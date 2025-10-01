@@ -14,7 +14,121 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      faq_items: {
+        Row: {
+          answer: string
+          created_at: string
+          id: string
+          order_index: number | null
+          psak_din_id: string
+          question: string
+          updated_at: string
+        }
+        Insert: {
+          answer: string
+          created_at?: string
+          id?: string
+          order_index?: number | null
+          psak_din_id: string
+          question: string
+          updated_at?: string
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          id?: string
+          order_index?: number | null
+          psak_din_id?: string
+          question?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "faq_items_psak_din_id_fkey"
+            columns: ["psak_din_id"]
+            isOneToOne: false
+            referencedRelation: "psakei_din"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      psakei_din: {
+        Row: {
+          case_number: string | null
+          court: string
+          created_at: string
+          full_text: string | null
+          id: string
+          source_url: string | null
+          summary: string
+          tags: string[] | null
+          title: string
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          case_number?: string | null
+          court: string
+          created_at?: string
+          full_text?: string | null
+          id?: string
+          source_url?: string | null
+          summary: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          case_number?: string | null
+          court?: string
+          created_at?: string
+          full_text?: string | null
+          id?: string
+          source_url?: string | null
+          summary?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
+      sugya_psak_links: {
+        Row: {
+          connection_explanation: string
+          created_at: string
+          id: string
+          psak_din_id: string
+          relevance_score: number | null
+          sugya_id: string
+        }
+        Insert: {
+          connection_explanation: string
+          created_at?: string
+          id?: string
+          psak_din_id: string
+          relevance_score?: number | null
+          sugya_id: string
+        }
+        Update: {
+          connection_explanation?: string
+          created_at?: string
+          id?: string
+          psak_din_id?: string
+          relevance_score?: number | null
+          sugya_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sugya_psak_links_psak_din_id_fkey"
+            columns: ["psak_din_id"]
+            isOneToOne: false
+            referencedRelation: "psakei_din"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
