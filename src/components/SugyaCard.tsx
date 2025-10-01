@@ -24,7 +24,7 @@ const SugyaCard = ({ id, title, dafYomi, summary, casesCount, tags }: SugyaCardP
 
   const fetchRealCasesCount = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('sugya_psak_links')
         .select('*, psakei_din:psak_din_id(source_url)', { count: 'exact' })
         .eq('sugya_id', id);

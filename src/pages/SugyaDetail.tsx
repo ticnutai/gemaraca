@@ -311,7 +311,7 @@ const SugyaDetail = () => {
   const fetchRealCases = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('sugya_psak_links')
         .select(`
           *,
@@ -339,7 +339,7 @@ const SugyaDetail = () => {
 
   const fetchFAQItems = async (psakDinIds: string[]) => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('faq_items')
         .select('*')
         .in('psak_din_id', psakDinIds)
@@ -454,7 +454,7 @@ const SugyaDetail = () => {
                   );
                   
                   return (
-                    <Card key={link.id} className="p-6 space-y-6 hover:shadow-lg transition-all border-2 border-primary/20">
+                    <Card key={link.id} className="p-6 space-y-4 hover:shadow-lg transition-all border-2 border-primary/20">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 space-y-2">
                           <div className="flex items-center gap-2">
@@ -476,7 +476,7 @@ const SugyaDetail = () => {
                           </div>
                           {caseData.tags && caseData.tags.length > 0 && (
                             <div className="flex flex-wrap gap-1">
-                              {caseData.tags.map((tag: string, i: number) => (
+                              {(caseData.tags as string[]).map((tag: string, i: number) => (
                                 <Badge key={i} variant="secondary" className="text-xs">
                                   {tag}
                                 </Badge>
@@ -484,17 +484,25 @@ const SugyaDetail = () => {
                             </div>
                           )}
                         </div>
-                        {caseData.source_url && (
+                      </div>
+                      
+                      {caseData.source_url && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full gap-2"
+                          asChild
+                        >
                           <a 
                             href={caseData.source_url} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="text-primary hover:text-primary/80"
                           >
-                            <ExternalLink className="w-5 h-5" />
+                            <ExternalLink className="w-4 h-4" />
+                            צפייה בפסק הדין המלא במקור
                           </a>
-                        )}
-                      </div>
+                        </Button>
+                      )}
                       
                       <p className="text-foreground leading-relaxed">{caseData.summary}</p>
                       
