@@ -83,18 +83,19 @@ const PsakDinSearchButton = ({
             </div>
             <div className="flex-1">
               <h3 className="text-xl font-bold text-foreground mb-2">
-                חיפוש פסקי דין אמיתיים
+                חיפוש פסקי דין אמיתיים ומקורות הלכתיים
               </h3>
               <p className="text-muted-foreground mb-4">
-                מנוע החיפוש יסרוק אתרי פסקי דין רבניים, ספריות שו"ת וספרי הלכה
-                כדי למצוא מקורות אמיתיים וקישורים מאומתים הקשורים לסוגיה זו.
+                מנוע החיפוש יסרוק אתרים רשמיים: פסקדין (www.psakdin.co.il), 
+                אתר דעת (www.daat.ac.il), ספריא (www.sefaria.org.il), 
+                בתי הדין הרבניים (www.gov.il) ומקורות אמינים נוספים כדי למצוא 
+                פסקי דין אמיתיים וקישורים מאומתים הקשורים לסוגיה זו.
               </p>
               <div className="flex flex-wrap gap-2 text-sm text-muted-foreground mb-4">
-                <span>• פסקדין</span>
-                <span>• תורה בינט</span>
-                <span>• המכון לחקר המשפט העברי</span>
-                <span>• אתר דעת</span>
-                <span>• ספריות שו"ת</span>
+                <span>• פסקדין (psakdin.co.il)</span>
+                <span>• אתר דעת (daat.ac.il)</span>
+                <span>• ספריא (sefaria.org.il)</span>
+                <span>• בתי הדין הרבניים</span>
               </div>
             </div>
           </div>

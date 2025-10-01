@@ -5,6 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { BookOpen, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { toHebrewNumeral } from "@/lib/hebrewNumbers";
 
 const dafMapping: Record<number, string> = {
   2: "shnayim-ochazin",
@@ -76,7 +77,7 @@ const DafQuickNav = () => {
                       }
                     `}
                   >
-                    {dafNum}
+                    {toHebrewNumeral(dafNum)}
                   </Button>
                 );
               })}

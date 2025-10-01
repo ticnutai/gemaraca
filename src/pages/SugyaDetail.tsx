@@ -532,11 +532,19 @@ const SugyaDetail = () => {
           {/* Sample Cases */}
           {sugya.cases && sugya.cases.length > 0 && (
             <div className="space-y-6">
-              <div className="flex items-center gap-3">
-                <Scale className="w-6 h-6 text-muted-foreground" />
-                <h2 className="text-2xl font-bold text-muted-foreground">
-                  דוגמאות נוספות ({sugya.cases.length})
-                </h2>
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <Scale className="w-6 h-6 text-muted-foreground" />
+                  <h2 className="text-2xl font-bold text-muted-foreground">
+                    דוגמאות להמחשה ({sugya.cases.length})
+                  </h2>
+                </div>
+                <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                  <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                    💡 <strong>שימו לב:</strong> אלו דוגמאות להמחשה בלבד. הקישורים אינם אמיתיים. 
+                    להשגת פסקי דין אמיתיים, השתמשו בכפתור "חפש פסקי דין אמיתיים" למעלה.
+                  </p>
+                </div>
               </div>
               
               <div className="space-y-4">
