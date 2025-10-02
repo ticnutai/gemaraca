@@ -1,1 +1,16 @@
 project_id = "jaotdqumpcfhcbkgtfib"
+
+[functions.search-psak-din]
+verify_jwt = false
+
+[functions.analyze-psak-din]
+verify_jwt = false
+
+[functions.get-gemara-text]
+verify_jwt = false
+
+[functions.get-commentaries]
+verify_jwt = false
+
+[functions.search-lexicon]
+verify_jwt = false

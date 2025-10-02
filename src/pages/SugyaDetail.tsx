@@ -8,7 +8,11 @@ import DafSelector from "@/components/DafSelector";
 import DafQuickNav from "@/components/DafQuickNav";
 import FAQSection from "@/components/FAQSection";
 import PsakDinSearchButton from "@/components/PsakDinSearchButton";
+import GemaraTextPanel from "@/components/GemaraTextPanel";
+import CommentariesPanel from "@/components/CommentariesPanel";
+import LexiconSearch from "@/components/LexiconSearch";
 import { supabase } from "@/integrations/supabase/client";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const sugyotData: Record<string, any> = {
   "shnayim-ochazin": {
@@ -427,6 +431,27 @@ const SugyaDetail = () => {
               {sugya.fullText}
             </div>
           </Card>
+
+          {/* Sefaria Integration */}
+          <div className="space-y-6">
+            <h2 className="text-3xl font-bold text-foreground">מקורות וכלים ללימוד</h2>
+            <Tabs defaultValue="gemara" className="w-full" dir="rtl">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="gemara">טקסט הגמרא</TabsTrigger>
+                <TabsTrigger value="commentaries">מפרשים</TabsTrigger>
+                <TabsTrigger value="lexicon">מילון</TabsTrigger>
+              </TabsList>
+              <TabsContent value="gemara" className="mt-6">
+                <GemaraTextPanel sugyaId={id || ""} dafYomi={sugya.dafYomi} />
+              </TabsContent>
+              <TabsContent value="commentaries" className="mt-6">
+                <CommentariesPanel dafYomi={sugya.dafYomi} />
+              </TabsContent>
+              <TabsContent value="lexicon" className="mt-6">
+                <LexiconSearch dafYomi={sugya.dafYomi} />
+              </TabsContent>
+            </Tabs>
+          </div>
 
           {/* Search for Psak Din */}
           <PsakDinSearchButton
