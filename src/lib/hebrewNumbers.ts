@@ -56,6 +56,63 @@ export function toHebrewNumeral(num: number): string {
 }
 
 /**
+ * Converts Hebrew numeral back to a number
+ * Examples: "ב" -> 2, "כג" -> 23, "ט״ו" -> 15
+ */
+export function fromHebrewNumeral(hebrewNum: string): number | null {
+  if (!hebrewNum) return null;
+
+  // Remove gershayim and geresh
+  const cleaned = hebrewNum.replace(/[״׳]/g, '').trim();
+  
+  const onesMap: Record<string, number> = {
+    'א': 1, 'ב': 2, 'ג': 3, 'ד': 4, 'ה': 5,
+    'ו': 6, 'ז': 7, 'ח': 8, 'ט': 9
+  };
+  
+  const tensMap: Record<string, number> = {
+    'י': 10, 'כ': 20, 'ל': 30, 'מ': 40, 'נ': 50,
+    'ס': 60, 'ע': 70, 'פ': 80, 'צ': 90
+  };
+  
+  const hundredsMap: Record<string, number> = {
+    'ק': 100, 'ר': 200, 'ש': 300, 'ת': 400,
+    'תק': 500, 'תר': 600, 'תש': 700, 'תת': 800, 'תתק': 900
+  };
+
+  let total = 0;
+  let i = 0;
+
+  // Check for hundreds
+  if (cleaned.length >= 2) {
+    const twoChar = cleaned.substring(i, i + 2);
+    if (hundredsMap[twoChar]) {
+      total += hundredsMap[twoChar];
+      i += 2;
+    } else if (hundredsMap[cleaned[i]]) {
+      total += hundredsMap[cleaned[i]];
+      i++;
+    }
+  } else if (hundredsMap[cleaned[i]]) {
+    total += hundredsMap[cleaned[i]];
+    i++;
+  }
+
+  // Check for tens
+  if (i < cleaned.length && tensMap[cleaned[i]]) {
+    total += tensMap[cleaned[i]];
+    i++;
+  }
+
+  // Check for ones
+  if (i < cleaned.length && onesMap[cleaned[i]]) {
+    total += onesMap[cleaned[i]];
+  }
+
+  return total > 0 ? total : null;
+}
+
+/**
  * Converts daf format to Hebrew
  * Examples: "2a" -> "ב ע\"א", "10b" -> "י ע\"ב"
  */

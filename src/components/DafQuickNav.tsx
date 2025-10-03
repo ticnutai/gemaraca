@@ -2,10 +2,11 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { BookOpen, Sparkles } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { BookOpen, Sparkles, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { toHebrewNumeral } from "@/lib/hebrewNumbers";
+import { toHebrewNumeral, fromHebrewNumeral } from "@/lib/hebrewNumbers";
 
 const dafMapping: Record<number, string> = {
   2: "shnayim-ochazin",
@@ -18,6 +19,7 @@ const dafMapping: Record<number, string> = {
 
 const DafQuickNav = () => {
   const [open, setOpen] = useState(false);
+  const [customDaf, setCustomDaf] = useState("");
   const navigate = useNavigate();
 
   const handleDafClick = (dafNum: number) => {
@@ -28,6 +30,19 @@ const DafQuickNav = () => {
     } else {
       toast.info(`דף ${dafNum} טרם נוסף למערכת`, {
         description: "בקרוב נוסיף עוד סוגיות מהמסכת"
+      });
+    }
+  };
+
+  const handleCustomDafSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const dafNum = fromHebrewNumeral(customDaf.trim());
+    if (dafNum && dafNum >= 2 && dafNum <= 176) {
+      handleDafClick(dafNum);
+      setCustomDaf("");
+    } else {
+      toast.error("מספר דף לא תקין", {
+        description: "הזן מספר דף בין ב' לקע\"ו (2-176)"
       });
     }
   };
@@ -52,12 +67,25 @@ const DafQuickNav = () => {
           <div className="space-y-2">
             <h3 className="font-bold text-lg flex items-center gap-2">
               <BookOpen className="w-5 h-5 text-primary" />
-              דפים ב-ל (בבא מציעא)
+              דפים ב-ל (בבא בתרא)
             </h3>
             <p className="text-sm text-muted-foreground">
               בחר דף לקפיצה מהירה לסוגיה
             </p>
           </div>
+
+          <form onSubmit={handleCustomDafSubmit} className="flex gap-2">
+            <Input
+              value={customDaf}
+              onChange={(e) => setCustomDaf(e.target.value)}
+              placeholder="הזן דף (לדוגמה: כג)"
+              className="text-right"
+              dir="rtl"
+            />
+            <Button type="submit" size="icon" variant="secondary">
+              <Search className="w-4 h-4" />
+            </Button>
+          </form>
           
           <ScrollArea className="h-[300px]">
             <div className="grid grid-cols-5 gap-2 p-1">
