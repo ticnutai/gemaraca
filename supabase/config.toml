@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.search-lexicon]
 verify_jwt = false
+
+[functions.load-daf]
+verify_jwt = false

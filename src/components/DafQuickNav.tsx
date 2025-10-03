@@ -1,36 +1,88 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
-import { BookOpen, Sparkles, Search } from "lucide-react";
+import { BookOpen, Sparkles, Search, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { toHebrewNumeral, fromHebrewNumeral } from "@/lib/hebrewNumbers";
-
-const dafMapping: Record<number, string> = {
-  2: "shnayim-ochazin",
-  21: "eilu-metziot",
-  27: "hashavat-aveida",
-  28: "geneiva-aveida",
-  18: "hamotzei-shtarot",
-  29: "hamaafil"
-};
+import { supabase } from "@/integrations/supabase/client";
 
 const DafQuickNav = () => {
   const [open, setOpen] = useState(false);
   const [customDaf, setCustomDaf] = useState("");
+  const [loadedPages, setLoadedPages] = useState<Record<number, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    loadExistingPages();
+  }, []);
+
+  const loadExistingPages = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('gemara_pages')
+        .select('daf_number, sugya_id');
+
+      if (error) throw error;
+
+      const mapping: Record<number, string> = {};
+      data?.forEach((page) => {
+        mapping[page.daf_number] = page.sugya_id;
+      });
+      setLoadedPages(mapping);
+    } catch (error) {
+      console.error('Error loading pages:', error);
+    }
+  };
+
   const handleDafClick = (dafNum: number) => {
-    const sugyaId = dafMapping[dafNum];
+    const sugyaId = loadedPages[dafNum];
     if (sugyaId) {
       navigate(`/sugya/${sugyaId}`);
       setOpen(false);
     } else {
-      toast.info(`דף ${dafNum} טרם נוסף למערכת`, {
-        description: "בקרוב נוסיף עוד סוגיות מהמסכת"
+      toast.info(`דף ${toHebrewNumeral(dafNum)} טרם נטען`, {
+        description: "השתמש בכפתור 'טען דף' כדי לטעון דף חדש"
       });
+    }
+  };
+
+  const handleLoadDaf = async (dafNum: number) => {
+    if (loadedPages[dafNum]) {
+      toast.info("דף זה כבר קיים במערכת");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const hebrewDaf = toHebrewNumeral(dafNum);
+      const sugya_id = `daf-${dafNum}`;
+      const title = `דף ${hebrewDaf}`;
+
+      const { data, error } = await supabase.functions.invoke('load-daf', {
+        body: {
+          dafNumber: dafNum,
+          sugya_id: sugya_id,
+          title: title
+        }
+      });
+
+      if (error) throw error;
+
+      toast.success(data.message || `דף ${hebrewDaf} נטען בהצלחה!`);
+      await loadExistingPages();
+      navigate(`/sugya/${sugya_id}`);
+      setOpen(false);
+    } catch (error: any) {
+      console.error('Error loading daf:', error);
+      toast.error("שגיאה בטעינת הדף", {
+        description: error.message || "אנא נסה שוב"
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -90,34 +142,54 @@ const DafQuickNav = () => {
           <ScrollArea className="h-[300px]">
             <div className="grid grid-cols-5 gap-2 p-1">
               {dafim.map((dafNum) => {
-                const hasSugya = !!dafMapping[dafNum];
+                const isLoaded = !!loadedPages[dafNum];
                 return (
-                  <Button
-                    key={dafNum}
-                    variant={hasSugya ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => handleDafClick(dafNum)}
-                    className={`
-                      h-12 font-bold text-base
-                      ${hasSugya 
-                        ? "bg-gradient-to-br from-primary to-secondary hover:shadow-lg" 
-                        : "opacity-50 hover:opacity-75"
-                      }
-                    `}
-                  >
-                    {toHebrewNumeral(dafNum)}
-                  </Button>
+                  <div key={dafNum} className="relative group">
+                    <Button
+                      variant={isLoaded ? "default" : "ghost"}
+                      size="sm"
+                      onClick={() => handleDafClick(dafNum)}
+                      disabled={isLoading}
+                      className={`
+                        w-full h-12 font-bold text-base
+                        ${isLoaded 
+                          ? "bg-gradient-to-br from-primary to-secondary hover:shadow-lg" 
+                          : "opacity-50 hover:opacity-75"
+                        }
+                      `}
+                    >
+                      {toHebrewNumeral(dafNum)}
+                    </Button>
+                    {!isLoaded && (
+                      <Button
+                        size="icon"
+                        variant="secondary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleLoadDaf(dafNum);
+                        }}
+                        disabled={isLoading}
+                        className="absolute -top-1 -left-1 w-6 h-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Download className="w-3 h-3" />
+                      </Button>
+                    )}
+                  </div>
                 );
               })}
             </div>
           </ScrollArea>
           
           <div className="text-xs text-muted-foreground pt-2 border-t">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded bg-gradient-to-br from-primary to-secondary"></div>
-              <span>דף זמין</span>
-              <div className="w-3 h-3 rounded bg-muted mr-4"></div>
-              <span>בקרוב</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded bg-gradient-to-br from-primary to-secondary"></div>
+                <span>נטען</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded bg-muted"></div>
+                <span>טען בעמידה על דף</span>
+              </div>
             </div>
           </div>
         </div>

@@ -52,6 +52,39 @@ export type Database = {
           },
         ]
       }
+      gemara_pages: {
+        Row: {
+          created_at: string
+          daf_number: number
+          daf_yomi: string
+          id: string
+          sefaria_ref: string
+          sugya_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          daf_number: number
+          daf_yomi: string
+          id?: string
+          sefaria_ref: string
+          sugya_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          daf_number?: number
+          daf_yomi?: string
+          id?: string
+          sefaria_ref?: string
+          sugya_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       psakei_din: {
         Row: {
           case_number: string | null
