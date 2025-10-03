@@ -303,14 +303,43 @@ const SugyaDetail = () => {
   const [realCases, setRealCases] = useState<any[]>([]);
   const [faqItems, setFaqItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadedPage, setLoadedPage] = useState<any>(null);
   
-  const sugya = sugyotData[id || ""];
+  const sugya = sugyotData[id || ""] || loadedPage;
 
   useEffect(() => {
     if (id) {
+      loadPageFromDB();
       fetchRealCases();
     }
   }, [id]);
+
+  const loadPageFromDB = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('gemara_pages')
+        .select('*')
+        .eq('sugya_id', id)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data) {
+        // Convert DB format to component format
+        setLoadedPage({
+          title: data.title,
+          dafYomi: data.daf_yomi,
+          summary: `דף ${data.daf_yomi} מתוך בבא בתרא`,
+          tags: ["גמרא", "בבא בתרא"],
+          gemaraText: "",
+          fullText: "",
+          cases: []
+        });
+      }
+    } catch (error) {
+      console.error('Error loading page from DB:', error);
+    }
+  };
 
   const fetchRealCases = async () => {
     try {
