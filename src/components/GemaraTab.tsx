@@ -115,7 +115,7 @@ const GemaraTab = () => {
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="absolute -top-1 -left-1 opacity-0 group-hover:opacity-100 transition-opacity bg-accent text-accent-foreground hover:bg-accent/90 w-6 h-6 p-0"
+                          className="absolute -top-1 -left-1 opacity-0 group-hover:opacity-100 transition-opacity w-7 h-7 p-0 rounded-full bg-accent text-accent-foreground hover:bg-accent/90"
                           onClick={() => handleLoadDaf(dafNum)}
                         >
                           <Download className="w-3 h-3" />

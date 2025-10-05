@@ -72,7 +72,9 @@ const SearchPsakDinTab = () => {
                 disabled={loading}
                 className="gap-2"
               >
-                <Search className="w-4 h-4" />
+                <div className="w-5 h-5 rounded-full bg-primary-foreground/20 flex items-center justify-center">
+                  <Search className="w-3 h-3" />
+                </div>
                 חפש
               </Button>
             </div>
@@ -94,17 +96,23 @@ const SearchPsakDinTab = () => {
                     {psak.title}
                   </CardTitle>
                   <div className="flex flex-wrap gap-2 text-sm text-muted-foreground mt-2">
-                    <div className="flex items-center gap-1">
-                      <Building2 className="w-4 h-4" />
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Building2 className="w-3 h-3 text-primary" />
+                      </div>
                       {psak.court}
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-4 h-4" />
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Calendar className="w-3 h-3 text-primary" />
+                      </div>
                       {psak.year}
                     </div>
                     {psak.case_number && (
-                      <div className="flex items-center gap-1">
-                        <FileText className="w-4 h-4" />
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                          <FileText className="w-3 h-3 text-primary" />
+                        </div>
                         {psak.case_number}
                       </div>
                     )}

@@ -19,21 +19,27 @@ const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
                 value="gemara" 
                 className="gap-2 data-[state=active]:bg-card data-[state=active]:text-foreground"
               >
-                <BookOpen className="w-4 h-4" />
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <BookOpen className="w-4 h-4 text-primary" />
+                </div>
                 גמרא
               </TabsTrigger>
               <TabsTrigger 
                 value="psak-din" 
                 className="gap-2 data-[state=active]:bg-card data-[state=active]:text-foreground"
               >
-                <Scale className="w-4 h-4" />
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Scale className="w-4 h-4 text-primary" />
+                </div>
                 פסקי דין
               </TabsTrigger>
               <TabsTrigger 
                 value="search" 
                 className="gap-2 data-[state=active]:bg-card data-[state=active]:text-foreground"
               >
-                <Search className="w-4 h-4" />
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Search className="w-4 h-4 text-primary" />
+                </div>
                 חיפוש פסקי דין
               </TabsTrigger>
             </TabsList>
