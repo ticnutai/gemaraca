@@ -13,22 +13,31 @@ serve(async (req) => {
   }
 
   try {
-    const { dafNumber, sugya_id, title } = await req.json();
+    console.log('=== LOAD DAF REQUEST START ===');
+    const body = await req.json();
+    console.log('Request body:', JSON.stringify(body));
+    
+    const { dafNumber, sugya_id, title } = body;
+    
+    console.log('Parsed params:', { dafNumber, sugya_id, title });
     
     if (!dafNumber || !sugya_id || !title) {
+      console.error('Missing required parameters:', { dafNumber, sugya_id, title });
       return new Response(
         JSON.stringify({ error: 'Missing required parameters: dafNumber, sugya_id, title' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('Loading daf:', dafNumber, sugya_id, title);
+    console.log('Loading daf:', dafNumber, 'sugya_id:', sugya_id, 'title:', title);
 
     // Create Supabase client
+    console.log('Creating Supabase client...');
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
+    console.log('Supabase client created');
 
     // Convert daf number to Hebrew
     const toHebrewNumeral = (num: number): string => {
@@ -53,21 +62,32 @@ serve(async (req) => {
 
     const dafYomi = `${toHebrewNumeral(dafNumber)} ע״א`;
     const sefariaRef = `Bava_Batra.${dafNumber}a`;
+    
+    console.log('Generated dafYomi:', dafYomi);
+    console.log('Generated sefariaRef:', sefariaRef);
 
     // Verify the page exists in Sefaria
     const sefariaUrl = `https://www.sefaria.org/api/texts/${sefariaRef}?commentary=0&context=1`;
+    console.log('Calling Sefaria API:', sefariaUrl);
+    
     const sefariaResponse = await fetch(sefariaUrl);
+    console.log('Sefaria response status:', sefariaResponse.status);
 
     if (!sefariaResponse.ok) {
+      const errorText = await sefariaResponse.text();
+      console.error('Sefaria API error:', sefariaResponse.status, errorText);
       throw new Error(`Sefaria API error: ${sefariaResponse.status}`);
     }
 
     const sefariaData = await sefariaResponse.json();
+    console.log('Sefaria data received:', { hasHe: !!sefariaData.he, heLength: sefariaData.he?.length });
 
     if (!sefariaData.he || sefariaData.he.length === 0) {
+      console.error('No Hebrew text found in Sefaria for this daf');
       throw new Error('No text found in Sefaria for this daf');
     }
 
+    console.log('Inserting into database...');
     // Insert into database
     const { data, error } = await supabaseClient
       .from('gemara_pages')
@@ -83,8 +103,14 @@ serve(async (req) => {
 
     if (error) {
       console.error('Database error:', error);
+      console.error('Error code:', error.code);
+      console.error('Error details:', error.details);
+      console.error('Error hint:', error.hint);
       throw new Error(`Database error: ${error.message}`);
     }
+
+    console.log('Successfully inserted daf:', data.id);
+    console.log('=== LOAD DAF REQUEST SUCCESS ===');
 
     return new Response(
       JSON.stringify({
@@ -96,10 +122,17 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error in load-daf function:', error);
+    console.error('=== LOAD DAF ERROR ===');
+    console.error('Error type:', error?.constructor?.name);
+    console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ 
+        error: errorMessage,
+        details: error instanceof Error ? error.stack : undefined
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
