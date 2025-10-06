@@ -12,6 +12,7 @@ const GemaraTab = () => {
   const [selectedMasechet, setSelectedMasechet] = useState("בבא מציעא");
   const [pages, setPages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingDaf, setLoadingDaf] = useState<number | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -36,31 +37,58 @@ const GemaraTab = () => {
   };
 
   const handleLoadDaf = async (dafNumber: number) => {
+    setLoadingDaf(dafNumber);
+    console.log('Starting to load daf:', dafNumber);
+    
     try {
+      const hebrewNumber = toHebrewNumeral(dafNumber);
+      const sugya_id = `daf-${dafNumber}`;
+      const title = `דף ${hebrewNumber}`;
+      
+      console.log('Loading daf with params:', { dafNumber, sugya_id, title });
+      
       toast({
         title: "טוען דף...",
-        description: `מוריד מידע עבור דף ${toHebrewNumeral(dafNumber)}`,
+        description: `מוריד מידע עבור דף ${hebrewNumber}`,
       });
 
       const { data, error } = await supabase.functions.invoke('load-daf', {
-        body: { dafNumber }
+        body: { 
+          dafNumber,
+          sugya_id,
+          title
+        }
       });
 
-      if (error) throw error;
+      console.log('Load daf response:', { data, error });
+
+      if (error) {
+        console.error('Load daf error:', error);
+        throw error;
+      }
 
       toast({
         title: "הדף נטען בהצלחה",
-        description: `דף ${toHebrewNumeral(dafNumber)} זמין כעת`,
+        description: `דף ${hebrewNumber} זמין כעת`,
       });
 
+      console.log('Reloading pages...');
       await loadPages();
+      
+      // Navigate to the newly loaded page
+      if (data?.data?.sugya_id) {
+        console.log('Navigating to:', data.data.sugya_id);
+        navigate(`/sugya/${data.data.sugya_id}`);
+      }
     } catch (error) {
       console.error('Error loading daf:', error);
       toast({
         title: "שגיאה בטעינת הדף",
-        description: "נסה שוב מאוחר יותר",
+        description: error instanceof Error ? error.message : "נסה שוב מאוחר יותר",
         variant: "destructive",
       });
+    } finally {
+      setLoadingDaf(null);
     }
   };
 
@@ -106,12 +134,19 @@ const GemaraTab = () => {
                             navigate(`/sugya/${loadedPage.sugya_id}`);
                           }
                         }}
-                        disabled={!isLoaded}
+                        disabled={!isLoaded || loadingDaf === dafNum}
                       >
-                        {toHebrewNumeral(dafNum)}
+                        {loadingDaf === dafNum ? (
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                            <span className="text-xs">טוען...</span>
+                          </div>
+                        ) : (
+                          toHebrewNumeral(dafNum)
+                        )}
                       </Button>
                       
-                      {!isLoaded && (
+                      {!isLoaded && loadingDaf !== dafNum && (
                         <Button
                           size="sm"
                           variant="ghost"
