@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, BookOpen, Image, FileText, ZoomIn, ZoomOut, ChevronRight, ChevronLeft } from "lucide-react";
+import { Loader2, BookOpen, Image, FileText, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -10,42 +10,17 @@ interface GemaraTextPanelProps {
   dafYomi: string;
 }
 
-// מיפוי מסכתות ל-book ID של HebrewBooks
-const masechetToHebrewBooksReq: Record<string, number> = {
-  "Berakhot": 37714, "Shabbat": 37715, "Eruvin": 37716, "Pesachim": 37717,
-  "Yoma": 37719, "Sukkah": 37720, "Beitzah": 37721, "Rosh_Hashanah": 37722,
-  "Taanit": 37723, "Megillah": 37724, "Moed_Katan": 37725, "Chagigah": 37726,
-  "Yevamot": 37727, "Ketubot": 37728, "Nedarim": 37729, "Nazir": 37730,
-  "Sotah": 37731, "Gittin": 37732, "Kiddushin": 37733,
-  "Bava_Kamma": 37734, "Bava_Metzia": 37735, "Bava_Batra": 9585,
-  "Sanhedrin": 37737, "Makkot": 37738, "Shevuot": 37739, "Avodah_Zarah": 37740,
-  "Horayot": 37741, "Zevachim": 37742, "Menachot": 37743, "Chullin": 37744,
-  "Bekhorot": 37745, "Arakhin": 37746, "Temurah": 37747, "Keritot": 37748,
-  "Meilah": 37749, "Niddah": 37751
-};
-
-// חישוב מספר העמוד ב-PDF (דף 2a הוא עמוד 3 בדרך כלל)
-const calculatePdfPage = (dafNumber: number, amud: 'a' | 'b'): number => {
-  // בבבא בתרא: דף 2a מתחיל בעמוד 5 ב-PDF (עם כותרות)
-  const basePage = 3; // עמוד ההתחלה
-  const pageOffset = (dafNumber - 2) * 2; // כל דף = 2 עמודים
-  const amudOffset = amud === 'b' ? 1 : 0;
-  return basePage + pageOffset + amudOffset;
-};
-
-type ViewMode = 'text' | 'original';
+type ViewMode = 'text' | 'sefaria' | 'edaf';
 
 export default function GemaraTextPanel({ sugyaId, dafYomi }: GemaraTextPanelProps) {
   const [gemaraText, setGemaraText] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showHebrew, setShowHebrew] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('text');
-  const [imageError, setImageError] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     loadGemaraText();
-    setImageError(false);
   }, [dafYomi]);
 
   const loadGemaraText = async () => {
@@ -82,10 +57,13 @@ export default function GemaraTextPanel({ sugyaId, dafYomi }: GemaraTextPanelPro
     const parts = dafYomi.trim().split(' ');
     const masechet = "Bava_Batra";
     
-    if (parts.length >= 3) {
-      const dafNum = parts[parts.length - 2];
-      const amud = parts[parts.length - 1];
-      const amudLetter = amud === 'א' ? 'a' : 'b';
+    if (parts.length >= 2) {
+      let dafNum = parts[0].replace(/[׳\"]/g, '');
+      let amud = 'a';
+      
+      if (parts.length >= 2 && parts[1].includes('ע')) {
+        amud = parts[1].includes('ב') ? 'b' : 'a';
+      }
       
       const hebrewToNumber: Record<string, string> = {
         'א': '1', 'ב': '2', 'ג': '3', 'ד': '4', 'ה': '5',
@@ -98,18 +76,16 @@ export default function GemaraTextPanel({ sugyaId, dafYomi }: GemaraTextPanelPro
       };
       
       const dafNumber = hebrewToNumber[dafNum] || dafNum;
-      return `${masechet}.${dafNumber}${amudLetter}`;
+      return `${masechet}.${dafNumber}${amud}`;
     }
     
     return "Bava_Batra.2a";
   };
 
-  const getDafInfo = (dafYomi: string): { masechet: string; daf: number; amud: 'a' | 'b' } => {
+  const getDafInfo = (dafYomi: string): { daf: number; amud: 'a' | 'b' } => {
     const parts = dafYomi.trim().split(' ');
-    const masechet = "Bava_Batra";
     
     if (parts.length >= 2) {
-      // Handle format like "ל׳ ע״א" or just number
       let dafNum = parts[0].replace(/[׳\"]/g, '');
       let amud: 'a' | 'b' = 'a';
       
@@ -128,24 +104,33 @@ export default function GemaraTextPanel({ sugyaId, dafYomi }: GemaraTextPanelPro
       };
       
       return {
-        masechet,
         daf: hebrewToNumber[dafNum] || 2,
         amud
       };
     }
     
-    return { masechet, daf: 2, amud: 'a' };
+    return { daf: 2, amud: 'a' };
   };
 
-  const getHebrewBooksImageUrl = (): string => {
-    const { masechet, daf, amud } = getDafInfo(dafYomi);
-    const bookReq = masechetToHebrewBooksReq[masechet] || 9585;
-    const pdfPage = calculatePdfPage(daf, amud);
-    // HebrewBooks pdfpager URL - מציג את הדף ישירות
-    return `https://hebrewbooks.org/pdfpager.aspx?req=${bookReq}&pgnum=${pdfPage}`;
+  // URL לספריא - עובד טוב ב-iframe
+  const getSefariaEmbedUrl = (): string => {
+    const ref = convertDafYomiToSefariaRef(dafYomi);
+    return `https://www.sefaria.org/${ref}?lang=he&layout=book&sidebarLang=hebrew`;
   };
 
-  // פונקציה לניקוי והמרת HTML tags לטקסט מעוצב
+  // URL ל-e-daf - תמונות סרוקות
+  const getEdafUrl = (): string => {
+    const { daf, amud } = getDafInfo(dafYomi);
+    return `https://www.e-daf.com/index.asp?ID=23&masession=${daf}${amud.toUpperCase()}`;
+  };
+
+  // URL ישיר לספריא (לפתיחה בחלון חדש)
+  const getSefariaDirectUrl = (): string => {
+    const ref = convertDafYomiToSefariaRef(dafYomi);
+    return `https://www.sefaria.org/${ref}?lang=he`;
+  };
+
+  // פונקציה לניקוי והמרת HTML tags
   const cleanAndFormatText = (html: string): string => {
     let cleaned = html
       .replace(/<big>/gi, '<span class="text-xl font-bold text-primary">')
@@ -183,45 +168,78 @@ export default function GemaraTextPanel({ sugyaId, dafYomi }: GemaraTextPanelPro
     );
   };
 
-  const renderOriginalView = () => {
+  const renderSefariaView = () => {
     const { daf, amud } = getDafInfo(dafYomi);
-    const imageUrl = getHebrewBooksImageUrl();
+    const embedUrl = getSefariaEmbedUrl();
+    const directUrl = getSefariaDirectUrl();
     
     return (
-      <div className="space-y-4">
-        <div className="text-center text-muted-foreground text-sm mb-2 flex items-center justify-center gap-2">
+      <div className="space-y-3">
+        <div className="text-center text-muted-foreground text-sm flex items-center justify-center gap-2">
           <BookOpen className="h-4 w-4" />
-          <span>דף {daf}{amud === 'a' ? ' עמוד א' : ' עמוד ב'} - תלמוד בבלי מסכת בבא בתרא</span>
+          <span>דף {daf} עמוד {amud === 'a' ? 'א' : 'ב'} - תצוגת ספריא</span>
         </div>
         
-        {/* תצוגת הדף המקורי */}
         <div 
-          className="border rounded-lg overflow-hidden bg-[#f5f0e6] shadow-inner"
-          style={{ height: '700px' }}
+          className="border rounded-lg overflow-hidden bg-white shadow-sm"
+          style={{ height: '650px' }}
         >
           <iframe
-            src={imageUrl}
+            src={embedUrl}
             className="w-full h-full border-0"
-            title={`דף גמרא ${daf}${amud}`}
-            style={{ 
-              backgroundColor: '#f5f0e6',
-            }}
-            onError={() => setImageError(true)}
+            title={`דף גמרא ${daf}${amud} - ספריא`}
+            allow="fullscreen"
           />
         </div>
         
-        {imageError && (
-          <div className="text-center text-muted-foreground py-4">
-            <p>לא ניתן לטעון את הדף המקורי</p>
-            <Button 
-              variant="link" 
-              onClick={() => window.open(imageUrl, '_blank')}
-              className="mt-2"
-            >
-              פתח בחלון חדש
-            </Button>
-          </div>
-        )}
+        <div className="flex justify-center">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.open(directUrl, '_blank')}
+            className="gap-2"
+          >
+            <ExternalLink className="h-4 w-4" />
+            פתח בספריא
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  const renderEdafView = () => {
+    const { daf, amud } = getDafInfo(dafYomi);
+    const edafUrl = getEdafUrl();
+    
+    return (
+      <div className="space-y-3">
+        <div className="text-center text-muted-foreground text-sm flex items-center justify-center gap-2">
+          <Image className="h-4 w-4" />
+          <span>דף {daf} עמוד {amud === 'a' ? 'א' : 'ב'} - צורת הדף (E-Daf)</span>
+        </div>
+        
+        <div 
+          className="border rounded-lg overflow-hidden bg-[#f8f5eb] shadow-sm"
+          style={{ height: '650px' }}
+        >
+          <iframe
+            src={edafUrl}
+            className="w-full h-full border-0"
+            title={`דף גמרא ${daf}${amud} - E-Daf`}
+          />
+        </div>
+        
+        <div className="flex justify-center">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.open(edafUrl, '_blank')}
+            className="gap-2"
+          >
+            <ExternalLink className="h-4 w-4" />
+            פתח ב-E-Daf
+          </Button>
+        </div>
       </div>
     );
   };
@@ -247,19 +265,28 @@ export default function GemaraTextPanel({ sugyaId, dafYomi }: GemaraTextPanelPro
                 variant={viewMode === 'text' ? "default" : "ghost"}
                 size="sm"
                 onClick={() => setViewMode('text')}
-                className="gap-1"
+                className="gap-1 text-xs sm:text-sm"
               >
                 <FileText className="h-4 w-4" />
                 טקסט
               </Button>
               <Button
-                variant={viewMode === 'original' ? "default" : "ghost"}
+                variant={viewMode === 'sefaria' ? "default" : "ghost"}
                 size="sm"
-                onClick={() => setViewMode('original')}
-                className="gap-1"
+                onClick={() => setViewMode('sefaria')}
+                className="gap-1 text-xs sm:text-sm"
+              >
+                <BookOpen className="h-4 w-4" />
+                ספריא
+              </Button>
+              <Button
+                variant={viewMode === 'edaf' ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode('edaf')}
+                className="gap-1 text-xs sm:text-sm"
               >
                 <Image className="h-4 w-4" />
-                דף מקורי
+                צורת הדף
               </Button>
             </div>
             
@@ -289,8 +316,10 @@ export default function GemaraTextPanel({ sugyaId, dafYomi }: GemaraTextPanelPro
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
-        ) : viewMode === 'original' ? (
-          renderOriginalView()
+        ) : viewMode === 'sefaria' ? (
+          renderSefariaView()
+        ) : viewMode === 'edaf' ? (
+          renderEdafView()
         ) : gemaraText ? (
           <div className="prose prose-slate max-w-none dark:prose-invert bg-amber-50/30 dark:bg-amber-950/10 p-4 rounded-lg">
             {renderGemaraText()}
