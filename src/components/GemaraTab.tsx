@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toHebrewNumeral } from "@/lib/hebrewNumbers";
-import { Download } from "lucide-react";
+import { Download, CheckSquare, Square, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const GemaraTab = () => {
@@ -13,6 +14,9 @@ const GemaraTab = () => {
   const [pages, setPages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingDaf, setLoadingDaf] = useState<number | null>(null);
+  const [multiSelectMode, setMultiSelectMode] = useState(false);
+  const [selectedDafim, setSelectedDafim] = useState<Set<number>>(new Set());
+  const [loadingMultiple, setLoadingMultiple] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -75,7 +79,6 @@ const GemaraTab = () => {
       console.log('Reloading pages...');
       await loadPages();
       
-      // Navigate to the newly loaded page
       if (data?.data?.sugya_id) {
         console.log('Navigating to:', data.data.sugya_id);
         navigate(`/sugya/${data.data.sugya_id}`);
@@ -92,7 +95,71 @@ const GemaraTab = () => {
     }
   };
 
+  const handleLoadMultipleDafim = async () => {
+    if (selectedDafim.size === 0) return;
+    
+    setLoadingMultiple(true);
+    const dafimArray = Array.from(selectedDafim).sort((a, b) => a - b);
+    
+    toast({
+      title: "טוען דפים...",
+      description: `מוריד ${dafimArray.length} דפים`,
+    });
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const dafNumber of dafimArray) {
+      try {
+        const hebrewNumber = toHebrewNumeral(dafNumber);
+        const sugya_id = `daf-${dafNumber}`;
+        const title = `דף ${hebrewNumber}`;
+
+        const { error } = await supabase.functions.invoke('load-daf', {
+          body: { dafNumber, sugya_id, title }
+        });
+
+        if (error) throw error;
+        successCount++;
+      } catch (error) {
+        console.error(`Error loading daf ${dafNumber}:`, error);
+        failCount++;
+      }
+    }
+
+    await loadPages();
+    setSelectedDafim(new Set());
+    setMultiSelectMode(false);
+    setLoadingMultiple(false);
+
+    toast({
+      title: "טעינה הושלמה",
+      description: `נטענו ${successCount} דפים בהצלחה${failCount > 0 ? `, ${failCount} נכשלו` : ''}`,
+      variant: failCount > 0 ? "destructive" : "default",
+    });
+  };
+
+  const toggleDafSelection = (dafNum: number) => {
+    const newSelected = new Set(selectedDafim);
+    if (newSelected.has(dafNum)) {
+      newSelected.delete(dafNum);
+    } else {
+      newSelected.add(dafNum);
+    }
+    setSelectedDafim(newSelected);
+  };
+
+  const selectAllUnloaded = () => {
+    const unloadedDafim = allDafim.filter(dafNum => !pages.find(p => p.daf_number === dafNum));
+    setSelectedDafim(new Set(unloadedDafim));
+  };
+
+  const clearSelection = () => {
+    setSelectedDafim(new Set());
+  };
+
   const allDafim = Array.from({ length: 30 }, (_, i) => i + 2);
+  const unloadedCount = allDafim.filter(dafNum => !pages.find(p => p.daf_number === dafNum)).length;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -116,25 +183,115 @@ const GemaraTab = () => {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-foreground mb-3 block">
-                בחר דף
-              </label>
+              <div className="flex items-center justify-between mb-3">
+                <label className="text-sm font-medium text-foreground">
+                  בחר דף
+                </label>
+                
+                <div className="flex items-center gap-2">
+                  {unloadedCount > 0 && (
+                    <Button
+                      variant={multiSelectMode ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => {
+                        setMultiSelectMode(!multiSelectMode);
+                        if (multiSelectMode) {
+                          setSelectedDafim(new Set());
+                        }
+                      }}
+                      className="gap-2"
+                    >
+                      {multiSelectMode ? (
+                        <CheckSquare className="w-4 h-4" />
+                      ) : (
+                        <Square className="w-4 h-4" />
+                      )}
+                      בחירה מרובה
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {/* פס פעולות בחירה מרובה */}
+              {multiSelectMode && (
+                <div className="flex items-center gap-2 mb-3 p-3 bg-accent/50 rounded-lg">
+                  <span className="text-sm text-muted-foreground">
+                    נבחרו: {selectedDafim.size} דפים
+                  </span>
+                  <div className="flex-1" />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={selectAllUnloaded}
+                    disabled={loadingMultiple}
+                  >
+                    בחר הכל ({unloadedCount})
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearSelection}
+                    disabled={loadingMultiple || selectedDafim.size === 0}
+                  >
+                    נקה בחירה
+                  </Button>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={handleLoadMultipleDafim}
+                    disabled={loadingMultiple || selectedDafim.size === 0}
+                    className="gap-2"
+                  >
+                    {loadingMultiple ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        טוען...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4" />
+                        טען {selectedDafim.size} דפים
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
+
               <div className="grid grid-cols-5 gap-2">
                 {allDafim.map((dafNum) => {
                   const loadedPage = pages.find(p => p.daf_number === dafNum);
                   const isLoaded = !!loadedPage;
+                  const isSelected = selectedDafim.has(dafNum);
 
                   return (
                     <div key={dafNum} className="relative group">
+                      {/* Checkbox למצב בחירה מרובה */}
+                      {multiSelectMode && !isLoaded && (
+                        <div 
+                          className="absolute -top-1 -right-1 z-10"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleDafSelection(dafNum);
+                          }}
+                        >
+                          <Checkbox
+                            checked={isSelected}
+                            className="w-5 h-5 bg-background border-2 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                          />
+                        </div>
+                      )}
+                      
                       <Button
-                        variant={isLoaded ? "default" : "outline"}
-                        className="w-full h-12 relative"
+                        variant={isLoaded ? "default" : isSelected ? "secondary" : "outline"}
+                        className={`w-full h-12 relative ${isSelected && !isLoaded ? 'ring-2 ring-primary ring-offset-1' : ''}`}
                         onClick={() => {
-                          if (isLoaded) {
+                          if (multiSelectMode && !isLoaded) {
+                            toggleDafSelection(dafNum);
+                          } else if (isLoaded) {
                             navigate(`/sugya/${loadedPage.sugya_id}`);
                           }
                         }}
-                        disabled={!isLoaded || loadingDaf === dafNum}
+                        disabled={(!isLoaded && !multiSelectMode) || loadingDaf === dafNum || loadingMultiple}
                       >
                         {loadingDaf === dafNum ? (
                           <div className="flex items-center gap-2">
@@ -146,7 +303,8 @@ const GemaraTab = () => {
                         )}
                       </Button>
                       
-                      {!isLoaded && loadingDaf !== dafNum && (
+                      {/* כפתור הורדה בודד (רק כשלא במצב בחירה מרובה) */}
+                      {!isLoaded && !multiSelectMode && loadingDaf !== dafNum && (
                         <Button
                           size="sm"
                           variant="ghost"
