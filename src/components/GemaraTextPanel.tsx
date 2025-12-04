@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, BookOpen, Image, FileText, ExternalLink } from "lucide-react";
+import { Loader2, BookOpen, Image, FileText, ZoomIn, ZoomOut, ChevronRight, ChevronLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -10,16 +10,27 @@ interface GemaraTextPanelProps {
   dafYomi: string;
 }
 
-// מיפוי מסכתות ל-mesechta ID של HebrewBooks
-const masechetToHebrewBooksId: Record<string, number> = {
-  "Berakhot": 1, "Shabbat": 2, "Eruvin": 3, "Pesachim": 4, "Shekalim": 5,
-  "Yoma": 6, "Sukkah": 7, "Beitzah": 8, "Rosh_Hashanah": 9, "Taanit": 10,
-  "Megillah": 11, "Moed_Katan": 12, "Chagigah": 13, "Yevamot": 14, "Ketubot": 15,
-  "Nedarim": 16, "Nazir": 17, "Sotah": 18, "Gittin": 19, "Kiddushin": 20,
-  "Bava_Kamma": 21, "Bava_Metzia": 22, "Bava_Batra": 23, "Sanhedrin": 24,
-  "Makkot": 25, "Shevuot": 26, "Avodah_Zarah": 27, "Horayot": 28,
-  "Zevachim": 29, "Menachot": 30, "Chullin": 31, "Bekhorot": 32,
-  "Arakhin": 33, "Temurah": 34, "Keritot": 35, "Meilah": 36, "Niddah": 37
+// מיפוי מסכתות ל-book ID של HebrewBooks
+const masechetToHebrewBooksReq: Record<string, number> = {
+  "Berakhot": 37714, "Shabbat": 37715, "Eruvin": 37716, "Pesachim": 37717,
+  "Yoma": 37719, "Sukkah": 37720, "Beitzah": 37721, "Rosh_Hashanah": 37722,
+  "Taanit": 37723, "Megillah": 37724, "Moed_Katan": 37725, "Chagigah": 37726,
+  "Yevamot": 37727, "Ketubot": 37728, "Nedarim": 37729, "Nazir": 37730,
+  "Sotah": 37731, "Gittin": 37732, "Kiddushin": 37733,
+  "Bava_Kamma": 37734, "Bava_Metzia": 37735, "Bava_Batra": 9585,
+  "Sanhedrin": 37737, "Makkot": 37738, "Shevuot": 37739, "Avodah_Zarah": 37740,
+  "Horayot": 37741, "Zevachim": 37742, "Menachot": 37743, "Chullin": 37744,
+  "Bekhorot": 37745, "Arakhin": 37746, "Temurah": 37747, "Keritot": 37748,
+  "Meilah": 37749, "Niddah": 37751
+};
+
+// חישוב מספר העמוד ב-PDF (דף 2a הוא עמוד 3 בדרך כלל)
+const calculatePdfPage = (dafNumber: number, amud: 'a' | 'b'): number => {
+  // בבבא בתרא: דף 2a מתחיל בעמוד 5 ב-PDF (עם כותרות)
+  const basePage = 3; // עמוד ההתחלה
+  const pageOffset = (dafNumber - 2) * 2; // כל דף = 2 עמודים
+  const amudOffset = amud === 'b' ? 1 : 0;
+  return basePage + pageOffset + amudOffset;
 };
 
 type ViewMode = 'text' | 'original';
@@ -29,10 +40,12 @@ export default function GemaraTextPanel({ sugyaId, dafYomi }: GemaraTextPanelPro
   const [isLoading, setIsLoading] = useState(false);
   const [showHebrew, setShowHebrew] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('text');
+  const [imageError, setImageError] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     loadGemaraText();
+    setImageError(false);
   }, [dafYomi]);
 
   const loadGemaraText = async () => {
@@ -91,53 +104,57 @@ export default function GemaraTextPanel({ sugyaId, dafYomi }: GemaraTextPanelPro
     return "Bava_Batra.2a";
   };
 
-  const getDafInfo = (dafYomi: string): { masechet: string; daf: string; amud: 'a' | 'b' } => {
+  const getDafInfo = (dafYomi: string): { masechet: string; daf: number; amud: 'a' | 'b' } => {
     const parts = dafYomi.trim().split(' ');
     const masechet = "Bava_Batra";
     
-    if (parts.length >= 3) {
-      const dafNum = parts[parts.length - 2];
-      const amud = parts[parts.length - 1];
+    if (parts.length >= 2) {
+      // Handle format like "ל׳ ע״א" or just number
+      let dafNum = parts[0].replace(/[׳\"]/g, '');
+      let amud: 'a' | 'b' = 'a';
       
-      const hebrewToNumber: Record<string, string> = {
-        'א': '1', 'ב': '2', 'ג': '3', 'ד': '4', 'ה': '5',
-        'ו': '6', 'ז': '7', 'ח': '8', 'ט': '9', 'י': '10',
-        'יא': '11', 'יב': '12', 'יג': '13', 'יד': '14', 'טו': '15',
-        'טז': '16', 'יז': '17', 'יח': '18', 'יט': '19', 'כ': '20',
-        'כא': '21', 'כב': '22', 'כג': '23', 'כד': '24', 'כה': '25',
-        'כו': '26', 'כז': '27', 'כח': '28', 'כט': '29', 'ל': '30',
-        'לא': '31', 'לב': '32', 'לג': '33', 'לד': '34', 'לה': '35'
+      if (parts.length >= 2 && parts[1].includes('ע')) {
+        amud = parts[1].includes('ב') ? 'b' : 'a';
+      }
+      
+      const hebrewToNumber: Record<string, number> = {
+        'א': 1, 'ב': 2, 'ג': 3, 'ד': 4, 'ה': 5,
+        'ו': 6, 'ז': 7, 'ח': 8, 'ט': 9, 'י': 10,
+        'יא': 11, 'יב': 12, 'יג': 13, 'יד': 14, 'טו': 15,
+        'טז': 16, 'יז': 17, 'יח': 18, 'יט': 19, 'כ': 20,
+        'כא': 21, 'כב': 22, 'כג': 23, 'כד': 24, 'כה': 25,
+        'כו': 26, 'כז': 27, 'כח': 28, 'כט': 29, 'ל': 30,
+        'לא': 31, 'לב': 32, 'לג': 33, 'לד': 34, 'לה': 35
       };
       
       return {
         masechet,
-        daf: hebrewToNumber[dafNum] || dafNum,
-        amud: amud === 'א' ? 'a' : 'b'
+        daf: hebrewToNumber[dafNum] || 2,
+        amud
       };
     }
     
-    return { masechet, daf: '2', amud: 'a' };
+    return { masechet, daf: 2, amud: 'a' };
   };
 
-  const getHebrewBooksUrl = (): string => {
+  const getHebrewBooksImageUrl = (): string => {
     const { masechet, daf, amud } = getDafInfo(dafYomi);
-    const mesechetaId = masechetToHebrewBooksId[masechet] || 23;
-    return `https://hebrewbooks.org/shas.aspx?mesechta=${mesechetaId}&daf=${daf}${amud}&format=pdf`;
-  };
-
-  const getSefariaUrl = (): string => {
-    const ref = convertDafYomiToSefariaRef(dafYomi);
-    return `https://www.sefaria.org/${ref}?lang=he`;
+    const bookReq = masechetToHebrewBooksReq[masechet] || 9585;
+    const pdfPage = calculatePdfPage(daf, amud);
+    // HebrewBooks pdfpager URL - מציג את הדף ישירות
+    return `https://hebrewbooks.org/pdfpager.aspx?req=${bookReq}&pgnum=${pdfPage}`;
   };
 
   // פונקציה לניקוי והמרת HTML tags לטקסט מעוצב
   const cleanAndFormatText = (html: string): string => {
-    // ניקוי תגיות לא נחוצות והמרה לתצוגה נכונה
     let cleaned = html
-      .replace(/<big>/gi, '<span class="text-lg font-bold">')
+      .replace(/<big>/gi, '<span class="text-xl font-bold text-primary">')
       .replace(/<\/big>/gi, '</span>')
       .replace(/<small>/gi, '<span class="text-sm">')
-      .replace(/<\/small>/gi, '</span>');
+      .replace(/<\/small>/gi, '</span>')
+      .replace(/<strong>/gi, '<strong class="font-bold">')
+      .replace(/<b>/gi, '<b class="font-semibold">')
+      .replace(/<i>/gi, '<i class="italic text-muted-foreground">');
     return cleaned;
   };
 
@@ -150,7 +167,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi }: GemaraTextPanelPro
       return textToShow.map((line: string, index: number) => (
         <p 
           key={index} 
-          className="mb-3 leading-loose text-lg" 
+          className="mb-4 leading-loose text-lg font-serif" 
           dir="rtl"
           dangerouslySetInnerHTML={{ __html: cleanAndFormatText(line) }}
         />
@@ -159,7 +176,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi }: GemaraTextPanelPro
     
     return (
       <p 
-        className="leading-loose text-lg" 
+        className="leading-loose text-lg font-serif" 
         dir="rtl"
         dangerouslySetInnerHTML={{ __html: cleanAndFormatText(textToShow) }}
       />
@@ -167,51 +184,51 @@ export default function GemaraTextPanel({ sugyaId, dafYomi }: GemaraTextPanelPro
   };
 
   const renderOriginalView = () => {
-    const hebrewBooksUrl = getHebrewBooksUrl();
-    const sefariaUrl = getSefariaUrl();
+    const { daf, amud } = getDafInfo(dafYomi);
+    const imageUrl = getHebrewBooksImageUrl();
     
     return (
       <div className="space-y-4">
-        <div className="text-center text-muted-foreground text-sm mb-4">
-          צפייה בדף המקורי מתוך הש"ס וילנא
+        <div className="text-center text-muted-foreground text-sm mb-2 flex items-center justify-center gap-2">
+          <BookOpen className="h-4 w-4" />
+          <span>דף {daf}{amud === 'a' ? ' עמוד א' : ' עמוד ב'} - תלמוד בבלי מסכת בבא בתרא</span>
         </div>
         
-        {/* תצוגת iframe מ-HebrewBooks */}
-        <div className="border rounded-lg overflow-hidden bg-white" style={{ height: '600px' }}>
+        {/* תצוגת הדף המקורי */}
+        <div 
+          className="border rounded-lg overflow-hidden bg-[#f5f0e6] shadow-inner"
+          style={{ height: '700px' }}
+        >
           <iframe
-            src={hebrewBooksUrl}
-            className="w-full h-full"
-            title="דף גמרא מקורי"
-            sandbox="allow-same-origin allow-scripts"
+            src={imageUrl}
+            className="w-full h-full border-0"
+            title={`דף גמרא ${daf}${amud}`}
+            style={{ 
+              backgroundColor: '#f5f0e6',
+            }}
+            onError={() => setImageError(true)}
           />
         </div>
         
-        {/* לינקים חיצוניים */}
-        <div className="flex flex-wrap gap-2 justify-center">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => window.open(hebrewBooksUrl, '_blank')}
-          >
-            <ExternalLink className="h-4 w-4 ml-2" />
-            HebrewBooks
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => window.open(sefariaUrl, '_blank')}
-          >
-            <ExternalLink className="h-4 w-4 ml-2" />
-            ספריא
-          </Button>
-        </div>
+        {imageError && (
+          <div className="text-center text-muted-foreground py-4">
+            <p>לא ניתן לטעון את הדף המקורי</p>
+            <Button 
+              variant="link" 
+              onClick={() => window.open(imageUrl, '_blank')}
+              className="mt-2"
+            >
+              פתח בחלון חדש
+            </Button>
+          </div>
+        )}
       </div>
     );
   };
 
   return (
     <Card className="w-full">
-      <CardHeader>
+      <CardHeader className="pb-3">
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -225,36 +242,38 @@ export default function GemaraTextPanel({ sugyaId, dafYomi }: GemaraTextPanelPro
           
           {/* בחירת מצב תצוגה */}
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="flex gap-2">
+            <div className="flex gap-1 p-1 bg-muted rounded-lg">
               <Button
-                variant={viewMode === 'text' ? "default" : "outline"}
+                variant={viewMode === 'text' ? "default" : "ghost"}
                 size="sm"
                 onClick={() => setViewMode('text')}
+                className="gap-1"
               >
-                <FileText className="h-4 w-4 ml-1" />
+                <FileText className="h-4 w-4" />
                 טקסט
               </Button>
               <Button
-                variant={viewMode === 'original' ? "default" : "outline"}
+                variant={viewMode === 'original' ? "default" : "ghost"}
                 size="sm"
                 onClick={() => setViewMode('original')}
+                className="gap-1"
               >
-                <Image className="h-4 w-4 ml-1" />
+                <Image className="h-4 w-4" />
                 דף מקורי
               </Button>
             </div>
             
             {viewMode === 'text' && (
-              <div className="flex gap-2">
+              <div className="flex gap-1 p-1 bg-muted rounded-lg">
                 <Button
-                  variant={showHebrew ? "default" : "outline"}
+                  variant={showHebrew ? "default" : "ghost"}
                   size="sm"
                   onClick={() => setShowHebrew(true)}
                 >
                   עברית
                 </Button>
                 <Button
-                  variant={!showHebrew ? "default" : "outline"}
+                  variant={!showHebrew ? "default" : "ghost"}
                   size="sm"
                   onClick={() => setShowHebrew(false)}
                 >
@@ -273,12 +292,12 @@ export default function GemaraTextPanel({ sugyaId, dafYomi }: GemaraTextPanelPro
         ) : viewMode === 'original' ? (
           renderOriginalView()
         ) : gemaraText ? (
-          <div className="prose prose-slate max-w-none dark:prose-invert">
+          <div className="prose prose-slate max-w-none dark:prose-invert bg-amber-50/30 dark:bg-amber-950/10 p-4 rounded-lg">
             {renderGemaraText()}
           </div>
         ) : (
           <div className="text-center py-8 text-muted-foreground">
-            לחץ על הכפתור למעלה כדי לטעון את טקסט הגמרא
+            טוען את טקסט הגמרא...
           </div>
         )}
       </CardContent>
