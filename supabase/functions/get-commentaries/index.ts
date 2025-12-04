@@ -42,15 +42,14 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    console.log('Sefaria data received, items count:', data?.length || 0);
+    console.log('Sefaria data received, keys:', Object.keys(data || {}));
 
-    if (!Array.isArray(data)) {
-      console.error('Unexpected data format from Sefaria:', typeof data);
-      throw new Error('Unexpected data format from Sefaria API');
-    }
+    // Sefaria /api/related returns an object with 'links' array
+    const links = data?.links || [];
+    console.log('Links count:', links.length);
 
     // סינון ועיבוד המפרשים
-    const commentaries = data.filter((item: any) => {
+    const commentaries = links.filter((item: any) => {
       const isCommentary = item.category === 'Commentary' || item.type === 'commentary';
       if (isCommentary) {
         console.log('Found commentary:', item.ref || item.heRef);
