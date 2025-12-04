@@ -1,5 +1,5 @@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpen, Scale, Search } from "lucide-react";
+import { BookOpen, Scale, Search, Upload } from "lucide-react";
 
 interface NavigationProps {
   activeTab: string;
@@ -40,7 +40,16 @@ const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
                 <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                   <Search className="w-4 h-4 text-primary" />
                 </div>
-                חיפוש פסקי דין
+                חיפוש
+              </TabsTrigger>
+              <TabsTrigger 
+                value="upload" 
+                className="gap-2 data-[state=active]:bg-card data-[state=active]:text-foreground"
+              >
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Upload className="w-4 h-4 text-primary" />
+                </div>
+                העלאה
               </TabsTrigger>
             </TabsList>
           </Tabs>
