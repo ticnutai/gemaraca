@@ -1,7 +1,14 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, BookOpen, Image, FileText, ExternalLink } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { Loader2, BookOpen, Image, FileText, ExternalLink, Eye, Check, ZoomIn, ZoomOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -10,18 +17,35 @@ interface GemaraTextPanelProps {
   dafYomi: string;
 }
 
-type ViewMode = 'text' | 'sefaria' | 'edaf';
+type ViewMode = 'text' | 'sefaria' | 'edaf-image' | 'edaf-site';
+
+const VIEW_LABELS: Record<ViewMode, { label: string; icon: React.ReactNode; description: string }> = {
+  'text': { label: 'טקסט מעוצב', icon: <FileText className="h-4 w-4" />, description: 'טקסט נקי מ-Sefaria' },
+  'sefaria': { label: 'תצוגת ספריא', icon: <BookOpen className="h-4 w-4" />, description: 'קורא ספריא מלא' },
+  'edaf-image': { label: 'תמונה סרוקה', icon: <Image className="h-4 w-4" />, description: 'תמונת דף מ-E-Daf' },
+  'edaf-site': { label: 'אתר E-Daf', icon: <ExternalLink className="h-4 w-4" />, description: 'תצוגת אתר E-Daf' },
+};
+
+const STORAGE_KEY = 'gemara-view-preference';
 
 export default function GemaraTextPanel({ sugyaId, dafYomi }: GemaraTextPanelProps) {
   const [gemaraText, setGemaraText] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showHebrew, setShowHebrew] = useState(true);
-  const [viewMode, setViewMode] = useState<ViewMode>('text');
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return (saved as ViewMode) || 'text';
+  });
+  const [imageZoom, setImageZoom] = useState(100);
   const { toast } = useToast();
 
   useEffect(() => {
     loadGemaraText();
   }, [dafYomi]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, viewMode);
+  }, [viewMode]);
 
   const loadGemaraText = async () => {
     setIsLoading(true);
@@ -112,25 +136,27 @@ export default function GemaraTextPanel({ sugyaId, dafYomi }: GemaraTextPanelPro
     return { daf: 2, amud: 'a' };
   };
 
-  // URL לספריא - עובד טוב ב-iframe
   const getSefariaEmbedUrl = (): string => {
     const ref = convertDafYomiToSefariaRef(dafYomi);
     return `https://www.sefaria.org/${ref}?lang=he&layout=book&sidebarLang=hebrew`;
   };
 
-  // URL ל-e-daf - תמונות סרוקות
-  const getEdafUrl = (): string => {
+  const getEdafSiteUrl = (): string => {
     const { daf, amud } = getDafInfo(dafYomi);
     return `https://www.e-daf.com/index.asp?ID=23&masession=${daf}${amud.toUpperCase()}`;
   };
 
-  // URL ישיר לספריא (לפתיחה בחלון חדש)
+  // URL ישיר לתמונת הדף מ-E-Daf
+  const getEdafImageUrl = (): string => {
+    const { daf, amud } = getDafInfo(dafYomi);
+    return `https://www.e-daf.com/dafImages/bavabatra/${daf}${amud}.gif`;
+  };
+
   const getSefariaDirectUrl = (): string => {
     const ref = convertDafYomiToSefariaRef(dafYomi);
     return `https://www.sefaria.org/${ref}?lang=he`;
   };
 
-  // פונקציה לניקוי והמרת HTML tags
   const cleanAndFormatText = (html: string): string => {
     let cleaned = html
       .replace(/<big>/gi, '<span class="text-xl font-bold text-primary">')
@@ -207,15 +233,82 @@ export default function GemaraTextPanel({ sugyaId, dafYomi }: GemaraTextPanelPro
     );
   };
 
-  const renderEdafView = () => {
+  const renderEdafImageView = () => {
     const { daf, amud } = getDafInfo(dafYomi);
-    const edafUrl = getEdafUrl();
+    const imageUrl = getEdafImageUrl();
+    const siteUrl = getEdafSiteUrl();
+    
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="text-muted-foreground text-sm flex items-center gap-2">
+            <Image className="h-4 w-4" />
+            <span>דף {daf} עמוד {amud === 'a' ? 'א' : 'ב'} - תמונה סרוקה</span>
+          </div>
+          
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setImageZoom(z => Math.max(50, z - 25))}
+              disabled={imageZoom <= 50}
+            >
+              <ZoomOut className="h-4 w-4" />
+            </Button>
+            <span className="text-xs text-muted-foreground w-12 text-center">{imageZoom}%</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setImageZoom(z => Math.min(200, z + 25))}
+              disabled={imageZoom >= 200}
+            >
+              <ZoomIn className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+        
+        <div 
+          className="border rounded-lg overflow-auto bg-[#f8f5eb] shadow-sm flex justify-center"
+          style={{ height: '650px' }}
+        >
+          <img
+            src={imageUrl}
+            alt={`דף גמרא ${daf}${amud}`}
+            className="h-auto transition-transform"
+            style={{ width: `${imageZoom}%`, maxWidth: 'none' }}
+            onError={(e) => {
+              console.error('Failed to load E-Daf image');
+              (e.target as HTMLImageElement).src = '/placeholder.svg';
+            }}
+          />
+        </div>
+        
+        <div className="flex justify-center">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.open(siteUrl, '_blank')}
+            className="gap-2"
+          >
+            <ExternalLink className="h-4 w-4" />
+            פתח באתר E-Daf
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  const renderEdafSiteView = () => {
+    const { daf, amud } = getDafInfo(dafYomi);
+    const edafUrl = getEdafSiteUrl();
     
     return (
       <div className="space-y-3">
         <div className="text-center text-muted-foreground text-sm flex items-center justify-center gap-2">
-          <Image className="h-4 w-4" />
-          <span>דף {daf} עמוד {amud === 'a' ? 'א' : 'ב'} - צורת הדף (E-Daf)</span>
+          <ExternalLink className="h-4 w-4" />
+          <span>דף {daf} עמוד {amud === 'a' ? 'א' : 'ב'} - אתר E-Daf</span>
         </div>
         
         <div 
@@ -244,6 +337,36 @@ export default function GemaraTextPanel({ sugyaId, dafYomi }: GemaraTextPanelPro
     );
   };
 
+  const renderContent = () => {
+    if (isLoading && viewMode === 'text') {
+      return (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      );
+    }
+
+    switch (viewMode) {
+      case 'sefaria':
+        return renderSefariaView();
+      case 'edaf-image':
+        return renderEdafImageView();
+      case 'edaf-site':
+        return renderEdafSiteView();
+      case 'text':
+      default:
+        return gemaraText ? (
+          <div className="prose prose-slate max-w-none dark:prose-invert bg-amber-50/30 dark:bg-amber-950/10 p-4 rounded-lg">
+            {renderGemaraText()}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-muted-foreground">
+            טוען את טקסט הגמרא...
+          </div>
+        );
+    }
+  };
+
   return (
     <Card className="w-full">
       <CardHeader className="pb-3">
@@ -258,37 +381,32 @@ export default function GemaraTextPanel({ sugyaId, dafYomi }: GemaraTextPanelPro
             </div>
           </div>
           
-          {/* בחירת מצב תצוגה */}
+          {/* בחירת מצב תצוגה - Dropdown */}
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="flex gap-1 p-1 bg-muted rounded-lg">
-              <Button
-                variant={viewMode === 'text' ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode('text')}
-                className="gap-1 text-xs sm:text-sm"
-              >
-                <FileText className="h-4 w-4" />
-                טקסט
-              </Button>
-              <Button
-                variant={viewMode === 'sefaria' ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode('sefaria')}
-                className="gap-1 text-xs sm:text-sm"
-              >
-                <BookOpen className="h-4 w-4" />
-                ספריא
-              </Button>
-              <Button
-                variant={viewMode === 'edaf' ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode('edaf')}
-                className="gap-1 text-xs sm:text-sm"
-              >
-                <Image className="h-4 w-4" />
-                צורת הדף
-              </Button>
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Eye className="h-4 w-4" />
+                  {VIEW_LABELS[viewMode].label}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                {(Object.keys(VIEW_LABELS) as ViewMode[]).map((mode) => (
+                  <DropdownMenuItem
+                    key={mode}
+                    onClick={() => setViewMode(mode)}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    {VIEW_LABELS[mode].icon}
+                    <div className="flex flex-col flex-1">
+                      <span className="font-medium">{VIEW_LABELS[mode].label}</span>
+                      <span className="text-xs text-muted-foreground">{VIEW_LABELS[mode].description}</span>
+                    </div>
+                    {viewMode === mode && <Check className="h-4 w-4 text-primary" />}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
             
             {viewMode === 'text' && (
               <div className="flex gap-1 p-1 bg-muted rounded-lg">
@@ -312,23 +430,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi }: GemaraTextPanelPro
         </div>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : viewMode === 'sefaria' ? (
-          renderSefariaView()
-        ) : viewMode === 'edaf' ? (
-          renderEdafView()
-        ) : gemaraText ? (
-          <div className="prose prose-slate max-w-none dark:prose-invert bg-amber-50/30 dark:bg-amber-950/10 p-4 rounded-lg">
-            {renderGemaraText()}
-          </div>
-        ) : (
-          <div className="text-center py-8 text-muted-foreground">
-            טוען את טקסט הגמרא...
-          </div>
-        )}
+        {renderContent()}
       </CardContent>
     </Card>
   );
