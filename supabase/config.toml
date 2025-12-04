@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.load-daf]
 verify_jwt = false
+
+[functions.upload-psak-din]
+verify_jwt = false
