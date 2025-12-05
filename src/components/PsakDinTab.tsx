@@ -3,10 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { Calendar, Building2, FileText } from "lucide-react";
+import PsakDinViewDialog from "./PsakDinViewDialog";
 
 const PsakDinTab = () => {
   const [psakim, setPsakim] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedPsak, setSelectedPsak] = useState<any | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     loadPsakim();
@@ -29,6 +32,11 @@ const PsakDinTab = () => {
     }
   };
 
+  const handlePsakClick = (psak: any) => {
+    setSelectedPsak(psak);
+    setDialogOpen(true);
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -43,7 +51,11 @@ const PsakDinTab = () => {
         <h2 className="text-2xl font-bold text-foreground mb-6">פסקי דין אחרונים</h2>
         
         {psakim.map((psak) => (
-          <Card key={psak.id} className="border border-border shadow-sm hover:shadow-md transition-shadow">
+          <Card 
+            key={psak.id} 
+            className="border border-border shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => handlePsakClick(psak)}
+          >
             <CardHeader>
               <CardTitle className="text-lg font-semibold text-foreground">
                 {psak.title}
@@ -72,7 +84,7 @@ const PsakDinTab = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-foreground mb-3">{psak.summary}</p>
+              <p className="text-foreground mb-3 line-clamp-2">{psak.summary}</p>
               {psak.tags && psak.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {psak.tags.map((tag: string, idx: number) => (
@@ -86,6 +98,12 @@ const PsakDinTab = () => {
           </Card>
         ))}
       </div>
+
+      <PsakDinViewDialog 
+        psak={selectedPsak} 
+        open={dialogOpen} 
+        onOpenChange={setDialogOpen} 
+      />
     </div>
   );
 };
