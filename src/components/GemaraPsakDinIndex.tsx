@@ -144,36 +144,50 @@ const GemaraPsakDinIndex = () => {
       if (error) throw error;
 
       setAllLinks(links || []);
+      
+      console.log('Total links received:', links?.length || 0);
 
-      const indexMap = new Map<string, Map<number, { sugya_id: string; count: number }>>();
-
-      links?.forEach((link: any) => {
-        const sugyaId = link.sugya_id;
-        const match = sugyaId.match(/^([a-z_]+)_(\d+)[ab]?$/i);
-        if (match) {
-          const masechetName = match[1].replace(/_/g, ' ');
-          const dafNumber = parseInt(match[2]);
-          
-          if (!indexMap.has(masechetName)) {
-            indexMap.set(masechetName, new Map());
-          }
-          const masechetDafim = indexMap.get(masechetName)!;
-          
-          if (!masechetDafim.has(dafNumber)) {
-            masechetDafim.set(dafNumber, { sugya_id: sugyaId, count: 0 });
-          }
-          masechetDafim.get(dafNumber)!.count++;
-        }
-      });
-
+      // בניית אינדקס ישירות מהמסכתות
       const index: IndexEntry[] = [];
       
-      MASECHTOT.forEach(masechet => {
-        const sefariaLower = masechet.sefariaName.toLowerCase().replace(/_/g, ' ');
-        const masechetData = indexMap.get(sefariaLower);
+      for (const masechet of MASECHTOT) {
+        const sefariaName = masechet.sefariaName;
         
-        if (masechetData && masechetData.size > 0) {
-          const dafim = Array.from(masechetData.entries())
+        // חיפוש כל הקישורים שמתחילים בשם המסכת
+        const masechetLinks = (links || []).filter((link: any) => {
+          const sugyaId = link.sugya_id || '';
+          // מחפש רק פורמט של מסכת_מספר (לא null, undefined, או תווים מיוחדים)
+          if (!sugyaId.startsWith(sefariaName + '_')) return false;
+          const afterMasechet = sugyaId.slice(sefariaName.length + 1);
+          // וידוא שמתחיל במספר ולא ב-null/undefined
+          return /^\d+/.test(afterMasechet);
+        });
+        
+        if (masechetLinks.length === 0) continue;
+        
+        console.log(`Found ${masechetLinks.length} links for ${sefariaName}`);
+        
+        // קיבוץ לפי דף
+        const dafMap = new Map<number, { sugya_id: string; count: number }>();
+        
+        masechetLinks.forEach((link: any) => {
+          const sugyaId = link.sugya_id || '';
+          const afterMasechet = sugyaId.slice(sefariaName.length + 1);
+          const dafMatch = afterMasechet.match(/^(\d+)/);
+          
+          if (dafMatch) {
+            const dafNumber = parseInt(dafMatch[1]);
+            if (dafNumber >= 2 && dafNumber <= masechet.maxDaf) {
+              if (!dafMap.has(dafNumber)) {
+                dafMap.set(dafNumber, { sugya_id: sugyaId, count: 0 });
+              }
+              dafMap.get(dafNumber)!.count++;
+            }
+          }
+        });
+        
+        if (dafMap.size > 0) {
+          const dafim = Array.from(dafMap.entries())
             .map(([dafNumber, data]) => ({
               dafNumber,
               sugya_id: data.sugya_id,
@@ -184,10 +198,14 @@ const GemaraPsakDinIndex = () => {
           const totalPsakim = dafim.reduce((sum, d) => sum + d.psakimCount, 0);
           index.push({ masechet, dafim, totalPsakim });
         }
-      });
+      }
 
-      // מיון לפי כמות פסקים
+      // מיון לפי כמות פסקים (יורד)
       index.sort((a, b) => b.totalPsakim - a.totalPsakim);
+      
+      console.log('Index built:', index.length, 'masechtot with', 
+        index.reduce((sum, e) => sum + e.totalPsakim, 0), 'total links');
+      
       setIndexData(index);
     } catch (error) {
       console.error('Error loading index:', error);
@@ -198,7 +216,12 @@ const GemaraPsakDinIndex = () => {
 
   const loadDafPsakim = async (sugyaId: string, masechet: string, daf: number) => {
     try {
-      let query = supabase
+      // מציאת שם המסכת ב-sefaria format
+      const masechetObj = MASECHTOT.find(m => m.hebrewName === masechet);
+      const sefariaName = masechetObj?.sefariaName || '';
+      
+      // חיפוש כל הקישורים לדף זה (כולל כל וריאציות ה-amud)
+      const { data, error } = await supabase
         .from('sugya_psak_links')
         .select(`
           id,
@@ -216,9 +239,7 @@ const GemaraPsakDinIndex = () => {
             source_url
           )
         `)
-        .eq('sugya_id', sugyaId);
-
-      const { data, error } = await query;
+        .like('sugya_id', `${sefariaName}_${daf}%`);
 
       if (error) throw error;
 
