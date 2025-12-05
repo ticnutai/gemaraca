@@ -45,7 +45,8 @@ serve(async (req) => {
     const results: unknown[] = [];
     const errors: string[] = [];
 
-    for (const file of files) {
+    // Process files in parallel for better performance (max 3 concurrent)
+    const processFile = async (file: File): Promise<void> => {
       const fileName = file.name;
       const fileExt = fileName.split('.').pop()?.toLowerCase();
       
@@ -72,6 +73,13 @@ serve(async (req) => {
         console.error(`Error processing ${fileName}:`, err);
         errors.push(`${fileName}: ${err instanceof Error ? err.message : 'שגיאה לא ידועה'}`);
       }
+    };
+
+    // Process files in batches of 3 for parallel execution
+    const CONCURRENT_LIMIT = 3;
+    for (let i = 0; i < files.length; i += CONCURRENT_LIMIT) {
+      const batch = files.slice(i, i + CONCURRENT_LIMIT);
+      await Promise.all(batch.map(processFile));
     }
 
     return new Response(
