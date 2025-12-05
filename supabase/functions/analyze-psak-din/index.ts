@@ -229,6 +229,12 @@ ${textToAnalyze.substring(0, 10000)}
       // Create links to Gemara pages/sugyot
       if (analysis.sources && analysis.sources.length > 0) {
         for (const source of analysis.sources) {
+          // Skip sources with missing required data
+          if (!source.masechetEnglish || !source.daf || typeof source.daf !== 'number') {
+            console.log(`Skipping source with missing data: masechet=${source.masechetEnglish}, daf=${source.daf}`);
+            continue;
+          }
+          
           // Generate sugya_id based on masechet and daf
           // Format: daf-{number} for Bava Batra, or {masechet}_{daf}{amud} for others
           let sugyaId: string;
