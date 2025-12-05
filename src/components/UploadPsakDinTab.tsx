@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -7,10 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, FileText, Archive, X, Loader2, CheckCircle, AlertCircle, FolderUp, Sparkles, Brain } from "lucide-react";
+import { Upload, FileText, Archive, X, Loader2, CheckCircle, AlertCircle, FolderUp, Sparkles, Brain, Play, Pause, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-const BATCH_SIZE = 5; // Upload 5 files at a time for optimal performance
+const BATCH_SIZE = 5;
+const PENDING_UPLOADS_KEY = "pending-uploads";
+const UPLOAD_SESSION_KEY = "upload-session";
 
 interface UploadProgress {
   total: number;
@@ -20,23 +22,75 @@ interface UploadProgress {
   failed: number;
 }
 
+interface PendingUpload {
+  name: string;
+  status: 'pending' | 'uploading' | 'success' | 'failed';
+  error?: string;
+  resultId?: string;
+}
+
+interface UploadSession {
+  metadata: Record<string, any>;
+  results: any[];
+  errors: string[];
+  pendingAnalysis: string[];
+  timestamp: number;
+}
+
 const UploadPsakDinTab = () => {
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [results, setResults] = useState<any[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
   const [progress, setProgress] = useState<UploadProgress | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
+  const pauseRef = useRef(false);
   const { toast } = useToast();
   
-  // Metadata fields
   const [court, setCourt] = useState("");
   const [year, setYear] = useState(new Date().getFullYear().toString());
   const [tags, setTags] = useState("");
   const [enableAIAnalysis, setEnableAIAnalysis] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState({ current: 0, total: 0 });
+  
+  // Session recovery
+  const [savedSession, setSavedSession] = useState<UploadSession | null>(null);
+
+  // Load saved session on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(UPLOAD_SESSION_KEY);
+    if (saved) {
+      try {
+        const session = JSON.parse(saved) as UploadSession;
+        // Only restore if less than 24 hours old
+        if (Date.now() - session.timestamp < 24 * 60 * 60 * 1000) {
+          setSavedSession(session);
+        } else {
+          localStorage.removeItem(UPLOAD_SESSION_KEY);
+        }
+      } catch {}
+    }
+  }, []);
+
+  const saveSession = (session: Partial<UploadSession>) => {
+    const fullSession: UploadSession = {
+      metadata: session.metadata || { court, year: parseInt(year), tags: tags.split(',').filter(Boolean) },
+      results: session.results || results,
+      errors: session.errors || errors,
+      pendingAnalysis: session.pendingAnalysis || [],
+      timestamp: Date.now(),
+    };
+    localStorage.setItem(UPLOAD_SESSION_KEY, JSON.stringify(fullSession));
+    setSavedSession(fullSession);
+  };
+
+  const clearSession = () => {
+    localStorage.removeItem(UPLOAD_SESSION_KEY);
+    setSavedSession(null);
+  };
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || []);
@@ -76,7 +130,6 @@ const UploadPsakDinTab = () => {
     setFiles([]);
   };
 
-  // Upload files in batches for better performance
   const uploadBatch = async (batch: File[], metadata: Record<string, any>): Promise<{ results: any[]; errors: string[] }> => {
     const formData = new FormData();
     batch.forEach(file => {
@@ -98,8 +151,19 @@ const UploadPsakDinTab = () => {
     };
   };
 
-  const handleUpload = async () => {
-    if (files.length === 0) {
+  const togglePause = () => {
+    pauseRef.current = !pauseRef.current;
+    setPaused(pauseRef.current);
+    
+    if (pauseRef.current) {
+      toast({ title: "ההעלאה הושהתה", description: "לחץ המשך כדי להמשיך" });
+    } else {
+      toast({ title: "ממשיך בהעלאה..." });
+    }
+  };
+
+  const handleUpload = async (resumeFromSession = false) => {
+    if (!resumeFromSession && files.length === 0) {
       toast({
         title: "אנא בחר קבצים להעלאה",
         variant: "destructive",
@@ -108,34 +172,42 @@ const UploadPsakDinTab = () => {
     }
 
     setUploading(true);
-    setResults([]);
-    setErrors([]);
+    setPaused(false);
+    pauseRef.current = false;
     
-    const allResults: any[] = [];
-    const allErrors: string[] = [];
+    let allResults: any[] = resumeFromSession && savedSession ? [...savedSession.results] : [];
+    let allErrors: string[] = resumeFromSession && savedSession ? [...savedSession.errors] : [];
     
-    const metadata = {
+    setResults(allResults);
+    setErrors(allErrors);
+    
+    const metadata = resumeFromSession && savedSession?.metadata ? savedSession.metadata : {
       court: court || undefined,
       year: parseInt(year) || new Date().getFullYear(),
       tags: tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : [],
     };
 
-    // Split files into batches
+    const filesToUpload = files;
     const batches: File[][] = [];
-    for (let i = 0; i < files.length; i += BATCH_SIZE) {
-      batches.push(files.slice(i, i + BATCH_SIZE));
+    for (let i = 0; i < filesToUpload.length; i += BATCH_SIZE) {
+      batches.push(filesToUpload.slice(i, i + BATCH_SIZE));
     }
 
     setProgress({
-      total: files.length,
+      total: filesToUpload.length,
       completed: 0,
       current: '',
-      successful: 0,
-      failed: 0,
+      successful: allResults.length,
+      failed: allErrors.length,
     });
 
     try {
       for (let i = 0; i < batches.length; i++) {
+        // Check for pause
+        while (pauseRef.current) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
         const batch = batches[i];
         const batchFileNames = batch.map(f => f.name).join(', ');
         
@@ -149,18 +221,28 @@ const UploadPsakDinTab = () => {
         allResults.push(...batchResults);
         allErrors.push(...batchErrors);
 
+        // Save session after each batch (partial save)
+        saveSession({
+          metadata,
+          results: allResults,
+          errors: allErrors,
+          pendingAnalysis: enableAIAnalysis ? allResults.map(r => r.id) : [],
+        });
+
         setProgress(prev => prev ? {
           ...prev,
-          completed: Math.min((i + 1) * BATCH_SIZE, files.length),
+          completed: Math.min((i + 1) * BATCH_SIZE, filesToUpload.length),
           successful: allResults.length,
           failed: allErrors.length,
         } : null);
 
-        // Update results in real-time
         setResults([...allResults]);
         setErrors([...allErrors]);
 
-        // Small delay between batches to prevent overwhelming the server
+        // Remove uploaded files from the list
+        const uploadedNames = new Set(batch.map(f => f.name));
+        setFiles(prev => prev.filter(f => !uploadedNames.has(f.name)));
+
         if (i < batches.length - 1) {
           await new Promise(resolve => setTimeout(resolve, 200));
         }
@@ -173,52 +255,82 @@ const UploadPsakDinTab = () => {
 
       // Run AI analysis if enabled
       if (enableAIAnalysis && allResults.length > 0) {
-        setAnalyzing(true);
-        setAnalysisProgress({ current: 0, total: allResults.length });
-        
-        for (let i = 0; i < allResults.length; i++) {
-          const result = allResults[i];
-          setAnalysisProgress({ current: i + 1, total: allResults.length });
-          
-          try {
-            await supabase.functions.invoke('analyze-psak-din', {
-              body: { psakId: result.id }
-            });
-            console.log(`Analyzed psak ${result.id}`);
-          } catch (err) {
-            console.error(`Error analyzing psak ${result.id}:`, err);
-          }
-          
-          // Delay between analyses to avoid rate limits
-          if (i < allResults.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 500));
-          }
-        }
-        
-        setAnalyzing(false);
-        toast({
-          title: "ניתוח AI הושלם",
-          description: `נותחו ${allResults.length} פסקי דין וקושרו למקורות`,
-        });
+        await runAIAnalysis(allResults);
       }
 
-      // Clear files after successful upload
-      setFiles([]);
+      // Clear session on complete success
+      clearSession();
       setCourt("");
       setYear(new Date().getFullYear().toString());
       setTags("");
 
     } catch (error) {
       console.error('Upload error:', error);
+      // Save session on error for recovery
+      saveSession({
+        metadata,
+        results: allResults,
+        errors: allErrors,
+        pendingAnalysis: enableAIAnalysis ? allResults.filter(r => !r.analyzed).map(r => r.id) : [],
+      });
+      
       toast({
         title: "שגיאה בהעלאה",
-        description: error instanceof Error ? error.message : "נסה שוב מאוחר יותר",
+        description: "ההעלאות שהצליחו נשמרו. תוכל להמשיך מאוחר יותר.",
         variant: "destructive",
       });
     } finally {
       setUploading(false);
-      setAnalyzing(false);
+      setPaused(false);
       setProgress(null);
+    }
+  };
+
+  const runAIAnalysis = async (psakimToAnalyze: any[]) => {
+    setAnalyzing(true);
+    setAnalysisProgress({ current: 0, total: psakimToAnalyze.length });
+    
+    for (let i = 0; i < psakimToAnalyze.length; i++) {
+      while (pauseRef.current) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      const result = psakimToAnalyze[i];
+      setAnalysisProgress({ current: i + 1, total: psakimToAnalyze.length });
+      
+      try {
+        await supabase.functions.invoke('analyze-psak-din', {
+          body: { psakId: result.id }
+        });
+        console.log(`Analyzed psak ${result.id}`);
+      } catch (err) {
+        console.error(`Error analyzing psak ${result.id}:`, err);
+      }
+      
+      if (i < psakimToAnalyze.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+    
+    setAnalyzing(false);
+    toast({
+      title: "ניתוח AI הושלם",
+      description: `נותחו ${psakimToAnalyze.length} פסקי דין וקושרו למקורות`,
+    });
+  };
+
+  const resumeAnalysis = async () => {
+    if (!savedSession?.pendingAnalysis?.length) return;
+    
+    // Fetch psak data for pending analysis
+    const { data: psakim } = await supabase
+      .from('psakei_din')
+      .select('*')
+      .in('id', savedSession.pendingAnalysis);
+    
+    if (psakim && psakim.length > 0) {
+      await runAIAnalysis(psakim);
+      clearSession();
     }
   };
 
@@ -233,13 +345,44 @@ const UploadPsakDinTab = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto space-y-6">
+        {/* Session Recovery Card */}
+        {savedSession && savedSession.results.length > 0 && (
+          <Card className="border-2 border-accent/50 bg-accent/5">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <RefreshCw className="w-5 h-5 text-accent" />
+                  <div>
+                    <p className="font-medium">יש העלאה קודמת שלא הושלמה</p>
+                    <p className="text-sm text-muted-foreground">
+                      {savedSession.results.length} פסקים הועלו, 
+                      {savedSession.pendingAnalysis?.length || 0} ממתינים לניתוח
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  {savedSession.pendingAnalysis?.length > 0 && (
+                    <Button size="sm" onClick={resumeAnalysis} className="gap-1">
+                      <Sparkles className="w-4 h-4" />
+                      המשך ניתוח
+                    </Button>
+                  )}
+                  <Button size="sm" variant="outline" onClick={clearSession}>
+                    התחל מחדש
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Card className="border border-border shadow-sm">
           <CardHeader>
             <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2">
               <Upload className="w-5 h-5" />
               העלאת פסקי דין
               <span className="text-sm font-normal text-muted-foreground">
-                (תומך באלפי קבצים)
+                (שמירה אוטומטית בכל שלב)
               </span>
             </CardTitle>
           </CardHeader>
@@ -330,12 +473,22 @@ const UploadPsakDinTab = () => {
               </div>
             )}
 
-            {/* Progress */}
+            {/* Progress with Pause/Resume */}
             {progress && (
               <div className="space-y-2 p-4 bg-muted/20 rounded-lg">
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between items-center text-sm">
                   <span>מעלה: {progress.current}</span>
-                  <span>{progress.completed}/{progress.total}</span>
+                  <div className="flex items-center gap-2">
+                    <span>{progress.completed}/{progress.total}</span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={togglePause}
+                      className="h-7 w-7 p-0"
+                    >
+                      {paused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+                    </Button>
+                  </div>
                 </div>
                 <Progress value={progressPercent} className="h-2" />
                 <div className="flex justify-between text-xs text-muted-foreground">
@@ -344,10 +497,13 @@ const UploadPsakDinTab = () => {
                     <span className="text-destructive">נכשלו: {progress.failed}</span>
                   )}
                 </div>
+                {paused && (
+                  <p className="text-xs text-accent text-center">ההעלאה מושהית - לחץ ▶ להמשך</p>
+                )}
               </div>
             )}
 
-            {/* Metadata Fields - Simplified for bulk upload */}
+            {/* Metadata Fields */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="court">בית דין (לכל הקבצים)</Label>
@@ -420,7 +576,7 @@ const UploadPsakDinTab = () => {
             )}
 
             <Button
-              onClick={handleUpload}
+              onClick={() => handleUpload(false)}
               disabled={uploading || analyzing || files.length === 0}
               className="w-full gap-2"
               size="lg"
@@ -460,7 +616,7 @@ const UploadPsakDinTab = () => {
                 {results.map((result, index) => (
                   <div key={index} className="flex items-center gap-2 text-sm py-1">
                     <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                    <span className="truncate">{result.title}</span>
+                    <span className="truncate">{result.title || result.fileName}</span>
                   </div>
                 ))}
               </div>
@@ -480,7 +636,7 @@ const UploadPsakDinTab = () => {
             <CardContent>
               <div className="max-h-40 overflow-y-auto space-y-1">
                 {errors.map((error, index) => (
-                  <div key={index} className="flex items-center gap-2 text-sm text-destructive py-1">
+                  <div key={index} className="flex items-center gap-2 text-sm py-1 text-destructive">
                     <AlertCircle className="w-4 h-4 flex-shrink-0" />
                     <span className="truncate">{error}</span>
                   </div>
