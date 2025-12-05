@@ -22,10 +22,13 @@ serve(async (req) => {
       // Get statistics
       const { count: totalCount } = await supabase.from('psakei_din').select('*', { count: 'exact', head: true });
       
-      const { data: linkedCount } = await supabase
+      // Get unique linked psak IDs
+      const { data: linksData } = await supabase
         .from('sugya_psak_links')
-        .select('psak_din_id')
-        .then(res => ({ data: new Set(res.data?.map(r => r.psak_din_id)).size }));
+        .select('psak_din_id');
+      
+      const linkedPsakIds = new Set((linksData || []).map(r => r.psak_din_id));
+      const linkedCount = linkedPsakIds.size;
 
       // Find duplicates by title+court+year AND by content_hash
       const { data: allPsakim } = await supabase
@@ -65,11 +68,11 @@ serve(async (req) => {
           success: true,
           stats: {
             total: totalCount || 0,
-            linked: linkedCount || 0,
+            linked: linkedCount,
             duplicates: totalDuplicates,
             duplicatesByTitle,
             duplicatesByHash,
-            unlinked: (totalCount || 0) - (linkedCount || 0),
+            unlinked: (totalCount || 0) - linkedCount,
           }
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
