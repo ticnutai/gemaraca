@@ -165,6 +165,51 @@ export type Database = {
           },
         ]
       }
+      upload_sessions: {
+        Row: {
+          created_at: string
+          current_file: string | null
+          device_id: string | null
+          failed_files: number
+          id: string
+          processed_files: number
+          session_id: string
+          skipped_files: number
+          status: string
+          successful_files: number
+          total_files: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_file?: string | null
+          device_id?: string | null
+          failed_files?: number
+          id?: string
+          processed_files?: number
+          session_id: string
+          skipped_files?: number
+          status?: string
+          successful_files?: number
+          total_files?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_file?: string | null
+          device_id?: string | null
+          failed_files?: number
+          id?: string
+          processed_files?: number
+          session_id?: string
+          skipped_files?: number
+          status?: string
+          successful_files?: number
+          total_files?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
