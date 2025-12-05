@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, Building2, FileText, List, BookOpen, Sparkles, Brain, Loader2, CheckCircle, Link } from "lucide-react";
+import { Calendar, Building2, FileText, List, BookOpen, Sparkles, Brain, Loader2, Link } from "lucide-react";
 import PsakDinViewDialog from "./PsakDinViewDialog";
 import GemaraPsakDinIndex from "./GemaraPsakDinIndex";
 import { useToast } from "@/hooks/use-toast";
@@ -127,7 +127,6 @@ const PsakDinTab = () => {
     setAnalyzing(false);
     setSelectedForAnalysis(new Set());
     
-    // Reload link counts
     await loadLinkCounts();
     
     toast({
@@ -138,18 +137,18 @@ const PsakDinTab = () => {
 
   const unlinkedCount = psakim.filter(p => !psakLinks.has(p.id)).length;
 
-return (
+  return (
     <div className="container mx-auto px-4 py-8" dir="rtl">
-      <div className="max-w-6xl mx-auto text-right">
+      <div className="max-w-6xl mx-auto">
         <Tabs defaultValue="recent" className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="recent" className="gap-2">
-              <List className="w-4 h-4" />
+          <TabsList className="grid w-full max-w-md grid-cols-2 mr-auto">
+            <TabsTrigger value="recent" className="gap-2 flex-row-reverse">
               פסקי דין אחרונים
+              <List className="w-4 h-4" />
             </TabsTrigger>
-            <TabsTrigger value="index" className="gap-2">
-              <BookOpen className="w-4 h-4" />
+            <TabsTrigger value="index" className="gap-2 flex-row-reverse">
               אינדקס לפי מסכתות
+              <BookOpen className="w-4 h-4" />
             </TabsTrigger>
           </TabsList>
 
@@ -158,12 +157,12 @@ return (
               <div className="text-center py-8 text-muted-foreground">טוען...</div>
             ) : (
               <div className="max-w-4xl mx-auto space-y-4">
-                <div className="flex items-center justify-between mb-6 flex-row-reverse">
-                  <h2 className="text-2xl font-bold text-foreground text-right">פסקי דין אחרונים</h2>
+                {/* Header */}
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-foreground">פסקי דין אחרונים</h2>
                   
-                  {/* AI Analysis Section */}
                   {unlinkedCount > 0 && (
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-row-reverse">
                       <span className="text-sm text-muted-foreground">
                         {unlinkedCount} פסקים ללא קישור
                       </span>
@@ -172,17 +171,17 @@ return (
                           size="sm"
                           onClick={runAIAnalysis}
                           disabled={analyzing}
-                          className="gap-2"
+                          className="gap-2 flex-row-reverse"
                         >
                           {analyzing ? (
                             <>
-                              <Loader2 className="w-4 h-4 animate-spin" />
                               מנתח...
+                              <Loader2 className="w-4 h-4 animate-spin" />
                             </>
                           ) : (
                             <>
-                              <Sparkles className="w-4 h-4" />
                               נתח {selectedForAnalysis.size} פסקים
+                              <Sparkles className="w-4 h-4" />
                             </>
                           )}
                         </Button>
@@ -195,10 +194,10 @@ return (
                 {analyzing && (
                   <Card className="border border-primary/30 bg-primary/5">
                     <CardContent className="p-4">
-                      <div className="flex items-center gap-3 mb-2">
+                      <div className="flex items-center gap-3 mb-2 flex-row-reverse">
                         <Brain className="w-5 h-5 text-primary animate-pulse" />
                         <span className="font-medium">מנתח פסקי דין באמצעות AI...</span>
-                        <span className="mr-auto text-sm">
+                        <span className="ml-auto text-sm">
                           {analysisProgress.current}/{analysisProgress.total}
                         </span>
                       </div>
@@ -206,7 +205,7 @@ return (
                         value={(analysisProgress.current / analysisProgress.total) * 100} 
                         className="h-2" 
                       />
-                      <p className="text-xs text-muted-foreground mt-2">
+                      <p className="text-xs text-muted-foreground mt-2 text-right">
                         מזהה מקורות תלמודיים ומקשר לדפי גמרא רלוונטיים
                       </p>
                     </CardContent>
@@ -216,10 +215,10 @@ return (
                 {/* Select All for Analysis */}
                 {unlinkedCount > 0 && !analyzing && (
                   <Card className="border border-accent/30 bg-accent/5">
-                    <CardContent className="p-3 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
+                    <CardContent className="p-3 flex items-center justify-between flex-row-reverse">
+                      <div className="flex items-center gap-3 flex-row-reverse">
                         <Sparkles className="w-5 h-5 text-accent" />
-                        <div>
+                        <div className="text-right">
                           <p className="font-medium text-sm">ניתוח AI לפסקי דין קיימים</p>
                           <p className="text-xs text-muted-foreground">
                             בחר פסקי דין לניתוח וקישור אוטומטי למקורות גמרא
@@ -250,62 +249,8 @@ return (
                       }`}
                     >
                       <CardHeader className="pb-2">
-                        <div className="flex items-start gap-3">
-                          {/* Checkbox for unlinked psakim */}
-                          {!hasLinks && !analyzing && (
-                            <Checkbox
-                              checked={isSelected}
-                              onCheckedChange={() => toggleSelectForAnalysis(psak.id)}
-                              onClick={(e) => e.stopPropagation()}
-                              className="mt-1"
-                            />
-                          )}
-                          
-                          <div 
-                            className="flex-1 cursor-pointer"
-                            onClick={() => handlePsakClick(psak)}
-                          >
-                            <div className="flex items-center gap-2">
-                              <CardTitle className="text-lg font-semibold text-foreground">
-                                {psak.title}
-                              </CardTitle>
-                              {hasLinks && (
-                                <Badge variant="secondary" className="gap-1 text-xs">
-                                  <Link className="w-3 h-3" />
-                                  {linkCount} קישורים
-                                </Badge>
-                              )}
-                              {!hasLinks && (
-                                <Badge variant="outline" className="text-xs text-muted-foreground">
-                                  לא מנותח
-                                </Badge>
-                              )}
-                            </div>
-                      <div className="flex flex-wrap justify-end gap-2 text-sm text-muted-foreground mt-2">
-                              <div className="flex items-center gap-2">
-                                {psak.court}
-                                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                                  <Building2 className="w-3 h-3 text-primary" />
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {psak.year}
-                                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                                  <Calendar className="w-3 h-3 text-primary" />
-                                </div>
-                              </div>
-                              {psak.case_number && (
-                                <div className="flex items-center gap-2">
-                                  {psak.case_number}
-                                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                                    <FileText className="w-3 h-3 text-primary" />
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                          
-                          {/* Quick Analyze Button */}
+                        <div className="flex items-start gap-3 flex-row-reverse">
+                          {/* Quick Analyze Button - Right side in RTL */}
                           {!hasLinks && !analyzing && (
                             <Button
                               size="sm"
@@ -315,21 +260,70 @@ return (
                                 setSelectedForAnalysis(new Set([psak.id]));
                                 await runAIAnalysis();
                               }}
-                              className="gap-1"
+                              className="gap-1 flex-row-reverse shrink-0"
                             >
-                              <Sparkles className="w-4 h-4" />
                               נתח
+                              <Sparkles className="w-4 h-4" />
                             </Button>
+                          )}
+                          
+                          {/* Main Content */}
+                          <div 
+                            className="flex-1 cursor-pointer text-right"
+                            onClick={() => handlePsakClick(psak)}
+                          >
+                            <div className="flex items-center gap-2 flex-row-reverse justify-start">
+                              <CardTitle className="text-lg font-semibold text-foreground text-right">
+                                {psak.title}
+                              </CardTitle>
+                              {hasLinks && (
+                                <Badge variant="secondary" className="gap-1 text-xs flex-row-reverse">
+                                  {linkCount} קישורים
+                                  <Link className="w-3 h-3" />
+                                </Badge>
+                              )}
+                              {!hasLinks && (
+                                <Badge variant="outline" className="text-xs text-muted-foreground">
+                                  לא מנותח
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex flex-wrap gap-2 text-sm text-muted-foreground mt-2 justify-start">
+                              <div className="flex items-center gap-1 flex-row-reverse">
+                                <Building2 className="w-3 h-3 text-primary" />
+                                {psak.court}
+                              </div>
+                              <div className="flex items-center gap-1 flex-row-reverse">
+                                <Calendar className="w-3 h-3 text-primary" />
+                                {psak.year}
+                              </div>
+                              {psak.case_number && (
+                                <div className="flex items-center gap-1 flex-row-reverse">
+                                  <FileText className="w-3 h-3 text-primary" />
+                                  {psak.case_number}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Checkbox - Left side in RTL */}
+                          {!hasLinks && !analyzing && (
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => toggleSelectForAnalysis(psak.id)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="mt-1 shrink-0"
+                            />
                           )}
                         </div>
                       </CardHeader>
                       <CardContent 
-                        className="cursor-pointer" 
+                        className="cursor-pointer text-right" 
                         onClick={() => handlePsakClick(psak)}
                       >
-                        <p className="text-foreground mb-3 line-clamp-2">{psak.summary}</p>
+                        <p className="text-foreground mb-3 line-clamp-2 text-right">{psak.summary}</p>
                         {psak.tags && psak.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-wrap gap-2 justify-start">
                             {psak.tags.map((tag: string, idx: number) => (
                               <Badge key={idx} variant="secondary" className="bg-muted text-muted-foreground">
                                 {tag}
