@@ -10,7 +10,8 @@ import {
   Sparkles, 
   RefreshCw,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
+  X
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
@@ -76,62 +77,90 @@ const PsakDinStats = () => {
     }
   };
 
+  const [jobId, setJobId] = useState<string | null>(null);
+
   const handleBulkAnalysis = async () => {
-    if (!confirm(`האם לנתח ${stats?.unlinked} פסקי דין שלא קושרו?`)) return;
+    if (!confirm(`האם לנתח ${stats?.unlinked} פסקי דין שלא קושרו?\n\nהניתוח ירוץ ברקע - תוכל לעבור לטאבים אחרים.`)) return;
     
     setAnalyzing(true);
     try {
-      // Get unlinked IDs
-      const { data: unlinkedData, error: unlinkedError } = await supabase.functions.invoke('cleanup-duplicates', {
-        body: { action: 'get-unlinked' }
+      // Start background job
+      const { data, error } = await supabase.functions.invoke('bulk-analyze', {
+        body: { action: 'start' }
       });
       
-      if (unlinkedError) throw unlinkedError;
+      if (error) throw error;
       
-      const unlinkedIds = unlinkedData.unlinkedIds;
-      setAnalysisProgress({ current: 0, total: unlinkedIds.length });
-      
-      // Analyze in batches
-      const BATCH_SIZE = 5;
-      const DELAY = 2000; // 2 seconds between batches to avoid rate limits
-      
-      for (let i = 0; i < unlinkedIds.length; i += BATCH_SIZE) {
-        const batch = unlinkedIds.slice(i, i + BATCH_SIZE);
-        
-        // Process batch in parallel
-        await Promise.all(batch.map(async (psakId: string) => {
-          try {
-            await supabase.functions.invoke('analyze-psak-din', {
-              body: { psakId }
-            });
-          } catch (err) {
-            console.error(`Error analyzing ${psakId}:`, err);
-          }
-        }));
-        
-        setAnalysisProgress({ 
-          current: Math.min(i + BATCH_SIZE, unlinkedIds.length), 
-          total: unlinkedIds.length 
-        });
-        
-        // Delay between batches
-        if (i + BATCH_SIZE < unlinkedIds.length) {
-          await new Promise(r => setTimeout(r, DELAY));
-        }
-      }
+      setJobId(data.jobId);
+      setAnalysisProgress({ current: 0, total: data.total });
       
       toast({ 
-        title: "הניתוח הושלם",
-        description: `נותחו ${unlinkedIds.length} פסקי דין`
+        title: "הניתוח התחיל ברקע",
+        description: `מנתח ${data.total} פסקי דין - ניתן לעבור לטאבים אחרים`
       });
       
-      await fetchStats();
+      // Start polling
+      pollJobStatus(data.jobId);
+      
     } catch (err) {
-      console.error("Error in bulk analysis:", err);
-      toast({ title: "שגיאה בניתוח", variant: "destructive" });
-    } finally {
+      console.error("Error starting bulk analysis:", err);
+      toast({ title: "שגיאה בהתחלת הניתוח", variant: "destructive" });
       setAnalyzing(false);
-      setAnalysisProgress({ current: 0, total: 0 });
+    }
+  };
+
+  const pollJobStatus = async (currentJobId: string) => {
+    const poll = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('bulk-analyze', {
+          body: { action: 'status', jobId: currentJobId }
+        });
+        
+        if (error) throw error;
+        
+        setAnalysisProgress({ 
+          current: data.processed, 
+          total: data.total 
+        });
+        
+        if (data.status === 'completed') {
+          setAnalyzing(false);
+          setJobId(null);
+          toast({ 
+            title: "הניתוח הושלם",
+            description: `${data.successful} הצליחו, ${data.failed} נכשלו`
+          });
+          await fetchStats();
+        } else if (data.status === 'error' || data.status === 'cancelled') {
+          setAnalyzing(false);
+          setJobId(null);
+          toast({ 
+            title: data.status === 'cancelled' ? "הניתוח בוטל" : "שגיאה בניתוח",
+            variant: "destructive"
+          });
+        } else {
+          // Continue polling
+          setTimeout(poll, 3000);
+        }
+      } catch (err) {
+        console.error("Poll error:", err);
+        setTimeout(poll, 5000);
+      }
+    };
+    
+    poll();
+  };
+
+  const cancelAnalysis = async () => {
+    if (!jobId) return;
+    
+    try {
+      await supabase.functions.invoke('bulk-analyze', {
+        body: { action: 'cancel', jobId }
+      });
+      toast({ title: "מבטל..." });
+    } catch (err) {
+      console.error("Cancel error:", err);
     }
   };
 
@@ -207,11 +236,11 @@ const PsakDinStats = () => {
 
         {/* Analysis Progress */}
         {analyzing && analysisProgress.total > 0 && (
-          <div className="space-y-1 p-3 bg-primary/10 rounded-lg">
+          <div className="space-y-2 p-3 bg-primary/10 rounded-lg">
             <div className="flex justify-between text-sm">
               <span className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4 animate-pulse" />
-                מנתח פסקי דין...
+                מנתח ברקע (ניתן לעבור טאבים)
               </span>
               <span>{analysisProgress.current}/{analysisProgress.total}</span>
             </div>
@@ -219,6 +248,15 @@ const PsakDinStats = () => {
               value={(analysisProgress.current / analysisProgress.total) * 100} 
               className="h-2" 
             />
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={cancelAnalysis}
+              className="text-xs text-destructive hover:text-destructive"
+            >
+              <X className="w-3 h-3 mr-1" />
+              בטל ניתוח
+            </Button>
           </div>
         )}
 
