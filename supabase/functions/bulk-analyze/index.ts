@@ -33,19 +33,44 @@ serve(async (req) => {
       // Get unlinked psak IDs if not provided
       let idsToProcess = psakIds;
       if (!idsToProcess || idsToProcess.length === 0) {
-        const { data: linkedIds } = await supabase
-          .from('sugya_psak_links')
-          .select('psak_din_id');
+        // Fetch ALL linked IDs (no limit)
+        const allLinkedIds: string[] = [];
+        let linkedOffset = 0;
+        const FETCH_SIZE = 1000;
         
-        const linkedSet = new Set(linkedIds?.map(r => r.psak_din_id) || []);
+        while (true) {
+          const { data: linkedBatch } = await supabase
+            .from('sugya_psak_links')
+            .select('psak_din_id')
+            .range(linkedOffset, linkedOffset + FETCH_SIZE - 1);
+          
+          if (!linkedBatch || linkedBatch.length === 0) break;
+          allLinkedIds.push(...linkedBatch.map(r => r.psak_din_id));
+          if (linkedBatch.length < FETCH_SIZE) break;
+          linkedOffset += FETCH_SIZE;
+        }
         
-        const { data: allPsakim } = await supabase
-          .from('psakei_din')
-          .select('id');
+        const linkedSet = new Set(allLinkedIds);
         
-        idsToProcess = (allPsakim || [])
-          .filter(p => !linkedSet.has(p.id))
-          .map(p => p.id);
+        // Fetch ALL psakim IDs (no limit)
+        const allPsakimIds: string[] = [];
+        let psakOffset = 0;
+        
+        while (true) {
+          const { data: psakBatch } = await supabase
+            .from('psakei_din')
+            .select('id')
+            .range(psakOffset, psakOffset + FETCH_SIZE - 1);
+          
+          if (!psakBatch || psakBatch.length === 0) break;
+          allPsakimIds.push(...psakBatch.map(p => p.id));
+          if (psakBatch.length < FETCH_SIZE) break;
+          psakOffset += FETCH_SIZE;
+        }
+        
+        idsToProcess = allPsakimIds.filter(id => !linkedSet.has(id));
+        
+        console.log(`Found ${allPsakimIds.length} total psakim, ${allLinkedIds.length} linked, ${idsToProcess.length} to process`);
       }
 
       // Create job record
