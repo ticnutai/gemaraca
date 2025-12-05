@@ -11,6 +11,7 @@ import PsakDinSearchButton from "@/components/PsakDinSearchButton";
 import GemaraTextPanel from "@/components/GemaraTextPanel";
 import CommentariesPanel from "@/components/CommentariesPanel";
 import LexiconSearch from "@/components/LexiconSearch";
+import RelatedPsakimSidebar from "@/components/RelatedPsakimSidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -401,7 +402,7 @@ const SugyaDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto max-w-5xl px-4 py-12">
+      <div className="container mx-auto max-w-7xl px-4 py-12">
         <div className="flex items-center justify-between mb-8 gap-4 flex-wrap">
           <Button 
             variant="ghost" 
@@ -417,7 +418,9 @@ const SugyaDetail = () => {
           </div>
         </div>
 
-        <div className="space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Main Content */}
+          <div className="lg:col-span-3 space-y-8">
           {/* Header */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
@@ -643,6 +646,14 @@ const SugyaDetail = () => {
               <p className="text-muted-foreground">טוען פסקי דין...</p>
             </div>
           )}
+          </div>
+
+          {/* Sidebar - Related Psakim */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-4">
+              <RelatedPsakimSidebar sugyaId={id || ""} />
+            </div>
+          </div>
         </div>
       </div>
     </div>
