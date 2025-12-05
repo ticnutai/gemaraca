@@ -145,9 +145,33 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  html {
+    direction: rtl;
+  }
+
   body {
     @apply bg-background text-foreground;
     direction: rtl;
     text-align: right;
+  }
+
+  /* RTL fixes for common elements */
+  input, textarea, select {
+    text-align: right;
+  }
+
+  /* Fix flex direction for RTL */
+  .flex-row-reverse-rtl {
+    @apply flex-row-reverse;
+  }
+
+  /* Ensure cards and containers respect RTL */
+  .card, [class*="Card"] {
+    text-align: right;
+  }
+
+  /* Fix icons in RTL context */
+  .rtl-flip {
+    transform: scaleX(-1);
   }
 }

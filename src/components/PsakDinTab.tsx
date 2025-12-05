@@ -138,9 +138,9 @@ const PsakDinTab = () => {
 
   const unlinkedCount = psakim.filter(p => !psakLinks.has(p.id)).length;
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-6xl mx-auto">
+return (
+    <div className="container mx-auto px-4 py-8" dir="rtl">
+      <div className="max-w-6xl mx-auto text-right">
         <Tabs defaultValue="recent" className="space-y-6">
           <TabsList className="grid w-full max-w-md grid-cols-2">
             <TabsTrigger value="recent" className="gap-2">
@@ -158,8 +158,8 @@ const PsakDinTab = () => {
               <div className="text-center py-8 text-muted-foreground">טוען...</div>
             ) : (
               <div className="max-w-4xl mx-auto space-y-4">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-foreground">פסקי דין אחרונים</h2>
+                <div className="flex items-center justify-between mb-6 flex-row-reverse">
+                  <h2 className="text-2xl font-bold text-foreground text-right">פסקי דין אחרונים</h2>
                   
                   {/* AI Analysis Section */}
                   {unlinkedCount > 0 && (
@@ -281,25 +281,25 @@ const PsakDinTab = () => {
                                 </Badge>
                               )}
                             </div>
-                            <div className="flex flex-wrap gap-2 text-sm text-muted-foreground mt-2">
+                      <div className="flex flex-wrap justify-end gap-2 text-sm text-muted-foreground mt-2">
                               <div className="flex items-center gap-2">
+                                {psak.court}
                                 <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
                                   <Building2 className="w-3 h-3 text-primary" />
                                 </div>
-                                {psak.court}
                               </div>
                               <div className="flex items-center gap-2">
+                                {psak.year}
                                 <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
                                   <Calendar className="w-3 h-3 text-primary" />
                                 </div>
-                                {psak.year}
                               </div>
                               {psak.case_number && (
                                 <div className="flex items-center gap-2">
+                                  {psak.case_number}
                                   <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
                                     <FileText className="w-3 h-3 text-primary" />
                                   </div>
-                                  {psak.case_number}
                                 </div>
                               )}
                             </div>
