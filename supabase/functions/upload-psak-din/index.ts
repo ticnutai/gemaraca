@@ -18,11 +18,37 @@ interface PsakDinData {
   fileUrl?: string;
 }
 
+// Timeout wrapper for async operations
+async function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  operation: string
+): Promise<T> {
+  let timeoutId: number | undefined;
+  
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error(`${operation} timeout after ${timeoutMs}ms`));
+    }, timeoutMs);
+  });
+
+  try {
+    const result = await Promise.race([promise, timeoutPromise]);
+    clearTimeout(timeoutId);
+    return result;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    throw error;
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const startTime = Date.now();
+  
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -41,7 +67,7 @@ serve(async (req) => {
       }
     }
 
-    console.log(`Received ${files.length} files for upload`);
+    console.log(`[${Date.now() - startTime}ms] Received ${files.length} files for upload`);
     const results: unknown[] = [];
     const errors: string[] = [];
 
@@ -50,28 +76,30 @@ serve(async (req) => {
       const fileName = file.name;
       const fileExt = fileName.split('.').pop()?.toLowerCase();
       
-      console.log(`Processing file: ${fileName}, type: ${fileExt}`);
+      console.log(`[${Date.now() - startTime}ms] Processing file: ${fileName}, type: ${fileExt}, size: ${file.size}`);
 
       try {
         if (['pdf', 'docx', 'doc', 'txt', 'rtf', 'zip'].includes(fileExt || '')) {
-          const result = await processAndSaveFile(
-            supabase,
-            file,
-            fileName,
-            parsedMetadata
+          const result = await withTimeout(
+            processAndSaveFile(supabase, file, fileName, parsedMetadata),
+            45000, // 45 second timeout per file
+            `Processing ${fileName}`
           );
           
           if (result.success) {
             results.push(result.data);
+            console.log(`[${Date.now() - startTime}ms] Successfully processed: ${fileName}`);
           } else {
             errors.push(`${fileName}: ${result.error}`);
+            console.log(`[${Date.now() - startTime}ms] Failed to process: ${fileName} - ${result.error}`);
           }
         } else {
           errors.push(`${fileName}: פורמט לא נתמך`);
         }
       } catch (err) {
-        console.error(`Error processing ${fileName}:`, err);
-        errors.push(`${fileName}: ${err instanceof Error ? err.message : 'שגיאה לא ידועה'}`);
+        console.error(`[${Date.now() - startTime}ms] Error processing ${fileName}:`, err);
+        const errorMessage = err instanceof Error ? err.message : 'שגיאה לא ידועה';
+        errors.push(`${fileName}: ${errorMessage}`);
       }
     };
 
@@ -82,22 +110,26 @@ serve(async (req) => {
       await Promise.all(batch.map(processFile));
     }
 
+    console.log(`[${Date.now() - startTime}ms] Completed: ${results.length} success, ${errors.length} errors`);
+
     return new Response(
       JSON.stringify({
         success: true,
         uploaded: results.length,
         results,
-        errors: errors.length > 0 ? errors : undefined
+        errors: errors.length > 0 ? errors : undefined,
+        processingTimeMs: Date.now() - startTime
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
   } catch (error) {
-    console.error("Error in upload-psak-din:", error);
+    console.error(`[${Date.now() - startTime}ms] Error in upload-psak-din:`, error);
     return new Response(
       JSON.stringify({ 
         success: false,
-        error: error instanceof Error ? error.message : "שגיאה בהעלאה"
+        error: error instanceof Error ? error.message : "שגיאה בהעלאה",
+        processingTimeMs: Date.now() - startTime
       }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
@@ -111,13 +143,19 @@ async function processAndSaveFile(
   metadata: Record<string, any>
 ): Promise<{ success: boolean; data?: any; error?: string }> {
   try {
-    // Upload file to storage
+    // Upload file to storage with timeout
     const timestamp = Date.now();
-    const storagePath = `uploads/${timestamp}_${fileName.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+    const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const storagePath = `uploads/${timestamp}_${sanitizedFileName}`;
+    
+    console.log(`Uploading to storage: ${storagePath}, size: ${(file as File).size || 'unknown'}`);
     
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('psakei-din-files')
-      .upload(storagePath, file);
+      .upload(storagePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
 
     if (uploadError) {
       console.error("Storage upload error:", uploadError);
@@ -135,6 +173,10 @@ async function processAndSaveFile(
     if (fileExt === 'txt') {
       try {
         fullText = await (file as File).text?.() || await new Response(file).text();
+        // Limit text length to avoid database issues
+        if (fullText.length > 100000) {
+          fullText = fullText.substring(0, 100000) + '... [קוצר]';
+        }
       } catch (e) {
         console.log("Could not extract text:", e);
       }
@@ -172,7 +214,13 @@ async function processAndSaveFile(
     }
 
     console.log(`Successfully saved psak din: ${psakDin.id}`);
-    return { success: true, data: psakDin };
+    return { 
+      success: true, 
+      data: { 
+        ...psakDin, 
+        fileName 
+      } 
+    };
 
   } catch (err) {
     console.error("processAndSaveFile error:", err);
