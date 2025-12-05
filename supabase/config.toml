@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.upload-psak-din]
 verify_jwt = false
+
+[functions.cleanup-duplicates]
+verify_jwt = false
