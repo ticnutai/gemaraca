@@ -13,6 +13,7 @@ import { useUploadController } from "@/hooks/useUploadController";
 import { calculateFileHashes } from "@/lib/fileHash";
 import { isOnline } from "@/lib/uploadUtils";
 import UploadSummaryDialog from "./UploadSummaryDialog";
+import PsakDinStats from "./PsakDinStats";
 
 interface DuplicateFile {
   name: string;
@@ -247,6 +248,9 @@ const UploadPsakDinTab = () => {
   return (
     <div className="container mx-auto px-4 py-8" dir="rtl">
       <div className="max-w-4xl mx-auto space-y-6 text-right">
+        {/* Database Statistics */}
+        <PsakDinStats />
+        
         {/* Session Recovery Card */}
         {session && session.status === 'paused' && session.results.length > 0 && (
           <Card className="border-2 border-accent/50 bg-accent/5">
