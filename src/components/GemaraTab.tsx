@@ -29,11 +29,11 @@ const GemaraTab = () => {
   const loadPages = async () => {
     setLoading(true);
     try {
-      // טעינת דפים לפי מסכת נבחרת
+      // טעינת דפים לפי מסכת נבחרת - שימוש בעמודת masechet
       const { data, error } = await supabase
         .from('gemara_pages')
         .select('*')
-        .like('sugya_id', `${selectedMasechet.sefariaName.toLowerCase()}%`)
+        .eq('masechet', selectedMasechet.sefariaName)
         .order('daf_number');
 
       if (error) throw error;
