@@ -9,9 +9,14 @@ import {
   X, 
   CheckCircle,
   AlertCircle,
-  FileText
+  FileText,
+  WifiOff,
+  StopCircle,
+  RefreshCw
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { isOnline } from "@/lib/uploadUtils";
+import { useState, useEffect } from "react";
 
 const GlobalUploadProgress = () => {
   const { 
@@ -21,6 +26,22 @@ const GlobalUploadProgress = () => {
     clearSession 
   } = useUploadStore();
   
+  const [online, setOnline] = useState(isOnline());
+  
+  // Track online status
+  useEffect(() => {
+    const handleOnline = () => setOnline(true);
+    const handleOffline = () => setOnline(false);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+  
   if (!session || session.status === 'idle' || session.status === 'completed') {
     return null;
   }
@@ -28,6 +49,7 @@ const GlobalUploadProgress = () => {
   const isUploading = session.status === 'uploading';
   const isPaused = session.status === 'paused';
   const isAnalyzing = session.status === 'analyzing';
+  const isError = session.status === 'error';
   
   const uploadProgress = session.uploadProgress;
   const analysisProgress = session.analysisProgress;
@@ -52,36 +74,49 @@ const GlobalUploadProgress = () => {
       className={cn(
         "fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 z-50",
         "bg-card border border-border rounded-lg shadow-lg p-4",
-        "animate-in slide-in-from-bottom-4 duration-300"
+        "animate-in slide-in-from-bottom-4 duration-300",
+        isError && "border-destructive/50"
       )}
       dir="rtl"
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          {isAnalyzing ? (
+          {!online && (
+            <WifiOff className="w-4 h-4 text-destructive" />
+          )}
+          {isError ? (
+            <AlertCircle className="w-5 h-5 text-destructive" />
+          ) : isAnalyzing ? (
             <Sparkles className="w-5 h-5 text-primary animate-pulse" />
           ) : (
             <Upload className="w-5 h-5 text-primary" />
           )}
           <span className="font-medium text-sm">
-            {isAnalyzing ? 'מנתח פסקי דין...' : isPaused ? 'מושהה' : 'מעלה קבצים...'}
+            {isError ? 'העלאה נכשלה' : 
+              !online ? 'ממתין לחיבור...' :
+              isAnalyzing ? 'מנתח פסקי דין...' : 
+              isPaused ? 'מושהה' : 'מעלה קבצים...'}
           </span>
         </div>
         <div className="flex items-center gap-1">
-          <Button
-            size="icon"
-            variant="ghost"
-            className="h-7 w-7"
-            onClick={togglePause}
-          >
-            {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
-          </Button>
+          {!isError && (
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7"
+              onClick={togglePause}
+              title={isPaused ? "המשך" : "השהה"}
+            >
+              {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+            </Button>
+          )}
           <Button
             size="icon"
             variant="ghost"
             className="h-7 w-7 text-muted-foreground hover:text-destructive"
             onClick={clearSession}
+            title="סגור"
           >
             <X className="w-4 h-4" />
           </Button>
@@ -89,13 +124,13 @@ const GlobalUploadProgress = () => {
       </div>
       
       {/* Upload Progress */}
-      {(isUploading || isPaused) && uploadProgress && (
+      {(isUploading || isPaused || isError) && uploadProgress && (
         <div className="space-y-2">
           <div className="flex justify-between text-xs text-muted-foreground">
             <span className="truncate max-w-[200px]">{uploadProgress.current}</span>
             <span>{uploadProgress.completed}/{uploadProgress.total}</span>
           </div>
-          <Progress value={uploadPercent} className="h-2" />
+          <Progress value={uploadPercent} className={cn("h-2", isError && "bg-destructive/20")} />
           <div className="flex gap-3 text-xs">
             <span className="text-green-500 flex items-center gap-1">
               <CheckCircle className="w-3 h-3" />
@@ -133,9 +168,23 @@ const GlobalUploadProgress = () => {
         </div>
       )}
       
+      {/* Status Messages */}
       {isPaused && (
         <p className="text-xs text-accent text-center mt-2">
           לחץ ▶ להמשך
+        </p>
+      )}
+      
+      {!online && (
+        <p className="text-xs text-destructive text-center mt-2 flex items-center justify-center gap-1">
+          <RefreshCw className="w-3 h-3 animate-spin" />
+          ממתין לחיבור אינטרנט...
+        </p>
+      )}
+      
+      {isError && (
+        <p className="text-xs text-destructive text-center mt-2">
+          הקבצים שהועלו נשמרו. תוכל להמשיך מאוחר יותר.
         </p>
       )}
     </div>
