@@ -132,6 +132,26 @@ serve(async (req) => {
       throw new Error('No text found in Sefaria for this daf');
     }
 
+    // Check if page already exists
+    const { data: existingPage } = await supabaseClient
+      .from('gemara_pages')
+      .select('*')
+      .eq('masechet', sefariaName)
+      .eq('daf_number', dafNumber)
+      .maybeSingle();
+
+    if (existingPage) {
+      console.log('Page already exists:', existingPage.id);
+      return new Response(
+        JSON.stringify({
+          success: true,
+          data: existingPage,
+          message: `דף ${dafYomi} כבר קיים במערכת`
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     console.log('Inserting into database...');
     // Insert into database
     const { data, error } = await supabaseClient
