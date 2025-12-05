@@ -268,11 +268,33 @@ async function analyzeSinglePsak(supabase: any, psakId: string): Promise<boolean
     const content = aiData.choices?.[0]?.message?.content;
     if (!content) return false;
 
-    // Parse response
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return false;
-
-    const analysis = JSON.parse(jsonMatch[0]);
+    // Parse response - handle various formats
+    let analysis: { tags?: string[]; sources?: any[] };
+    try {
+      // Try to extract JSON from the response
+      let jsonStr = content;
+      
+      // Remove markdown code blocks if present
+      jsonStr = jsonStr.replace(/```json\s*/gi, '').replace(/```\s*/g, '');
+      
+      // Try to find JSON object
+      const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        console.error(`No JSON found in response for ${psakId}`);
+        return false;
+      }
+      
+      // Clean up common issues
+      let cleanJson = jsonMatch[0]
+        .replace(/[\u200B-\u200D\uFEFF]/g, '') // Remove zero-width chars
+        .replace(/,\s*}/g, '}') // Remove trailing commas
+        .replace(/,\s*]/g, ']');
+      
+      analysis = JSON.parse(cleanJson);
+    } catch (parseError) {
+      console.error(`JSON parse error for ${psakId}:`, parseError);
+      return false;
+    }
 
     // Update psak
     await supabase.from('psakei_din').update({
@@ -280,8 +302,9 @@ async function analyzeSinglePsak(supabase: any, psakId: string): Promise<boolean
     }).eq('id', psakId);
 
     // Create links
-    if (analysis.sources?.length > 0) {
-      for (const source of analysis.sources) {
+    const sources = analysis.sources || [];
+    if (sources.length > 0) {
+      for (const source of sources) {
         if (!source.masechetEnglish || !source.daf || typeof source.daf !== 'number') continue;
         
         let sugyaId = source.masechetEnglish === "Bava Batra" 
@@ -316,15 +339,51 @@ async function analyzeSinglePsak(supabase: any, psakId: string): Promise<boolean
 }
 
 function getSystemPrompt(): string {
-  return `אתה מומחה לניתוח פסקי דין הלכתיים. זהה מקורות תלמודיים רלוונטיים. החזר JSON בלבד.`;
+  return `אתה מומחה בתלמוד בבלי והלכה. תפקידך לזהות מקורות תלמודיים בפסקי דין.
+
+כללים חשובים:
+1. זהה כל אזכור של מסכת, דף או סוגיא בטקסט
+2. חפש מושגים הלכתיים וקשר אותם למקורות התלמודיים המתאימים
+3. גם אם אין אזכור מפורש, נסה לזהות את הנושא ההלכתי ולקשר למקורות רלוונטיים
+4. החזר JSON תקין בלבד, ללא טקסט נוסף
+
+רשימת מסכתות (בעברית -> באנגלית):
+ברכות=Berakhot, שבת=Shabbat, עירובין=Eruvin, פסחים=Pesachim, שקלים=Shekalim,
+יומא=Yoma, סוכה=Sukkah, ביצה=Beitzah, ראש השנה=Rosh Hashanah, תענית=Taanit,
+מגילה=Megillah, מועד קטן=Moed Katan, חגיגה=Chagigah, יבמות=Yevamot, כתובות=Ketubot,
+נדרים=Nedarim, נזיר=Nazir, סוטה=Sotah, גיטין=Gittin, קידושין=Kiddushin,
+בבא קמא=Bava Kamma, בבא מציעא=Bava Metzia, בבא בתרא=Bava Batra,
+סנהדרין=Sanhedrin, מכות=Makkot, שבועות=Shevuot, עבודה זרה=Avodah Zarah,
+הוריות=Horayot, זבחים=Zevachim, מנחות=Menachot, חולין=Chullin, בכורות=Bekhorot,
+ערכין=Arakhin, תמורה=Temurah, כריתות=Keritot, מעילה=Meilah, תמיד=Tamid,
+נדה=Niddah`;
 }
 
 function getAnalysisPrompt(text: string): string {
-  return `נתח את פסק הדין וזהה מקורות תלמודיים. החזר JSON:
+  return `נתח את פסק הדין הבא וזהה את כל המקורות התלמודיים הרלוונטיים.
+
+הוראות:
+1. זהה אזכורים מפורשים של מסכתות ודפים
+2. זהה מושגים הלכתיים (כגון: חזקה, מיגו, קים ליה, ספק ספיקא) וקשר למקורותיהם
+3. עבור כל נושא הלכתי, מצא לפחות מקור תלמודי אחד רלוונטי
+4. אם יש דיון בממונות - בדוק קשר לבבא קמא/מציעא/בתרא
+5. אם יש דיון באיסורים - בדוק קשר למסכת הרלוונטית
+
+החזר JSON בפורמט הבא בלבד (ללא markdown או טקסט נוסף):
 {
-  "tags": ["תגית1"],
-  "sources": [{"masechet": "בבא מציעא", "masechetEnglish": "Bava Metzia", "daf": 30, "amud": "א", "reference": "...", "explanation": "..."}]
+  "tags": ["נזיקין", "חוזים", "ירושה"],
+  "sources": [
+    {
+      "masechet": "בבא קמא",
+      "masechetEnglish": "Bava Kamma",
+      "daf": 84,
+      "amud": "א",
+      "reference": "בבא קמא פד.",
+      "explanation": "הסוגיא דנה בעין תחת עין..."
+    }
+  ]
 }
 
-טקסט: ${text.substring(0, 6000)}`;
+טקסט לניתוח:
+${text.substring(0, 8000)}`;
 }
