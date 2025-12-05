@@ -20,7 +20,6 @@ serve(async (req) => {
 
     if (action === "stats") {
       // Get statistics
-      const { data: total } = await supabase.from('psakei_din').select('id', { count: 'exact' });
       const { count: totalCount } = await supabase.from('psakei_din').select('*', { count: 'exact', head: true });
       
       const { data: linkedCount } = await supabase
@@ -28,22 +27,38 @@ serve(async (req) => {
         .select('psak_din_id')
         .then(res => ({ data: new Set(res.data?.map(r => r.psak_din_id)).size }));
 
-      // Find duplicates
+      // Find duplicates by title+court+year AND by content_hash
       const { data: allPsakim } = await supabase
         .from('psakei_din')
-        .select('id, title, court, year');
+        .select('id, title, court, year, content_hash');
 
-      const seen = new Map<string, string>();
-      let duplicatesCount = 0;
+      const seenTitles = new Map<string, string>();
+      const seenHashes = new Map<string, string>();
+      let duplicatesByTitle = 0;
+      let duplicatesByHash = 0;
       
       for (const psak of allPsakim || []) {
-        const key = `${psak.title}-${psak.court}-${psak.year}`;
-        if (seen.has(key)) {
-          duplicatesCount++;
+        const titleKey = `${psak.title}-${psak.court}-${psak.year}`;
+        
+        // Check title-based duplicate
+        if (seenTitles.has(titleKey)) {
+          duplicatesByTitle++;
         } else {
-          seen.set(key, psak.id);
+          seenTitles.set(titleKey, psak.id);
+        }
+        
+        // Check hash-based duplicate (only if hash exists)
+        if (psak.content_hash) {
+          if (seenHashes.has(psak.content_hash)) {
+            duplicatesByHash++;
+          } else {
+            seenHashes.set(psak.content_hash, psak.id);
+          }
         }
       }
+
+      // Total unique duplicates (some might be caught by both methods)
+      const totalDuplicates = Math.max(duplicatesByTitle, duplicatesByHash);
 
       return new Response(
         JSON.stringify({
@@ -51,7 +66,9 @@ serve(async (req) => {
           stats: {
             total: totalCount || 0,
             linked: linkedCount || 0,
-            duplicates: duplicatesCount,
+            duplicates: totalDuplicates,
+            duplicatesByTitle,
+            duplicatesByHash,
             unlinked: (totalCount || 0) - (linkedCount || 0),
           }
         }),
@@ -60,53 +77,69 @@ serve(async (req) => {
     }
 
     if (action === "cleanup") {
-      // Find and remove duplicates (keep the first one with the most links)
+      // Find and remove duplicates by both title+court+year AND content_hash
       const { data: allPsakim } = await supabase
         .from('psakei_din')
-        .select('id, title, court, year, created_at')
+        .select('id, title, court, year, content_hash, created_at')
         .order('created_at', { ascending: true });
 
-      const seen = new Map<string, string>();
-      const toDelete: string[] = [];
+      const seenTitles = new Map<string, string>();
+      const seenHashes = new Map<string, string>();
+      const toDelete = new Set<string>();
       
       for (const psak of allPsakim || []) {
-        const key = `${psak.title}-${psak.court}-${psak.year}`;
-        if (seen.has(key)) {
-          toDelete.push(psak.id);
-        } else {
-          seen.set(key, psak.id);
+        const titleKey = `${psak.title}-${psak.court}-${psak.year}`;
+        
+        // Check title-based duplicate
+        if (seenTitles.has(titleKey)) {
+          toDelete.add(psak.id);
+          continue;
+        }
+        seenTitles.set(titleKey, psak.id);
+        
+        // Check hash-based duplicate
+        if (psak.content_hash && seenHashes.has(psak.content_hash)) {
+          toDelete.add(psak.id);
+          continue;
+        }
+        if (psak.content_hash) {
+          seenHashes.set(psak.content_hash, psak.id);
         }
       }
 
-      console.log(`Found ${toDelete.length} duplicates to delete`);
+      const toDeleteArray = Array.from(toDelete);
+      console.log(`Found ${toDeleteArray.length} duplicates to delete (by title and/or hash)`);
 
-      if (toDelete.length > 0) {
+      if (toDeleteArray.length > 0) {
         // Delete links first
         const { error: linksError } = await supabase
           .from('sugya_psak_links')
           .delete()
-          .in('psak_din_id', toDelete);
+          .in('psak_din_id', toDeleteArray);
 
         if (linksError) {
           console.error("Error deleting links:", linksError);
         }
 
-        // Delete duplicates
-        const { error: deleteError } = await supabase
-          .from('psakei_din')
-          .delete()
-          .in('id', toDelete);
+        // Delete duplicates in batches
+        const BATCH_SIZE = 100;
+        for (let i = 0; i < toDeleteArray.length; i += BATCH_SIZE) {
+          const batch = toDeleteArray.slice(i, i + BATCH_SIZE);
+          const { error: deleteError } = await supabase
+            .from('psakei_din')
+            .delete()
+            .in('id', batch);
 
-        if (deleteError) {
-          console.error("Error deleting duplicates:", deleteError);
-          throw deleteError;
+          if (deleteError) {
+            console.error("Error deleting duplicates batch:", deleteError);
+          }
         }
       }
 
       return new Response(
         JSON.stringify({
           success: true,
-          deleted: toDelete.length,
+          deleted: toDeleteArray.length,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
