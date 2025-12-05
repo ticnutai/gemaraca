@@ -3,11 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, FileText, Archive, X, Loader2, CheckCircle, AlertCircle, FolderUp } from "lucide-react";
+import { Upload, FileText, Archive, X, Loader2, CheckCircle, AlertCircle, FolderUp, Sparkles, Brain } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const BATCH_SIZE = 5; // Upload 5 files at a time for optimal performance
@@ -34,6 +34,9 @@ const UploadPsakDinTab = () => {
   const [court, setCourt] = useState("");
   const [year, setYear] = useState(new Date().getFullYear().toString());
   const [tags, setTags] = useState("");
+  const [enableAIAnalysis, setEnableAIAnalysis] = useState(true);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analysisProgress, setAnalysisProgress] = useState({ current: 0, total: 0 });
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || []);
@@ -165,8 +168,39 @@ const UploadPsakDinTab = () => {
 
       toast({
         title: `הועלו ${allResults.length} פסקי דין בהצלחה`,
-        description: allErrors.length > 0 ? `${allErrors.length} שגיאות` : undefined,
+        description: allErrors.length > 0 ? `${allErrors.length} שגיאות` : enableAIAnalysis ? "מתחיל ניתוח AI..." : undefined,
       });
+
+      // Run AI analysis if enabled
+      if (enableAIAnalysis && allResults.length > 0) {
+        setAnalyzing(true);
+        setAnalysisProgress({ current: 0, total: allResults.length });
+        
+        for (let i = 0; i < allResults.length; i++) {
+          const result = allResults[i];
+          setAnalysisProgress({ current: i + 1, total: allResults.length });
+          
+          try {
+            await supabase.functions.invoke('analyze-psak-din', {
+              body: { psakId: result.id }
+            });
+            console.log(`Analyzed psak ${result.id}`);
+          } catch (err) {
+            console.error(`Error analyzing psak ${result.id}:`, err);
+          }
+          
+          // Delay between analyses to avoid rate limits
+          if (i < allResults.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+        }
+        
+        setAnalyzing(false);
+        toast({
+          title: "ניתוח AI הושלם",
+          description: `נותחו ${allResults.length} פסקי דין וקושרו למקורות`,
+        });
+      }
 
       // Clear files after successful upload
       setFiles([]);
@@ -183,6 +217,7 @@ const UploadPsakDinTab = () => {
       });
     } finally {
       setUploading(false);
+      setAnalyzing(false);
       setProgress(null);
     }
   };
@@ -346,9 +381,47 @@ const UploadPsakDinTab = () => {
               </div>
             </div>
 
+            {/* AI Analysis Toggle */}
+            <div className="flex items-center justify-between p-4 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-lg border border-primary/20">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Brain className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <Label htmlFor="ai-analysis" className="font-medium">ניתוח AI וסיווג אוטומטי</Label>
+                  <p className="text-xs text-muted-foreground">
+                    זיהוי מקורות תלמודיים, חילוץ מטא-דאטה, וקישור לדפי גמרא
+                  </p>
+                </div>
+              </div>
+              <Switch
+                id="ai-analysis"
+                checked={enableAIAnalysis}
+                onCheckedChange={setEnableAIAnalysis}
+              />
+            </div>
+
+            {/* AI Analysis Progress */}
+            {analyzing && (
+              <div className="space-y-2 p-4 bg-primary/5 rounded-lg border border-primary/20">
+                <div className="flex items-center gap-2 text-sm">
+                  <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+                  <span>מנתח פסקי דין באמצעות AI...</span>
+                  <span className="mr-auto">{analysisProgress.current}/{analysisProgress.total}</span>
+                </div>
+                <Progress 
+                  value={(analysisProgress.current / analysisProgress.total) * 100} 
+                  className="h-2" 
+                />
+                <p className="text-xs text-muted-foreground">
+                  מזהה מקורות תלמודיים ומסווג את פסקי הדין
+                </p>
+              </div>
+            )}
+
             <Button
               onClick={handleUpload}
-              disabled={uploading || files.length === 0}
+              disabled={uploading || analyzing || files.length === 0}
               className="w-full gap-2"
               size="lg"
             >
@@ -357,10 +430,16 @@ const UploadPsakDinTab = () => {
                   <Loader2 className="w-4 h-4 animate-spin" />
                   מעלה {progress?.completed || 0}/{files.length}...
                 </>
+              ) : analyzing ? (
+                <>
+                  <Sparkles className="w-4 h-4 animate-pulse" />
+                  מנתח...
+                </>
               ) : (
                 <>
                   <Upload className="w-4 h-4" />
                   העלה {files.length > 0 ? `${files.length} קבצים` : ''}
+                  {enableAIAnalysis && files.length > 0 && ' + ניתוח AI'}
                 </>
               )}
             </Button>
