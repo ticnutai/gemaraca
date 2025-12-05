@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { crypto } from "https://deno.land/std@0.168.0/crypto/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -16,6 +17,15 @@ interface PsakDinData {
   tags?: string[];
   fileName?: string;
   fileUrl?: string;
+  contentHash?: string;
+}
+
+// Calculate SHA-256 hash of file content
+async function calculateFileHash(file: File): Promise<string> {
+  const buffer = await file.arrayBuffer();
+  const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 // Timeout wrapper for async operations
@@ -141,7 +151,7 @@ async function processAndSaveFile(
   file: Blob | File,
   fileName: string,
   metadata: Record<string, any>
-): Promise<{ success: boolean; data?: any; error?: string }> {
+): Promise<{ success: boolean; data?: any; error?: string; isDuplicate?: boolean }> {
   try {
     // Upload file to storage with timeout
     const timestamp = Date.now();
@@ -182,6 +192,31 @@ async function processAndSaveFile(
       }
     }
 
+    // Calculate content hash for duplicate detection
+    let contentHash = '';
+    try {
+      contentHash = await calculateFileHash(file as File);
+      console.log(`Content hash for ${fileName}: ${contentHash.substring(0, 16)}...`);
+      
+      // Check if this hash already exists
+      const { data: existingByHash } = await supabase
+        .from('psakei_din')
+        .select('id, title')
+        .eq('content_hash', contentHash)
+        .maybeSingle();
+      
+      if (existingByHash) {
+        console.log(`Duplicate detected by hash: ${fileName} matches ${existingByHash.title}`);
+        return { 
+          success: false, 
+          error: `כפול (תוכן זהה לפסק: ${existingByHash.title})`,
+          isDuplicate: true
+        };
+      }
+    } catch (hashErr) {
+      console.log("Could not calculate hash:", hashErr);
+    }
+
     // Create psak din record
     const psakData: PsakDinData = {
       title: metadata.title || extractTitleFromFileName(fileName),
@@ -191,6 +226,7 @@ async function processAndSaveFile(
       summary: metadata.summary || `פסק דין שהועלה מהקובץ: ${fileName}`,
       fullText: fullText || metadata.fullText,
       tags: metadata.tags || [],
+      contentHash,
     };
 
     const { data: psakDin, error: psakError } = await supabase
@@ -204,6 +240,7 @@ async function processAndSaveFile(
         full_text: psakData.fullText,
         source_url: publicUrl,
         tags: psakData.tags,
+        content_hash: psakData.contentHash,
       })
       .select()
       .single();

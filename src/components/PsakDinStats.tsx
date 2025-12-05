@@ -18,6 +18,8 @@ interface Stats {
   total: number;
   linked: number;
   duplicates: number;
+  duplicatesByTitle?: number;
+  duplicatesByHash?: number;
   unlinked: number;
 }
 
@@ -183,7 +185,14 @@ const PsakDinStats = () => {
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-destructive">{stats.duplicates}</div>
-            <div className="text-xs text-muted-foreground">כפולים</div>
+            <div className="text-xs text-muted-foreground">
+              כפולים
+              {stats.duplicatesByTitle !== undefined && stats.duplicatesByHash !== undefined && (
+                <span className="block text-[10px] mt-0.5">
+                  ({stats.duplicatesByTitle} כותרת, {stats.duplicatesByHash} תוכן)
+                </span>
+              )}
+            </div>
           </div>
         </div>
 

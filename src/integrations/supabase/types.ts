@@ -91,6 +91,7 @@ export type Database = {
       psakei_din: {
         Row: {
           case_number: string | null
+          content_hash: string | null
           court: string
           created_at: string
           full_text: string | null
@@ -104,6 +105,7 @@ export type Database = {
         }
         Insert: {
           case_number?: string | null
+          content_hash?: string | null
           court: string
           created_at?: string
           full_text?: string | null
@@ -117,6 +119,7 @@ export type Database = {
         }
         Update: {
           case_number?: string | null
+          content_hash?: string | null
           court?: string
           created_at?: string
           full_text?: string | null
