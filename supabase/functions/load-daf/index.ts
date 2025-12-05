@@ -141,7 +141,8 @@ serve(async (req) => {
         sugya_id: sugya_id,
         title: title,
         daf_yomi: dafYomi,
-        sefaria_ref: sefariaRef
+        sefaria_ref: sefariaRef,
+        masechet: sefariaName
       })
       .select()
       .single();

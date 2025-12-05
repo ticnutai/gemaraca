@@ -58,6 +58,7 @@ export type Database = {
           daf_number: number
           daf_yomi: string
           id: string
+          masechet: string
           sefaria_ref: string
           sugya_id: string
           title: string
@@ -68,6 +69,7 @@ export type Database = {
           daf_number: number
           daf_yomi: string
           id?: string
+          masechet?: string
           sefaria_ref: string
           sugya_id: string
           title: string
@@ -78,6 +80,7 @@ export type Database = {
           daf_number?: number
           daf_yomi?: string
           id?: string
+          masechet?: string
           sefaria_ref?: string
           sugya_id?: string
           title?: string
