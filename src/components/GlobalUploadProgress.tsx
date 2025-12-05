@@ -1,4 +1,5 @@
 import { useUploadStore } from "@/stores/uploadStore";
+import { useRealtimeUploadSync } from "@/hooks/useRealtimeUploadSync";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { 
@@ -11,14 +12,16 @@ import {
   AlertCircle,
   FileText,
   WifiOff,
-  StopCircle,
-  RefreshCw
+  RefreshCw,
+  Monitor
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { isOnline } from "@/lib/uploadUtils";
 import { useState, useEffect } from "react";
 
 const GlobalUploadProgress = () => {
+  // Enable realtime sync
+  const { deviceId } = useRealtimeUploadSync();
   const { 
     session, 
     pauseSession, 
@@ -97,6 +100,9 @@ const GlobalUploadProgress = () => {
               !online ? 'ממתין לחיבור...' :
               isAnalyzing ? 'מנתח פסקי דין...' : 
               isPaused ? 'מושהה' : 'מעלה קבצים...'}
+          </span>
+          <span className="text-xs text-muted-foreground flex items-center gap-1" title={`מזהה מכשיר: ${deviceId}`}>
+            <Monitor className="w-3 h-3" />
           </span>
         </div>
         <div className="flex items-center gap-1">
