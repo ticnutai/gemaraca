@@ -8,6 +8,7 @@ import SugyaDetail from "./pages/SugyaDetail";
 import NotFound from "./pages/NotFound";
 import { ThemeProvider } from "./components/ThemeProvider";
 import { SettingsButton } from "./components/SettingsButton";
+import GlobalUploadProgress from "./components/GlobalUploadProgress";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ const App = () => (
           </Routes>
         </BrowserRouter>
         <SettingsButton />
+        <GlobalUploadProgress />
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>
