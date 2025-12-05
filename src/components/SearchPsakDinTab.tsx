@@ -6,11 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { Search, Calendar, Building2, FileText, ExternalLink, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import PsakDinViewDialog from "./PsakDinViewDialog";
 
 const SearchPsakDinTab = () => {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedPsak, setSelectedPsak] = useState<any | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const handleSearch = async () => {
@@ -65,6 +68,11 @@ const SearchPsakDinTab = () => {
     }
   };
 
+  const handlePsakClick = (psak: any) => {
+    setSelectedPsak(psak);
+    setDialogOpen(true);
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -112,7 +120,11 @@ const SearchPsakDinTab = () => {
         {!loading && results.length > 0 && (
           <div className="space-y-4">
             {results.map((psak, index) => (
-              <Card key={index} className="border border-border shadow-sm hover:shadow-md transition-shadow">
+              <Card 
+                key={index} 
+                className="border border-border shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => handlePsakClick(psak)}
+              >
                 <CardHeader>
                   <CardTitle className="text-lg font-semibold text-foreground">
                     {psak.title}
@@ -150,9 +162,9 @@ const SearchPsakDinTab = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-foreground mb-3">{psak.summary}</p>
+                  <p className="text-foreground mb-3 line-clamp-2">{psak.summary}</p>
                   {psak.connection && (
-                    <p className="text-sm text-muted-foreground mb-3 italic">
+                    <p className="text-sm text-muted-foreground mb-3 italic line-clamp-1">
                       {psak.connection}
                     </p>
                   )}
@@ -166,15 +178,20 @@ const SearchPsakDinTab = () => {
                     </div>
                   )}
                   {psak.sourceUrl && (
-                    <a
-                      href={psak.sourceUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <span
+                      onClick={(e) => e.stopPropagation()}
                       className="inline-flex items-center gap-2 text-primary hover:underline text-sm"
                     >
-                      <ExternalLink className="w-4 h-4" />
-                      לפסק הדין המלא
-                    </a>
+                      <a
+                        href={psak.sourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        לפסק הדין המלא
+                      </a>
+                    </span>
                   )}
                 </CardContent>
               </Card>
@@ -182,6 +199,12 @@ const SearchPsakDinTab = () => {
           </div>
         )}
       </div>
+
+      <PsakDinViewDialog 
+        psak={selectedPsak} 
+        open={dialogOpen} 
+        onOpenChange={setDialogOpen} 
+      />
     </div>
   );
 };
