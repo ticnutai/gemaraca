@@ -8,10 +8,10 @@ interface NavigationProps {
 
 const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
   return (
-    <div className="w-full border-b border-border bg-card">
+    <div className="w-full border-b border-border bg-card" dir="rtl">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between py-6">
-          <h1 className="text-3xl font-bold text-foreground">גמרא להלכה</h1>
+        <div className="flex items-center justify-between py-6 flex-row-reverse">
+          <h1 className="text-3xl font-bold text-foreground text-right">גמרא להלכה</h1>
           
           <Tabs value={activeTab} onValueChange={onTabChange} className="w-auto">
             <TabsList className="bg-muted border border-border">

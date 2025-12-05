@@ -343,8 +343,8 @@ const UploadPsakDinTab = () => {
   const progressPercent = progress ? (progress.completed / progress.total) * 100 : 0;
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="container mx-auto px-4 py-8" dir="rtl">
+      <div className="max-w-4xl mx-auto space-y-6 text-right">
         {/* Session Recovery Card */}
         {savedSession && savedSession.results.length > 0 && (
           <Card className="border-2 border-accent/50 bg-accent/5">

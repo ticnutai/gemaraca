@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { MASECHTOT, SEDARIM, Masechet } from "@/lib/masechtotData";
 import { toHebrewNumeral } from "@/lib/hebrewNumbers";
 import { 
-  Search, BookOpen, Scale, ChevronLeft, TrendingUp, 
+  Search, BookOpen, Scale, ChevronRight, TrendingUp, 
   Database, Tag, Filter, BarChart3, Sparkles, Building2, Calendar
 } from "lucide-react";
 import PsakDinViewDialog from "./PsakDinViewDialog";
@@ -297,8 +297,8 @@ const GemaraPsakDinIndex = () => {
     );
   }
 
-  return (
-    <div className="space-y-6">
+return (
+    <div className="space-y-6 text-right" dir="rtl">
       {/* כותרת וסטטיסטיקות ראשיות */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="border-border bg-gradient-to-br from-primary/5 to-transparent">
@@ -517,17 +517,17 @@ const GemaraPsakDinIndex = () => {
                   >
                     {filteredIndex.map((entry) => (
                       <AccordionItem key={entry.masechet.englishName} value={entry.masechet.englishName}>
-                        <AccordionTrigger className="hover:no-underline">
-                          <div className="flex items-center justify-between w-full pl-4">
+                        <AccordionTrigger className="hover:no-underline flex-row-reverse">
+                          <div className="flex items-center justify-between w-full pr-4">
+                            <Badge variant="secondary" className="mr-2">
+                              {entry.totalPsakim} פסקים
+                            </Badge>
                             <div className="flex items-center gap-2">
-                              <span className="font-medium">{entry.masechet.hebrewName}</span>
                               <span className="text-xs text-muted-foreground">
                                 ({getCoveragePercent(entry)}% כיסוי)
                               </span>
+                              <span className="font-medium">{entry.masechet.hebrewName}</span>
                             </div>
-                            <Badge variant="secondary" className="ml-2">
-                              {entry.totalPsakim} פסקים
-                            </Badge>
                           </div>
                         </AccordionTrigger>
                         <AccordionContent>
@@ -608,25 +608,25 @@ const GemaraPsakDinIndex = () => {
                         onClick={() => handlePsakClick(link.psakei_din)}
                       >
                         <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1">
+                          <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0 mt-1" />
+                          <div className="flex-1 text-right">
                             <h4 className="font-medium text-foreground line-clamp-1">
                               {link.psakei_din?.title}
                             </h4>
-                            <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
+                            <div className="flex items-center justify-end gap-3 text-sm text-muted-foreground mt-1">
                               <span className="flex items-center gap-1">
-                                <Building2 className="w-3 h-3" />
                                 {link.psakei_din?.court}
+                                <Building2 className="w-3 h-3" />
                               </span>
                               <span className="flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
                                 {link.psakei_din?.year}
+                                <Calendar className="w-3 h-3" />
                               </span>
                             </div>
-                            <p className="text-sm text-foreground/80 mt-2 line-clamp-2">
+                            <p className="text-sm text-foreground/80 mt-2 line-clamp-2 text-right">
                               {link.connection_explanation}
                             </p>
                           </div>
-                          <ChevronLeft className="w-5 h-5 text-muted-foreground shrink-0" />
                         </div>
                         {link.psakei_din?.tags && link.psakei_din.tags.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-2">
