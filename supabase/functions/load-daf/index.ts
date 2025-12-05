@@ -7,6 +7,47 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// רשימת המסכתות עם שמות Sefaria
+const MASECHTOT_MAP: Record<string, string> = {
+  "ברכות": "Berakhot",
+  "שבת": "Shabbat",
+  "עירובין": "Eruvin",
+  "פסחים": "Pesachim",
+  "שקלים": "Shekalim",
+  "יומא": "Yoma",
+  "סוכה": "Sukkah",
+  "ביצה": "Beitzah",
+  "ראש השנה": "Rosh_Hashanah",
+  "תענית": "Taanit",
+  "מגילה": "Megillah",
+  "מועד קטן": "Moed_Katan",
+  "חגיגה": "Chagigah",
+  "יבמות": "Yevamot",
+  "כתובות": "Ketubot",
+  "נדרים": "Nedarim",
+  "נזיר": "Nazir",
+  "סוטה": "Sotah",
+  "גיטין": "Gittin",
+  "קידושין": "Kiddushin",
+  "בבא קמא": "Bava_Kamma",
+  "בבא מציעא": "Bava_Metzia",
+  "בבא בתרא": "Bava_Batra",
+  "סנהדרין": "Sanhedrin",
+  "מכות": "Makkot",
+  "שבועות": "Shevuot",
+  "עבודה זרה": "Avodah_Zarah",
+  "הוריות": "Horayot",
+  "זבחים": "Zevachim",
+  "מנחות": "Menachot",
+  "חולין": "Chullin",
+  "בכורות": "Bekhorot",
+  "ערכין": "Arakhin",
+  "תמורה": "Temurah",
+  "כריתות": "Keritot",
+  "מעילה": "Meilah",
+  "נידה": "Niddah",
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -17,9 +58,13 @@ serve(async (req) => {
     const body = await req.json();
     console.log('Request body:', JSON.stringify(body));
     
-    const { dafNumber, sugya_id, title } = body;
+    const { dafNumber, sugya_id, title, masechet } = body;
     
-    console.log('Parsed params:', { dafNumber, sugya_id, title });
+    // ברירת מחדל - בבא בתרא (לתאימות אחורה)
+    const masechetName = masechet || "בבא בתרא";
+    const sefariaName = MASECHTOT_MAP[masechetName] || "Bava_Batra";
+    
+    console.log('Parsed params:', { dafNumber, sugya_id, title, masechetName, sefariaName });
     
     if (!dafNumber || !sugya_id || !title) {
       console.error('Missing required parameters:', { dafNumber, sugya_id, title });
@@ -29,7 +74,7 @@ serve(async (req) => {
       );
     }
 
-    console.log('Loading daf:', dafNumber, 'sugya_id:', sugya_id, 'title:', title);
+    console.log('Loading daf:', dafNumber, 'sugya_id:', sugya_id, 'title:', title, 'masechet:', masechetName);
 
     // Create Supabase client
     console.log('Creating Supabase client...');
@@ -60,8 +105,8 @@ serve(async (req) => {
       return result + '׳';
     };
 
-    const dafYomi = `${toHebrewNumeral(dafNumber)} ע״א`;
-    const sefariaRef = `Bava_Batra.${dafNumber}a`;
+    const dafYomi = `${masechetName} ${toHebrewNumeral(dafNumber)} ע״א`;
+    const sefariaRef = `${sefariaName}.${dafNumber}a`;
     
     console.log('Generated dafYomi:', dafYomi);
     console.log('Generated sefariaRef:', sefariaRef);

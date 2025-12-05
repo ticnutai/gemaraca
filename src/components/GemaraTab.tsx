@@ -8,9 +8,11 @@ import { useNavigate } from "react-router-dom";
 import { toHebrewNumeral } from "@/lib/hebrewNumbers";
 import { Download, CheckSquare, Square, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { MASECHTOT, SEDARIM, getMasechetByHebrewName, Masechet } from "@/lib/masechtotData";
+import MasechetDownloader from "./MasechetDownloader";
 
 const GemaraTab = () => {
-  const [selectedMasechet, setSelectedMasechet] = useState("בבא מציעא");
+  const [selectedMasechet, setSelectedMasechet] = useState<Masechet>(MASECHTOT.find(m => m.hebrewName === "בבא בתרא")!);
   const [pages, setPages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingDaf, setLoadingDaf] = useState<number | null>(null);
@@ -22,13 +24,16 @@ const GemaraTab = () => {
 
   useEffect(() => {
     loadPages();
-  }, []);
+  }, [selectedMasechet]);
 
   const loadPages = async () => {
+    setLoading(true);
     try {
+      // טעינת דפים לפי מסכת נבחרת
       const { data, error } = await supabase
         .from('gemara_pages')
         .select('*')
+        .like('sugya_id', `${selectedMasechet.sefariaName.toLowerCase()}%`)
         .order('daf_number');
 
       if (error) throw error;
@@ -42,25 +47,26 @@ const GemaraTab = () => {
 
   const handleLoadDaf = async (dafNumber: number) => {
     setLoadingDaf(dafNumber);
-    console.log('Starting to load daf:', dafNumber);
+    console.log('Starting to load daf:', dafNumber, 'from', selectedMasechet.hebrewName);
     
     try {
       const hebrewNumber = toHebrewNumeral(dafNumber);
-      const sugya_id = `daf-${dafNumber}`;
-      const title = `דף ${hebrewNumber}`;
+      const sugya_id = `${selectedMasechet.sefariaName.toLowerCase()}_${dafNumber}a`;
+      const title = `${selectedMasechet.hebrewName} דף ${hebrewNumber}`;
       
-      console.log('Loading daf with params:', { dafNumber, sugya_id, title });
+      console.log('Loading daf with params:', { dafNumber, sugya_id, title, masechet: selectedMasechet.hebrewName });
       
       toast({
         title: "טוען דף...",
-        description: `מוריד מידע עבור דף ${hebrewNumber}`,
+        description: `מוריד מידע עבור ${title}`,
       });
 
       const { data, error } = await supabase.functions.invoke('load-daf', {
         body: { 
           dafNumber,
           sugya_id,
-          title
+          title,
+          masechet: selectedMasechet.hebrewName
         }
       });
 
@@ -73,7 +79,7 @@ const GemaraTab = () => {
 
       toast({
         title: "הדף נטען בהצלחה",
-        description: `דף ${hebrewNumber} זמין כעת`,
+        description: `${title} זמין כעת`,
       });
 
       console.log('Reloading pages...');
@@ -112,11 +118,11 @@ const GemaraTab = () => {
     for (const dafNumber of dafimArray) {
       try {
         const hebrewNumber = toHebrewNumeral(dafNumber);
-        const sugya_id = `daf-${dafNumber}`;
-        const title = `דף ${hebrewNumber}`;
+        const sugya_id = `${selectedMasechet.sefariaName.toLowerCase()}_${dafNumber}a`;
+        const title = `${selectedMasechet.hebrewName} דף ${hebrewNumber}`;
 
         const { error } = await supabase.functions.invoke('load-daf', {
-          body: { dafNumber, sugya_id, title }
+          body: { dafNumber, sugya_id, title, masechet: selectedMasechet.hebrewName }
         });
 
         if (error) throw error;
@@ -158,8 +164,25 @@ const GemaraTab = () => {
     setSelectedDafim(new Set());
   };
 
-  const allDafim = Array.from({ length: 30 }, (_, i) => i + 2);
-  const unloadedCount = allDafim.filter(dafNum => !pages.find(p => p.daf_number === dafNum)).length;
+  const handleMasechetChange = (hebrewName: string) => {
+    const masechet = getMasechetByHebrewName(hebrewName);
+    if (masechet) {
+      setSelectedMasechet(masechet);
+      setSelectedDafim(new Set());
+      setMultiSelectMode(false);
+    }
+  };
+
+  // דפים מתחילים מב' (2)
+  const allDafim = Array.from({ length: selectedMasechet.maxDaf - 1 }, (_, i) => i + 2);
+  const loadedDafNumbers = pages.map(p => p.daf_number);
+  const unloadedCount = allDafim.filter(dafNum => !loadedDafNumbers.includes(dafNum)).length;
+
+  // קיבוץ מסכתות לפי סדר
+  const groupedMasechtot = SEDARIM.map(seder => ({
+    seder,
+    masechtot: MASECHTOT.filter(m => m.seder === seder)
+  }));
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -170,22 +193,38 @@ const GemaraTab = () => {
               <label className="text-sm font-medium text-foreground mb-2 block">
                 בחר מסכת
               </label>
-              <Select value={selectedMasechet} onValueChange={setSelectedMasechet}>
+              <Select value={selectedMasechet.hebrewName} onValueChange={handleMasechetChange}>
                 <SelectTrigger className="w-full bg-card border-border">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-popover border-border">
-                  <SelectItem value="בבא מציעא">בבא מציעא</SelectItem>
-                  <SelectItem value="בבא קמא">בבא קמא</SelectItem>
-                  <SelectItem value="בבא בתרא">בבא בתרא</SelectItem>
+                <SelectContent className="bg-popover border-border max-h-[400px]">
+                  {groupedMasechtot.map(group => (
+                    <div key={group.seder}>
+                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
+                        סדר {group.seder}
+                      </div>
+                      {group.masechtot.map(masechet => (
+                        <SelectItem key={masechet.englishName} value={masechet.hebrewName}>
+                          {masechet.hebrewName} ({masechet.maxDaf - 1} דפים)
+                        </SelectItem>
+                      ))}
+                    </div>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
+            {/* הורדת מסכת שלמה */}
+            <MasechetDownloader
+              masechet={selectedMasechet}
+              loadedPages={loadedDafNumbers}
+              onComplete={loadPages}
+            />
+
             <div>
               <div className="flex items-center justify-between mb-3">
                 <label className="text-sm font-medium text-foreground">
-                  בחר דף
+                  בחר דף ({loadedDafNumbers.length}/{allDafim.length} טעונים)
                 </label>
                 
                 <div className="flex items-center gap-2">
@@ -257,67 +296,70 @@ const GemaraTab = () => {
                 </div>
               )}
 
-              <div className="grid grid-cols-5 gap-2">
-                {allDafim.map((dafNum) => {
-                  const loadedPage = pages.find(p => p.daf_number === dafNum);
-                  const isLoaded = !!loadedPage;
-                  const isSelected = selectedDafim.has(dafNum);
+              {loading ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  טוען...
+                </div>
+              ) : (
+                <div className="grid grid-cols-8 sm:grid-cols-10 gap-2">
+                  {allDafim.map((dafNum) => {
+                    const loadedPage = pages.find(p => p.daf_number === dafNum);
+                    const isLoaded = !!loadedPage;
+                    const isSelected = selectedDafim.has(dafNum);
 
-                  return (
-                    <div key={dafNum} className="relative group">
-                      {/* Checkbox למצב בחירה מרובה */}
-                      {multiSelectMode && !isLoaded && (
-                        <div 
-                          className="absolute -top-1 -right-1 z-10"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleDafSelection(dafNum);
-                          }}
-                        >
-                          <Checkbox
-                            checked={isSelected}
-                            className="w-5 h-5 bg-background border-2 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                          />
-                        </div>
-                      )}
-                      
-                      <Button
-                        variant={isLoaded ? "default" : isSelected ? "secondary" : "outline"}
-                        className={`w-full h-12 relative ${isSelected && !isLoaded ? 'ring-2 ring-primary ring-offset-1' : ''}`}
-                        onClick={() => {
-                          if (multiSelectMode && !isLoaded) {
-                            toggleDafSelection(dafNum);
-                          } else if (isLoaded) {
-                            navigate(`/sugya/${loadedPage.sugya_id}`);
-                          }
-                        }}
-                        disabled={(!isLoaded && !multiSelectMode) || loadingDaf === dafNum || loadingMultiple}
-                      >
-                        {loadingDaf === dafNum ? (
-                          <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                            <span className="text-xs">טוען...</span>
+                    return (
+                      <div key={dafNum} className="relative group">
+                        {/* Checkbox למצב בחירה מרובה */}
+                        {multiSelectMode && !isLoaded && (
+                          <div 
+                            className="absolute -top-1 -right-1 z-10"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleDafSelection(dafNum);
+                            }}
+                          >
+                            <Checkbox
+                              checked={isSelected}
+                              className="w-4 h-4 bg-background border-2 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                            />
                           </div>
-                        ) : (
-                          toHebrewNumeral(dafNum)
                         )}
-                      </Button>
-                      
-                      {/* כפתור הורדה בודד (רק כשלא במצב בחירה מרובה) */}
-                      {!isLoaded && !multiSelectMode && loadingDaf !== dafNum && (
+                        
                         <Button
-                          size="sm"
-                          variant="ghost"
-                          className="absolute -top-1 -left-1 opacity-0 group-hover:opacity-100 transition-opacity w-7 h-7 p-0 rounded-full bg-accent text-accent-foreground hover:bg-accent/90"
-                          onClick={() => handleLoadDaf(dafNum)}
+                          variant={isLoaded ? "default" : isSelected ? "secondary" : "outline"}
+                          className={`w-full h-10 text-xs relative ${isSelected && !isLoaded ? 'ring-2 ring-primary ring-offset-1' : ''}`}
+                          onClick={() => {
+                            if (multiSelectMode && !isLoaded) {
+                              toggleDafSelection(dafNum);
+                            } else if (isLoaded) {
+                              navigate(`/sugya/${loadedPage.sugya_id}`);
+                            }
+                          }}
+                          disabled={(!isLoaded && !multiSelectMode) || loadingDaf === dafNum || loadingMultiple}
                         >
-                          <Download className="w-3 h-3" />
+                          {loadingDaf === dafNum ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            toHebrewNumeral(dafNum)
+                          )}
                         </Button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+                        
+                        {/* כפתור הורדה בודד (רק כשלא במצב בחירה מרובה) */}
+                        {!isLoaded && !multiSelectMode && loadingDaf !== dafNum && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="absolute -top-1 -left-1 opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 p-0 rounded-full bg-accent text-accent-foreground hover:bg-accent/90"
+                            onClick={() => handleLoadDaf(dafNum)}
+                          >
+                            <Download className="w-3 h-3" />
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </Card>
