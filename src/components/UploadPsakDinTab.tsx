@@ -6,97 +6,75 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, FileText, Archive, X, Loader2, CheckCircle, AlertCircle, FolderUp, Sparkles, Brain, Play, Pause, RefreshCw, Copy, Ban } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { Upload, FileText, Archive, X, Loader2, CheckCircle, AlertCircle, FolderUp, Sparkles, Brain, Play, Pause, RefreshCw, Copy, Ban, Hash } from "lucide-react";
+import { useToast, toast } from "@/hooks/use-toast";
+import { useUploadStore } from "@/stores/uploadStore";
+import { calculateFileHashes } from "@/lib/fileHash";
+import UploadSummaryDialog from "./UploadSummaryDialog";
 
 const BATCH_SIZE = 5;
-const UPLOAD_SESSION_KEY = "upload-session";
-
-interface UploadProgress {
-  total: number;
-  completed: number;
-  current: string;
-  successful: number;
-  failed: number;
-  skipped: number;
-}
-
-interface UploadSession {
-  metadata: Record<string, any>;
-  results: any[];
-  errors: string[];
-  pendingAnalysis: string[];
-  timestamp: number;
-}
 
 interface DuplicateFile {
   name: string;
-  existingTitle: string;
+  reason: 'title' | 'hash';
+  existingTitle?: string;
 }
 
 const UploadPsakDinTab = () => {
   const [files, setFiles] = useState<File[]>([]);
-  const [uploading, setUploading] = useState(false);
-  const [paused, setPaused] = useState(false);
-  const [results, setResults] = useState<any[]>([]);
-  const [errors, setErrors] = useState<string[]>([]);
-  const [progress, setProgress] = useState<UploadProgress | null>(null);
   const [duplicates, setDuplicates] = useState<DuplicateFile[]>([]);
   const [checkingDuplicates, setCheckingDuplicates] = useState(false);
+  const [hashProgress, setHashProgress] = useState<{ current: number; total: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
   const pauseRef = useRef(false);
-  const { toast } = useToast();
+  const { toast: showToast } = useToast();
   
   const [court, setCourt] = useState("");
   const [year, setYear] = useState(new Date().getFullYear().toString());
   const [tags, setTags] = useState("");
-  const [analyzing, setAnalyzing] = useState(false);
-  const [analysisProgress, setAnalysisProgress] = useState({ current: 0, total: 0 });
+  const [showSummary, setShowSummary] = useState(false);
   
-  // Session recovery
-  const [savedSession, setSavedSession] = useState<UploadSession | null>(null);
+  // Zustand store
+  const {
+    session,
+    startSession,
+    updateProgress,
+    addResult,
+    addError,
+    setStatus,
+    pauseSession,
+    resumeSession,
+    startAnalysis,
+    updateAnalysisProgress,
+    markAnalyzed,
+    completeSession,
+    clearSession,
+    addFileHash,
+    hasFileHash,
+    getFileByHash,
+  } = useUploadStore();
 
-  // Load saved session on mount
-  useEffect(() => {
-    const saved = localStorage.getItem(UPLOAD_SESSION_KEY);
-    if (saved) {
-      try {
-        const session = JSON.parse(saved) as UploadSession;
-        if (Date.now() - session.timestamp < 24 * 60 * 60 * 1000) {
-          setSavedSession(session);
-        } else {
-          localStorage.removeItem(UPLOAD_SESSION_KEY);
-        }
-      } catch {}
-    }
-  }, []);
+  const isUploading = session?.status === 'uploading';
+  const isPaused = session?.status === 'paused';
+  const isAnalyzing = session?.status === 'analyzing';
+  const isActive = isUploading || isPaused || isAnalyzing;
 
-  const saveSession = (session: Partial<UploadSession>) => {
-    const fullSession: UploadSession = {
-      metadata: session.metadata || { court, year: parseInt(year), tags: tags.split(',').filter(Boolean) },
-      results: session.results || results,
-      errors: session.errors || errors,
-      pendingAnalysis: session.pendingAnalysis || [],
-      timestamp: Date.now(),
-    };
-    localStorage.setItem(UPLOAD_SESSION_KEY, JSON.stringify(fullSession));
-    setSavedSession(fullSession);
-  };
-
-  const clearSession = () => {
-    localStorage.removeItem(UPLOAD_SESSION_KEY);
-    setSavedSession(null);
-  };
-
-  // Check for duplicates when files are selected
+  // Check for duplicates - both by title and content hash
   const checkDuplicates = useCallback(async (filesToCheck: File[]) => {
     if (filesToCheck.length === 0) return;
     
     setCheckingDuplicates(true);
     
     try {
-      // Get all existing titles from database
+      // Step 1: Calculate file hashes
+      setHashProgress({ current: 0, total: filesToCheck.length });
+      const fileHashes = await calculateFileHashes(filesToCheck, (completed, total) => {
+        setHashProgress({ current: completed, total });
+      });
+      setHashProgress(null);
+      
+      // Step 2: Get existing titles from database
       const { data: existingPsakim } = await supabase
         .from('psakei_din')
         .select('title');
@@ -110,30 +88,48 @@ const UploadPsakDinTab = () => {
       
       for (const file of filesToCheck) {
         const baseName = file.name.replace(/\.[^/.]+$/, '').toLowerCase().trim();
+        const hash = fileHashes.get(file.name);
         
-        // Check if file name matches existing title
-        const isDuplicate = existingTitles.has(baseName) || 
+        // Check content hash first (more accurate)
+        if (hash && hasFileHash(hash)) {
+          foundDuplicates.push({
+            name: file.name,
+            reason: 'hash',
+            existingTitle: getFileByHash(hash),
+          });
+          continue;
+        }
+        
+        // Check title match
+        const titleMatch = existingTitles.has(baseName) || 
           Array.from(existingTitles).some(title => 
             title.includes(baseName) || baseName.includes(title)
           );
         
-        if (isDuplicate) {
+        if (titleMatch) {
           foundDuplicates.push({
             name: file.name,
+            reason: 'title',
             existingTitle: Array.from(existingTitles).find(t => 
               t.includes(baseName) || baseName.includes(t)
             ) || baseName
           });
         } else {
           uniqueFiles.push(file);
+          // Save hash for future duplicate detection
+          if (hash) {
+            addFileHash(hash, baseName);
+          }
         }
       }
       
       if (foundDuplicates.length > 0) {
-        setDuplicates(foundDuplicates);
+        setDuplicates(prev => [...prev, ...foundDuplicates]);
+        
+        // Show toast notification
         toast({
           title: `נמצאו ${foundDuplicates.length} קבצים כפולים`,
-          description: "קבצים אלו כבר קיימים במערכת והוסרו מההעלאה",
+          description: "קבצים אלו הוסרו מההעלאה",
           variant: "destructive",
         });
       }
@@ -146,12 +142,11 @@ const UploadPsakDinTab = () => {
       
     } catch (error) {
       console.error('Error checking duplicates:', error);
-      // If check fails, add all files
       setFiles(prev => [...prev, ...filesToCheck]);
     } finally {
       setCheckingDuplicates(false);
     }
-  }, [toast]);
+  }, [hasFileHash, getFileByHash, addFileHash]);
 
   const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || []);
@@ -161,14 +156,14 @@ const UploadPsakDinTab = () => {
     });
     
     if (validFiles.length < selectedFiles.length) {
-      toast({
+      showToast({
         title: `${selectedFiles.length - validFiles.length} קבצים לא נתמכים הוסרו`,
         variant: "destructive",
       });
     }
     
     await checkDuplicates(validFiles);
-  }, [toast, checkDuplicates]);
+  }, [showToast, checkDuplicates]);
 
   const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
@@ -220,33 +215,26 @@ const UploadPsakDinTab = () => {
 
   const togglePause = () => {
     pauseRef.current = !pauseRef.current;
-    setPaused(pauseRef.current);
     
     if (pauseRef.current) {
+      pauseSession();
       toast({ title: "ההעלאה הושהתה", description: "לחץ המשך כדי להמשיך" });
     } else {
+      resumeSession();
       toast({ title: "ממשיך בהעלאה..." });
     }
   };
 
   const handleUpload = async (withAI: boolean = false) => {
     if (files.length === 0) {
-      toast({
+      showToast({
         title: "אנא בחר קבצים להעלאה",
         variant: "destructive",
       });
       return;
     }
 
-    setUploading(true);
-    setPaused(false);
     pauseRef.current = false;
-    
-    let allResults: any[] = [];
-    let allErrors: string[] = [];
-    
-    setResults(allResults);
-    setErrors(allErrors);
     
     const metadata = {
       court: court || undefined,
@@ -254,13 +242,16 @@ const UploadPsakDinTab = () => {
       tags: tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : [],
     };
 
+    // Start session in store
+    startSession(metadata);
+    
     const filesToUpload = files;
     const batches: File[][] = [];
     for (let i = 0; i < filesToUpload.length; i += BATCH_SIZE) {
       batches.push(filesToUpload.slice(i, i + BATCH_SIZE));
     }
 
-    setProgress({
+    updateProgress({
       total: filesToUpload.length,
       completed: 0,
       current: '',
@@ -269,8 +260,12 @@ const UploadPsakDinTab = () => {
       skipped: duplicates.length,
     });
 
+    const allResults: any[] = [];
+    const allErrors: string[] = [];
+
     try {
       for (let i = 0; i < batches.length; i++) {
+        // Wait while paused
         while (pauseRef.current) {
           await new Promise(resolve => setTimeout(resolve, 500));
         }
@@ -278,33 +273,36 @@ const UploadPsakDinTab = () => {
         const batch = batches[i];
         const batchFileNames = batch.map(f => f.name).join(', ');
         
-        setProgress(prev => prev ? {
-          ...prev,
+        updateProgress({
           current: batchFileNames.length > 50 ? batchFileNames.substring(0, 50) + '...' : batchFileNames,
-        } : null);
+        });
 
         const { results: batchResults, errors: batchErrors } = await uploadBatch(batch, metadata);
         
-        allResults.push(...batchResults);
-        allErrors.push(...batchErrors);
-
-        saveSession({
-          metadata,
-          results: allResults,
-          errors: allErrors,
-          pendingAnalysis: withAI ? allResults.map(r => r.id) : [],
+        // Add results to store
+        batchResults.forEach(result => {
+          allResults.push(result);
+          addResult({
+            id: result.id,
+            title: result.title || result.fileName,
+            fileName: result.fileName,
+            success: true,
+          });
+        });
+        
+        // Add errors to store
+        batchErrors.forEach(error => {
+          allErrors.push(error);
+          addError(error);
         });
 
-        setProgress(prev => prev ? {
-          ...prev,
+        updateProgress({
           completed: Math.min((i + 1) * BATCH_SIZE, filesToUpload.length),
           successful: allResults.length,
           failed: allErrors.length,
-        } : null);
+        });
 
-        setResults([...allResults]);
-        setErrors([...allErrors]);
-
+        // Remove uploaded files from the list
         const uploadedNames = new Set(batch.map(f => f.name));
         setFiles(prev => prev.filter(f => !uploadedNames.has(f.name)));
 
@@ -322,9 +320,12 @@ const UploadPsakDinTab = () => {
 
       if (withAI && allResults.length > 0) {
         await runAIAnalysis(allResults);
+      } else {
+        completeSession();
+        setShowSummary(true);
       }
 
-      clearSession();
+      // Reset form
       setCourt("");
       setYear(new Date().getFullYear().toString());
       setTags("");
@@ -332,41 +333,37 @@ const UploadPsakDinTab = () => {
 
     } catch (error) {
       console.error('Upload error:', error);
-      saveSession({
-        metadata,
-        results: allResults,
-        errors: allErrors,
-        pendingAnalysis: withAI ? allResults.filter(r => !r.analyzed).map(r => r.id) : [],
-      });
+      setStatus('error');
       
-      toast({
+      showToast({
         title: "שגיאה בהעלאה",
         description: "ההעלאות שהצליחו נשמרו. תוכל להמשיך מאוחר יותר.",
         variant: "destructive",
       });
-    } finally {
-      setUploading(false);
-      setPaused(false);
-      setProgress(null);
     }
   };
 
   const runAIAnalysis = async (psakimToAnalyze: any[]) => {
-    setAnalyzing(true);
-    setAnalysisProgress({ current: 0, total: psakimToAnalyze.length });
+    startAnalysis(psakimToAnalyze.map(p => p.id));
     
     for (let i = 0; i < psakimToAnalyze.length; i++) {
+      // Wait while paused
       while (pauseRef.current) {
         await new Promise(resolve => setTimeout(resolve, 500));
       }
 
       const result = psakimToAnalyze[i];
-      setAnalysisProgress({ current: i + 1, total: psakimToAnalyze.length });
+      updateAnalysisProgress({ 
+        current: i + 1, 
+        total: psakimToAnalyze.length,
+        currentTitle: result.title || result.fileName,
+      });
       
       try {
         await supabase.functions.invoke('analyze-psak-din', {
           body: { psakId: result.id }
         });
+        markAnalyzed(result.id);
         console.log(`Analyzed psak ${result.id}`);
       } catch (err) {
         console.error(`Error analyzing psak ${result.id}:`, err);
@@ -377,7 +374,9 @@ const UploadPsakDinTab = () => {
       }
     }
     
-    setAnalyzing(false);
+    completeSession();
+    setShowSummary(true);
+    
     toast({
       title: "ניתוח AI הושלם",
       description: `נותחו ${psakimToAnalyze.length} פסקי דין וקושרו למקורות`,
@@ -385,16 +384,15 @@ const UploadPsakDinTab = () => {
   };
 
   const resumeAnalysis = async () => {
-    if (!savedSession?.pendingAnalysis?.length) return;
+    if (!session?.pendingAnalysis?.length) return;
     
     const { data: psakim } = await supabase
       .from('psakei_din')
       .select('*')
-      .in('id', savedSession.pendingAnalysis);
+      .in('id', session.pendingAnalysis);
     
     if (psakim && psakim.length > 0) {
       await runAIAnalysis(psakim);
-      clearSession();
     }
   };
 
@@ -404,28 +402,29 @@ const UploadPsakDinTab = () => {
     return <FileText className="w-4 h-4" />;
   };
 
-  const progressPercent = progress ? (progress.completed / progress.total) * 100 : 0;
+  const localProgress = session?.uploadProgress;
+  const progressPercent = localProgress ? (localProgress.completed / localProgress.total) * 100 : 0;
 
   return (
     <div className="container mx-auto px-4 py-8" dir="rtl">
       <div className="max-w-4xl mx-auto space-y-6 text-right">
         {/* Session Recovery Card */}
-        {savedSession && savedSession.results.length > 0 && (
+        {session && session.status === 'paused' && session.results.length > 0 && (
           <Card className="border-2 border-accent/50 bg-accent/5">
             <CardContent className="p-4">
               <div className="flex items-center justify-between flex-row-reverse">
                 <div className="flex items-center gap-3 flex-row-reverse">
                   <RefreshCw className="w-5 h-5 text-accent" />
                   <div className="text-right">
-                    <p className="font-medium">יש העלאה קודמת שלא הושלמה</p>
+                    <p className="font-medium">יש העלאה שהושהתה</p>
                     <p className="text-sm text-muted-foreground">
-                      {savedSession.results.length} פסקים הועלו, 
-                      {savedSession.pendingAnalysis?.length || 0} ממתינים לניתוח
+                      {session.results.length} פסקים הועלו, 
+                      {session.pendingAnalysis?.length || 0} ממתינים לניתוח
                     </p>
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  {savedSession.pendingAnalysis?.length > 0 && (
+                  {session.pendingAnalysis?.length > 0 && (
                     <Button size="sm" onClick={resumeAnalysis} className="gap-1">
                       <Sparkles className="w-4 h-4" />
                       המשך ניתוח
@@ -453,7 +452,13 @@ const UploadPsakDinTab = () => {
               <div className="flex flex-wrap gap-2 mb-3">
                 {duplicates.slice(0, 10).map((dup, idx) => (
                   <Badge key={idx} variant="outline" className="text-xs flex items-center gap-1">
-                    <Ban className="w-3 h-3" />
+                    <span title={dup.reason === 'hash' ? "זוהה לפי תוכן" : "זוהה לפי שם"}>
+                      {dup.reason === 'hash' ? (
+                        <Hash className="w-3 h-3" />
+                      ) : (
+                        <Ban className="w-3 h-3" />
+                      )}
+                    </span>
                     {dup.name}
                   </Badge>
                 ))}
@@ -476,7 +481,7 @@ const UploadPsakDinTab = () => {
               <Upload className="w-5 h-5" />
               העלאת פסקי דין
               <span className="text-sm font-normal text-muted-foreground">
-                (זיהוי כפילויות אוטומטי)
+                (זיהוי כפילויות לפי תוכן ושם)
               </span>
             </CardTitle>
           </CardHeader>
@@ -486,7 +491,7 @@ const UploadPsakDinTab = () => {
               className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:border-primary transition-colors bg-muted/20 ${
                 checkingDuplicates ? 'border-accent' : 'border-border'
               }`}
-              onClick={() => !checkingDuplicates && fileInputRef.current?.click()}
+              onClick={() => !checkingDuplicates && !isActive && fileInputRef.current?.click()}
               onDrop={handleDrop}
               onDragOver={handleDragOver}
             >
@@ -510,7 +515,12 @@ const UploadPsakDinTab = () => {
               {checkingDuplicates ? (
                 <>
                   <Loader2 className="w-12 h-12 mx-auto text-accent mb-4 animate-spin" />
-                  <p className="text-foreground font-medium">בודק קבצים כפולים...</p>
+                  <p className="text-foreground font-medium">
+                    {hashProgress 
+                      ? `מחשב hash לקבצים... (${hashProgress.current}/${hashProgress.total})`
+                      : 'בודק קבצים כפולים...'
+                    }
+                  </p>
                 </>
               ) : (
                 <>
@@ -525,7 +535,7 @@ const UploadPsakDinTab = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={checkingDuplicates}
+                  disabled={checkingDuplicates || isActive}
                   onClick={(e) => {
                     e.stopPropagation();
                     folderInputRef.current?.click();
@@ -579,34 +589,34 @@ const UploadPsakDinTab = () => {
               </div>
             )}
 
-            {/* Progress with Pause/Resume */}
-            {progress && (
+            {/* Progress in Tab (minimal, since we have global progress) */}
+            {isActive && localProgress && (
               <div className="space-y-2 p-4 bg-muted/20 rounded-lg">
                 <div className="flex justify-between items-center text-sm flex-row-reverse">
-                  <span>מעלה: {progress.current}</span>
+                  <span>מעלה: {localProgress.current}</span>
                   <div className="flex items-center gap-2">
-                    <span>{progress.completed}/{progress.total}</span>
+                    <span>{localProgress.completed}/{localProgress.total}</span>
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={togglePause}
                       className="h-7 w-7 p-0"
                     >
-                      {paused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+                      {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
                     </Button>
                   </div>
                 </div>
                 <Progress value={progressPercent} className="h-2" />
                 <div className="flex justify-between text-xs text-muted-foreground flex-row-reverse">
-                  <span className="text-green-600">הצליחו: {progress.successful}</span>
-                  {progress.failed > 0 && (
-                    <span className="text-destructive">נכשלו: {progress.failed}</span>
+                  <span className="text-green-600">הצליחו: {localProgress.successful}</span>
+                  {localProgress.failed > 0 && (
+                    <span className="text-destructive">נכשלו: {localProgress.failed}</span>
                   )}
-                  {progress.skipped > 0 && (
-                    <span className="text-accent">דולגו (כפולים): {progress.skipped}</span>
+                  {localProgress.skipped > 0 && (
+                    <span className="text-accent">דולגו (כפולים): {localProgress.skipped}</span>
                   )}
                 </div>
-                {paused && (
+                {isPaused && (
                   <p className="text-xs text-accent text-center">ההעלאה מושהית - לחץ ▶ להמשך</p>
                 )}
               </div>
@@ -622,6 +632,7 @@ const UploadPsakDinTab = () => {
                   onChange={(e) => setCourt(e.target.value)}
                   placeholder="לדוגמה: בית הדין הרבני"
                   className="bg-card border-border text-right"
+                  disabled={isActive}
                 />
               </div>
               <div className="space-y-2">
@@ -632,6 +643,7 @@ const UploadPsakDinTab = () => {
                   value={year}
                   onChange={(e) => setYear(e.target.value)}
                   className="bg-card border-border text-right"
+                  disabled={isActive}
                 />
               </div>
               <div className="space-y-2">
@@ -642,38 +654,39 @@ const UploadPsakDinTab = () => {
                   onChange={(e) => setTags(e.target.value)}
                   placeholder="ממונות, נזיקין"
                   className="bg-card border-border text-right"
+                  disabled={isActive}
                 />
               </div>
             </div>
 
             {/* AI Analysis Progress */}
-            {analyzing && (
+            {isAnalyzing && session?.analysisProgress && (
               <div className="space-y-2 p-4 bg-primary/5 rounded-lg border border-primary/20">
                 <div className="flex items-center gap-2 text-sm flex-row-reverse">
                   <Sparkles className="w-4 h-4 text-primary animate-pulse" />
                   <span>מנתח פסקי דין באמצעות AI...</span>
-                  <span className="mr-auto">{analysisProgress.current}/{analysisProgress.total}</span>
+                  <span className="mr-auto">{session.analysisProgress.current}/{session.analysisProgress.total}</span>
                 </div>
                 <Progress 
-                  value={(analysisProgress.current / analysisProgress.total) * 100} 
+                  value={(session.analysisProgress.current / session.analysisProgress.total) * 100} 
                   className="h-2" 
                 />
                 <p className="text-xs text-muted-foreground">
-                  מזהה מקורות תלמודיים ומסווג את פסקי הדין
+                  {session.analysisProgress.currentTitle || 'מזהה מקורות תלמודיים ומסווג את פסקי הדין'}
                 </p>
               </div>
             )}
 
-            {/* Upload Buttons - Separated */}
+            {/* Upload Buttons */}
             <div className="flex gap-3 flex-row-reverse">
               <Button
                 onClick={() => handleUpload(false)}
-                disabled={uploading || analyzing || files.length === 0}
+                disabled={isActive || files.length === 0}
                 variant="outline"
                 className="flex-1 gap-2"
                 size="lg"
               >
-                {uploading ? (
+                {isUploading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
                     מעלה...
@@ -689,16 +702,16 @@ const UploadPsakDinTab = () => {
               
               <Button
                 onClick={() => handleUpload(true)}
-                disabled={uploading || analyzing || files.length === 0}
+                disabled={isActive || files.length === 0}
                 className="flex-1 gap-2"
                 size="lg"
               >
-                {uploading ? (
+                {isUploading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
                     מעלה...
                   </>
-                ) : analyzing ? (
+                ) : isAnalyzing ? (
                   <>
                     <Sparkles className="w-4 h-4 animate-pulse" />
                     מנתח...
@@ -715,34 +728,40 @@ const UploadPsakDinTab = () => {
           </CardContent>
         </Card>
 
-        {/* Results */}
-        {results.length > 0 && (
+        {/* Results - shown from store */}
+        {session && session.results.length > 0 && session.status !== 'uploading' && (
           <Card className="border border-border shadow-sm">
             <CardHeader>
               <CardTitle className="text-lg text-foreground flex items-center gap-2 flex-row-reverse">
                 <CheckCircle className="w-5 h-5 text-green-500" />
-                הועלו בהצלחה ({results.length})
+                הועלו בהצלחה ({session.results.filter(r => r.success).length})
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="max-h-60 overflow-y-auto space-y-1">
-                {results.map((result, index) => (
+                {session.results.filter(r => r.success).map((result, index) => (
                   <div key={index} className="flex items-center gap-2 text-sm py-1 flex-row-reverse">
                     <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                    <span className="truncate text-right">{result.title || result.fileName}</span>
+                    <span className="truncate text-right flex-1">{result.title}</span>
+                    {result.analyzed && (
+                      <Badge variant="secondary" className="text-xs">
+                        <Sparkles className="w-3 h-3 ml-1" />
+                        נותח
+                      </Badge>
+                    )}
                   </div>
                 ))}
               </div>
               
               {/* Analyze uploaded results */}
-              {results.length > 0 && !analyzing && (
+              {!isAnalyzing && session.results.some(r => !r.analyzed) && (
                 <Button
-                  onClick={() => runAIAnalysis(results)}
+                  onClick={() => runAIAnalysis(session.results.filter(r => r.success && !r.analyzed))}
                   className="w-full mt-4 gap-2"
                   variant="outline"
                 >
                   <Sparkles className="w-4 h-4" />
-                  נתח {results.length} פסקים עם AI
+                  נתח {session.results.filter(r => !r.analyzed).length} פסקים עם AI
                 </Button>
               )}
             </CardContent>
@@ -750,17 +769,17 @@ const UploadPsakDinTab = () => {
         )}
 
         {/* Errors */}
-        {errors.length > 0 && (
+        {session && session.errors.length > 0 && (
           <Card className="border border-destructive/50 shadow-sm">
             <CardHeader>
               <CardTitle className="text-lg text-destructive flex items-center gap-2 flex-row-reverse">
                 <AlertCircle className="w-5 h-5" />
-                שגיאות ({errors.length})
+                שגיאות ({session.errors.length})
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="max-h-40 overflow-y-auto space-y-1">
-                {errors.map((error, index) => (
+                {session.errors.map((error, index) => (
                   <div key={index} className="flex items-center gap-2 text-sm py-1 text-destructive flex-row-reverse">
                     <AlertCircle className="w-4 h-4 flex-shrink-0" />
                     <span className="truncate text-right">{error}</span>
@@ -771,6 +790,9 @@ const UploadPsakDinTab = () => {
           </Card>
         )}
       </div>
+      
+      {/* Summary Dialog */}
+      <UploadSummaryDialog open={showSummary} onOpenChange={setShowSummary} />
     </div>
   );
 };
