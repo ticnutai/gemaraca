@@ -7,89 +7,136 @@ All colors MUST be HSL.
 */
 
 @layer base {
-  :root {
-    --background: 40 50% 96%;
-    --foreground: 215 35% 12%;
+  /* Theme: Classic - קרם וזהב */
+  :root,
+  .theme-classic {
+    --background: 42 50% 95%;
+    --foreground: 215 40% 15%;
 
-    --card: 40 40% 98%;
-    --card-foreground: 215 35% 12%;
+    --card: 42 45% 98%;
+    --card-foreground: 215 40% 15%;
 
-    --popover: 40 40% 98%;
-    --popover-foreground: 215 35% 12%;
+    --popover: 42 45% 98%;
+    --popover-foreground: 215 40% 15%;
 
-    --primary: 215 40% 18%;
-    --primary-foreground: 40 50% 96%;
+    --primary: 215 45% 18%;
+    --primary-foreground: 42 50% 95%;
 
-    --secondary: 0 0% 50%;
-    --secondary-foreground: 40 50% 96%;
+    --secondary: 42 30% 88%;
+    --secondary-foreground: 215 40% 15%;
 
-    --muted: 40 35% 92%;
-    --muted-foreground: 0 0% 40%;
+    --muted: 42 35% 90%;
+    --muted-foreground: 215 20% 40%;
 
-    --accent: 45 90% 55%;
-    --accent-foreground: 215 35% 12%;
+    --accent: 43 90% 52%;
+    --accent-foreground: 215 40% 12%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 215 25% 20%;
-    --input: 40 30% 94%;
-    --ring: 45 90% 55%;
+    --border: 42 25% 82%;
+    --input: 42 30% 92%;
+    --ring: 43 90% 52%;
 
     --radius: 0.5rem;
     
-    --shadow-card: 0 1px 3px 0 hsl(215 35% 12% / 0.1);
-    --shadow-hover: 0 4px 12px -2px hsl(215 35% 12% / 0.15);
+    --shadow-card: 0 1px 3px 0 hsl(215 35% 12% / 0.08);
+    --shadow-hover: 0 4px 12px -2px hsl(215 35% 12% / 0.12);
 
-    --sidebar-background: 40 45% 97%;
-    --sidebar-foreground: 215 35% 12%;
-    --sidebar-primary: 215 35% 12%;
-    --sidebar-primary-foreground: 40 50% 96%;
-    --sidebar-accent: 40 35% 93%;
-    --sidebar-accent-foreground: 215 35% 12%;
-    --sidebar-border: 215 25% 20%;
-    --sidebar-ring: 45 90% 55%;
+    --sidebar-background: 42 45% 97%;
+    --sidebar-foreground: 215 40% 15%;
+    --sidebar-primary: 215 40% 15%;
+    --sidebar-primary-foreground: 42 50% 95%;
+    --sidebar-accent: 42 35% 92%;
+    --sidebar-accent-foreground: 215 40% 15%;
+    --sidebar-border: 42 25% 82%;
+    --sidebar-ring: 43 90% 52%;
   }
 
-  .dark {
-    --background: 215 30% 8%;
-    --foreground: 42 35% 92%;
+  /* Theme: Midnight - חצות (כהה יוקרתי) */
+  .theme-midnight {
+    --background: 220 25% 8%;
+    --foreground: 42 40% 92%;
 
-    --card: 215 25% 12%;
-    --card-foreground: 42 35% 92%;
+    --card: 220 22% 12%;
+    --card-foreground: 42 40% 92%;
 
-    --popover: 215 25% 12%;
-    --popover-foreground: 42 35% 92%;
+    --popover: 220 22% 12%;
+    --popover-foreground: 42 40% 92%;
 
-    --primary: 45 90% 55%;
-    --primary-foreground: 215 35% 12%;
+    --primary: 43 85% 50%;
+    --primary-foreground: 220 25% 8%;
 
-    --secondary: 0 0% 50%;
-    --secondary-foreground: 42 35% 92%;
+    --secondary: 220 18% 18%;
+    --secondary-foreground: 42 40% 92%;
 
-    --muted: 215 20% 18%;
-    --muted-foreground: 0 0% 60%;
+    --muted: 220 18% 16%;
+    --muted-foreground: 220 10% 55%;
 
-    --accent: 45 90% 55%;
-    --accent-foreground: 215 30% 8%;
+    --accent: 43 85% 50%;
+    --accent-foreground: 220 25% 8%;
 
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 62.8% 45%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 215 25% 20%;
-    --input: 215 20% 18%;
-    --ring: 45 90% 55%;
+    --border: 220 18% 20%;
+    --input: 220 18% 16%;
+    --ring: 43 85% 50%;
     
-    --shadow-card: 0 1px 3px 0 hsl(0 0% 0% / 0.3);
-    --shadow-hover: 0 4px 12px -2px hsl(0 0% 0% / 0.4);
-    --sidebar-background: 215 30% 10%;
-    --sidebar-foreground: 42 35% 92%;
-    --sidebar-primary: 45 90% 55%;
-    --sidebar-primary-foreground: 215 35% 12%;
-    --sidebar-accent: 215 20% 18%;
-    --sidebar-accent-foreground: 42 35% 92%;
-    --sidebar-border: 215 25% 20%;
-    --sidebar-ring: 45 90% 55%;
+    --shadow-card: 0 1px 3px 0 hsl(0 0% 0% / 0.4);
+    --shadow-hover: 0 4px 12px -2px hsl(0 0% 0% / 0.5);
+
+    --sidebar-background: 220 25% 10%;
+    --sidebar-foreground: 42 40% 92%;
+    --sidebar-primary: 43 85% 50%;
+    --sidebar-primary-foreground: 220 25% 8%;
+    --sidebar-accent: 220 18% 16%;
+    --sidebar-accent-foreground: 42 40% 92%;
+    --sidebar-border: 220 18% 20%;
+    --sidebar-ring: 43 85% 50%;
+  }
+
+  /* Theme: Royal - מלכותי (כחול עמוק וכסף) */
+  .theme-royal {
+    --background: 225 35% 12%;
+    --foreground: 210 20% 92%;
+
+    --card: 225 30% 16%;
+    --card-foreground: 210 20% 92%;
+
+    --popover: 225 30% 16%;
+    --popover-foreground: 210 20% 92%;
+
+    --primary: 210 15% 75%;
+    --primary-foreground: 225 35% 12%;
+
+    --secondary: 225 25% 22%;
+    --secondary-foreground: 210 20% 92%;
+
+    --muted: 225 25% 20%;
+    --muted-foreground: 210 15% 55%;
+
+    --accent: 210 15% 80%;
+    --accent-foreground: 225 35% 12%;
+
+    --destructive: 0 62.8% 45%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 225 20% 25%;
+    --input: 225 25% 20%;
+    --ring: 210 15% 75%;
+    
+    --shadow-card: 0 1px 3px 0 hsl(0 0% 0% / 0.4);
+    --shadow-hover: 0 4px 12px -2px hsl(0 0% 0% / 0.5);
+
+    --sidebar-background: 225 35% 14%;
+    --sidebar-foreground: 210 20% 92%;
+    --sidebar-primary: 210 15% 75%;
+    --sidebar-primary-foreground: 225 35% 12%;
+    --sidebar-accent: 225 25% 20%;
+    --sidebar-accent-foreground: 210 20% 92%;
+    --sidebar-border: 225 20% 25%;
+    --sidebar-ring: 210 15% 75%;
   }
 }
 
