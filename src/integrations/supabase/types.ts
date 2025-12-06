@@ -204,6 +204,42 @@ export type Database = {
           },
         ]
       }
+      text_annotations: {
+        Row: {
+          created_at: string
+          end_offset: number
+          id: string
+          original_text: string
+          source_id: string
+          source_type: string
+          start_offset: number
+          styles: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_offset: number
+          id?: string
+          original_text: string
+          source_id: string
+          source_type: string
+          start_offset: number
+          styles?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_offset?: number
+          id?: string
+          original_text?: string
+          source_id?: string
+          source_type?: string
+          start_offset?: number
+          styles?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       upload_sessions: {
         Row: {
           created_at: string

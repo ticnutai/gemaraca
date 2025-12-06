@@ -12,9 +12,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Sparkles, Loader2, RefreshCw, Lightbulb, Scale, BookOpen, Database, Type, AArrowUp, AArrowDown, AlignRight, AlignCenter, AlignLeft, Bold, Highlighter, Check, Settings2 } from "lucide-react";
+import { Sparkles, Loader2, RefreshCw, Lightbulb, Scale, BookOpen, Database, Type, AArrowUp, AArrowDown, AlignRight, AlignCenter, AlignLeft, Bold, Highlighter, Check, Settings2, MousePointer2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { RichTextViewer } from "./RichTextViewer";
 
 const FONTS = [
   { value: 'font-serif', label: 'דוד (סריף)' },
@@ -358,6 +359,10 @@ export const ModernExamplesPanel = ({
           <Settings2 className="h-3 w-3" />
           עיצוב טקסט
         </Button>
+        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <MousePointer2 className="h-3 w-3" />
+          <span>סמן מילים לעיצוב</span>
+        </div>
       </div>
 
       {showToolbar && renderTextToolbar()}
@@ -371,12 +376,13 @@ export const ModernExamplesPanel = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p 
+          <RichTextViewer
+            text={data?.principle || ''}
+            sourceType="modern_examples"
+            sourceId={`${effectiveSugyaId}-principle`}
             className={`text-foreground font-medium ${textClasses}`}
-            style={{ fontSize: `${textSettings.fontSize}px` }}
-          >
-            {data?.principle}
-          </p>
+            baseStyle={{ fontSize: `${textSettings.fontSize}px` }}
+          />
         </CardContent>
       </Card>
 
@@ -414,23 +420,36 @@ export const ModernExamplesPanel = ({
                     className={`font-bold text-foreground ${textSettings.fontFamily} ${getTextAlignClass()}`}
                     style={{ fontSize: `${textSettings.fontSize + 2}px` }}
                   >
-                    {example.title}
+                    <RichTextViewer
+                      text={example.title}
+                      sourceType="modern_examples"
+                      sourceId={`${effectiveSugyaId}-example-${index}-title`}
+                      className={`font-bold text-foreground ${textSettings.fontFamily} ${getTextAlignClass()}`}
+                      baseStyle={{ fontSize: `${textSettings.fontSize + 2}px` }}
+                    />
                   </h4>
-                  <p 
-                    className={`text-muted-foreground mt-1 ${textClasses}`}
-                    style={{ fontSize: `${textSettings.fontSize}px` }}
-                  >
-                    {example.scenario}
-                  </p>
+                  <div className="mt-1">
+                    <RichTextViewer
+                      text={example.scenario}
+                      sourceType="modern_examples"
+                      sourceId={`${effectiveSugyaId}-example-${index}-scenario`}
+                      className={`text-muted-foreground ${textClasses}`}
+                      baseStyle={{ fontSize: `${textSettings.fontSize}px` }}
+                    />
+                  </div>
                 </div>
               </div>
               <div className="pr-10 pt-2 border-t border-border/30">
-                <p 
-                  className={`text-primary ${textClasses}`}
-                  style={{ fontSize: `${textSettings.fontSize - 1}px` }}
-                >
-                  🔗 קשר לגמרא: {example.connection}
-                </p>
+                <div className="flex items-start gap-1">
+                  <span>🔗</span>
+                  <RichTextViewer
+                    text={`קשר לגמרא: ${example.connection}`}
+                    sourceType="modern_examples"
+                    sourceId={`${effectiveSugyaId}-example-${index}-connection`}
+                    className={`text-primary ${textClasses}`}
+                    baseStyle={{ fontSize: `${textSettings.fontSize - 1}px` }}
+                  />
+                </div>
               </div>
             </div>
           ))}
@@ -446,12 +465,13 @@ export const ModernExamplesPanel = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p 
+          <RichTextViewer
+            text={data?.practicalSummary || ''}
+            sourceType="modern_examples"
+            sourceId={`${effectiveSugyaId}-summary`}
             className={`text-foreground ${textClasses}`}
-            style={{ fontSize: `${textSettings.fontSize}px` }}
-          >
-            {data?.practicalSummary}
-          </p>
+            baseStyle={{ fontSize: `${textSettings.fontSize}px` }}
+          />
         </CardContent>
       </Card>
     </div>
