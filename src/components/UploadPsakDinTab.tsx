@@ -24,6 +24,7 @@ interface DuplicateFile {
 
 const UploadPsakDinTab = () => {
   const [files, setFiles] = useState<File[]>([]);
+  const [queuedFiles, setQueuedFiles] = useState<File[]>([]); // Files queued while uploading
   const [duplicates, setDuplicates] = useState<DuplicateFile[]>([]);
   const [checkingDuplicates, setCheckingDuplicates] = useState(false);
   const [hashProgress, setHashProgress] = useState<{ current: number; total: number } | null>(null);
@@ -52,7 +53,19 @@ const UploadPsakDinTab = () => {
     cancel,
     clearSession,
   } = useUploadController({
-    onComplete: () => setShowSummary(true),
+    onComplete: () => {
+      setShowSummary(true);
+      // Check if there are queued files to upload
+      if (queuedFiles.length > 0) {
+        const filesToUpload = [...queuedFiles];
+        setQueuedFiles([]);
+        setFiles(filesToUpload);
+        toast({
+          title: `יש ${filesToUpload.length} קבצים בתור`,
+          description: "לחץ על העלה כדי להתחיל את ההעלאה הבאה",
+        });
+      }
+    },
   });
   
   // Zustand store for hash functions
@@ -136,19 +149,38 @@ const UploadPsakDinTab = () => {
         });
       }
       
-      setFiles(prev => {
-        const existingNames = new Set(prev.map(f => f.name));
-        const newUniqueFiles = uniqueFiles.filter(f => !existingNames.has(f.name));
-        return [...prev, ...newUniqueFiles];
-      });
+      // If upload is active, add to queue instead of main list
+      if (isActive) {
+        setQueuedFiles(prev => {
+          const existingNames = new Set(prev.map(f => f.name));
+          const newUniqueFiles = uniqueFiles.filter(f => !existingNames.has(f.name));
+          return [...prev, ...newUniqueFiles];
+        });
+        if (uniqueFiles.length > 0) {
+          toast({
+            title: `${uniqueFiles.length} קבצים נוספו לתור`,
+            description: "יועלו לאחר סיום ההעלאה הנוכחית",
+          });
+        }
+      } else {
+        setFiles(prev => {
+          const existingNames = new Set(prev.map(f => f.name));
+          const newUniqueFiles = uniqueFiles.filter(f => !existingNames.has(f.name));
+          return [...prev, ...newUniqueFiles];
+        });
+      }
       
     } catch (error) {
       console.error('Error checking duplicates:', error);
-      setFiles(prev => [...prev, ...filesToCheck]);
+      if (isActive) {
+        setQueuedFiles(prev => [...prev, ...filesToCheck]);
+      } else {
+        setFiles(prev => [...prev, ...filesToCheck]);
+      }
     } finally {
       setCheckingDuplicates(false);
     }
-  }, [hasFileHash, getFileByHash, addFileHash]);
+  }, [hasFileHash, getFileByHash, addFileHash, isActive]);
 
   // Debug logging helper
   const addDebug = useCallback((message: string) => {
@@ -482,12 +514,14 @@ const UploadPsakDinTab = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* File Drop Zone */}
+            {/* File Drop Zone - ALWAYS ENABLED even during upload */}
             <div
-              className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:border-primary transition-colors bg-muted/20 ${
-                checkingDuplicates ? 'border-accent' : 'border-border'
+              className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:border-primary transition-colors ${
+                checkingDuplicates ? 'border-accent bg-accent/5' : 
+                isActive ? 'border-primary/50 bg-primary/5' : 
+                'border-border bg-muted/20'
               }`}
-              onClick={() => !checkingDuplicates && !isActive && fileInputRef.current?.click()}
+              onClick={() => !checkingDuplicates && fileInputRef.current?.click()}
               onDrop={handleDrop}
               onDragOver={handleDragOver}
             >
@@ -535,6 +569,19 @@ const UploadPsakDinTab = () => {
                     }
                   </p>
                 </>
+              ) : isActive ? (
+                <>
+                  <Upload className="w-12 h-12 mx-auto text-primary mb-4" />
+                  <p className="text-foreground font-medium">העלאה בתהליך - ניתן להוסיף קבצים נוספים לתור</p>
+                  <p className="text-sm text-primary mt-2">
+                    קבצים חדשים יתווספו לתור ויועלו אחרי סיום ההעלאה הנוכחית
+                  </p>
+                  {queuedFiles.length > 0 && (
+                    <Badge variant="secondary" className="mt-2">
+                      {queuedFiles.length} קבצים בתור
+                    </Badge>
+                  )}
+                </>
               ) : (
                 <>
                   <Upload className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
@@ -548,7 +595,7 @@ const UploadPsakDinTab = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={checkingDuplicates || isActive}
+                  disabled={checkingDuplicates}
                   onClick={(e) => {
                     e.stopPropagation();
                     folderInputRef.current?.click();
@@ -556,10 +603,36 @@ const UploadPsakDinTab = () => {
                   className="gap-2"
                 >
                   <FolderUp className="w-4 h-4" />
-                  בחר תיקייה
+                  {isActive ? 'הוסף תיקייה לתור' : 'בחר תיקייה'}
                 </Button>
               </div>
             </div>
+
+            {/* Queued Files - shown during upload */}
+            {isActive && queuedFiles.length > 0 && (
+              <Card className="border-2 border-primary/30 bg-primary/5">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between flex-row-reverse">
+                    <div className="flex items-center gap-2">
+                      <Archive className="w-5 h-5 text-primary" />
+                      <span className="font-medium">קבצים בתור ({queuedFiles.length})</span>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setQueuedFiles([])}
+                      className="text-destructive"
+                    >
+                      <X className="w-4 h-4 ml-1" />
+                      נקה תור
+                    </Button>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1 text-right">
+                    קבצים אלו יועלו אוטומטית לאחר סיום ההעלאה הנוכחית
+                  </p>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Selected Files */}
             {files.length > 0 && (
