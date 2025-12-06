@@ -312,6 +312,7 @@ const SugyaDetail = () => {
   const [faqItems, setFaqItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadedPage, setLoadedPage] = useState<any>(null);
+  const [isPageLoading, setIsPageLoading] = useState(true);
   
   const sugya = sugyotData[id || ""] || loadedPage;
 
@@ -323,6 +324,7 @@ const SugyaDetail = () => {
   }, [id]);
 
   const loadPageFromDB = async () => {
+    setIsPageLoading(true);
     try {
       const { data, error } = await supabase
         .from('gemara_pages')
@@ -351,6 +353,8 @@ const SugyaDetail = () => {
       }
     } catch (error) {
       console.error('Error loading page from DB:', error);
+    } finally {
+      setIsPageLoading(false);
     }
   };
 
@@ -400,6 +404,18 @@ const SugyaDetail = () => {
       console.error('Error:', error);
     }
   };
+
+  // Show loading state while page is being fetched
+  if (isPageLoading && !sugyotData[id || ""]) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-muted-foreground">טוען דף...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!sugya) {
     return (
