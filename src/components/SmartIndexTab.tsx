@@ -15,11 +15,21 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { supabase } from "@/integrations/supabase/client";
-import { 
+import {
   Search, BookOpen, FileText, Sparkles, Brain, 
   Loader2, Library, Tag, BarChart3, Zap, Link2, 
-  ExternalLink, Save, Database, RefreshCw, CheckCircle2
+  ExternalLink, Save, Database, RefreshCw, CheckCircle2,
+  ArrowUpDown, ArrowUp, ArrowDown, Calendar, Filter, SlidersHorizontal
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
+} from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { 
   analyzePsakDin, 
@@ -51,6 +61,12 @@ const SmartIndexTab = () => {
   const [selectedBook, setSelectedBook] = useState<string | null>(null);
   const [selectedPsak, setSelectedPsak] = useState<any | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  
+  // Sorting state
+  const [sortBy, setSortBy] = useState<'daf-asc' | 'daf-desc' | 'date-asc' | 'date-desc' | 'links-asc' | 'links-desc' | 'confidence' | 'none'>('none');
+  const [filterConfidence, setFilterConfidence] = useState<'all' | 'high' | 'medium' | 'low'>('all');
+  const [filterHasFullText, setFilterHasFullText] = useState<boolean | null>(null);
+  
   const { toast } = useToast();
 
   // Load saved results on mount
@@ -100,7 +116,7 @@ const SmartIndexTab = () => {
 
   // Filter results based on search and filters
   const filteredResults = useMemo(() => {
-    return analysisResults.filter(result => {
+    let results = analysisResults.filter(result => {
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         const matchesTitle = result.title.toLowerCase().includes(query);
@@ -121,9 +137,72 @@ const SmartIndexTab = () => {
         if (!result.books.includes(selectedBook)) return false;
       }
 
+      // Filter by confidence
+      if (filterConfidence !== 'all') {
+        const gemaraSources = result.sources.filter(s => s.type === 'gemara' && s.sugyaId);
+        if (gemaraSources.length === 0) return false;
+        const hasMatchingConfidence = gemaraSources.some(s => s.confidence === filterConfidence);
+        if (!hasMatchingConfidence) return false;
+      }
+
+      // Filter by full text
+      if (filterHasFullText !== null) {
+        if (result.hasFullText !== filterHasFullText) return false;
+      }
+
       return true;
     });
-  }, [analysisResults, searchQuery, selectedCategory, selectedMasechet, selectedBook]);
+
+    // Sort results
+    if (sortBy !== 'none') {
+      results = [...results].sort((a, b) => {
+        // Get first gemara source for each
+        const aGemara = a.sources.find(s => s.type === 'gemara' && s.dafNumber);
+        const bGemara = b.sources.find(s => s.type === 'gemara' && s.dafNumber);
+        
+        switch (sortBy) {
+          case 'daf-asc':
+            // Sort by daf number ascending
+            if (!aGemara?.dafNumber && !bGemara?.dafNumber) return 0;
+            if (!aGemara?.dafNumber) return 1;
+            if (!bGemara?.dafNumber) return -1;
+            return aGemara.dafNumber - bGemara.dafNumber;
+          
+          case 'daf-desc':
+            // Sort by daf number descending
+            if (!aGemara?.dafNumber && !bGemara?.dafNumber) return 0;
+            if (!aGemara?.dafNumber) return 1;
+            if (!bGemara?.dafNumber) return -1;
+            return bGemara.dafNumber - aGemara.dafNumber;
+          
+          case 'links-asc':
+            // Sort by number of gemara links ascending
+            const aLinks = a.sources.filter(s => s.type === 'gemara' && s.sugyaId).length;
+            const bLinks = b.sources.filter(s => s.type === 'gemara' && s.sugyaId).length;
+            return aLinks - bLinks;
+          
+          case 'links-desc':
+            // Sort by number of gemara links descending
+            const aLinksD = a.sources.filter(s => s.type === 'gemara' && s.sugyaId).length;
+            const bLinksD = b.sources.filter(s => s.type === 'gemara' && s.sugyaId).length;
+            return bLinksD - aLinksD;
+          
+          case 'confidence':
+            // Sort by confidence (high > medium > low)
+            const confidenceOrder = { high: 3, medium: 2, low: 1 };
+            const aConf = aGemara?.confidence || 'low';
+            const bConf = bGemara?.confidence || 'low';
+            return (confidenceOrder[bConf as keyof typeof confidenceOrder] || 0) - 
+                   (confidenceOrder[aConf as keyof typeof confidenceOrder] || 0);
+          
+          default:
+            return 0;
+        }
+      });
+    }
+
+    return results;
+  }, [analysisResults, searchQuery, selectedCategory, selectedMasechet, selectedBook, sortBy, filterConfidence, filterHasFullText]);
 
   // Group results by category
   const groupedByCategory = useMemo(() => {
@@ -563,6 +642,148 @@ const SmartIndexTab = () => {
                     />
                   </div>
                   
+                  {/* Sort Dropdown */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="gap-2 flex-row-reverse">
+                        <ArrowUpDown className="w-4 h-4" />
+                        מיון
+                        {sortBy !== 'none' && (
+                          <Badge variant="secondary" className="text-xs px-1">פעיל</Badge>
+                        )}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48 text-right">
+                      <DropdownMenuLabel className="text-right">מיון לפי</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem 
+                        onClick={() => setSortBy('none')}
+                        className={`flex-row-reverse justify-end gap-2 ${sortBy === 'none' ? 'bg-accent' : ''}`}
+                      >
+                        ללא מיון
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel className="text-right text-xs text-muted-foreground">לפי דף גמרא</DropdownMenuLabel>
+                      <DropdownMenuItem 
+                        onClick={() => setSortBy('daf-asc')}
+                        className={`flex-row-reverse justify-end gap-2 ${sortBy === 'daf-asc' ? 'bg-accent' : ''}`}
+                      >
+                        <ArrowUp className="w-4 h-4" />
+                        דף ב׳ → דף ק׳
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => setSortBy('daf-desc')}
+                        className={`flex-row-reverse justify-end gap-2 ${sortBy === 'daf-desc' ? 'bg-accent' : ''}`}
+                      >
+                        <ArrowDown className="w-4 h-4" />
+                        דף ק׳ → דף ב׳
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel className="text-right text-xs text-muted-foreground">לפי קישורים</DropdownMenuLabel>
+                      <DropdownMenuItem 
+                        onClick={() => setSortBy('links-desc')}
+                        className={`flex-row-reverse justify-end gap-2 ${sortBy === 'links-desc' ? 'bg-accent' : ''}`}
+                      >
+                        <ArrowDown className="w-4 h-4" />
+                        הרבה קישורים קודם
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => setSortBy('links-asc')}
+                        className={`flex-row-reverse justify-end gap-2 ${sortBy === 'links-asc' ? 'bg-accent' : ''}`}
+                      >
+                        <ArrowUp className="w-4 h-4" />
+                        מעט קישורים קודם
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem 
+                        onClick={() => setSortBy('confidence')}
+                        className={`flex-row-reverse justify-end gap-2 ${sortBy === 'confidence' ? 'bg-accent' : ''}`}
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        לפי רמת ודאות
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  {/* Filter Dropdown */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="gap-2 flex-row-reverse">
+                        <SlidersHorizontal className="w-4 h-4" />
+                        סינון
+                        {(filterConfidence !== 'all' || filterHasFullText !== null) && (
+                          <Badge variant="secondary" className="text-xs px-1">פעיל</Badge>
+                        )}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-52 text-right">
+                      <DropdownMenuLabel className="text-right">סינון לפי</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel className="text-right text-xs text-muted-foreground">רמת ודאות</DropdownMenuLabel>
+                      <DropdownMenuCheckboxItem 
+                        checked={filterConfidence === 'all'}
+                        onCheckedChange={() => setFilterConfidence('all')}
+                        className="flex-row-reverse"
+                      >
+                        הכל
+                      </DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem 
+                        checked={filterConfidence === 'high'}
+                        onCheckedChange={() => setFilterConfidence('high')}
+                        className="flex-row-reverse"
+                      >
+                        ודאות גבוהה בלבד
+                      </DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem 
+                        checked={filterConfidence === 'medium'}
+                        onCheckedChange={() => setFilterConfidence('medium')}
+                        className="flex-row-reverse"
+                      >
+                        ודאות בינונית
+                      </DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem 
+                        checked={filterConfidence === 'low'}
+                        onCheckedChange={() => setFilterConfidence('low')}
+                        className="flex-row-reverse"
+                      >
+                        ודאות נמוכה
+                      </DropdownMenuCheckboxItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel className="text-right text-xs text-muted-foreground">טקסט מלא</DropdownMenuLabel>
+                      <DropdownMenuCheckboxItem 
+                        checked={filterHasFullText === null}
+                        onCheckedChange={() => setFilterHasFullText(null)}
+                        className="flex-row-reverse"
+                      >
+                        הכל
+                      </DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem 
+                        checked={filterHasFullText === true}
+                        onCheckedChange={() => setFilterHasFullText(true)}
+                        className="flex-row-reverse"
+                      >
+                        עם טקסט מלא
+                      </DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem 
+                        checked={filterHasFullText === false}
+                        onCheckedChange={() => setFilterHasFullText(false)}
+                        className="flex-row-reverse"
+                      >
+                        ללא טקסט מלא
+                      </DropdownMenuCheckboxItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem 
+                        onClick={() => {
+                          setFilterConfidence('all');
+                          setFilterHasFullText(null);
+                        }}
+                        className="text-destructive flex-row-reverse justify-end"
+                      >
+                        נקה סינונים
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  
                   <div className="flex flex-wrap gap-2">
                     {selectedCategory && (
                       <Badge 
@@ -589,6 +810,28 @@ const SmartIndexTab = () => {
                         onClick={() => setSelectedBook(null)}
                       >
                         {selectedBook} ✕
+                      </Badge>
+                    )}
+                    {sortBy !== 'none' && (
+                      <Badge 
+                        variant="outline" 
+                        className="cursor-pointer gap-1 border-primary text-primary"
+                        onClick={() => setSortBy('none')}
+                      >
+                        {sortBy === 'daf-asc' ? 'דף ב׳→ק׳' : 
+                         sortBy === 'daf-desc' ? 'דף ק׳→ב׳' : 
+                         sortBy === 'links-desc' ? 'הרבה קישורים' : 
+                         sortBy === 'links-asc' ? 'מעט קישורים' : 
+                         sortBy === 'confidence' ? 'לפי ודאות' : ''} ✕
+                      </Badge>
+                    )}
+                    {filterConfidence !== 'all' && (
+                      <Badge 
+                        variant="outline" 
+                        className="cursor-pointer gap-1 border-accent text-accent"
+                        onClick={() => setFilterConfidence('all')}
+                      >
+                        ודאות: {filterConfidence === 'high' ? 'גבוהה' : filterConfidence === 'medium' ? 'בינונית' : 'נמוכה'} ✕
                       </Badge>
                     )}
                   </div>
