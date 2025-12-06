@@ -149,8 +149,8 @@ const RelatedPsakimSidebar = ({ sugyaId }: RelatedPsakimSidebarProps) => {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <ScrollArea className="max-h-[400px]">
-            <div className="space-y-2 p-4 pt-0">
+          <ScrollArea className="h-[calc(100vh-300px)] max-h-[600px]">
+            <div className="space-y-2 p-4 pt-2">
               {psakim.map((link) => (
                 <div
                   key={link.id}
