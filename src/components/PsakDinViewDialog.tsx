@@ -3,8 +3,73 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Building2, FileText, ExternalLink, Download, Eye, FileIcon, Maximize2, Minimize2 } from "lucide-react";
+import { 
+  Calendar, Building2, FileText, ExternalLink, Download, Eye, FileIcon, 
+  Maximize2, Minimize2, AlignRight, AlignCenter, AlignLeft, AlignJustify,
+  Type, Bold, Italic, Highlighter, AArrowUp, AArrowDown, Palette
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
+const VIEWER_TEXT_SETTINGS_KEY = 'psak-din-viewer-text-settings';
+
+const FONTS = [
+  { value: 'font-sans', label: 'אריאל' },
+  { value: 'font-serif', label: 'טיימס' },
+  { value: 'font-david', label: 'דוד' },
+  { value: 'font-frank', label: 'פרנק רוהל' },
+  { value: 'font-heebo', label: 'חיבו' },
+  { value: 'font-rubik', label: 'רוביק' },
+  { value: 'font-noto-serif', label: 'נוטו סריף' },
+];
+
+const TEXT_COLORS = [
+  { value: 'text-foreground', label: 'ברירת מחדל', color: 'currentColor' },
+  { value: 'text-blue-700', label: 'כחול', color: '#1d4ed8' },
+  { value: 'text-red-700', label: 'אדום', color: '#b91c1c' },
+  { value: 'text-green-700', label: 'ירוק', color: '#15803d' },
+  { value: 'text-purple-700', label: 'סגול', color: '#7e22ce' },
+  { value: 'text-amber-700', label: 'כתום', color: '#b45309' },
+];
+
+const BG_COLORS = [
+  { value: 'bg-transparent', label: 'ללא', color: 'transparent' },
+  { value: 'bg-yellow-100', label: 'צהוב', color: '#fef9c3' },
+  { value: 'bg-green-100', label: 'ירוק', color: '#dcfce7' },
+  { value: 'bg-blue-100', label: 'כחול', color: '#dbeafe' },
+  { value: 'bg-pink-100', label: 'ורוד', color: '#fce7f3' },
+  { value: 'bg-orange-100', label: 'כתום', color: '#ffedd5' },
+];
+
+interface TextSettings {
+  fontSize: number;
+  fontFamily: string;
+  textAlign: 'right' | 'center' | 'left' | 'justify';
+  isBold: boolean;
+  isItalic: boolean;
+  textColor: string;
+  bgColor: string;
+}
+
+const defaultTextSettings: TextSettings = {
+  fontSize: 16,
+  fontFamily: 'font-serif',
+  textAlign: 'right',
+  isBold: false,
+  isItalic: false,
+  textColor: 'text-foreground',
+  bgColor: 'bg-transparent',
+};
 
 interface PsakDinViewDialogProps {
   psak: {
@@ -29,7 +94,24 @@ interface PsakDinViewDialogProps {
 
 const PsakDinViewDialog = ({ psak, open, onOpenChange }: PsakDinViewDialogProps) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [activeTab, setActiveTab] = useState("info");
+  // Default to "preview" tab when file exists
+  const [activeTab, setActiveTab] = useState("preview");
+  const [textSettings, setTextSettings] = useState<TextSettings>(() => {
+    const saved = localStorage.getItem(VIEWER_TEXT_SETTINGS_KEY);
+    return saved ? JSON.parse(saved) : defaultTextSettings;
+  });
+
+  useEffect(() => {
+    localStorage.setItem(VIEWER_TEXT_SETTINGS_KEY, JSON.stringify(textSettings));
+  }, [textSettings]);
+
+  // Reset to preview tab when dialog opens
+  useEffect(() => {
+    if (open && psak) {
+      const sourceUrl = psak.source_url || psak.sourceUrl;
+      setActiveTab(sourceUrl ? "preview" : "info");
+    }
+  }, [open, psak]);
 
   if (!psak) return null;
 
@@ -49,7 +131,6 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange }: PsakDinViewDialogProps)
   };
 
   const fileType = getFileType(sourceUrl);
-  const canPreview = sourceUrl && (fileType === 'pdf' || fileType === 'txt');
 
   // For Google Docs Viewer for Word files
   const getPreviewUrl = (url: string, type: string): string => {
@@ -61,6 +142,177 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange }: PsakDinViewDialogProps)
     }
     return url;
   };
+
+  const updateTextSetting = <K extends keyof TextSettings>(key: K, value: TextSettings[K]) => {
+    setTextSettings(prev => ({ ...prev, [key]: value }));
+  };
+
+  const getTextAlignClass = () => {
+    switch (textSettings.textAlign) {
+      case 'center': return 'text-center';
+      case 'left': return 'text-left';
+      case 'justify': return 'text-justify';
+      default: return 'text-right';
+    }
+  };
+
+  const textClasses = `${textSettings.fontFamily} ${getTextAlignClass()} ${textSettings.isBold ? 'font-bold' : ''} ${textSettings.isItalic ? 'italic' : ''} ${textSettings.textColor} ${textSettings.bgColor}`;
+
+  const renderTextToolbar = () => (
+    <div className="flex items-center gap-1 flex-wrap p-2 bg-muted/50 rounded-lg border mb-2">
+      {/* Font Size Controls */}
+      <div className="flex items-center gap-1 border-l pl-2 ml-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onClick={() => updateTextSetting('fontSize', Math.max(10, textSettings.fontSize - 1))}
+          title="הקטן גופן"
+        >
+          <AArrowDown className="h-3 w-3" />
+        </Button>
+        <span className="text-xs text-muted-foreground w-6 text-center">{textSettings.fontSize}</span>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onClick={() => updateTextSetting('fontSize', Math.min(32, textSettings.fontSize + 1))}
+          title="הגדל גופן"
+        >
+          <AArrowUp className="h-3 w-3" />
+        </Button>
+      </div>
+
+      {/* Font Family */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-7 w-7" title="סוג גופן">
+            <Type className="h-3 w-3" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="bg-popover z-50">
+          {FONTS.map(font => (
+            <DropdownMenuItem
+              key={font.value}
+              onClick={() => updateTextSetting('fontFamily', font.value)}
+              className={`flex items-center gap-2 ${font.value}`}
+            >
+              <span>{font.label}</span>
+              {textSettings.fontFamily === font.value && <span className="text-primary">✓</span>}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* Text Alignment */}
+      <div className="flex items-center gap-0.5 border-x px-2 mx-1">
+        <Button
+          variant={textSettings.textAlign === 'right' ? 'secondary' : 'ghost'}
+          size="icon"
+          className="h-7 w-7"
+          onClick={() => updateTextSetting('textAlign', 'right')}
+          title="יישור לימין"
+        >
+          <AlignRight className="h-3 w-3" />
+        </Button>
+        <Button
+          variant={textSettings.textAlign === 'center' ? 'secondary' : 'ghost'}
+          size="icon"
+          className="h-7 w-7"
+          onClick={() => updateTextSetting('textAlign', 'center')}
+          title="יישור למרכז"
+        >
+          <AlignCenter className="h-3 w-3" />
+        </Button>
+        <Button
+          variant={textSettings.textAlign === 'left' ? 'secondary' : 'ghost'}
+          size="icon"
+          className="h-7 w-7"
+          onClick={() => updateTextSetting('textAlign', 'left')}
+          title="יישור לשמאל"
+        >
+          <AlignLeft className="h-3 w-3" />
+        </Button>
+        <Button
+          variant={textSettings.textAlign === 'justify' ? 'secondary' : 'ghost'}
+          size="icon"
+          className="h-7 w-7"
+          onClick={() => updateTextSetting('textAlign', 'justify')}
+          title="יישור משני הצדדים"
+        >
+          <AlignJustify className="h-3 w-3" />
+        </Button>
+      </div>
+
+      {/* Bold */}
+      <Button
+        variant={textSettings.isBold ? 'secondary' : 'ghost'}
+        size="icon"
+        className="h-7 w-7"
+        onClick={() => updateTextSetting('isBold', !textSettings.isBold)}
+        title="הדגשה"
+      >
+        <Bold className="h-3 w-3" />
+      </Button>
+
+      {/* Italic */}
+      <Button
+        variant={textSettings.isItalic ? 'secondary' : 'ghost'}
+        size="icon"
+        className="h-7 w-7"
+        onClick={() => updateTextSetting('isItalic', !textSettings.isItalic)}
+        title="נטוי"
+      >
+        <Italic className="h-3 w-3" />
+      </Button>
+
+      {/* Text Color */}
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-7 w-7" title="צבע טקסט">
+            <Palette className="h-3 w-3" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-36 p-2 bg-popover z-50" align="start">
+          <div className="grid grid-cols-3 gap-1">
+            {TEXT_COLORS.map(color => (
+              <button
+                key={color.value}
+                onClick={() => updateTextSetting('textColor', color.value)}
+                className={`h-7 rounded border flex items-center justify-center ${textSettings.textColor === color.value ? 'ring-2 ring-primary' : ''}`}
+                style={{ color: color.color }}
+                title={color.label}
+              >
+                A
+              </button>
+            ))}
+          </div>
+        </PopoverContent>
+      </Popover>
+
+      {/* Background Color */}
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-7 w-7" title="צבע רקע">
+            <Highlighter className="h-3 w-3" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-36 p-2 bg-popover z-50" align="start">
+          <div className="grid grid-cols-3 gap-1">
+            {BG_COLORS.map(color => (
+              <button
+                key={color.value}
+                onClick={() => updateTextSetting('bgColor', color.value)}
+                className={`h-7 rounded border ${textSettings.bgColor === color.value ? 'ring-2 ring-primary' : ''}`}
+                style={{ backgroundColor: color.color }}
+                title={color.label}
+              />
+            ))}
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -120,38 +372,43 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange }: PsakDinViewDialogProps)
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
           <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
-            <TabsTrigger value="info" className="gap-2">
-              <FileText className="w-4 h-4" />
-              מידע
-            </TabsTrigger>
             <TabsTrigger value="preview" className="gap-2" disabled={!sourceUrl}>
               <Eye className="w-4 h-4" />
               צפייה בקובץ
             </TabsTrigger>
+            <TabsTrigger value="info" className="gap-2">
+              <FileText className="w-4 h-4" />
+              מידע
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="info" className="flex-1 min-h-0 mt-4">
+            {renderTextToolbar()}
             <ScrollArea className="h-full border border-border rounded-lg">
-              <div className="p-4 space-y-4 text-right" dir="rtl">
+              <div 
+                className={`p-4 space-y-4 ${textClasses}`} 
+                dir="rtl"
+                style={{ fontSize: `${textSettings.fontSize}px` }}
+              >
                 {/* Summary */}
                 <div>
-                  <h3 className="font-semibold text-foreground mb-2">תקציר</h3>
-                  <p className="text-foreground leading-relaxed">{psak.summary}</p>
+                  <h3 className="font-semibold mb-2">תקציר</h3>
+                  <p className="leading-relaxed">{psak.summary}</p>
                 </div>
 
                 {/* Connection explanation if exists */}
                 {psak.connection && (
-                  <div className="bg-muted/50 p-3 rounded-lg">
-                    <h3 className="font-semibold text-foreground mb-2">קשר לסוגיה</h3>
-                    <p className="text-muted-foreground italic">{psak.connection}</p>
+                  <div className="p-3 rounded-lg border">
+                    <h3 className="font-semibold mb-2">קשר לסוגיה</h3>
+                    <p className="opacity-80">{psak.connection}</p>
                   </div>
                 )}
 
                 {/* Full text if exists */}
                 {fullText && (
                   <div>
-                    <h3 className="font-semibold text-foreground mb-2">טקסט מלא</h3>
-                    <div className="bg-muted/30 p-4 rounded-lg whitespace-pre-wrap text-foreground leading-relaxed font-serif">
+                    <h3 className="font-semibold mb-2">טקסט מלא</h3>
+                    <div className="p-4 rounded-lg border whitespace-pre-wrap leading-relaxed">
                       {fullText}
                     </div>
                   </div>
@@ -160,7 +417,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange }: PsakDinViewDialogProps)
                 {/* Tags */}
                 {psak.tags && psak.tags.length > 0 && (
                   <div>
-                    <h3 className="font-semibold text-foreground mb-2">תגיות</h3>
+                    <h3 className="font-semibold mb-2">תגיות</h3>
                     <div className="flex flex-wrap gap-2">
                       {psak.tags.map((tag: string, idx: number) => (
                         <Badge key={idx} variant="secondary" className="bg-muted text-muted-foreground">
@@ -176,38 +433,41 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange }: PsakDinViewDialogProps)
 
           <TabsContent value="preview" className="flex-1 min-h-0 mt-4">
             {sourceUrl ? (
-              <div className="h-full border border-border rounded-lg overflow-hidden bg-muted/20">
-                {fileType === 'pdf' ? (
-                  <iframe
-                    src={`${sourceUrl}#toolbar=1&navpanes=1&scrollbar=1`}
-                    className="w-full h-full min-h-[500px]"
-                    title="צפייה בפסק דין"
-                  />
-                ) : fileType === 'doc' ? (
-                  <iframe
-                    src={getPreviewUrl(sourceUrl, fileType)}
-                    className="w-full h-full min-h-[500px]"
-                    title="צפייה בפסק דין"
-                  />
-                ) : fileType === 'txt' ? (
-                  <TxtViewer url={sourceUrl} />
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-                    <FileIcon className="w-16 h-16 text-muted-foreground mb-4" />
-                    <p className="text-foreground font-medium mb-2">
-                      לא ניתן להציג תצוגה מקדימה של קובץ זה
-                    </p>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      ניתן להוריד את הקובץ לצפייה
-                    </p>
-                    <Button asChild className="gap-2">
-                      <a href={sourceUrl} download target="_blank" rel="noopener noreferrer">
-                        <Download className="w-4 h-4" />
-                        הורד קובץ
-                      </a>
-                    </Button>
-                  </div>
-                )}
+              <div className="h-full flex flex-col">
+                {renderTextToolbar()}
+                <div className="flex-1 border border-border rounded-lg overflow-hidden bg-muted/20">
+                  {fileType === 'pdf' ? (
+                    <iframe
+                      src={`${sourceUrl}#toolbar=1&navpanes=1&scrollbar=1`}
+                      className="w-full h-full min-h-[500px]"
+                      title="צפייה בפסק דין"
+                    />
+                  ) : fileType === 'doc' ? (
+                    <iframe
+                      src={getPreviewUrl(sourceUrl, fileType)}
+                      className="w-full h-full min-h-[500px]"
+                      title="צפייה בפסק דין"
+                    />
+                  ) : fileType === 'txt' ? (
+                    <TxtViewer url={sourceUrl} textSettings={textSettings} textClasses={textClasses} />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+                      <FileIcon className="w-16 h-16 text-muted-foreground mb-4" />
+                      <p className="text-foreground font-medium mb-2">
+                        לא ניתן להציג תצוגה מקדימה של קובץ זה
+                      </p>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        ניתן להוריד את הקובץ לצפייה
+                      </p>
+                      <Button asChild className="gap-2">
+                        <a href={sourceUrl} download target="_blank" rel="noopener noreferrer">
+                          <Download className="w-4 h-4" />
+                          הורד קובץ
+                        </a>
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-full p-8 text-center">
@@ -252,8 +512,14 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange }: PsakDinViewDialogProps)
   );
 };
 
-// Component for viewing TXT files
-const TxtViewer = ({ url }: { url: string }) => {
+// Component for viewing TXT files with text settings
+interface TxtViewerProps {
+  url: string;
+  textSettings: TextSettings;
+  textClasses: string;
+}
+
+const TxtViewer = ({ url, textSettings, textClasses }: TxtViewerProps) => {
   const [content, setContent] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -293,7 +559,11 @@ const TxtViewer = ({ url }: { url: string }) => {
 
   return (
     <ScrollArea className="h-full">
-      <pre className="p-4 text-foreground whitespace-pre-wrap font-serif text-right" dir="rtl">
+      <pre 
+        className={`p-4 whitespace-pre-wrap ${textClasses}`} 
+        dir="rtl"
+        style={{ fontSize: `${textSettings.fontSize}px` }}
+      >
         {content}
       </pre>
     </ScrollArea>
