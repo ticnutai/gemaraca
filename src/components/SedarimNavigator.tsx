@@ -1,14 +1,23 @@
-import { useState } from "react";
-import { BookOpen, ChevronLeft } from "lucide-react";
+import { useState, useEffect } from "react";
+import { BookOpen, ChevronLeft, ChevronDown, Scale } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { SEDARIM, getMasechtotBySeder, Masechet, MASECHTOT } from "@/lib/masechtotData";
+import { SEDARIM, getMasechtotBySeder, Masechet } from "@/lib/masechtotData";
 import { toDafFormat } from "@/lib/hebrewNumbers";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "@/contexts/AppContext";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SedarimNavigatorProps {
   className?: string;
+}
+
+interface PsakDinExample {
+  id: string;
+  title: string;
+  court: string;
+  year: number;
+  summary: string;
 }
 
 const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
@@ -16,15 +25,35 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
   const { setSelectedMasechet, setActiveTab } = useAppContext();
   const [selectedSeder, setSelectedSeder] = useState<string | null>(null);
   const [selectedMasechetLocal, setSelectedMasechetLocal] = useState<Masechet | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [psakDinExamples, setPsakDinExamples] = useState<PsakDinExample[]>([]);
+
+  const INITIAL_DAF_COUNT = 20;
+
+  // Load sample Psakei Din
+  useEffect(() => {
+    const loadPsakDinExamples = async () => {
+      const { data } = await supabase
+        .from('psakei_din')
+        .select('id, title, court, year, summary')
+        .order('created_at', { ascending: false })
+        .limit(6);
+      
+      if (data) {
+        setPsakDinExamples(data);
+      }
+    };
+    loadPsakDinExamples();
+  }, []);
 
   const handleSederClick = (seder: string) => {
     if (selectedSeder === seder) {
-      // Toggle off if clicking same seder
       setSelectedSeder(null);
       setSelectedMasechetLocal(null);
     } else {
       setSelectedSeder(seder);
       setSelectedMasechetLocal(null);
+      setIsExpanded(false);
     }
   };
 
@@ -33,6 +62,7 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
       setSelectedMasechetLocal(null);
     } else {
       setSelectedMasechetLocal(masechet);
+      setIsExpanded(false);
     }
   };
 
@@ -43,24 +73,34 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
     navigate(`/sugya/${sugyaId}`);
   };
 
+  const handlePsakDinClick = (id: string) => {
+    setActiveTab("psak-din");
+    // Could navigate to specific psak din view
+  };
+
   const getMasechetCount = (seder: string) => {
     return getMasechtotBySeder(seder).length;
   };
 
-  // Generate daf buttons for selected masechet
-  const getDafButtons = () => {
-    if (!selectedMasechetLocal) return null;
-
+  // Generate daf list for selected masechet
+  const getAllDafim = () => {
+    if (!selectedMasechetLocal) return [];
     const dafim = [];
     for (let daf = 2; daf <= selectedMasechetLocal.maxDaf; daf++) {
       dafim.push(daf);
     }
-
     return dafim;
   };
 
+  const allDafim = getAllDafim();
+  const displayedDafim = isExpanded ? allDafim : allDafim.slice(0, INITIAL_DAF_COUNT);
+  const remainingCount = allDafim.length - INITIAL_DAF_COUNT;
+
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn("space-y-6", className)}>
+      {/* Spacing from header */}
+      <div className="pt-2" />
+
       {/* 6 Sedarim Cards */}
       <div className="grid grid-cols-3 md:grid-cols-6 gap-2 md:gap-3">
         {SEDARIM.map((seder) => (
@@ -115,10 +155,10 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
         </div>
       )}
 
-      {/* Dafim Grid of Selected Masechet */}
+      {/* Dafim Grid of Selected Masechet - with colored rows like reference */}
       {selectedMasechetLocal && (
-        <div className="bg-card/50 rounded-xl border border-border p-4 animate-in fade-in slide-in-from-top-2 duration-300">
-          <div className="flex items-center gap-2 mb-3">
+        <div className="bg-card rounded-xl border border-border p-4 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="flex items-center gap-2 mb-4">
             <button 
               onClick={() => setSelectedMasechetLocal(null)}
               className="p-1 hover:bg-muted rounded-lg transition-colors"
@@ -129,34 +169,102 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
             <span className="text-sm text-muted-foreground">({selectedMasechetLocal.maxDaf - 1} דפים)</span>
           </div>
           
-          <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-1.5">
-            {getDafButtons()?.map((daf) => (
-              <div key={daf} className="flex flex-col gap-0.5">
-                {/* Amud Alef */}
+          {/* Dafim grid with alternating row colors */}
+          <div className="space-y-1">
+            {/* Row for Amud Alef */}
+            <div className="flex flex-wrap gap-1.5 p-2 rounded-lg bg-secondary/50">
+              {displayedDafim.map((daf) => (
                 <button
+                  key={`${daf}a`}
                   onClick={() => handleDafClick(selectedMasechetLocal, daf, 'a')}
                   className={cn(
-                    "px-2 py-1.5 text-xs rounded-t-lg border border-b-0 transition-all",
+                    "px-2.5 py-1.5 text-xs rounded-lg border transition-all min-w-[60px]",
                     "bg-card hover:bg-accent hover:text-accent-foreground",
-                    "border-border hover:border-accent"
+                    "border-border hover:border-accent hover:shadow-sm"
                   )}
                 >
                   {toDafFormat(daf, 'a')}
                 </button>
-                {/* Amud Bet */}
+              ))}
+            </div>
+            
+            {/* Row for Amud Bet */}
+            <div className="flex flex-wrap gap-1.5 p-2 rounded-lg bg-accent/20">
+              {displayedDafim.map((daf) => (
                 <button
+                  key={`${daf}b`}
                   onClick={() => handleDafClick(selectedMasechetLocal, daf, 'b')}
                   className={cn(
-                    "px-2 py-1.5 text-xs rounded-b-lg border transition-all",
-                    "bg-muted/50 hover:bg-accent hover:text-accent-foreground",
-                    "border-border hover:border-accent"
+                    "px-2.5 py-1.5 text-xs rounded-lg border transition-all min-w-[60px]",
+                    "bg-card hover:bg-accent hover:text-accent-foreground",
+                    "border-border hover:border-accent hover:shadow-sm"
                   )}
                 >
                   {toDafFormat(daf, 'b')}
                 </button>
-              </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Expand button */}
+          {!isExpanded && remainingCount > 0 && (
+            <button
+              onClick={() => setIsExpanded(true)}
+              className="flex items-center gap-1 mt-4 mx-auto text-sm text-accent hover:text-accent/80 transition-colors"
+            >
+              <ChevronDown className="h-4 w-4" />
+              <span>הרחב ({remainingCount} נוספים)</span>
+            </button>
+          )}
+          
+          {isExpanded && (
+            <button
+              onClick={() => setIsExpanded(false)}
+              className="flex items-center gap-1 mt-4 mx-auto text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ChevronDown className="h-4 w-4 rotate-180" />
+              <span>צמצם</span>
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Psak Din Examples Section */}
+      {psakDinExamples.length > 0 && !selectedMasechetLocal && (
+        <div className="bg-card rounded-xl border border-border p-4">
+          <div className="flex items-center gap-2 mb-4">
+            <Scale className="h-5 w-5 text-accent" />
+            <h3 className="font-bold text-lg">דוגמאות פסקי דין</h3>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {psakDinExamples.map((psak) => (
+              <button
+                key={psak.id}
+                onClick={() => handlePsakDinClick(psak.id)}
+                className={cn(
+                  "p-3 rounded-lg border text-right transition-all",
+                  "bg-secondary/30 border-border hover:border-accent hover:shadow-sm",
+                  "hover:bg-accent/10"
+                )}
+              >
+                <h4 className="font-medium text-sm line-clamp-2 mb-1">{psak.title}</h4>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span>{psak.court}</span>
+                  <span>•</span>
+                  <span>{psak.year}</span>
+                </div>
+              </button>
             ))}
           </div>
+          
+          <button
+            onClick={() => setActiveTab("psak-din")}
+            className="flex items-center gap-1 mt-4 mx-auto text-sm text-accent hover:text-accent/80 transition-colors"
+          >
+            <span>צפה בכל פסקי הדין</span>
+            <ChevronLeft className="h-4 w-4 rtl-flip" />
+          </button>
         </div>
       )}
     </div>
