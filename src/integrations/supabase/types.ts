@@ -124,6 +124,50 @@ export type Database = {
         }
         Relationships: []
       }
+      pattern_sugya_links: {
+        Row: {
+          amud: string | null
+          confidence: string
+          created_at: string
+          daf: string | null
+          id: string
+          masechet: string
+          psak_din_id: string
+          source_text: string
+          sugya_id: string
+        }
+        Insert: {
+          amud?: string | null
+          confidence?: string
+          created_at?: string
+          daf?: string | null
+          id?: string
+          masechet: string
+          psak_din_id: string
+          source_text: string
+          sugya_id: string
+        }
+        Update: {
+          amud?: string | null
+          confidence?: string
+          created_at?: string
+          daf?: string | null
+          id?: string
+          masechet?: string
+          psak_din_id?: string
+          source_text?: string
+          sugya_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pattern_sugya_links_psak_din_id_fkey"
+            columns: ["psak_din_id"]
+            isOneToOne: false
+            referencedRelation: "psakei_din"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       psakei_din: {
         Row: {
           case_number: string | null
@@ -168,6 +212,56 @@ export type Database = {
           year?: number
         }
         Relationships: []
+      }
+      smart_index_results: {
+        Row: {
+          analysis_method: string
+          books: string[]
+          created_at: string
+          has_full_text: boolean
+          id: string
+          masechtot: string[]
+          psak_din_id: string
+          sources: Json
+          topics: Json
+          updated_at: string
+          word_count: number
+        }
+        Insert: {
+          analysis_method?: string
+          books?: string[]
+          created_at?: string
+          has_full_text?: boolean
+          id?: string
+          masechtot?: string[]
+          psak_din_id: string
+          sources?: Json
+          topics?: Json
+          updated_at?: string
+          word_count?: number
+        }
+        Update: {
+          analysis_method?: string
+          books?: string[]
+          created_at?: string
+          has_full_text?: boolean
+          id?: string
+          masechtot?: string[]
+          psak_din_id?: string
+          sources?: Json
+          topics?: Json
+          updated_at?: string
+          word_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "smart_index_results_psak_din_id_fkey"
+            columns: ["psak_din_id"]
+            isOneToOne: true
+            referencedRelation: "psakei_din"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sugya_psak_links: {
         Row: {
