@@ -59,16 +59,15 @@ const UploadPsakDinTab = () => {
     },
   });
   
+  // Clean up stale sessions on mount
+  const { cleanupStaleSessions, addFileHash, hasFileHash, getFileByHash } = useUploadStore();
+  useState(() => {
+    cleanupStaleSessions();
+  });
+  
   // Derived state
   const activeSessions = getActiveSessions();
   const isActive = activeSessions.length > 0;
-  
-  // Zustand store for hash functions
-  const {
-    addFileHash,
-    hasFileHash,
-    getFileByHash,
-  } = useUploadStore();
 
   // Check for duplicates - both by title and content hash
   const checkDuplicates = useCallback(async (filesToCheck: File[]): Promise<File[]> => {
@@ -396,9 +395,15 @@ const UploadPsakDinTab = () => {
                     </p>
                   </div>
                 </div>
-                <Button size="sm" variant="outline" onClick={clearAllSessions}>
-                  בטל הכל
-                </Button>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => {
+                    clearAllSessions();
+                    setExtractedZips([]);
+                    setDuplicates([]);
+                  }}>
+                    נקה הכל ואפס
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -451,17 +456,9 @@ const UploadPsakDinTab = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* File Drop Zone */}
-            <div
-              className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:border-primary transition-colors ${
-                checkingDuplicates ? 'border-accent bg-accent/5' : 
-                extractProgress ? 'border-primary bg-primary/5' :
-                'border-border bg-muted/20'
-              }`}
-              onClick={() => !checkingDuplicates && fileInputRef.current?.click()}
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-            >
+            {/* File Selection Buttons */}
+            <div className="flex flex-col gap-4">
+              {/* Hidden Inputs */}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -479,57 +476,91 @@ const UploadPsakDinTab = () => {
                 className="hidden"
                 {...{ webkitdirectory: "", directory: "" } as any}
               />
-              {extractProgress ? (
-                <>
-                  <Archive className="w-12 h-12 mx-auto text-primary mb-4 animate-pulse" />
-                  <p className="text-foreground font-medium">
-                    מחלץ קבצים מ-ZIP...
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {extractProgress.zipName}
-                  </p>
-                  <Progress 
-                    value={(extractProgress.current / extractProgress.total) * 100} 
-                    className="h-2 mt-3 max-w-xs mx-auto" 
-                  />
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {extractProgress.current}/{extractProgress.total} קבצים
-                  </p>
-                </>
-              ) : checkingDuplicates ? (
-                <>
-                  <Loader2 className="w-12 h-12 mx-auto text-accent mb-4 animate-spin" />
-                  <p className="text-foreground font-medium">
-                    {hashProgress 
-                      ? `מחשב hash לקבצים... (${hashProgress.current}/${hashProgress.total})`
-                      : 'בודק קבצים כפולים...'
-                    }
-                  </p>
-                </>
-              ) : (
-                <>
-                  <Upload className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-foreground font-medium">לחץ לבחירת קבצי ZIP או גרור לכאן</p>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    כל ZIP יעלה במקביל - ניתן להעלות מספר ZIPs בו-זמנית
-                  </p>
-                </>
+              
+              {/* Status Display */}
+              {(extractProgress || checkingDuplicates) && (
+                <div className="border-2 border-dashed border-primary rounded-lg p-6 text-center bg-primary/5">
+                  {extractProgress ? (
+                    <>
+                      <Archive className="w-12 h-12 mx-auto text-primary mb-4 animate-pulse" />
+                      <p className="text-foreground font-medium">מחלץ קבצים מ-ZIP...</p>
+                      <p className="text-sm text-muted-foreground mt-1">{extractProgress.zipName}</p>
+                      <Progress 
+                        value={(extractProgress.current / extractProgress.total) * 100} 
+                        className="h-2 mt-3 max-w-xs mx-auto" 
+                      />
+                      <p className="text-xs text-muted-foreground mt-2">
+                        {extractProgress.current}/{extractProgress.total} קבצים
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <Loader2 className="w-12 h-12 mx-auto text-accent mb-4 animate-spin" />
+                      <p className="text-foreground font-medium">
+                        {hashProgress 
+                          ? `מחשב hash לקבצים... (${hashProgress.current}/${hashProgress.total})`
+                          : 'בודק קבצים כפולים...'
+                        }
+                      </p>
+                    </>
+                  )}
+                </div>
               )}
-              <div className="flex justify-center gap-2 mt-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={checkingDuplicates}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    folderInputRef.current?.click();
-                  }}
-                  className="gap-2"
-                >
-                  <FolderUp className="w-4 h-4" />
-                  בחר תיקייה
-                </Button>
-              </div>
+              
+              {/* Selection Buttons - Always Visible */}
+              {!extractProgress && !checkingDuplicates && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Individual Files Button */}
+                  <div
+                    className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors border-border bg-muted/20"
+                    onClick={() => fileInputRef.current?.click()}
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                  >
+                    <FileText className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
+                    <p className="text-foreground font-medium">קבצים בודדים / ZIP</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      PDF, DOCX, DOC, TXT, RTF או קבצי ZIP
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-3 gap-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        fileInputRef.current?.click();
+                      }}
+                    >
+                      <Upload className="w-4 h-4" />
+                      בחר קבצים
+                    </Button>
+                  </div>
+
+                  {/* Folder Button */}
+                  <div
+                    className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors border-border bg-muted/20"
+                    onClick={() => folderInputRef.current?.click()}
+                  >
+                    <FolderUp className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
+                    <p className="text-foreground font-medium">תיקייה שלמה</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      בחר תיקייה להעלאת כל הקבצים שבתוכה
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-3 gap-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        folderInputRef.current?.click();
+                      }}
+                    >
+                      <FolderUp className="w-4 h-4" />
+                      בחר תיקייה
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Pending ZIP Batches */}
