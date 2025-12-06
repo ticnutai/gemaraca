@@ -20,11 +20,13 @@ const PsakDinTab = () => {
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState({ current: 0, total: 0 });
   const [psakLinks, setPsakLinks] = useState<Map<string, number>>(new Map());
+  const [totalUnlinkedCount, setTotalUnlinkedCount] = useState(0);
   const { toast } = useToast();
 
   useEffect(() => {
     loadPsakim();
     loadLinkCounts();
+    loadTotalUnlinkedCount();
   }, []);
 
   const loadPsakim = async () => {
@@ -59,6 +61,26 @@ const PsakDinTab = () => {
       setPsakLinks(counts);
     } catch (error) {
       console.error('Error loading link counts:', error);
+    }
+  };
+
+  const loadTotalUnlinkedCount = async () => {
+    try {
+      // Get total psakei din count
+      const { count: totalCount } = await supabase
+        .from('psakei_din')
+        .select('*', { count: 'exact', head: true });
+
+      // Get linked psakei din count  
+      const { data: linkedData } = await supabase
+        .from('sugya_psak_links')
+        .select('psak_din_id');
+      
+      const uniqueLinkedIds = new Set(linkedData?.map(l => l.psak_din_id) || []);
+      
+      setTotalUnlinkedCount((totalCount || 0) - uniqueLinkedIds.size);
+    } catch (error) {
+      console.error('Error loading unlinked count:', error);
     }
   };
 
@@ -135,13 +157,13 @@ const PsakDinTab = () => {
     });
   };
 
-  const unlinkedCount = psakim.filter(p => !psakLinks.has(p.id)).length;
+  const displayedUnlinkedCount = psakim.filter(p => !psakLinks.has(p.id)).length;
 
   return (
     <div className="container mx-auto px-4 py-8" dir="rtl">
       <div className="max-w-6xl mx-auto">
         <Tabs defaultValue="recent" className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-2 mr-auto">
+          <TabsList className="grid w-full max-w-md grid-cols-2 ml-auto">
             <TabsTrigger value="recent" className="gap-2 flex-row-reverse">
               פסקי דין אחרונים
               <List className="w-4 h-4" />
@@ -158,13 +180,13 @@ const PsakDinTab = () => {
             ) : (
               <div className="max-w-4xl mx-auto space-y-4">
                 {/* Header */}
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center justify-between mb-6 flex-row-reverse">
                   <h2 className="text-2xl font-bold text-foreground">פסקי דין אחרונים</h2>
                   
-                  {unlinkedCount > 0 && (
-                    <div className="flex items-center gap-3 flex-row-reverse">
+                  {totalUnlinkedCount > 0 && (
+                    <div className="flex items-center gap-3">
                       <span className="text-sm text-muted-foreground">
-                        {unlinkedCount} פסקים ללא קישור
+                        {totalUnlinkedCount} פסקים ללא קישור
                       </span>
                       {selectedForAnalysis.size > 0 && (
                         <Button
@@ -213,7 +235,7 @@ const PsakDinTab = () => {
                 )}
 
                 {/* Select All for Analysis */}
-                {unlinkedCount > 0 && !analyzing && (
+                {displayedUnlinkedCount > 0 && !analyzing && (
                   <Card className="border border-accent/30 bg-accent/5">
                     <CardContent className="p-3 flex items-center justify-between flex-row-reverse">
                       <div className="flex items-center gap-3 flex-row-reverse">
@@ -230,7 +252,7 @@ const PsakDinTab = () => {
                         variant="outline"
                         onClick={selectAllForAnalysis}
                       >
-                        {selectedForAnalysis.size === unlinkedCount ? 'בטל בחירה' : `בחר הכל (${unlinkedCount})`}
+                        {selectedForAnalysis.size === displayedUnlinkedCount ? 'בטל בחירה' : `בחר הכל (${displayedUnlinkedCount})`}
                       </Button>
                     </CardContent>
                   </Card>
