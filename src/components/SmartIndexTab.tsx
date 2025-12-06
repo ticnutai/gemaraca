@@ -40,6 +40,7 @@ import {
 } from "@/lib/textAnalyzer";
 import PsakDinViewDialog from "./PsakDinViewDialog";
 import { toHebrewNumeral } from "@/lib/hebrewNumbers";
+import { MASECHTOT } from "@/lib/masechtotData";
 
 const BATCH_SIZE = 500;
 const STORAGE_KEY = 'smart_index_last_run';
@@ -1048,49 +1049,155 @@ const SmartIndexTab = () => {
                 <Accordion type="multiple" className="space-y-2">
                   {Object.entries(groupedByMasechet)
                     .sort((a, b) => b[1].length - a[1].length)
-                    .map(([masechet, results]) => (
-                      <AccordionItem key={masechet} value={masechet} className="border rounded-lg px-4">
-                        <AccordionTrigger className="flex-row-reverse">
-                          <div className="flex items-center gap-3 flex-row-reverse flex-1">
-                            <BookOpen className="w-4 h-4 text-primary" />
-                            <span className="font-medium">{masechet}</span>
-                            <Badge variant="secondary">{results.length}</Badge>
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent>
-                          <div className="space-y-2 pt-2">
-                            {results.slice(0, 20).map(result => (
-                              <Card 
-                                key={result.id}
-                                className={`cursor-pointer hover:shadow-md transition-shadow ${
-                                  selectedForAI.has(result.id) ? 'border-accent ring-1 ring-accent' : ''
-                                }`}
+                    .map(([masechet, results]) => {
+                      // Get masechet info for max daf
+                      const masechetInfo = MASECHTOT.find(m => m.hebrewName === masechet);
+                      const maxDaf = masechetInfo?.maxDaf || 100;
+                      
+                      // Count psakim per daf
+                      const dafCounts: Record<number, number> = {};
+                      results.forEach(result => {
+                        result.sources
+                          .filter(s => s.type === 'gemara' && s.masechet === masechet && s.dafNumber)
+                          .forEach(source => {
+                            if (source.dafNumber) {
+                              dafCounts[source.dafNumber] = (dafCounts[source.dafNumber] || 0) + 1;
+                            }
+                          });
+                      });
+                      
+                      const totalPsakim = Object.values(dafCounts).reduce((sum, c) => sum + c, 0);
+                      const coveredDafim = Object.keys(dafCounts).length;
+                      const coveragePercent = Math.round((coveredDafim / (maxDaf - 1)) * 100);
+                      
+                      return (
+                        <AccordionItem key={masechet} value={masechet} className="border rounded-lg px-4">
+                          <AccordionTrigger className="flex-row-reverse">
+                            <div className="flex items-center gap-3 flex-row-reverse flex-1">
+                              <BookOpen className="w-4 h-4 text-primary" />
+                              <span className="font-medium">{masechet}</span>
+                              <span className="text-muted-foreground text-sm">(כיסוי {coveragePercent}%)</span>
+                              <Badge variant="secondary">פסקים {totalPsakim}</Badge>
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent>
+                            <div className="pt-4 pb-2">
+                              {/* Visual daf grid */}
+                              <div 
+                                className="grid gap-1" 
+                                style={{ 
+                                  gridTemplateColumns: 'repeat(auto-fill, minmax(42px, 1fr))',
+                                  direction: 'rtl' 
+                                }}
                               >
-                                <CardContent className="p-3 flex items-start gap-3 flex-row-reverse">
-                                  <Checkbox
-                                    checked={selectedForAI.has(result.id)}
-                                    onCheckedChange={() => toggleAISelection(result.id)}
-                                    onClick={(e) => e.stopPropagation()}
-                                  />
-                                  <div 
-                                    className="flex-1 text-right"
-                                    onClick={() => handlePsakClick(result.id)}
-                                  >
-                                    <div className="font-medium text-sm line-clamp-1">{result.title}</div>
-                                    <div className="flex flex-wrap gap-1 mt-1">
-                                      {result.sources
-                                        .filter(s => s.type === 'gemara' && s.masechet === masechet && s.sugyaId)
-                                        .slice(0, 3)
-                                        .map((source, idx) => renderSourceBadge(source, idx))}
+                                {Array.from({ length: maxDaf - 1 }, (_, i) => i + 2).map(dafNum => {
+                                  const count = dafCounts[dafNum] || 0;
+                                  const hasLinks = count > 0;
+                                  const isHot = count >= 10;
+                                  const isMedium = count >= 3 && count < 10;
+                                  
+                                  return (
+                                    <div
+                                      key={dafNum}
+                                      onClick={() => {
+                                        if (hasLinks && masechetInfo) {
+                                          const sugyaId = `${masechetInfo.sefariaName.toLowerCase()}_${dafNum}a`;
+                                          navigate(`/sugya/${sugyaId}`);
+                                        }
+                                      }}
+                                      className={`
+                                        relative flex items-center justify-center h-10 rounded text-sm font-medium
+                                        transition-all cursor-pointer
+                                        ${hasLinks 
+                                          ? isHot 
+                                            ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                                            : isMedium
+                                              ? 'bg-primary/70 text-primary-foreground hover:bg-primary/80'
+                                              : 'bg-muted-foreground/60 text-background hover:bg-muted-foreground/70'
+                                          : 'bg-muted/50 text-muted-foreground/50 cursor-default'
+                                        }
+                                      `}
+                                      title={hasLinks ? `${count} פסקי דין` : 'אין פסקי דין'}
+                                    >
+                                      {toHebrewNumeral(dafNum)}
+                                      {count > 1 && (
+                                        <span className="absolute -top-1 -right-1 bg-background text-foreground text-[10px] rounded-full w-4 h-4 flex items-center justify-center border shadow-sm">
+                                          {count}
+                                        </span>
+                                      )}
                                     </div>
+                                  );
+                                })}
+                              </div>
+                              
+                              {/* Legend */}
+                              <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground justify-end flex-wrap">
+                                <div className="flex items-center gap-1">
+                                  <div className="w-4 h-4 rounded bg-primary"></div>
+                                  <span>10+ פסקים</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <div className="w-4 h-4 rounded bg-primary/70"></div>
+                                  <span>3-9 פסקים</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <div className="w-4 h-4 rounded bg-muted-foreground/60"></div>
+                                  <span>1-2 פסקים</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <div className="w-4 h-4 rounded bg-muted/50"></div>
+                                  <span>ללא פסקים</span>
+                                </div>
+                              </div>
+                              
+                              {/* Psakim list */}
+                              {results.length > 0 && (
+                                <div className="mt-4 border-t pt-4">
+                                  <p className="text-sm text-muted-foreground mb-2 text-right">
+                                    רשימת פסקי דין ({results.length})
+                                  </p>
+                                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                                    {results.slice(0, 15).map(result => (
+                                      <Card 
+                                        key={result.id}
+                                        className={`cursor-pointer hover:shadow-md transition-shadow ${
+                                          selectedForAI.has(result.id) ? 'border-accent ring-1 ring-accent' : ''
+                                        }`}
+                                      >
+                                        <CardContent className="p-3 flex items-start gap-3 flex-row-reverse">
+                                          <Checkbox
+                                            checked={selectedForAI.has(result.id)}
+                                            onCheckedChange={() => toggleAISelection(result.id)}
+                                            onClick={(e) => e.stopPropagation()}
+                                          />
+                                          <div 
+                                            className="flex-1 text-right"
+                                            onClick={() => handlePsakClick(result.id)}
+                                          >
+                                            <div className="font-medium text-sm line-clamp-1">{result.title}</div>
+                                            <div className="flex flex-wrap gap-1 mt-1">
+                                              {result.sources
+                                                .filter(s => s.type === 'gemara' && s.masechet === masechet && s.sugyaId)
+                                                .slice(0, 3)
+                                                .map((source, idx) => renderSourceBadge(source, idx))}
+                                            </div>
+                                          </div>
+                                        </CardContent>
+                                      </Card>
+                                    ))}
+                                    {results.length > 15 && (
+                                      <p className="text-xs text-muted-foreground text-center py-2">
+                                        +{results.length - 15} נוספים
+                                      </p>
+                                    )}
                                   </div>
-                                </CardContent>
-                              </Card>
-                            ))}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    ))}
+                                </div>
+                              )}
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      );
+                    })}
                 </Accordion>
               </ScrollArea>
             </TabsContent>
