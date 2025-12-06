@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,11 +12,38 @@ serve(async (req) => {
   }
 
   try {
-    const { gemaraText, sugyaTitle, dafYomi, masechet } = await req.json();
+    const { gemaraText, sugyaTitle, dafYomi, masechet, sugyaId, forceRegenerate } = await req.json();
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
+    }
+
+    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+    const effectiveSugyaId = sugyaId || `${masechet}-${dafYomi}`.replace(/\s+/g, '-');
+
+    // Check if we already have cached examples (unless forcing regeneration)
+    if (!forceRegenerate) {
+      const { data: existing, error: fetchError } = await supabase
+        .from('modern_examples')
+        .select('*')
+        .eq('sugya_id', effectiveSugyaId)
+        .maybeSingle();
+
+      if (existing && !fetchError) {
+        console.log(`Found cached examples for ${effectiveSugyaId}`);
+        return new Response(JSON.stringify({
+          principle: existing.principle,
+          examples: existing.examples,
+          practicalSummary: existing.practical_summary,
+          cached: true
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     console.log(`Generating modern examples for ${masechet} ${dafYomi} - ${sugyaTitle}`);
@@ -115,7 +143,25 @@ ${gemaraText?.substring(0, 2000) || 'לא זמין'}
       };
     }
 
-    return new Response(JSON.stringify(result), {
+    // Save to database
+    const { error: upsertError } = await supabase
+      .from('modern_examples')
+      .upsert({
+        sugya_id: effectiveSugyaId,
+        masechet: masechet,
+        daf_yomi: dafYomi,
+        principle: result.principle,
+        examples: result.examples,
+        practical_summary: result.practicalSummary
+      }, { onConflict: 'sugya_id' });
+
+    if (upsertError) {
+      console.error("Error saving to database:", upsertError);
+    } else {
+      console.log(`Saved examples to database for ${effectiveSugyaId}`);
+    }
+
+    return new Response(JSON.stringify({ ...result, cached: false }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 
