@@ -14,38 +14,42 @@ const getDeviceId = () => {
 
 export function useRealtimeUploadSync() {
   const deviceId = useRef(getDeviceId());
-  const { session, updateProgress, setStatus } = useUploadStore();
+  const { sessions, updateProgress, setStatus } = useUploadStore();
 
-  // Broadcast local changes to database
+  // Broadcast local changes to database for all active sessions
   useEffect(() => {
-    if (!session || session.status === 'idle' || session.status === 'completed') {
-      return;
-    }
+    const activeSessions = Object.values(sessions).filter(
+      s => ['uploading', 'paused', 'analyzing'].includes(s.status)
+    );
+
+    if (activeSessions.length === 0) return;
 
     const syncToDb = async () => {
-      const progress = session.uploadProgress;
-      
-      try {
-        await supabase.from('upload_sessions').upsert({
-          session_id: session.id,
-          status: session.status,
-          total_files: progress?.total || 0,
-          processed_files: progress?.completed || 0,
-          successful_files: progress?.successful || 0,
-          failed_files: progress?.failed || 0,
-          skipped_files: progress?.skipped || 0,
-          current_file: progress?.current || null,
-          device_id: deviceId.current,
-        }, {
-          onConflict: 'session_id'
-        });
-      } catch (err) {
-        console.error('Error syncing upload progress:', err);
+      for (const session of activeSessions) {
+        const progress = session.uploadProgress;
+        
+        try {
+          await supabase.from('upload_sessions').upsert({
+            session_id: session.id,
+            status: session.status,
+            total_files: progress?.total || 0,
+            processed_files: progress?.completed || 0,
+            successful_files: progress?.successful || 0,
+            failed_files: progress?.failed || 0,
+            skipped_files: progress?.skipped || 0,
+            current_file: progress?.current || null,
+            device_id: deviceId.current,
+          }, {
+            onConflict: 'session_id'
+          });
+        } catch (err) {
+          console.error('Error syncing upload progress:', err);
+        }
       }
     };
 
     syncToDb();
-  }, [session?.id, session?.status, session?.uploadProgress]);
+  }, [sessions]);
 
   // Listen for changes from other devices
   useEffect(() => {
@@ -67,9 +71,9 @@ export function useRealtimeUploadSync() {
           }
 
           // Update local state with remote changes
-          if (data.status && ['uploading', 'paused', 'analyzing'].includes(data.status)) {
-            setStatus(data.status);
-            updateProgress({
+          if (data.session_id && data.status && ['uploading', 'paused', 'analyzing'].includes(data.status)) {
+            setStatus(data.session_id, data.status);
+            updateProgress(data.session_id, {
               total: data.total_files,
               completed: data.processed_files,
               successful: data.successful_files,

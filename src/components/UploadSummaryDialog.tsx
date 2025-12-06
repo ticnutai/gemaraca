@@ -1,4 +1,4 @@
-import { useUploadStore } from "@/stores/uploadStore";
+import { useUploadStore, UploadSession } from "@/stores/uploadStore";
 import {
   Dialog,
   DialogContent,
@@ -21,13 +21,29 @@ import {
 interface UploadSummaryDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  sessionId?: string;
 }
 
-const UploadSummaryDialog = ({ open, onOpenChange }: UploadSummaryDialogProps) => {
-  const { session, clearSession, getSummary } = useUploadStore();
-  const summary = getSummary();
+const UploadSummaryDialog = ({ open, onOpenChange, sessionId }: UploadSummaryDialogProps) => {
+  const { sessions, clearSession } = useUploadStore();
   
-  if (!session || !summary) return null;
+  // Get completed sessions
+  const completedSessions = Object.values(sessions).filter(s => s.status === 'completed');
+  
+  // Use specific session or first completed
+  const session = sessionId 
+    ? sessions[sessionId] 
+    : completedSessions[0];
+  
+  if (!session) return null;
+
+  const summary = {
+    totalUploaded: session.results.filter(r => r.success).length,
+    totalAnalyzed: session.results.filter(r => r.analyzed).length,
+    totalErrors: session.errors.length,
+    totalSkipped: session.uploadProgress?.skipped || 0,
+    duration: Date.now() - session.startedAt,
+  };
 
   const formatDuration = (ms: number) => {
     const seconds = Math.floor(ms / 1000);
@@ -42,21 +58,17 @@ const UploadSummaryDialog = ({ open, onOpenChange }: UploadSummaryDialogProps) =
 
   const handleClose = () => {
     onOpenChange(false);
-    clearSession();
+    clearSession(session.id);
   };
 
   const exportReport = () => {
     const report = {
       sessionId: session.id,
+      sessionName: session.name,
       startedAt: new Date(session.startedAt).toISOString(),
       duration: formatDuration(summary.duration),
       metadata: session.metadata,
-      summary: {
-        totalUploaded: summary.totalUploaded,
-        totalAnalyzed: summary.totalAnalyzed,
-        totalErrors: summary.totalErrors,
-        totalSkipped: summary.totalSkipped,
-      },
+      summary,
       results: session.results,
       errors: session.errors,
     };
@@ -76,7 +88,7 @@ const UploadSummaryDialog = ({ open, onOpenChange }: UploadSummaryDialogProps) =
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-right">
             <CheckCircle className="w-5 h-5 text-green-500" />
-            דוח סיכום העלאה
+            דוח סיכום: {session.name}
           </DialogTitle>
         </DialogHeader>
         

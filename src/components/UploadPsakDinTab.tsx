@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, FileText, Archive, X, Loader2, CheckCircle, AlertCircle, FolderUp, Sparkles, Brain, Play, Pause, RefreshCw, Copy, Ban, Hash, StopCircle, WifiOff } from "lucide-react";
+import { Upload, FileText, Archive, X, Loader2, CheckCircle, AlertCircle, FolderUp, Sparkles, Brain, Copy, Ban, Hash, Layers } from "lucide-react";
 import { useToast, toast } from "@/hooks/use-toast";
 import { useUploadStore } from "@/stores/uploadStore";
 import { useUploadController } from "@/hooks/useUploadController";
@@ -22,9 +22,13 @@ interface DuplicateFile {
   existingTitle?: string;
 }
 
+interface ExtractedZip {
+  name: string;
+  files: File[];
+}
+
 const UploadPsakDinTab = () => {
-  const [files, setFiles] = useState<File[]>([]);
-  const [queuedFiles, setQueuedFiles] = useState<File[]>([]); // Files queued while uploading
+  const [extractedZips, setExtractedZips] = useState<ExtractedZip[]>([]);
   const [duplicates, setDuplicates] = useState<DuplicateFile[]>([]);
   const [checkingDuplicates, setCheckingDuplicates] = useState(false);
   const [hashProgress, setHashProgress] = useState<{ current: number; total: number } | null>(null);
@@ -37,36 +41,27 @@ const UploadPsakDinTab = () => {
   const [year, setYear] = useState(new Date().getFullYear().toString());
   const [tags, setTags] = useState("");
   const [showSummary, setShowSummary] = useState(false);
+  const [completedSessionId, setCompletedSessionId] = useState<string | undefined>();
   const [debugLog, setDebugLog] = useState<string[]>([]);
   
   // Use the upload controller hook
   const {
-    session,
-    isUploading,
-    isPaused,
-    isAnalyzing,
-    isActive,
+    sessions,
+    getActiveSessions,
     uploadFiles,
     analyzeExisting,
-    pause,
-    resume,
-    cancel,
     clearSession,
+    clearAllSessions,
   } = useUploadController({
-    onComplete: () => {
+    onComplete: (sessionId) => {
+      setCompletedSessionId(sessionId);
       setShowSummary(true);
-      // Check if there are queued files to upload
-      if (queuedFiles.length > 0) {
-        const filesToUpload = [...queuedFiles];
-        setQueuedFiles([]);
-        setFiles(filesToUpload);
-        toast({
-          title: `יש ${filesToUpload.length} קבצים בתור`,
-          description: "לחץ על העלה כדי להתחיל את ההעלאה הבאה",
-        });
-      }
     },
   });
+  
+  // Derived state
+  const activeSessions = getActiveSessions();
+  const isActive = activeSessions.length > 0;
   
   // Zustand store for hash functions
   const {
@@ -76,8 +71,8 @@ const UploadPsakDinTab = () => {
   } = useUploadStore();
 
   // Check for duplicates - both by title and content hash
-  const checkDuplicates = useCallback(async (filesToCheck: File[]) => {
-    if (filesToCheck.length === 0) return;
+  const checkDuplicates = useCallback(async (filesToCheck: File[]): Promise<File[]> => {
+    if (filesToCheck.length === 0) return [];
     
     setCheckingDuplicates(true);
     
@@ -149,38 +144,15 @@ const UploadPsakDinTab = () => {
         });
       }
       
-      // If upload is active, add to queue instead of main list
-      if (isActive) {
-        setQueuedFiles(prev => {
-          const existingNames = new Set(prev.map(f => f.name));
-          const newUniqueFiles = uniqueFiles.filter(f => !existingNames.has(f.name));
-          return [...prev, ...newUniqueFiles];
-        });
-        if (uniqueFiles.length > 0) {
-          toast({
-            title: `${uniqueFiles.length} קבצים נוספו לתור`,
-            description: "יועלו לאחר סיום ההעלאה הנוכחית",
-          });
-        }
-      } else {
-        setFiles(prev => {
-          const existingNames = new Set(prev.map(f => f.name));
-          const newUniqueFiles = uniqueFiles.filter(f => !existingNames.has(f.name));
-          return [...prev, ...newUniqueFiles];
-        });
-      }
+      return uniqueFiles;
       
     } catch (error) {
       console.error('Error checking duplicates:', error);
-      if (isActive) {
-        setQueuedFiles(prev => [...prev, ...filesToCheck]);
-      } else {
-        setFiles(prev => [...prev, ...filesToCheck]);
-      }
+      return filesToCheck;
     } finally {
       setCheckingDuplicates(false);
     }
-  }, [hasFileHash, getFileByHash, addFileHash, isActive]);
+  }, [hasFileHash, getFileByHash, addFileHash]);
 
   // Debug logging helper
   const addDebug = useCallback((message: string) => {
@@ -256,7 +228,7 @@ const UploadPsakDinTab = () => {
     
     const validExts = ['pdf', 'docx', 'doc', 'txt', 'rtf', 'zip'];
     
-    const validFiles: File[] = [];
+    const regularFiles: File[] = [];
     const zipFiles: File[] = [];
     
     // Separate ZIP files from regular files
@@ -266,13 +238,13 @@ const UploadPsakDinTab = () => {
         zipFiles.push(file);
         addDebug(`🗜️ זוהה ZIP: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`);
       } else if (validExts.includes(ext || '')) {
-        validFiles.push(file);
+        regularFiles.push(file);
       }
     }
     
-    addDebug(`📊 סיכום: ${zipFiles.length} קבצי ZIP, ${validFiles.length} קבצים רגילים`);
+    addDebug(`📊 סיכום: ${zipFiles.length} קבצי ZIP, ${regularFiles.length} קבצים רגילים`);
     
-    // Extract files from ZIPs
+    // Extract files from ZIPs and add each as separate upload batch
     if (zipFiles.length > 0) {
       toast({
         title: `מחלץ ${zipFiles.length} קבצי ZIP...`,
@@ -282,28 +254,33 @@ const UploadPsakDinTab = () => {
       for (const zipFile of zipFiles) {
         addDebug(`🔄 מעבד ZIP: ${zipFile.name}`);
         const extracted = await extractZipFiles(zipFile);
-        validFiles.push(...extracted);
-        addDebug(`➕ נוספו ${extracted.length} קבצים מ-${zipFile.name}`);
+        addDebug(`➕ חולצו ${extracted.length} קבצים מ-${zipFile.name}`);
+        
+        // Check duplicates
+        addDebug(`🔍 בודק כפילויות...`);
+        const uniqueFiles = await checkDuplicates(extracted);
+        addDebug(`✅ ${uniqueFiles.length} קבצים ייחודיים`);
+        
+        if (uniqueFiles.length > 0) {
+          setExtractedZips(prev => [...prev, { name: zipFile.name, files: uniqueFiles }]);
+        }
       }
       
-      addDebug(`✅ סה"כ חולצו ${validFiles.length} קבצים מכל ה-ZIPs`);
-      
       toast({
-        title: `חולצו ${validFiles.length} קבצים מ-ZIP`,
-        description: 'בודק כפילויות...',
+        title: `קבצי ZIP מוכנים להעלאה`,
+        description: 'לחץ על "העלה הכל" להתחיל העלאה מקבילית',
       });
     }
     
-    if (validFiles.length < selectedFiles.length - zipFiles.length) {
-      showToast({
-        title: `${selectedFiles.length - validFiles.length - zipFiles.length} קבצים לא נתמכים הוסרו`,
-        variant: "destructive",
-      });
+    // Add regular files as a batch if any
+    if (regularFiles.length > 0) {
+      addDebug(`🔍 בודק כפילויות עבור ${regularFiles.length} קבצים רגילים...`);
+      const uniqueRegular = await checkDuplicates(regularFiles);
+      if (uniqueRegular.length > 0) {
+        setExtractedZips(prev => [...prev, { name: 'קבצים בודדים', files: uniqueRegular }]);
+      }
+      addDebug(`✅ בדיקת כפילויות הושלמה`);
     }
-    
-    addDebug(`🔍 בודק כפילויות עבור ${validFiles.length} קבצים...`);
-    await checkDuplicates(validFiles);
-    addDebug(`✅ בדיקת כפילויות הושלמה`);
     
     // Reset input to allow re-selecting same files
     e.target.value = '';
@@ -312,63 +289,25 @@ const UploadPsakDinTab = () => {
   const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
     const droppedFiles = Array.from(e.dataTransfer.files);
-    addDebug(`📥 נגררו ${droppedFiles.length} קבצים`);
     
-    const validExts = ['pdf', 'docx', 'doc', 'txt', 'rtf', 'zip'];
+    // Create a fake event for reuse
+    const fakeEvent = {
+      target: { files: droppedFiles, value: '' }
+    } as unknown as React.ChangeEvent<HTMLInputElement>;
     
-    const validFiles: File[] = [];
-    const zipFiles: File[] = [];
-    
-    // Separate ZIP files from regular files
-    for (const file of droppedFiles) {
-      const ext = file.name.split('.').pop()?.toLowerCase();
-      if (ext === 'zip') {
-        zipFiles.push(file);
-        addDebug(`🗜️ זוהה ZIP: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`);
-      } else if (validExts.includes(ext || '')) {
-        validFiles.push(file);
-      }
-    }
-    
-    addDebug(`📊 סיכום: ${zipFiles.length} קבצי ZIP, ${validFiles.length} קבצים רגילים`);
-    
-    // Extract files from ZIPs
-    if (zipFiles.length > 0) {
-      toast({
-        title: `מחלץ ${zipFiles.length} קבצי ZIP...`,
-        description: 'אנא המתן - פעולה זו עלולה לקחת זמן',
-      });
-      
-      for (const zipFile of zipFiles) {
-        addDebug(`🔄 מעבד ZIP: ${zipFile.name}`);
-        const extracted = await extractZipFiles(zipFile);
-        validFiles.push(...extracted);
-        addDebug(`➕ נוספו ${extracted.length} קבצים מ-${zipFile.name}`);
-      }
-      
-      addDebug(`✅ סה"כ חולצו ${validFiles.length} קבצים מכל ה-ZIPs`);
-      
-      toast({
-        title: `חולצו ${validFiles.length} קבצים מ-ZIP`,
-        description: 'בודק כפילויות...',
-      });
-    }
-    
-    addDebug(`🔍 בודק כפילויות עבור ${validFiles.length} קבצים...`);
-    await checkDuplicates(validFiles);
-    addDebug(`✅ בדיקת כפילויות הושלמה`);
-  }, [checkDuplicates, extractZipFiles, addDebug]);
+    await handleFileSelect(fakeEvent);
+  }, [handleFileSelect]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
   }, []);
 
-  const removeFile = (index: number) => {
-    setFiles(prev => prev.filter((_, i) => i !== index));
+  const removeZip = (index: number) => {
+    setExtractedZips(prev => prev.filter((_, i) => i !== index));
   };
 
-  const clearAllFiles = () => {
-    setFiles([]);
+  const clearAllZips = () => {
+    setExtractedZips([]);
     setDuplicates([]);
   };
 
@@ -376,8 +315,24 @@ const UploadPsakDinTab = () => {
     setDuplicates([]);
   };
 
-  const handleUpload = async (withAI: boolean = false) => {
-    if (files.length === 0) {
+  // Upload single ZIP batch
+  const handleUploadSingle = async (zipBatch: ExtractedZip, withAI: boolean = false) => {
+    const metadata = {
+      court: court || undefined,
+      year: parseInt(year) || new Date().getFullYear(),
+      tags: tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+    };
+
+    // Remove from pending list
+    setExtractedZips(prev => prev.filter(z => z.name !== zipBatch.name));
+    
+    // Start upload with ZIP name as session name
+    await uploadFiles(zipBatch.files, metadata, withAI, zipBatch.name);
+  };
+
+  // Upload ALL pending ZIPs concurrently
+  const handleUploadAll = async (withAI: boolean = false) => {
+    if (extractedZips.length === 0) {
       showToast({
         title: "אנא בחר קבצים להעלאה",
         variant: "destructive",
@@ -391,34 +346,26 @@ const UploadPsakDinTab = () => {
       tags: tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : [],
     };
 
-    const result = await uploadFiles(files, metadata, withAI);
+    // Copy and clear the list
+    const zipsToUpload = [...extractedZips];
+    setExtractedZips([]);
     
-    if (result) {
-      // Remove uploaded files from the list
-      const uploadedSet = new Set(result.uploadedFileNames);
-      setFiles(prev => prev.filter(f => !uploadedSet.has(f.name)));
-      
-      // Reset form on success
-      if (result.results.length > 0) {
-        setCourt("");
-        setYear(new Date().getFullYear().toString());
-        setTags("");
-        setDuplicates([]);
-      }
-    }
-  };
-
-  const handleResumeAnalysis = async () => {
-    if (!session?.pendingAnalysis?.length) return;
-    await analyzeExisting(session.pendingAnalysis);
-  };
-
-  const togglePause = () => {
-    if (isPaused) {
-      resume();
-    } else {
-      pause();
-    }
+    // Start ALL uploads concurrently
+    toast({
+      title: `מתחיל ${zipsToUpload.length} העלאות מקביליות`,
+      description: `סה"כ ${zipsToUpload.reduce((sum, z) => sum + z.files.length, 0)} קבצים`,
+    });
+    
+    // Fire all uploads in parallel (no await in loop)
+    zipsToUpload.forEach(zipBatch => {
+      uploadFiles(zipBatch.files, metadata, withAI, zipBatch.name);
+    });
+    
+    // Reset form
+    setCourt("");
+    setYear(new Date().getFullYear().toString());
+    setTags("");
+    setDuplicates([]);
   };
 
   const getFileIcon = (fileName: string) => {
@@ -427,8 +374,7 @@ const UploadPsakDinTab = () => {
     return <FileText className="w-4 h-4" />;
   };
 
-  const localProgress = session?.uploadProgress;
-  const progressPercent = localProgress ? (localProgress.completed / localProgress.total) * 100 : 0;
+  const totalPendingFiles = extractedZips.reduce((sum, z) => sum + z.files.length, 0);
 
   return (
     <div className="container mx-auto px-4 py-8" dir="rtl">
@@ -436,32 +382,23 @@ const UploadPsakDinTab = () => {
         {/* Database Statistics */}
         <PsakDinStats />
         
-        {/* Session Recovery Card */}
-        {session && session.status === 'paused' && session.results.length > 0 && (
-          <Card className="border-2 border-accent/50 bg-accent/5">
+        {/* Active Uploads Banner */}
+        {isActive && (
+          <Card className="border-2 border-primary/50 bg-primary/5">
             <CardContent className="p-4">
               <div className="flex items-center justify-between flex-row-reverse">
                 <div className="flex items-center gap-3 flex-row-reverse">
-                  <RefreshCw className="w-5 h-5 text-accent" />
+                  <Layers className="w-5 h-5 text-primary" />
                   <div className="text-right">
-                    <p className="font-medium">יש העלאה שהושהתה</p>
+                    <p className="font-medium">{activeSessions.length} העלאות פעילות</p>
                     <p className="text-sm text-muted-foreground">
-                      {session.results.length} פסקים הועלו, 
-                      {session.pendingAnalysis?.length || 0} ממתינים לניתוח
+                      ניתן להוסיף עוד קבצים להעלאה מקבילית
                     </p>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  {session.pendingAnalysis?.length > 0 && (
-                    <Button size="sm" onClick={handleResumeAnalysis} className="gap-1">
-                      <Sparkles className="w-4 h-4" />
-                      המשך ניתוח
-                    </Button>
-                  )}
-                  <Button size="sm" variant="outline" onClick={clearSession}>
-                    התחל מחדש
-                  </Button>
-                </div>
+                <Button size="sm" variant="outline" onClick={clearAllSessions}>
+                  בטל הכל
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -509,16 +446,16 @@ const UploadPsakDinTab = () => {
               <Upload className="w-5 h-5" />
               העלאת פסקי דין
               <span className="text-sm font-normal text-muted-foreground">
-                (זיהוי כפילויות לפי תוכן ושם)
+                (העלאה מקבילית של מספר ZIPs)
               </span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* File Drop Zone - ALWAYS ENABLED even during upload */}
+            {/* File Drop Zone */}
             <div
               className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:border-primary transition-colors ${
                 checkingDuplicates ? 'border-accent bg-accent/5' : 
-                isActive ? 'border-primary/50 bg-primary/5' : 
+                extractProgress ? 'border-primary bg-primary/5' :
                 'border-border bg-muted/20'
               }`}
               onClick={() => !checkingDuplicates && fileInputRef.current?.click()}
@@ -569,25 +506,12 @@ const UploadPsakDinTab = () => {
                     }
                   </p>
                 </>
-              ) : isActive ? (
-                <>
-                  <Upload className="w-12 h-12 mx-auto text-primary mb-4" />
-                  <p className="text-foreground font-medium">העלאה בתהליך - ניתן להוסיף קבצים נוספים לתור</p>
-                  <p className="text-sm text-primary mt-2">
-                    קבצים חדשים יתווספו לתור ויועלו אחרי סיום ההעלאה הנוכחית
-                  </p>
-                  {queuedFiles.length > 0 && (
-                    <Badge variant="secondary" className="mt-2">
-                      {queuedFiles.length} קבצים בתור
-                    </Badge>
-                  )}
-                </>
               ) : (
                 <>
                   <Upload className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-foreground font-medium">לחץ לבחירת קבצים או גרור לכאן</p>
+                  <p className="text-foreground font-medium">לחץ לבחירת קבצי ZIP או גרור לכאן</p>
                   <p className="text-sm text-muted-foreground mt-2">
-                    PDF, DOCX, DOC, TXT, RTF, ZIP (נתמכים קבצי ZIP עם עד 5000 קבצים)
+                    כל ZIP יעלה במקביל - ניתן להעלות מספר ZIPs בו-זמנית
                   </p>
                 </>
               )}
@@ -603,126 +527,62 @@ const UploadPsakDinTab = () => {
                   className="gap-2"
                 >
                   <FolderUp className="w-4 h-4" />
-                  {isActive ? 'הוסף תיקייה לתור' : 'בחר תיקייה'}
+                  בחר תיקייה
                 </Button>
               </div>
             </div>
 
-            {/* Queued Files - shown during upload */}
-            {isActive && queuedFiles.length > 0 && (
-              <Card className="border-2 border-primary/30 bg-primary/5">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between flex-row-reverse">
-                    <div className="flex items-center gap-2">
-                      <Archive className="w-5 h-5 text-primary" />
-                      <span className="font-medium">קבצים בתור ({queuedFiles.length})</span>
-                    </div>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => setQueuedFiles([])}
-                      className="text-destructive"
-                    >
-                      <X className="w-4 h-4 ml-1" />
-                      נקה תור
-                    </Button>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-1 text-right">
-                    קבצים אלו יועלו אוטומטית לאחר סיום ההעלאה הנוכחית
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Selected Files */}
-            {files.length > 0 && (
+            {/* Pending ZIP Batches */}
+            {extractedZips.length > 0 && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between flex-row-reverse">
-                  <Label className="text-foreground">קבצים נבחרים ({files.length})</Label>
-                  <Button variant="ghost" size="sm" onClick={clearAllFiles} className="text-destructive">
+                  <Label className="text-foreground flex items-center gap-2">
+                    <Layers className="w-4 h-4" />
+                    ממתינים להעלאה ({extractedZips.length} קבוצות, {totalPendingFiles} קבצים)
+                  </Label>
+                  <Button variant="ghost" size="sm" onClick={clearAllZips} className="text-destructive">
                     <X className="w-4 h-4 ml-1" />
                     נקה הכל
                   </Button>
                 </div>
-                <div className="max-h-40 overflow-y-auto border border-border rounded-lg p-2 bg-muted/10">
-                  <div className="flex flex-wrap gap-2">
-                    {files.slice(0, 100).map((file, index) => (
-                      <Badge 
-                        key={index} 
-                        variant="secondary" 
-                        className="flex items-center gap-1 py-1 px-2 text-xs"
-                      >
-                        {getFileIcon(file.name)}
-                        <span className="max-w-[120px] truncate">{file.name}</span>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            removeFile(index);
-                          }}
-                          className="hover:text-destructive"
+                <div className="space-y-2">
+                  {extractedZips.map((zipBatch, index) => (
+                    <div 
+                      key={index}
+                      className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Archive className="w-4 h-4 text-primary" />
+                        <span className="font-medium">{zipBatch.name}</span>
+                        <Badge variant="secondary">{zipBatch.files.length} קבצים</Badge>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleUploadSingle(zipBatch, false)}
                         >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </Badge>
-                    ))}
-                    {files.length > 100 && (
-                      <Badge variant="outline" className="py-1 px-2">
-                        +{files.length - 100} קבצים נוספים
-                      </Badge>
-                    )}
-                  </div>
+                          העלה
+                        </Button>
+                        <Button 
+                          size="sm"
+                          onClick={() => handleUploadSingle(zipBatch, true)}
+                        >
+                          <Sparkles className="w-3 h-3 ml-1" />
+                          העלה + AI
+                        </Button>
+                        <Button 
+                          size="icon" 
+                          variant="ghost"
+                          className="h-8 w-8"
+                          onClick={() => removeZip(index)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            )}
-
-            {/* Progress in Tab (minimal, since we have global progress) */}
-            {isActive && localProgress && (
-              <div className="space-y-2 p-4 bg-muted/20 rounded-lg">
-                <div className="flex justify-between items-center text-sm flex-row-reverse">
-                  <div className="flex items-center gap-2">
-                    {!isOnline() && (
-                      <span className="flex items-center gap-1 text-destructive">
-                        <WifiOff className="w-4 h-4" />
-                        אין חיבור
-                      </span>
-                    )}
-                    <span>מעלה: {localProgress.current}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span>{localProgress.completed}/{localProgress.total}</span>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={togglePause}
-                      className="h-7 w-7 p-0"
-                      title={isPaused ? "המשך" : "השהה"}
-                    >
-                      {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={cancel}
-                      className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                      title="בטל העלאה"
-                    >
-                      <StopCircle className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-                <Progress value={progressPercent} className="h-2" />
-                <div className="flex justify-between text-xs text-muted-foreground flex-row-reverse">
-                  <span className="text-green-600">הצליחו: {localProgress.successful}</span>
-                  {localProgress.failed > 0 && (
-                    <span className="text-destructive">נכשלו: {localProgress.failed}</span>
-                  )}
-                  {localProgress.skipped > 0 && (
-                    <span className="text-accent">דולגו (כפולים): {localProgress.skipped}</span>
-                  )}
-                </div>
-                {isPaused && (
-                  <p className="text-xs text-accent text-center">ההעלאה מושהית - לחץ ▶ להמשך</p>
-                )}
               </div>
             )}
 
@@ -736,7 +596,6 @@ const UploadPsakDinTab = () => {
                   onChange={(e) => setCourt(e.target.value)}
                   placeholder="לדוגמה: בית הדין הרבני"
                   className="bg-card border-border text-right"
-                  disabled={isActive}
                 />
               </div>
               <div className="space-y-2">
@@ -747,7 +606,6 @@ const UploadPsakDinTab = () => {
                   value={year}
                   onChange={(e) => setYear(e.target.value)}
                   className="bg-card border-border text-right"
-                  disabled={isActive}
                 />
               </div>
               <div className="space-y-2">
@@ -758,137 +616,78 @@ const UploadPsakDinTab = () => {
                   onChange={(e) => setTags(e.target.value)}
                   placeholder="ממונות, נזיקין"
                   className="bg-card border-border text-right"
-                  disabled={isActive}
                 />
               </div>
             </div>
 
-            {/* AI Analysis Progress */}
-            {isAnalyzing && session?.analysisProgress && (
-              <div className="space-y-2 p-4 bg-primary/5 rounded-lg border border-primary/20">
-                <div className="flex items-center gap-2 text-sm flex-row-reverse">
-                  <Sparkles className="w-4 h-4 text-primary animate-pulse" />
-                  <span>מנתח פסקי דין באמצעות AI...</span>
-                  <span className="mr-auto">{session.analysisProgress.current}/{session.analysisProgress.total}</span>
-                </div>
-                <Progress 
-                  value={(session.analysisProgress.current / session.analysisProgress.total) * 100} 
-                  className="h-2" 
-                />
-                <p className="text-xs text-muted-foreground">
-                  {session.analysisProgress.currentTitle || 'מזהה מקורות תלמודיים ומסווג את פסקי הדין'}
-                </p>
+            {/* Upload All Buttons */}
+            {extractedZips.length > 0 && (
+              <div className="flex gap-3 flex-row-reverse">
+                <Button
+                  onClick={() => handleUploadAll(false)}
+                  disabled={extractedZips.length === 0}
+                  variant="outline"
+                  className="flex-1 gap-2"
+                  size="lg"
+                >
+                  <Upload className="w-4 h-4" />
+                  העלה הכל ({totalPendingFiles} קבצים)
+                </Button>
+                
+                <Button
+                  onClick={() => handleUploadAll(true)}
+                  disabled={extractedZips.length === 0}
+                  className="flex-1 gap-2"
+                  size="lg"
+                >
+                  <Brain className="w-4 h-4" />
+                  העלה הכל + ניתוח AI
+                </Button>
               </div>
             )}
-
-            {/* Upload Buttons */}
-            <div className="flex gap-3 flex-row-reverse">
-              <Button
-                onClick={() => handleUpload(false)}
-                disabled={isActive || files.length === 0}
-                variant="outline"
-                className="flex-1 gap-2"
-                size="lg"
-              >
-                {isUploading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    מעלה...
-                  </>
-                ) : (
-                  <>
-                    <Upload className="w-4 h-4" />
-                    העלה בלבד
-                    {files.length > 0 && ` (${files.length})`}
-                  </>
-                )}
-              </Button>
-              
-              <Button
-                onClick={() => handleUpload(true)}
-                disabled={isActive || files.length === 0}
-                className="flex-1 gap-2"
-                size="lg"
-              >
-                {isUploading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    מעלה...
-                  </>
-                ) : isAnalyzing ? (
-                  <>
-                    <Sparkles className="w-4 h-4 animate-pulse" />
-                    מנתח...
-                  </>
-                ) : (
-                  <>
-                    <Brain className="w-4 h-4" />
-                    העלה + ניתוח AI
-                    {files.length > 0 && ` (${files.length})`}
-                  </>
-                )}
-              </Button>
-            </div>
           </CardContent>
         </Card>
 
-        {/* Results - shown from store */}
-        {session && session.results.length > 0 && session.status !== 'uploading' && (
+        {/* Completed Sessions Summary */}
+        {Object.values(sessions).filter(s => s.status === 'completed').length > 0 && (
           <Card className="border border-border shadow-sm">
             <CardHeader>
               <CardTitle className="text-lg text-foreground flex items-center gap-2 flex-row-reverse">
                 <CheckCircle className="w-5 h-5 text-green-500" />
-                הועלו בהצלחה ({session.results.filter(r => r.success).length})
+                העלאות שהושלמו
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="max-h-60 overflow-y-auto space-y-1">
-                {session.results.filter(r => r.success).map((result, index) => (
-                  <div key={index} className="flex items-center gap-2 text-sm py-1 flex-row-reverse">
-                    <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                    <span className="truncate text-right flex-1">{result.title}</span>
-                    {result.analyzed && (
-                      <Badge variant="secondary" className="text-xs">
-                        <Sparkles className="w-3 h-3 ml-1" />
-                        נותח
-                      </Badge>
-                    )}
-                  </div>
-                ))}
-              </div>
-              
-              {/* Analyze uploaded results */}
-              {!isAnalyzing && session.results.some(r => !r.analyzed) && (
-                <Button
-                  onClick={() => analyzeExisting(session.results.filter(r => r.success && !r.analyzed).map(r => r.id))}
-                  className="w-full mt-4 gap-2"
-                  variant="outline"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  נתח {session.results.filter(r => !r.analyzed).length} פסקים עם AI
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Errors */}
-        {session && session.errors.length > 0 && (
-          <Card className="border border-destructive/50 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-lg text-destructive flex items-center gap-2 flex-row-reverse">
-                <AlertCircle className="w-5 h-5" />
-                שגיאות ({session.errors.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="max-h-40 overflow-y-auto space-y-1">
-                {session.errors.map((error, index) => (
-                  <div key={index} className="flex items-center gap-2 text-sm py-1 text-destructive flex-row-reverse">
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                    <span className="truncate text-right">{error}</span>
-                  </div>
-                ))}
+              <div className="space-y-2">
+                {Object.values(sessions)
+                  .filter(s => s.status === 'completed')
+                  .map((session) => (
+                    <div 
+                      key={session.id}
+                      className="flex items-center justify-between p-3 bg-green-500/10 rounded-lg"
+                    >
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        <span className="font-medium">{session.name}</span>
+                        <Badge variant="secondary">
+                          {session.results.filter(r => r.success).length} הועלו
+                        </Badge>
+                        {session.results.some(r => r.analyzed) && (
+                          <Badge variant="outline">
+                            <Sparkles className="w-3 h-3 ml-1" />
+                            {session.results.filter(r => r.analyzed).length} נותחו
+                          </Badge>
+                        )}
+                      </div>
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        onClick={() => clearSession(session.id)}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
               </div>
             </CardContent>
           </Card>
@@ -927,7 +726,11 @@ const UploadPsakDinTab = () => {
       </div>
       
       {/* Summary Dialog */}
-      <UploadSummaryDialog open={showSummary} onOpenChange={setShowSummary} />
+      <UploadSummaryDialog 
+        open={showSummary} 
+        onOpenChange={setShowSummary}
+        sessionId={completedSessionId}
+      />
     </div>
   );
 };
