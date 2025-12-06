@@ -12,6 +12,7 @@ import GemaraTextPanel from "@/components/GemaraTextPanel";
 import CommentariesPanel from "@/components/CommentariesPanel";
 import LexiconSearch from "@/components/LexiconSearch";
 import RelatedPsakimSidebar from "@/components/RelatedPsakimSidebar";
+import { ModernExamplesPanel } from "@/components/ModernExamplesPanel";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MASECHTOT } from "@/lib/masechtotData";
@@ -507,6 +508,17 @@ const SugyaDetail = () => {
               {sugya.fullText}
             </div>
           </Card>
+
+          {/* Modern Examples - AI Generated */}
+          <div className="space-y-4">
+            <h2 className="text-3xl font-bold text-foreground">המחשה לימינו</h2>
+            <ModernExamplesPanel
+              gemaraText={sugya.gemaraText || sugya.fullText}
+              sugyaTitle={sugya.title}
+              dafYomi={sugya.dafYomi}
+              masechet={sugya.masechet || "בבא בתרא"}
+            />
+          </div>
 
           {/* Sefaria Integration */}
           <div className="space-y-6">
