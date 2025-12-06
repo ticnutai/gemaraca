@@ -11,6 +11,7 @@ import {
 import { Loader2, BookOpen, Image, FileText, ExternalLink, Eye, Check, ZoomIn, ZoomOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { getCachedGemaraText, setCachedGemaraText } from "@/lib/pageCache";
 
 interface GemaraTextPanelProps {
   sugyaId: string;
@@ -49,9 +50,18 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   }, [viewMode]);
 
   const loadGemaraText = async () => {
+    const ref = convertDafYomiToSefariaRef(dafYomi);
+    
+    // Check cache first
+    const cached = getCachedGemaraText(ref);
+    if (cached) {
+      console.log('Using cached Gemara text for ref:', ref);
+      setGemaraText(cached);
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const ref = convertDafYomiToSefariaRef(dafYomi);
       console.log('Loading Gemara text for ref:', ref);
       
       const { data, error } = await supabase.functions.invoke('get-gemara-text', {
@@ -62,6 +72,8 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
 
       if (data?.success) {
         console.log('Gemara text loaded successfully');
+        // Save to cache
+        setCachedGemaraText(ref, data.data);
         setGemaraText(data.data);
       } else {
         throw new Error(data?.error || 'Failed to load Gemara text');

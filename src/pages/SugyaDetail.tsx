@@ -15,6 +15,7 @@ import RelatedPsakimSidebar from "@/components/RelatedPsakimSidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MASECHTOT } from "@/lib/masechtotData";
+import { getCachedPage, setCachedPage } from "@/lib/pageCache";
 
 // Helper function to get Hebrew name from Sefaria name
 const getMasechetHebrewName = (sefariaName: string): string => {
@@ -324,6 +325,17 @@ const SugyaDetail = () => {
   }, [id]);
 
   const loadPageFromDB = async () => {
+    if (!id) return;
+    
+    // Check cache first
+    const cached = getCachedPage(id);
+    if (cached) {
+      console.log('Using cached page for:', id);
+      setLoadedPage(cached);
+      setIsPageLoading(false);
+      return;
+    }
+
     setIsPageLoading(true);
     try {
       const { data, error } = await supabase
@@ -340,7 +352,7 @@ const SugyaDetail = () => {
         const hebrewMasechetName = getMasechetHebrewName(masechetName);
         
         // Convert DB format to component format
-        setLoadedPage({
+        const pageData = {
           title: data.title,
           dafYomi: data.daf_yomi,
           summary: `דף ${data.daf_yomi}`,
@@ -349,7 +361,11 @@ const SugyaDetail = () => {
           gemaraText: "",
           fullText: "",
           cases: []
-        });
+        };
+        
+        // Save to cache
+        setCachedPage(id, pageData);
+        setLoadedPage(pageData);
       }
     } catch (error) {
       console.error('Error loading page from DB:', error);
