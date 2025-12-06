@@ -160,9 +160,10 @@ const PsakDinTab = () => {
     setAnalyzing(false);
     setSelectedForAnalysis(new Set());
     
-    // Reload link counts and refresh the list to update status badges
+    // Reload link counts, page data and refresh the list to update status badges
     await loadLinkCounts();
     await loadTotalUnlinkedCount();
+    await loadPsakim(currentPage); // Reload the current page to refresh badges
     
     toast({
       title: "ניתוח AI הושלם",
