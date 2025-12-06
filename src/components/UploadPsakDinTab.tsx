@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, FileText, Archive, X, Loader2, CheckCircle, AlertCircle, FolderUp, Sparkles, Brain, Play, Pause, RefreshCw, Copy, Ban, Hash, StopCircle, Wifi, WifiOff } from "lucide-react";
+import { Upload, FileText, Archive, X, Loader2, CheckCircle, AlertCircle, FolderUp, Sparkles, Brain, Play, Pause, RefreshCw, Copy, Ban, Hash, StopCircle, WifiOff } from "lucide-react";
 import { useToast, toast } from "@/hooks/use-toast";
 import { useUploadStore } from "@/stores/uploadStore";
 import { useUploadController } from "@/hooks/useUploadController";
@@ -14,6 +14,7 @@ import { calculateFileHashes } from "@/lib/fileHash";
 import { isOnline } from "@/lib/uploadUtils";
 import UploadSummaryDialog from "./UploadSummaryDialog";
 import PsakDinStats from "./PsakDinStats";
+import JSZip from "jszip";
 
 interface DuplicateFile {
   name: string;
@@ -147,32 +148,123 @@ const UploadPsakDinTab = () => {
     }
   }, [hasFileHash, getFileByHash, addFileHash]);
 
+  // Extract files from ZIP
+  const extractZipFiles = useCallback(async (zipFile: File): Promise<File[]> => {
+    const extractedFiles: File[] = [];
+    try {
+      const zip = await JSZip.loadAsync(zipFile);
+      const validExts = ['pdf', 'docx', 'doc', 'txt', 'rtf'];
+      
+      const entries = Object.entries(zip.files);
+      for (const [path, zipEntry] of entries) {
+        if (zipEntry.dir) continue;
+        
+        const fileName = path.split('/').pop() || path;
+        const ext = fileName.split('.').pop()?.toLowerCase();
+        
+        if (validExts.includes(ext || '')) {
+          const blob = await zipEntry.async('blob');
+          const file = new File([blob], fileName, { type: blob.type });
+          extractedFiles.push(file);
+        }
+      }
+      
+      console.log(`Extracted ${extractedFiles.length} files from ZIP: ${zipFile.name}`);
+    } catch (err) {
+      console.error('Error extracting ZIP:', err);
+      toast({
+        title: `שגיאה בחילוץ ${zipFile.name}`,
+        description: 'לא ניתן לפתוח את קובץ ה-ZIP',
+        variant: 'destructive',
+      });
+    }
+    return extractedFiles;
+  }, []);
+
   const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || []);
-    const validFiles = selectedFiles.filter(file => {
-      const ext = file.name.split('.').pop()?.toLowerCase();
-      return ['pdf', 'docx', 'doc', 'txt', 'rtf', 'zip'].includes(ext || '');
-    });
+    const validExts = ['pdf', 'docx', 'doc', 'txt', 'rtf', 'zip'];
     
-    if (validFiles.length < selectedFiles.length) {
+    const validFiles: File[] = [];
+    const zipFiles: File[] = [];
+    
+    // Separate ZIP files from regular files
+    for (const file of selectedFiles) {
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      if (ext === 'zip') {
+        zipFiles.push(file);
+      } else if (validExts.includes(ext || '')) {
+        validFiles.push(file);
+      }
+    }
+    
+    // Extract files from ZIPs
+    if (zipFiles.length > 0) {
+      toast({
+        title: `מחלץ ${zipFiles.length} קבצי ZIP...`,
+        description: 'אנא המתן',
+      });
+      
+      for (const zipFile of zipFiles) {
+        const extracted = await extractZipFiles(zipFile);
+        validFiles.push(...extracted);
+      }
+      
+      toast({
+        title: `חולצו ${validFiles.length} קבצים מ-ZIP`,
+      });
+    }
+    
+    if (validFiles.length < selectedFiles.length - zipFiles.length) {
       showToast({
-        title: `${selectedFiles.length - validFiles.length} קבצים לא נתמכים הוסרו`,
+        title: `${selectedFiles.length - validFiles.length - zipFiles.length} קבצים לא נתמכים הוסרו`,
         variant: "destructive",
       });
     }
     
     await checkDuplicates(validFiles);
-  }, [showToast, checkDuplicates]);
+    
+    // Reset input to allow re-selecting same files
+    e.target.value = '';
+  }, [showToast, checkDuplicates, extractZipFiles]);
 
   const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
     const droppedFiles = Array.from(e.dataTransfer.files);
-    const validFiles = droppedFiles.filter(file => {
+    const validExts = ['pdf', 'docx', 'doc', 'txt', 'rtf', 'zip'];
+    
+    const validFiles: File[] = [];
+    const zipFiles: File[] = [];
+    
+    // Separate ZIP files from regular files
+    for (const file of droppedFiles) {
       const ext = file.name.split('.').pop()?.toLowerCase();
-      return ['pdf', 'docx', 'doc', 'txt', 'rtf', 'zip'].includes(ext || '');
-    });
+      if (ext === 'zip') {
+        zipFiles.push(file);
+      } else if (validExts.includes(ext || '')) {
+        validFiles.push(file);
+      }
+    }
+    
+    // Extract files from ZIPs
+    if (zipFiles.length > 0) {
+      toast({
+        title: `מחלץ ${zipFiles.length} קבצי ZIP...`,
+        description: 'אנא המתן',
+      });
+      
+      for (const zipFile of zipFiles) {
+        const extracted = await extractZipFiles(zipFile);
+        validFiles.push(...extracted);
+      }
+      
+      toast({
+        title: `חולצו ${validFiles.length} קבצים מ-ZIP`,
+      });
+    }
+    
     await checkDuplicates(validFiles);
-  }, [checkDuplicates]);
+  }, [checkDuplicates, extractZipFiles]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();

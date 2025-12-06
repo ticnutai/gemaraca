@@ -89,7 +89,7 @@ serve(async (req) => {
       console.log(`[${Date.now() - startTime}ms] Processing file: ${fileName}, type: ${fileExt}, size: ${file.size}`);
 
       try {
-        if (['pdf', 'docx', 'doc', 'txt', 'rtf', 'zip'].includes(fileExt || '')) {
+        if (['pdf', 'docx', 'doc', 'txt', 'rtf'].includes(fileExt || '')) {
           const result = await withTimeout(
             processAndSaveFile(supabase, file, fileName, parsedMetadata),
             45000, // 45 second timeout per file
