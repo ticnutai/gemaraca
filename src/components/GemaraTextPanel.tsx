@@ -8,10 +8,30 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Loader2, BookOpen, Image, FileText, ExternalLink, Eye, Check, ZoomIn, ZoomOut } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Loader2, BookOpen, Image, FileText, ExternalLink, Eye, Check, ZoomIn, ZoomOut, Type, AArrowUp, AArrowDown, AlignRight, AlignCenter, AlignLeft, Bold, Highlighter } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getCachedGemaraText, setCachedGemaraText } from "@/lib/pageCache";
+
+const FONTS = [
+  { value: 'font-serif', label: 'דוד (סריף)' },
+  { value: 'font-sans', label: 'אריאל (ללא סריף)' },
+  { value: 'font-mono', label: 'קוריאר (מונו)' },
+];
+
+const HIGHLIGHT_COLORS = [
+  { value: 'bg-yellow-200/60', label: 'צהוב' },
+  { value: 'bg-green-200/60', label: 'ירוק' },
+  { value: 'bg-blue-200/60', label: 'כחול' },
+  { value: 'bg-pink-200/60', label: 'ורוד' },
+  { value: 'bg-orange-200/60', label: 'כתום' },
+  { value: 'bg-transparent', label: 'ללא' },
+];
 
 interface GemaraTextPanelProps {
   sugyaId: string;
@@ -29,6 +49,23 @@ const VIEW_LABELS: Record<ViewMode, { label: string; icon: React.ReactNode; desc
 };
 
 const STORAGE_KEY = 'gemara-view-preference';
+const TEXT_SETTINGS_KEY = 'gemara-text-settings';
+
+interface TextSettings {
+  fontSize: number;
+  fontFamily: string;
+  textAlign: 'right' | 'center' | 'left';
+  isBold: boolean;
+  highlightColor: string;
+}
+
+const defaultTextSettings: TextSettings = {
+  fontSize: 18,
+  fontFamily: 'font-serif',
+  textAlign: 'right',
+  isBold: false,
+  highlightColor: 'bg-transparent',
+};
 
 export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Batra" }: GemaraTextPanelProps) {
   const [gemaraText, setGemaraText] = useState<any>(null);
@@ -36,9 +73,13 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   const [showHebrew, setShowHebrew] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
-    return (saved as ViewMode) || 'text';
+    return (saved as ViewMode) || 'sefaria';
   });
   const [imageZoom, setImageZoom] = useState(100);
+  const [textSettings, setTextSettings] = useState<TextSettings>(() => {
+    const saved = localStorage.getItem(TEXT_SETTINGS_KEY);
+    return saved ? JSON.parse(saved) : defaultTextSettings;
+  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -48,6 +89,14 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, viewMode);
   }, [viewMode]);
+
+  useEffect(() => {
+    localStorage.setItem(TEXT_SETTINGS_KEY, JSON.stringify(textSettings));
+  }, [textSettings]);
+
+  const updateTextSetting = <K extends keyof TextSettings>(key: K, value: TextSettings[K]) => {
+    setTextSettings(prev => ({ ...prev, [key]: value }));
+  };
 
   const loadGemaraText = async () => {
     const ref = convertDafYomiToSefariaRef(dafYomi);
@@ -223,16 +272,26 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
     return cleaned;
   };
 
+  const getTextAlignClass = () => {
+    switch (textSettings.textAlign) {
+      case 'center': return 'text-center';
+      case 'left': return 'text-left';
+      default: return 'text-right';
+    }
+  };
+
   const renderGemaraText = () => {
     if (!gemaraText) return null;
 
     const textToShow = showHebrew ? gemaraText.he : gemaraText.text;
+    const textClasses = `mb-4 leading-loose ${textSettings.fontFamily} ${getTextAlignClass()} ${textSettings.isBold ? 'font-bold' : ''} ${textSettings.highlightColor}`;
     
     if (Array.isArray(textToShow)) {
       return textToShow.map((line: string, index: number) => (
         <p 
           key={index} 
-          className="mb-4 leading-loose text-lg font-serif" 
+          className={textClasses}
+          style={{ fontSize: `${textSettings.fontSize}px` }}
           dir="rtl"
           dangerouslySetInnerHTML={{ __html: cleanAndFormatText(line) }}
         />
@@ -241,12 +300,124 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
     
     return (
       <p 
-        className="leading-loose text-lg font-serif" 
+        className={textClasses}
+        style={{ fontSize: `${textSettings.fontSize}px` }}
         dir="rtl"
         dangerouslySetInnerHTML={{ __html: cleanAndFormatText(textToShow) }}
       />
     );
   };
+
+  const renderTextToolbar = () => (
+    <div className="flex items-center gap-1 flex-wrap p-2 bg-muted/50 rounded-lg border">
+      {/* Font Size Controls */}
+      <div className="flex items-center gap-1 border-l pl-2 ml-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => updateTextSetting('fontSize', Math.max(12, textSettings.fontSize - 2))}
+          title="הקטן גופן"
+        >
+          <AArrowDown className="h-4 w-4" />
+        </Button>
+        <span className="text-xs text-muted-foreground w-8 text-center">{textSettings.fontSize}</span>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => updateTextSetting('fontSize', Math.min(32, textSettings.fontSize + 2))}
+          title="הגדל גופן"
+        >
+          <AArrowUp className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Font Family */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-8 w-8" title="שנה גופן">
+            <Type className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          {FONTS.map(font => (
+            <DropdownMenuItem
+              key={font.value}
+              onClick={() => updateTextSetting('fontFamily', font.value)}
+              className="flex items-center gap-2"
+            >
+              <span className={font.value}>{font.label}</span>
+              {textSettings.fontFamily === font.value && <Check className="h-4 w-4 text-primary" />}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* Text Alignment */}
+      <div className="flex items-center gap-0.5 border-x px-2 mx-1">
+        <Button
+          variant={textSettings.textAlign === 'right' ? 'secondary' : 'ghost'}
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => updateTextSetting('textAlign', 'right')}
+          title="יישור לימין"
+        >
+          <AlignRight className="h-4 w-4" />
+        </Button>
+        <Button
+          variant={textSettings.textAlign === 'center' ? 'secondary' : 'ghost'}
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => updateTextSetting('textAlign', 'center')}
+          title="יישור למרכז"
+        >
+          <AlignCenter className="h-4 w-4" />
+        </Button>
+        <Button
+          variant={textSettings.textAlign === 'left' ? 'secondary' : 'ghost'}
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => updateTextSetting('textAlign', 'left')}
+          title="יישור לשמאל"
+        >
+          <AlignLeft className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Bold */}
+      <Button
+        variant={textSettings.isBold ? 'secondary' : 'ghost'}
+        size="icon"
+        className="h-8 w-8"
+        onClick={() => updateTextSetting('isBold', !textSettings.isBold)}
+        title="הדגשה"
+      >
+        <Bold className="h-4 w-4" />
+      </Button>
+
+      {/* Highlight Color */}
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-8 w-8" title="סימון בצבע">
+            <Highlighter className="h-4 w-4" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-48 p-2" align="start">
+          <div className="grid grid-cols-3 gap-1">
+            {HIGHLIGHT_COLORS.map(color => (
+              <button
+                key={color.value}
+                onClick={() => updateTextSetting('highlightColor', color.value)}
+                className={`h-8 rounded border ${color.value} ${textSettings.highlightColor === color.value ? 'ring-2 ring-primary' : ''}`}
+                title={color.label}
+              />
+            ))}
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
 
   const renderSefariaView = () => {
     const { daf, amud } = getDafInfo(dafYomi);
@@ -410,8 +581,11 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
       case 'text':
       default:
         return gemaraText ? (
-          <div className="prose prose-slate max-w-none dark:prose-invert bg-amber-50/30 dark:bg-amber-950/10 p-4 rounded-lg">
-            {renderGemaraText()}
+          <div className="space-y-3">
+            {renderTextToolbar()}
+            <div className="prose prose-slate max-w-none dark:prose-invert bg-amber-50/30 dark:bg-amber-950/10 p-4 rounded-lg">
+              {renderGemaraText()}
+            </div>
           </div>
         ) : (
           <div className="text-center py-8 text-muted-foreground">
