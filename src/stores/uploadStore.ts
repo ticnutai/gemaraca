@@ -27,6 +27,7 @@ export interface AnalysisProgress {
 
 export interface UploadSession {
   id: string;
+  name: string; // ZIP/folder name
   startedAt: number;
   metadata: {
     court?: string;
@@ -42,22 +43,23 @@ export interface UploadSession {
 }
 
 interface UploadStore {
-  // Current session
-  session: UploadSession | null;
+  // Multiple concurrent sessions
+  sessions: Record<string, UploadSession>;
   
-  // Actions
-  startSession: (metadata: UploadSession['metadata']) => void;
-  updateProgress: (progress: Partial<UploadProgress>) => void;
-  addResult: (result: UploadResult) => void;
-  addError: (error: string) => void;
-  setStatus: (status: UploadSession['status']) => void;
-  pauseSession: () => void;
-  resumeSession: () => void;
-  startAnalysis: (pendingIds: string[]) => void;
-  updateAnalysisProgress: (progress: AnalysisProgress) => void;
-  markAnalyzed: (id: string) => void;
-  completeSession: () => void;
-  clearSession: () => void;
+  // Actions for multi-session
+  startSession: (id: string, name: string, metadata: UploadSession['metadata']) => void;
+  updateProgress: (sessionId: string, progress: Partial<UploadProgress>) => void;
+  addResult: (sessionId: string, result: UploadResult) => void;
+  addError: (sessionId: string, error: string) => void;
+  setStatus: (sessionId: string, status: UploadSession['status']) => void;
+  pauseSession: (sessionId: string) => void;
+  resumeSession: (sessionId: string) => void;
+  startAnalysis: (sessionId: string, pendingIds: string[]) => void;
+  updateAnalysisProgress: (sessionId: string, progress: AnalysisProgress) => void;
+  markAnalyzed: (sessionId: string, id: string) => void;
+  completeSession: (sessionId: string) => void;
+  clearSession: (sessionId: string) => void;
+  clearAllSessions: () => void;
   
   // Hash storage for content-based duplicate detection
   fileHashes: Record<string, string>;
@@ -65,218 +67,307 @@ interface UploadStore {
   hasFileHash: (hash: string) => boolean;
   getFileByHash: (hash: string) => string | undefined;
   
-  // Summary
-  getSummary: () => {
-    totalUploaded: number;
-    totalAnalyzed: number;
-    totalErrors: number;
-    totalSkipped: number;
-    duration: number;
-  } | null;
+  // Get active sessions
+  getActiveSessions: () => UploadSession[];
+  getTotalProgress: () => {
+    total: number;
+    completed: number;
+    successful: number;
+    failed: number;
+    activeSessions: number;
+  };
 }
 
 export const useUploadStore = create<UploadStore>()(
   persist(
     (set, get) => ({
-      session: null,
+      sessions: {},
       fileHashes: {},
       
-      startSession: (metadata) => {
-        set({
-          session: {
-            id: crypto.randomUUID(),
-            startedAt: Date.now(),
-            metadata,
-            results: [],
-            errors: [],
-            pendingAnalysis: [],
-            uploadProgress: null,
-            analysisProgress: null,
-            status: 'uploading',
+      startSession: (id, name, metadata) => {
+        set((state) => ({
+          sessions: {
+            ...state.sessions,
+            [id]: {
+              id,
+              name,
+              startedAt: Date.now(),
+              metadata,
+              results: [],
+              errors: [],
+              pendingAnalysis: [],
+              uploadProgress: null,
+              analysisProgress: null,
+              status: 'uploading',
+            },
           },
+        }));
+      },
+      
+      updateProgress: (sessionId, progress) => {
+        set((state) => {
+          const session = state.sessions[sessionId];
+          if (!session) return state;
+          
+          return {
+            sessions: {
+              ...state.sessions,
+              [sessionId]: {
+                ...session,
+                uploadProgress: session.uploadProgress
+                  ? { ...session.uploadProgress, ...progress }
+                  : {
+                      total: 0,
+                      completed: 0,
+                      current: '',
+                      successful: 0,
+                      failed: 0,
+                      skipped: 0,
+                      ...progress,
+                    },
+              },
+            },
+          };
         });
       },
       
-      updateProgress: (progress) => {
-        const { session } = get();
-        if (!session) return;
-        
-        set({
-          session: {
-            ...session,
-            uploadProgress: session.uploadProgress
-              ? { ...session.uploadProgress, ...progress }
-              : {
-                  total: 0,
-                  completed: 0,
-                  current: '',
-                  successful: 0,
-                  failed: 0,
-                  skipped: 0,
-                  ...progress,
-                },
-          },
+      addResult: (sessionId, result) => {
+        set((state) => {
+          const session = state.sessions[sessionId];
+          if (!session) return state;
+          
+          return {
+            sessions: {
+              ...state.sessions,
+              [sessionId]: {
+                ...session,
+                results: [...session.results, result],
+              },
+            },
+          };
         });
       },
       
-      addResult: (result) => {
-        const { session } = get();
-        if (!session) return;
-        
-        set({
-          session: {
-            ...session,
-            results: [...session.results, result],
-          },
+      addError: (sessionId, error) => {
+        set((state) => {
+          const session = state.sessions[sessionId];
+          if (!session) return state;
+          
+          return {
+            sessions: {
+              ...state.sessions,
+              [sessionId]: {
+                ...session,
+                errors: [...session.errors, error],
+              },
+            },
+          };
         });
       },
       
-      addError: (error) => {
-        const { session } = get();
-        if (!session) return;
-        
-        set({
-          session: {
-            ...session,
-            errors: [...session.errors, error],
-          },
+      setStatus: (sessionId, status) => {
+        set((state) => {
+          const session = state.sessions[sessionId];
+          if (!session) return state;
+          
+          return {
+            sessions: {
+              ...state.sessions,
+              [sessionId]: {
+                ...session,
+                status,
+              },
+            },
+          };
         });
       },
       
-      setStatus: (status) => {
-        const { session } = get();
-        if (!session) return;
-        
-        set({
-          session: {
-            ...session,
-            status,
-          },
+      pauseSession: (sessionId) => {
+        set((state) => {
+          const session = state.sessions[sessionId];
+          if (!session) return state;
+          
+          return {
+            sessions: {
+              ...state.sessions,
+              [sessionId]: {
+                ...session,
+                status: 'paused',
+              },
+            },
+          };
         });
       },
       
-      pauseSession: () => {
-        const { session } = get();
-        if (!session) return;
-        
-        set({
-          session: {
-            ...session,
-            status: 'paused',
-          },
+      resumeSession: (sessionId) => {
+        set((state) => {
+          const session = state.sessions[sessionId];
+          if (!session) return state;
+          
+          const newStatus = session.pendingAnalysis.length > 0 ? 'analyzing' : 'uploading';
+          return {
+            sessions: {
+              ...state.sessions,
+              [sessionId]: {
+                ...session,
+                status: newStatus,
+              },
+            },
+          };
         });
       },
       
-      resumeSession: () => {
-        const { session } = get();
-        if (!session) return;
-        
-        const newStatus = session.pendingAnalysis.length > 0 ? 'analyzing' : 'uploading';
-        set({
-          session: {
-            ...session,
-            status: newStatus,
-          },
+      startAnalysis: (sessionId, pendingIds) => {
+        set((state) => {
+          const session = state.sessions[sessionId];
+          if (!session) return state;
+          
+          return {
+            sessions: {
+              ...state.sessions,
+              [sessionId]: {
+                ...session,
+                pendingAnalysis: pendingIds,
+                analysisProgress: { current: 0, total: pendingIds.length },
+                status: 'analyzing',
+              },
+            },
+          };
         });
       },
       
-      startAnalysis: (pendingIds) => {
-        const { session } = get();
-        if (!session) return;
-        
-        set({
-          session: {
-            ...session,
-            pendingAnalysis: pendingIds,
-            analysisProgress: { current: 0, total: pendingIds.length },
-            status: 'analyzing',
-          },
+      updateAnalysisProgress: (sessionId, progress) => {
+        set((state) => {
+          const session = state.sessions[sessionId];
+          if (!session) return state;
+          
+          return {
+            sessions: {
+              ...state.sessions,
+              [sessionId]: {
+                ...session,
+                analysisProgress: progress,
+              },
+            },
+          };
         });
       },
       
-      updateAnalysisProgress: (progress) => {
-        const { session } = get();
-        if (!session) return;
-        
-        set({
-          session: {
-            ...session,
-            analysisProgress: progress,
-          },
+      markAnalyzed: (sessionId, id) => {
+        set((state) => {
+          const session = state.sessions[sessionId];
+          if (!session) return state;
+          
+          return {
+            sessions: {
+              ...state.sessions,
+              [sessionId]: {
+                ...session,
+                results: session.results.map((r) =>
+                  r.id === id ? { ...r, analyzed: true } : r
+                ),
+                pendingAnalysis: session.pendingAnalysis.filter((pid) => pid !== id),
+              },
+            },
+          };
         });
       },
       
-      markAnalyzed: (id) => {
-        const { session } = get();
-        if (!session) return;
-        
-        set({
-          session: {
-            ...session,
-            results: session.results.map((r) =>
-              r.id === id ? { ...r, analyzed: true } : r
-            ),
-            pendingAnalysis: session.pendingAnalysis.filter((pid) => pid !== id),
-          },
+      completeSession: (sessionId) => {
+        set((state) => {
+          const session = state.sessions[sessionId];
+          if (!session) return state;
+          
+          return {
+            sessions: {
+              ...state.sessions,
+              [sessionId]: {
+                ...session,
+                status: 'completed',
+              },
+            },
+          };
         });
       },
       
-      completeSession: () => {
-        const { session } = get();
-        if (!session) return;
-        
-        set({
-          session: {
-            ...session,
-            status: 'completed',
-          },
+      clearSession: (sessionId) => {
+        set((state) => {
+          const { [sessionId]: _, ...rest } = state.sessions;
+          return { sessions: rest };
         });
       },
       
-      clearSession: () => {
-        set({ session: null });
+      clearAllSessions: () => {
+        set({ sessions: {} });
       },
       
       // Hash methods for content-based duplicate detection
       addFileHash: (hash, title) => {
-        const { fileHashes } = get();
-        set({
+        set((state) => ({
           fileHashes: {
-            ...fileHashes,
+            ...state.fileHashes,
             [hash]: title,
           },
-        });
+        }));
       },
       
       hasFileHash: (hash) => {
-        const { fileHashes } = get();
-        return hash in fileHashes;
+        return hash in get().fileHashes;
       },
       
       getFileByHash: (hash) => {
-        const { fileHashes } = get();
-        return fileHashes[hash];
+        return get().fileHashes[hash];
       },
       
-      getSummary: () => {
-        const { session } = get();
-        if (!session) return null;
+      getActiveSessions: () => {
+        const { sessions } = get();
+        return Object.values(sessions).filter(
+          (s) => ['uploading', 'paused', 'analyzing'].includes(s.status)
+        );
+      },
+      
+      getTotalProgress: () => {
+        const { sessions } = get();
+        const active = Object.values(sessions).filter(
+          (s) => ['uploading', 'paused', 'analyzing'].includes(s.status)
+        );
         
-        return {
-          totalUploaded: session.results.filter((r) => r.success).length,
-          totalAnalyzed: session.results.filter((r) => r.analyzed).length,
-          totalErrors: session.errors.length,
-          totalSkipped: session.uploadProgress?.skipped || 0,
-          duration: Date.now() - session.startedAt,
-        };
+        let total = 0;
+        let completed = 0;
+        let successful = 0;
+        let failed = 0;
+        
+        active.forEach((s) => {
+          if (s.uploadProgress) {
+            total += s.uploadProgress.total;
+            completed += s.uploadProgress.completed;
+            successful += s.uploadProgress.successful;
+            failed += s.uploadProgress.failed;
+          }
+        });
+        
+        return { total, completed, successful, failed, activeSessions: active.length };
       },
     }),
     {
-      name: 'upload-store',
+      name: 'upload-store-v2',
       partialize: (state) => ({
-        session: state.session,
+        sessions: state.sessions,
         fileHashes: state.fileHashes,
       }),
     }
   )
 );
+
+// Legacy compatibility - get single session (first active or first completed)
+export function useLegacySession() {
+  const sessions = useUploadStore((state) => state.sessions);
+  const sessionsArr = Object.values(sessions);
+  
+  // Return first active session, or first completed, or null
+  return (
+    sessionsArr.find((s) => ['uploading', 'paused', 'analyzing'].includes(s.status)) ||
+    sessionsArr.find((s) => s.status === 'completed') ||
+    null
+  );
+}

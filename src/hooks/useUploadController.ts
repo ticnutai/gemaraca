@@ -12,16 +12,17 @@ import { toast } from '@/hooks/use-toast';
 const BATCH_SIZE = 5;
 
 interface UseUploadControllerOptions {
-  onComplete?: () => void;
-  onError?: (error: Error) => void;
+  onComplete?: (sessionId: string) => void;
+  onError?: (sessionId: string, error: Error) => void;
 }
 
 export function useUploadController(options: UseUploadControllerOptions = {}) {
-  const abortControllerRef = useRef<AbortController | null>(null);
-  const isPausedRef = useRef(false);
+  // Multiple abort controllers for concurrent uploads
+  const abortControllersRef = useRef<Map<string, AbortController>>(new Map());
+  const pausedRef = useRef<Set<string>>(new Set());
   
   const {
-    session,
+    sessions,
     startSession,
     updateProgress,
     addResult,
@@ -34,31 +35,36 @@ export function useUploadController(options: UseUploadControllerOptions = {}) {
     markAnalyzed,
     completeSession,
     clearSession,
+    clearAllSessions,
+    getActiveSessions,
+    getTotalProgress,
   } = useUploadStore();
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      abortControllerRef.current?.abort();
+      abortControllersRef.current.forEach((controller) => controller.abort());
     };
   }, []);
 
-  const pause = useCallback(() => {
-    isPausedRef.current = true;
-    pauseSession();
+  const pause = useCallback((sessionId: string) => {
+    pausedRef.current.add(sessionId);
+    pauseSession(sessionId);
     toast({ title: "ההעלאה הושהתה", description: "לחץ המשך כדי להמשיך" });
   }, [pauseSession]);
 
-  const resume = useCallback(() => {
-    isPausedRef.current = false;
-    resumeSession();
+  const resume = useCallback((sessionId: string) => {
+    pausedRef.current.delete(sessionId);
+    resumeSession(sessionId);
     toast({ title: "ממשיך בהעלאה..." });
   }, [resumeSession]);
 
-  const cancel = useCallback(() => {
-    abortControllerRef.current?.abort();
-    isPausedRef.current = false;
-    setStatus('error');
+  const cancel = useCallback((sessionId: string) => {
+    const controller = abortControllersRef.current.get(sessionId);
+    controller?.abort();
+    abortControllersRef.current.delete(sessionId);
+    pausedRef.current.delete(sessionId);
+    setStatus(sessionId, 'error');
     toast({ 
       title: "ההעלאה בוטלה", 
       description: "הקבצים שהועלו נשמרו",
@@ -66,8 +72,19 @@ export function useUploadController(options: UseUploadControllerOptions = {}) {
     });
   }, [setStatus]);
 
-  const waitWhilePaused = useCallback(async (signal?: AbortSignal) => {
-    while (isPausedRef.current) {
+  const cancelAll = useCallback(() => {
+    abortControllersRef.current.forEach((controller) => controller.abort());
+    abortControllersRef.current.clear();
+    pausedRef.current.clear();
+    Object.keys(sessions).forEach((id) => setStatus(id, 'error'));
+    toast({ 
+      title: "כל ההעלאות בוטלו", 
+      variant: "destructive" 
+    });
+  }, [sessions, setStatus]);
+
+  const waitWhilePaused = useCallback(async (sessionId: string, signal?: AbortSignal) => {
+    while (pausedRef.current.has(sessionId)) {
       if (signal?.aborted) {
         throw new UploadAbortError();
       }
@@ -90,17 +107,22 @@ export function useUploadController(options: UseUploadControllerOptions = {}) {
   const uploadFiles = useCallback(async (
     files: File[],
     metadata: { court?: string; year?: number; tags?: string[] },
-    withAI: boolean = false
+    withAI: boolean = false,
+    sessionName?: string
   ) => {
     if (files.length === 0) return;
 
-    // Create new abort controller
-    abortControllerRef.current = new AbortController();
-    const signal = abortControllerRef.current.signal;
-    isPausedRef.current = false;
+    // Generate unique session ID
+    const sessionId = crypto.randomUUID();
+    const name = sessionName || `העלאה ${new Date().toLocaleTimeString('he-IL')}`;
+
+    // Create new abort controller for this session
+    const abortController = new AbortController();
+    abortControllersRef.current.set(sessionId, abortController);
+    const signal = abortController.signal;
 
     // Start session
-    startSession(metadata);
+    startSession(sessionId, name, metadata);
 
     // Create batches
     const batches: File[][] = [];
@@ -108,7 +130,7 @@ export function useUploadController(options: UseUploadControllerOptions = {}) {
       batches.push(files.slice(i, i + BATCH_SIZE));
     }
 
-    updateProgress({
+    updateProgress(sessionId, {
       total: files.length,
       completed: 0,
       current: '',
@@ -124,7 +146,7 @@ export function useUploadController(options: UseUploadControllerOptions = {}) {
     try {
       for (let i = 0; i < batches.length; i++) {
         // Wait if paused
-        await waitWhilePaused(signal);
+        await waitWhilePaused(sessionId, signal);
         
         // Check network
         await checkNetworkAndWait(signal);
@@ -132,7 +154,7 @@ export function useUploadController(options: UseUploadControllerOptions = {}) {
         const batch = batches[i];
         const batchFileNames = batch.map(f => f.name).join(', ');
         
-        updateProgress({
+        updateProgress(sessionId, {
           current: batchFileNames.length > 50 
             ? batchFileNames.substring(0, 50) + '...' 
             : batchFileNames,
@@ -154,7 +176,7 @@ export function useUploadController(options: UseUploadControllerOptions = {}) {
         // Process results
         batchResults.forEach(result => {
           allResults.push(result);
-          addResult({
+          addResult(sessionId, {
             id: result.id,
             title: result.title || result.fileName,
             fileName: result.fileName,
@@ -165,13 +187,13 @@ export function useUploadController(options: UseUploadControllerOptions = {}) {
         // Process errors
         batchErrors.forEach(error => {
           allErrors.push(error);
-          addError(error);
+          addError(sessionId, error);
         });
 
         // Track uploaded files
         uploadedFileNames.push(...batch.map(f => f.name));
 
-        updateProgress({
+        updateProgress(sessionId, {
           completed: Math.min((i + 1) * BATCH_SIZE, files.length),
           successful: allResults.length,
           failed: allErrors.length,
@@ -184,7 +206,7 @@ export function useUploadController(options: UseUploadControllerOptions = {}) {
       }
 
       toast({
-        title: `הועלו ${allResults.length} פסקי דין בהצלחה`,
+        title: `${name}: הועלו ${allResults.length} פסקים`,
         description: allErrors.length > 0 
           ? `${allErrors.length} שגיאות` 
           : withAI ? "מתחיל ניתוח AI..." : undefined,
@@ -192,23 +214,23 @@ export function useUploadController(options: UseUploadControllerOptions = {}) {
 
       // Run AI analysis if requested
       if (withAI && allResults.length > 0) {
-        await runAIAnalysis(allResults, signal);
+        await runAIAnalysis(sessionId, allResults, signal);
       } else {
-        completeSession();
+        completeSession(sessionId);
       }
 
-      options.onComplete?.();
-      return { uploadedFileNames, results: allResults, errors: allErrors };
+      options.onComplete?.(sessionId);
+      return { sessionId, uploadedFileNames, results: allResults, errors: allErrors };
 
     } catch (error) {
       if (error instanceof UploadAbortError) {
-        console.log('Upload aborted');
-        return { uploadedFileNames, results: allResults, errors: allErrors };
+        console.log(`Upload ${sessionId} aborted`);
+        return { sessionId, uploadedFileNames, results: allResults, errors: allErrors };
       }
 
       console.error('Upload error:', error);
-      setStatus('error');
-      options.onError?.(error as Error);
+      setStatus(sessionId, 'error');
+      options.onError?.(sessionId, error as Error);
 
       toast({
         title: "שגיאה בהעלאה",
@@ -216,7 +238,9 @@ export function useUploadController(options: UseUploadControllerOptions = {}) {
         variant: "destructive",
       });
 
-      return { uploadedFileNames, results: allResults, errors: allErrors };
+      return { sessionId, uploadedFileNames, results: allResults, errors: allErrors };
+    } finally {
+      abortControllersRef.current.delete(sessionId);
     }
   }, [
     startSession, updateProgress, addResult, addError, setStatus, 
@@ -224,16 +248,17 @@ export function useUploadController(options: UseUploadControllerOptions = {}) {
   ]);
 
   const runAIAnalysis = useCallback(async (
+    sessionId: string,
     psakimToAnalyze: any[],
     signal?: AbortSignal
   ) => {
     const { supabase } = await import('@/integrations/supabase/client');
     
-    startAnalysis(psakimToAnalyze.map(p => p.id));
+    startAnalysis(sessionId, psakimToAnalyze.map(p => p.id));
 
     for (let i = 0; i < psakimToAnalyze.length; i++) {
       // Wait if paused
-      await waitWhilePaused(signal);
+      await waitWhilePaused(sessionId, signal);
       
       // Check if aborted
       if (signal?.aborted) {
@@ -241,7 +266,7 @@ export function useUploadController(options: UseUploadControllerOptions = {}) {
       }
 
       const result = psakimToAnalyze[i];
-      updateAnalysisProgress({
+      updateAnalysisProgress(sessionId, {
         current: i + 1,
         total: psakimToAnalyze.length,
         currentTitle: result.title || result.fileName,
@@ -251,7 +276,7 @@ export function useUploadController(options: UseUploadControllerOptions = {}) {
         await supabase.functions.invoke('analyze-psak-din', {
           body: { psakId: result.id }
         });
-        markAnalyzed(result.id);
+        markAnalyzed(sessionId, result.id);
         console.log(`Analyzed psak ${result.id}`);
       } catch (err) {
         console.error(`Error analyzing psak ${result.id}:`, err);
@@ -262,15 +287,15 @@ export function useUploadController(options: UseUploadControllerOptions = {}) {
       }
     }
 
-    completeSession();
+    completeSession(sessionId);
     
     toast({
       title: "ניתוח AI הושלם",
-      description: `נותחו ${psakimToAnalyze.length} פסקי דין וקושרו למקורות`,
+      description: `נותחו ${psakimToAnalyze.length} פסקי דין`,
     });
   }, [startAnalysis, updateAnalysisProgress, markAnalyzed, completeSession, waitWhilePaused]);
 
-  const analyzeExisting = useCallback(async (psakimIds: string[]) => {
+  const analyzeExisting = useCallback(async (sessionId: string, psakimIds: string[]) => {
     const { supabase } = await import('@/integrations/supabase/client');
     
     const { data: psakim } = await supabase
@@ -279,22 +304,23 @@ export function useUploadController(options: UseUploadControllerOptions = {}) {
       .in('id', psakimIds);
 
     if (psakim && psakim.length > 0) {
-      abortControllerRef.current = new AbortController();
-      await runAIAnalysis(psakim, abortControllerRef.current.signal);
+      const abortController = new AbortController();
+      abortControllersRef.current.set(sessionId, abortController);
+      await runAIAnalysis(sessionId, psakim, abortController.signal);
     }
   }, [runAIAnalysis]);
 
   return {
-    session,
-    isUploading: session?.status === 'uploading',
-    isPaused: session?.status === 'paused',
-    isAnalyzing: session?.status === 'analyzing',
-    isActive: ['uploading', 'paused', 'analyzing'].includes(session?.status || ''),
+    sessions,
+    getActiveSessions,
+    getTotalProgress,
     uploadFiles,
     analyzeExisting,
     pause,
     resume,
     cancel,
+    cancelAll,
     clearSession,
+    clearAllSessions,
   };
 }
