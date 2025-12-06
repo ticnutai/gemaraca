@@ -25,30 +25,9 @@ serve(async (req) => {
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
     const effectiveSugyaId = sugyaId || `${masechet}-${dafYomi}`.replace(/\s+/g, '-');
 
-    // Check if we already have cached examples (unless forcing regeneration)
-    if (!forceRegenerate) {
-      const { data: existing, error: fetchError } = await supabase
-        .from('modern_examples')
-        .select('*')
-        .eq('sugya_id', effectiveSugyaId)
-        .maybeSingle();
-
-      if (existing && !fetchError) {
-        console.log(`Found cached examples for ${effectiveSugyaId}`);
-        return new Response(JSON.stringify({
-          principle: existing.principle,
-          examples: existing.examples,
-          practicalSummary: existing.practical_summary,
-          cached: true
-        }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-    }
-
-    // Handle loadMore request - generate additional examples only
+    // Handle loadMore request FIRST - generate additional examples only
     if (loadMore) {
-      console.log(`Generating ${3} more examples for ${masechet} ${dafYomi}`);
+      console.log(`Generating more examples for ${masechet} ${dafYomi}, existing: ${existingCount}`);
       
       const loadMoreSystemPrompt = `אתה מומחה להלכה ותלמוד שמסביר מושגים עתיקים במונחים מודרניים.
 תפקידך ליצור דוגמאות מודרניות נוספות שממחישות את היסודות ההלכתיים מהגמרא.
@@ -120,6 +99,8 @@ ${gemaraText?.substring(0, 2000) || 'לא זמין'}
       const loadMoreData = await loadMoreResponse.json();
       const loadMoreContent = loadMoreData.choices?.[0]?.message?.content;
       
+      console.log("Load more AI response received");
+
       let loadMoreResult;
       try {
         const jsonMatch = loadMoreContent.match(/```(?:json)?\s*([\s\S]*?)```/);
@@ -137,9 +118,31 @@ ${gemaraText?.substring(0, 2000) || 'לא זמין'}
         };
       }
 
+      console.log(`Returning ${loadMoreResult.examples?.length || 0} new examples`);
       return new Response(JSON.stringify({ examples: loadMoreResult.examples }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Check if we already have cached examples (unless forcing regeneration)
+    if (!forceRegenerate) {
+      const { data: existing, error: fetchError } = await supabase
+        .from('modern_examples')
+        .select('*')
+        .eq('sugya_id', effectiveSugyaId)
+        .maybeSingle();
+
+      if (existing && !fetchError) {
+        console.log(`Found cached examples for ${effectiveSugyaId}`);
+        return new Response(JSON.stringify({
+          principle: existing.principle,
+          examples: existing.examples,
+          practicalSummary: existing.practical_summary,
+          cached: true
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     console.log(`Generating modern examples for ${masechet} ${dafYomi} - ${sugyaTitle}`);
