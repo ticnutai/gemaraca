@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowRight, BookOpen, Scale, ExternalLink } from "lucide-react";
 import DafSelector from "@/components/DafSelector";
 import DafQuickNav from "@/components/DafQuickNav";
+import DafAmudNavigator from "@/components/DafAmudNavigator";
 import FAQSection from "@/components/FAQSection";
 import PsakDinSearchButton from "@/components/PsakDinSearchButton";
 import GemaraTextPanel from "@/components/GemaraTextPanel";
@@ -448,6 +449,9 @@ const SugyaDetail = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto max-w-7xl px-4 py-12">
+        {/* Daf/Amud Navigator - Main navigation bar */}
+        <DafAmudNavigator className="mb-6" />
+
         <div className="flex items-center justify-between mb-8 gap-4 flex-wrap">
           <Button 
             variant="ghost" 
