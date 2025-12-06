@@ -153,6 +153,7 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
     direction: rtl;
     text-align: right;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   }
 
   /* RTL fixes for common elements */
@@ -173,5 +174,16 @@ All colors MUST be HSL.
   /* Fix icons in RTL context */
   .rtl-flip {
     transform: scaleX(-1);
+  }
+}
+
+/* Luxurious shadow utilities */
+@layer utilities {
+  .shadow-elegant {
+    box-shadow: 0 4px 20px -4px hsl(var(--primary) / 0.15);
+  }
+  
+  .shadow-gold {
+    box-shadow: 0 4px 20px -4px hsl(var(--accent) / 0.25);
   }
 }
