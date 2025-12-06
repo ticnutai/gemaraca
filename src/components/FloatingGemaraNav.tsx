@@ -195,7 +195,7 @@ const FloatingGemaraNav = ({ className }: FloatingGemaraNavProps) => {
 
                 {/* Daf Level */}
                 {level === 'daf' && selectedMasechet && (
-                  <div className="grid grid-cols-5 gap-2">
+                  <div className="grid grid-cols-5 gap-2" style={{ direction: 'rtl' }}>
                     {getDafButtons().map((daf) => (
                       <Button
                         key={daf}
@@ -215,7 +215,7 @@ const FloatingGemaraNav = ({ className }: FloatingGemaraNavProps) => {
                     <p className="text-center text-muted-foreground">
                       בחר עמוד
                     </p>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-4" style={{ direction: 'rtl' }}>
                       <Button
                         variant="outline"
                         onClick={() => handleAmudSelect('a')}

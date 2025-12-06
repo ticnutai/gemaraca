@@ -13,6 +13,7 @@ import GemaraTextPanel from "@/components/GemaraTextPanel";
 import CommentariesPanel from "@/components/CommentariesPanel";
 import LexiconSearch from "@/components/LexiconSearch";
 import RelatedPsakimSidebar from "@/components/RelatedPsakimSidebar";
+import LinkedPsakimSection from "@/components/LinkedPsakimSection";
 import { ModernExamplesPanel } from "@/components/ModernExamplesPanel";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -524,7 +525,22 @@ const SugyaDetail = () => {
             />
           </div>
 
-          {/* Sefaria Integration */}
+          {/* Linked Psakim from Smart Index */}
+          {id && (() => {
+            const parts = id.split('_');
+            const sefariaName = parts[0] ? parts[0].charAt(0).toUpperCase() + parts[0].slice(1) : '';
+            const masechetObj = MASECHTOT.find(m => m.sefariaName.toLowerCase() === parts[0]);
+            const dafNumMatch = parts[1]?.match(/(\d+)/);
+            const dafNum = dafNumMatch ? parseInt(dafNumMatch[1]) : 0;
+            
+            return masechetObj && dafNum > 0 ? (
+              <LinkedPsakimSection 
+                sugyaId={id} 
+                masechet={masechetObj.hebrewName}
+                dafNumber={dafNum}
+              />
+            ) : null;
+          })()}
           <div className="space-y-6">
             <h2 className="text-3xl font-bold text-foreground">מקורות וכלים ללימוד</h2>
             <Tabs defaultValue="gemara" className="w-full" dir="rtl">
