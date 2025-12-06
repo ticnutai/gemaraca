@@ -14,6 +14,13 @@ import LexiconSearch from "@/components/LexiconSearch";
 import RelatedPsakimSidebar from "@/components/RelatedPsakimSidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MASECHTOT } from "@/lib/masechtotData";
+
+// Helper function to get Hebrew name from Sefaria name
+const getMasechetHebrewName = (sefariaName: string): string => {
+  const masechet = MASECHTOT.find(m => m.sefariaName === sefariaName);
+  return masechet?.hebrewName || sefariaName;
+};
 
 const sugyotData: Record<string, any> = {
   "shnayim-ochazin": {
@@ -326,12 +333,17 @@ const SugyaDetail = () => {
       if (error) throw error;
 
       if (data) {
+        // Extract masechet name from the data
+        const masechetName = data.masechet || 'Bava_Batra';
+        const hebrewMasechetName = getMasechetHebrewName(masechetName);
+        
         // Convert DB format to component format
         setLoadedPage({
           title: data.title,
           dafYomi: data.daf_yomi,
-          summary: `דף ${data.daf_yomi} מתוך בבא בתרא`,
-          tags: ["גמרא", "בבא בתרא"],
+          summary: `דף ${data.daf_yomi}`,
+          tags: ["גמרא", hebrewMasechetName],
+          masechet: masechetName,
           gemaraText: "",
           fullText: "",
           cases: []
@@ -474,7 +486,7 @@ const SugyaDetail = () => {
                 <TabsTrigger value="lexicon">מילון</TabsTrigger>
               </TabsList>
               <TabsContent value="gemara" className="mt-6">
-                <GemaraTextPanel sugyaId={id || ""} dafYomi={sugya.dafYomi} />
+                <GemaraTextPanel sugyaId={id || ""} dafYomi={sugya.dafYomi} masechet={sugya.masechet} />
               </TabsContent>
               <TabsContent value="commentaries" className="mt-6">
                 <CommentariesPanel dafYomi={sugya.dafYomi} />
