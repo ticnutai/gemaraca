@@ -75,34 +75,49 @@ const SmartIndexTab = () => {
     loadSavedResults();
   }, []);
 
-  // Load previously saved analysis results from database
+  // Load previously saved analysis results from database with pagination
   const loadSavedResults = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('smart_index_results')
-        .select(`
-          *,
-          psakei_din:psak_din_id (id, title, summary, court, year)
-        `);
+      const PAGE_SIZE = 1000;
+      let allResults: AnalysisResult[] = [];
+      let page = 0;
+      let hasMore = true;
 
-      if (error) throw error;
+      while (hasMore) {
+        const from = page * PAGE_SIZE;
+        const to = from + PAGE_SIZE - 1;
 
-      if (data && data.length > 0) {
-        const results: AnalysisResult[] = data.map((row: any) => ({
-          id: row.psak_din_id,
-          title: row.psakei_din?.title || '',
-          sources: row.sources as DetectedSource[],
-          topics: row.topics,
-          masechtot: row.masechtot || [],
-          books: row.books || [],
-          wordCount: row.word_count,
-          hasFullText: row.has_full_text
-        }));
-        
-        setAnalysisResults(results);
-        setSavedCount(results.length);
+        const { data, error } = await supabase
+          .from('smart_index_results')
+          .select(`
+            *,
+            psakei_din:psak_din_id (id, title, summary, court, year)
+          `)
+          .range(from, to);
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          const pageResults: AnalysisResult[] = data.map((row: any) => ({
+            id: row.psak_din_id,
+            title: row.psakei_din?.title || '',
+            sources: row.sources as DetectedSource[],
+            topics: row.topics,
+            masechtot: row.masechtot || [],
+            books: row.books || [],
+            wordCount: row.word_count,
+            hasFullText: row.has_full_text
+          }));
+          allResults = [...allResults, ...pageResults];
+        }
+
+        hasMore = data?.length === PAGE_SIZE;
+        page++;
       }
+
+      setAnalysisResults(allResults);
+      setSavedCount(allResults.length);
     } catch (error) {
       console.error('Error loading saved results:', error);
     } finally {
