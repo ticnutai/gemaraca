@@ -3,6 +3,7 @@ import GemaraTab from "@/components/GemaraTab";
 import PsakDinTab from "@/components/PsakDinTab";
 import SearchPsakDinTab from "@/components/SearchPsakDinTab";
 import UploadPsakDinTab from "@/components/UploadPsakDinTab";
+import SmartIndexTab from "@/components/SmartIndexTab";
 import { useAppContext } from "@/contexts/AppContext";
 
 const Index = () => {
@@ -19,6 +20,7 @@ const Index = () => {
           />
         )}
         {activeTab === "psak-din" && <PsakDinTab />}
+        {activeTab === "smart-index" && <SmartIndexTab />}
         {activeTab === "search" && <SearchPsakDinTab />}
         {activeTab === "upload" && <UploadPsakDinTab />}
       </div>
