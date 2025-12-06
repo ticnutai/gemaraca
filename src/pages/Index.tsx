@@ -16,11 +16,11 @@ const Index = () => {
         <AppSidebar activeTab={activeTab} onTabChange={setActiveTab} />
         
         <SidebarInset className="flex flex-col">
-          <AppHeader />
+          <AppHeader activeTab={activeTab} onTabChange={setActiveTab} />
           
           {/* Main content area */}
           <main className="flex-1 overflow-auto">
-            <div className="container mx-auto p-4 md:p-6">
+            <div className="p-4 md:p-6">
               {/* Content cards with luxurious styling */}
               <div className="bg-card rounded-2xl shadow-lg border border-border/50 overflow-hidden">
                 {activeTab === "gemara" && <GemaraTab />}

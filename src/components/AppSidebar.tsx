@@ -1,4 +1,5 @@
-import { BookOpen, Scale, Search, Upload } from "lucide-react";
+import { useState } from "react";
+import { BookOpen, Scale, Search, Upload, Pin, PinOff, ChevronDown, ChevronLeft } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -10,7 +11,12 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  SidebarFooter,
+  useSidebar,
 } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { MASECHTOT, SEDARIM } from "@/lib/masechtotData";
 
 interface AppSidebarProps {
   activeTab: string;
@@ -45,16 +51,65 @@ const menuItems = [
 ];
 
 const AppSidebar = ({ activeTab, onTabChange }: AppSidebarProps) => {
+  const { setOpen, open: sidebarOpen } = useSidebar();
+  const [isPinned, setIsPinned] = useState(true);
+  const [expandedSedarim, setExpandedSedarim] = useState<Set<string>>(new Set());
+
+  const toggleSeder = (seder: string) => {
+    const newExpanded = new Set(expandedSedarim);
+    if (newExpanded.has(seder)) {
+      newExpanded.delete(seder);
+    } else {
+      newExpanded.add(seder);
+    }
+    setExpandedSedarim(newExpanded);
+  };
+
+  const handlePinToggle = () => {
+    setIsPinned(!isPinned);
+    if (!isPinned) {
+      setOpen(true);
+    }
+  };
+
+  // קיבוץ מסכתות לפי סדר
+  const groupedMasechtot = SEDARIM.map(seder => ({
+    seder,
+    masechtot: MASECHTOT.filter(m => m.seder === seder)
+  }));
+
   return (
-    <Sidebar side="right" className="border-l border-border/50">
+    <Sidebar 
+      side="right" 
+      className="border-l border-border/50"
+      collapsible={isPinned ? "none" : "offcanvas"}
+    >
       <SidebarHeader className="border-b border-border/50 p-4">
-        <h2 className="text-lg font-semibold text-foreground">ניווט ראשי</h2>
-        <p className="text-sm text-muted-foreground">בחר קטגוריה</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">ניווט ראשי</h2>
+            <p className="text-xs text-muted-foreground">מסכתות ופסקי דין</p>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handlePinToggle}
+            className="h-8 w-8"
+            title={isPinned ? "בטל נעיצה" : "נעץ סיידבר"}
+          >
+            {isPinned ? (
+              <Pin className="h-4 w-4 text-accent" />
+            ) : (
+              <PinOff className="h-4 w-4 text-muted-foreground" />
+            )}
+          </Button>
+        </div>
       </SidebarHeader>
       
-      <SidebarContent>
+      <SidebarContent className="px-2">
+        {/* תפריט ניווט */}
         <SidebarGroup>
-          <SidebarGroupLabel className="text-muted-foreground text-xs mb-2">
+          <SidebarGroupLabel className="text-muted-foreground text-xs mb-2 px-2">
             תפריט
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -65,23 +120,92 @@ const AppSidebar = ({ activeTab, onTabChange }: AppSidebarProps) => {
                     onClick={() => onTabChange(item.id)}
                     isActive={activeTab === item.id}
                     tooltip={item.description}
-                    className={`
-                      group relative rounded-xl py-3 px-4 transition-all duration-200
-                      ${activeTab === item.id 
+                    className={cn(
+                      "rounded-xl py-2.5 px-3 transition-all duration-200",
+                      activeTab === item.id 
                         ? "bg-primary text-primary-foreground shadow-md" 
                         : "hover:bg-secondary/80 text-foreground"
-                      }
-                    `}
+                    )}
                   >
-                    <item.icon className={`h-5 w-5 ${activeTab === item.id ? "text-accent" : "text-muted-foreground group-hover:text-foreground"}`} />
-                    <span className="font-medium">{item.title}</span>
+                    <item.icon className={cn(
+                      "h-4 w-4",
+                      activeTab === item.id ? "text-accent" : "text-muted-foreground"
+                    )} />
+                    <span className="font-medium text-sm">{item.title}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {/* רשימת מסכתות מתקפלת */}
+        <SidebarGroup className="mt-4">
+          <SidebarGroupLabel className="text-muted-foreground text-xs mb-2 px-2">
+            מסכתות הגמרא
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <div className="space-y-1">
+              {groupedMasechtot.map((group) => (
+                <div key={group.seder} className="rounded-lg overflow-hidden">
+                  {/* כותרת סדר */}
+                  <button
+                    onClick={() => toggleSeder(group.seder)}
+                    className={cn(
+                      "w-full flex items-center justify-between px-3 py-2 text-sm font-medium transition-all",
+                      "bg-secondary/50 hover:bg-secondary text-foreground rounded-lg",
+                      expandedSedarim.has(group.seder) && "rounded-b-none"
+                    )}
+                  >
+                    <span>סדר {group.seder}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        {group.masechtot.length} מסכתות
+                      </span>
+                      {expandedSedarim.has(group.seder) ? (
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </div>
+                  </button>
+
+                  {/* רשימת מסכתות */}
+                  {expandedSedarim.has(group.seder) && (
+                    <div className="bg-muted/30 rounded-b-lg border-x border-b border-border/30">
+                      {group.masechtot.map((masechet, index) => (
+                        <button
+                          key={masechet.englishName}
+                          onClick={() => {
+                            onTabChange("gemara");
+                            // Could emit an event or use context to select this masechet
+                          }}
+                          className={cn(
+                            "w-full flex items-center justify-between px-4 py-2 text-sm transition-all",
+                            "hover:bg-accent/10 text-foreground",
+                            index !== group.masechtot.length - 1 && "border-b border-border/20"
+                          )}
+                        >
+                          <span>{masechet.hebrewName}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {masechet.maxDaf - 1} דפים
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
+
+      <SidebarFooter className="border-t border-border/50 p-3">
+        <div className="text-center text-xs text-muted-foreground">
+          גמרא להלכה © 2024
+        </div>
+      </SidebarFooter>
 
       <SidebarRail />
     </Sidebar>
