@@ -382,7 +382,7 @@ const GemaraTab = ({ selectedMasechet: selectedMasechetProp, onMasechetChange }:
               ) : (
                 <>
                   {/* דפים ראשונים (תמיד נראים) */}
-                  <div className="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-12 lg:grid-cols-15 gap-2">
+                  <div className="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-12 lg:grid-cols-15 gap-2" style={{ direction: 'rtl' }}>
                     {visibleDafim.map((dafNum) => {
                       const loadedPage = pages.find(p => p.daf_number === dafNum);
                       const isLoaded = !!loadedPage;
@@ -459,7 +459,7 @@ const GemaraTab = ({ selectedMasechet: selectedMasechetProp, onMasechetChange }:
                   <CollapsibleContent>
                     {/* דפים נוספים */}
                     {showAllPages && allDafim.length > 20 && (
-                      <div className="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-12 lg:grid-cols-15 gap-2 mt-4 pt-4 border-t border-border/50">
+                      <div className="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-12 lg:grid-cols-15 gap-2 mt-4 pt-4 border-t border-border/50" style={{ direction: 'rtl' }}>
                         {allDafim.slice(20).map((dafNum) => {
                           const loadedPage = pages.find(p => p.daf_number === dafNum);
                           const isLoaded = !!loadedPage;

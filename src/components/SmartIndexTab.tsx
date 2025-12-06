@@ -31,7 +31,7 @@ import {
 import PsakDinViewDialog from "./PsakDinViewDialog";
 import { toHebrewNumeral } from "@/lib/hebrewNumbers";
 
-const BATCH_SIZE = 100;
+const BATCH_SIZE = 500;
 const STORAGE_KEY = 'smart_index_last_run';
 
 const SmartIndexTab = () => {
