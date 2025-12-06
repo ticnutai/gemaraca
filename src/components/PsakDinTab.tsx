@@ -11,6 +11,8 @@ import PsakDinViewDialog from "./PsakDinViewDialog";
 import GemaraPsakDinIndex from "./GemaraPsakDinIndex";
 import { useToast } from "@/hooks/use-toast";
 
+const ITEMS_PER_PAGE = 50;
+
 const PsakDinTab = () => {
   const [psakim, setPsakim] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,24 +23,33 @@ const PsakDinTab = () => {
   const [analysisProgress, setAnalysisProgress] = useState({ current: 0, total: 0 });
   const [psakLinks, setPsakLinks] = useState<Map<string, number>>(new Map());
   const [totalUnlinkedCount, setTotalUnlinkedCount] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
 
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
+
   useEffect(() => {
-    loadPsakim();
+    loadPsakim(currentPage);
     loadLinkCounts();
     loadTotalUnlinkedCount();
-  }, []);
+  }, [currentPage]);
 
-  const loadPsakim = async () => {
+  const loadPsakim = async (page: number) => {
+    setLoading(true);
     try {
-      const { data, error } = await supabase
+      const from = (page - 1) * ITEMS_PER_PAGE;
+      const to = from + ITEMS_PER_PAGE - 1;
+
+      const { data, error, count } = await supabase
         .from('psakei_din')
-        .select('*')
+        .select('*', { count: 'exact' })
         .order('year', { ascending: false })
-        .limit(50);
+        .range(from, to);
 
       if (error) throw error;
       setPsakim(data || []);
+      setTotalCount(count || 0);
     } catch (error) {
       console.error('Error loading psakim:', error);
     } finally {
@@ -357,6 +368,71 @@ const PsakDinTab = () => {
                     </Card>
                   );
                 })}
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 mt-6">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1 || loading}
+                    >
+                      הקודם
+                    </Button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum: number;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+                        return (
+                          <Button
+                            key={pageNum}
+                            variant={currentPage === pageNum ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setCurrentPage(pageNum)}
+                            disabled={loading}
+                            className="w-10"
+                          >
+                            {pageNum}
+                          </Button>
+                        );
+                      })}
+                      {totalPages > 5 && currentPage < totalPages - 2 && (
+                        <>
+                          <span className="px-2 text-muted-foreground">...</span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(totalPages)}
+                            disabled={loading}
+                            className="w-10"
+                          >
+                            {totalPages}
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages || loading}
+                    >
+                      הבא
+                    </Button>
+                    <span className="text-sm text-muted-foreground mr-4">
+                      עמוד {currentPage} מתוך {totalPages} ({totalCount} פסקי דין)
+                    </span>
+                  </div>
+                )}
               </div>
             )}
           </TabsContent>
