@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 interface GemaraTextPanelProps {
   sugyaId: string;
   dafYomi: string;
+  masechet?: string; // Sefaria name e.g. "Megillah", "Bava_Batra"
 }
 
 type ViewMode = 'text' | 'sefaria' | 'edaf-image' | 'edaf-site';
@@ -28,7 +29,7 @@ const VIEW_LABELS: Record<ViewMode, { label: string; icon: React.ReactNode; desc
 
 const STORAGE_KEY = 'gemara-view-preference';
 
-export default function GemaraTextPanel({ sugyaId, dafYomi }: GemaraTextPanelProps) {
+export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Batra" }: GemaraTextPanelProps) {
   const [gemaraText, setGemaraText] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showHebrew, setShowHebrew] = useState(true);
@@ -77,33 +78,44 @@ export default function GemaraTextPanel({ sugyaId, dafYomi }: GemaraTextPanelPro
     }
   };
 
-  const convertDafYomiToSefariaRef = (dafYomi: string): string => {
-    const parts = dafYomi.trim().split(' ');
-    const masechet = "Bava_Batra";
+  const convertDafYomiToSefariaRef = (dafYomiStr: string): string => {
+    // First, try to extract daf number from dafYomi string
+    // Format can be: "מגילה י״ט ע״א" or "י״ט ע״א" etc.
+    const parts = dafYomiStr.trim().split(' ');
     
-    if (parts.length >= 2) {
-      let dafNum = parts[0].replace(/[׳\"]/g, '');
-      let amud = 'a';
-      
-      if (parts.length >= 2 && parts[1].includes('ע')) {
-        amud = parts[1].includes('ב') ? 'b' : 'a';
+    // Find the daf number part (Hebrew numeral)
+    let dafNum = '';
+    let amud = 'a';
+    
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      if (part.includes('ע')) {
+        // This is the amud indicator
+        amud = part.includes('ב') ? 'b' : 'a';
+      } else if (/^[א-ת״׳]+$/.test(part.replace(/[״׳]/g, ''))) {
+        // This looks like a Hebrew numeral
+        dafNum = part.replace(/[״׳]/g, '');
       }
-      
-      const hebrewToNumber: Record<string, string> = {
-        'א': '1', 'ב': '2', 'ג': '3', 'ד': '4', 'ה': '5',
-        'ו': '6', 'ז': '7', 'ח': '8', 'ט': '9', 'י': '10',
-        'יא': '11', 'יב': '12', 'יג': '13', 'יד': '14', 'טו': '15',
-        'טז': '16', 'יז': '17', 'יח': '18', 'יט': '19', 'כ': '20',
-        'כא': '21', 'כב': '22', 'כג': '23', 'כד': '24', 'כה': '25',
-        'כו': '26', 'כז': '27', 'כח': '28', 'כט': '29', 'ל': '30',
-        'לא': '31', 'לב': '32', 'לג': '33', 'לד': '34', 'לה': '35'
-      };
-      
-      const dafNumber = hebrewToNumber[dafNum] || dafNum;
-      return `${masechet}.${dafNumber}${amud}`;
     }
     
-    return "Bava_Batra.2a";
+    if (!dafNum) {
+      // Fallback: try parsing from sugya_id
+      return `${masechet}.2a`;
+    }
+    
+    const hebrewToNumber: Record<string, string> = {
+      'א': '1', 'ב': '2', 'ג': '3', 'ד': '4', 'ה': '5',
+      'ו': '6', 'ז': '7', 'ח': '8', 'ט': '9', 'י': '10',
+      'יא': '11', 'יב': '12', 'יג': '13', 'יד': '14', 'טו': '15',
+      'טז': '16', 'יז': '17', 'יח': '18', 'יט': '19', 'כ': '20',
+      'כא': '21', 'כב': '22', 'כג': '23', 'כד': '24', 'כה': '25',
+      'כו': '26', 'כז': '27', 'כח': '28', 'כט': '29', 'ל': '30',
+      'לא': '31', 'לב': '32', 'לג': '33', 'לד': '34', 'לה': '35',
+      'לו': '36', 'לז': '37', 'לח': '38', 'לט': '39', 'מ': '40'
+    };
+    
+    const dafNumber = hebrewToNumber[dafNum] || dafNum;
+    return `${masechet}.${dafNumber}${amud}`;
   };
 
   const getDafInfo = (dafYomi: string): { daf: number; amud: 'a' | 'b' } => {
@@ -143,13 +155,43 @@ export default function GemaraTextPanel({ sugyaId, dafYomi }: GemaraTextPanelPro
 
   const getEdafSiteUrl = (): string => {
     const { daf, amud } = getDafInfo(dafYomi);
-    return `https://www.e-daf.com/index.asp?ID=23&masession=${daf}${amud.toUpperCase()}`;
+    // Map masechet to E-Daf ID
+    const edafMasechetMap: Record<string, number> = {
+      'Bava_Batra': 23, 'Megillah': 12, 'Berachot': 1, 'Shabbat': 2,
+      'Eruvin': 3, 'Pesachim': 4, 'Shekalim': 5, 'Yoma': 6,
+      'Sukkah': 7, 'Beitzah': 8, 'Rosh_Hashanah': 9, 'Taanit': 10,
+      'Chagigah': 11, 'Moed_Katan': 13, 'Yevamot': 14, 'Ketubot': 15,
+      'Nedarim': 16, 'Nazir': 17, 'Sotah': 18, 'Gittin': 19,
+      'Kiddushin': 20, 'Bava_Kamma': 21, 'Bava_Metzia': 22,
+      'Sanhedrin': 24, 'Makkot': 25, 'Shevuot': 26, 'Avodah_Zarah': 27,
+      'Horayot': 28, 'Zevachim': 29, 'Menachot': 30, 'Chullin': 31,
+      'Bechorot': 32, 'Arachin': 33, 'Temurah': 34, 'Keritot': 35,
+      'Meilah': 36, 'Niddah': 37
+    };
+    const masechetId = edafMasechetMap[masechet] || 23;
+    return `https://www.e-daf.com/index.asp?ID=${masechetId}&masession=${daf}${amud.toUpperCase()}`;
   };
 
   // URL ישיר לתמונת הדף מ-E-Daf
   const getEdafImageUrl = (): string => {
     const { daf, amud } = getDafInfo(dafYomi);
-    return `https://www.e-daf.com/dafImages/bavabatra/${daf}${amud}.gif`;
+    // Convert Sefaria name to E-Daf folder name
+    const edafFolderMap: Record<string, string> = {
+      'Bava_Batra': 'bavabatra', 'Megillah': 'megillah', 'Berachot': 'berachot',
+      'Shabbat': 'shabbat', 'Eruvin': 'eruvin', 'Pesachim': 'pesachim',
+      'Yoma': 'yoma', 'Sukkah': 'sukkah', 'Beitzah': 'beitzah',
+      'Rosh_Hashanah': 'roshhashanah', 'Taanit': 'taanis', 'Chagigah': 'chagigah',
+      'Moed_Katan': 'moedkatan', 'Yevamot': 'yevamos', 'Ketubot': 'kesubos',
+      'Nedarim': 'nedarim', 'Nazir': 'nazir', 'Sotah': 'sotah',
+      'Gittin': 'gittin', 'Kiddushin': 'kiddushin', 'Bava_Kamma': 'bavakama',
+      'Bava_Metzia': 'bavametzia', 'Sanhedrin': 'sanhedrin', 'Makkot': 'makkos',
+      'Shevuot': 'shevuos', 'Avodah_Zarah': 'avodazarah', 'Horayot': 'horayos',
+      'Zevachim': 'zevachim', 'Menachot': 'menachos', 'Chullin': 'chullin',
+      'Bechorot': 'bechoros', 'Arachin': 'erchin', 'Temurah': 'temurah',
+      'Keritot': 'kerisus', 'Meilah': 'meilah', 'Niddah': 'niddah'
+    };
+    const folder = edafFolderMap[masechet] || masechet.toLowerCase().replace(/_/g, '');
+    return `https://www.e-daf.com/dafImages/${folder}/${daf}${amud}.gif`;
   };
 
   const getSefariaDirectUrl = (): string => {
