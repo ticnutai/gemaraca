@@ -9,6 +9,8 @@ import NotFound from "./pages/NotFound";
 import { ThemeProvider } from "./components/ThemeProvider";
 import { SettingsButton } from "./components/SettingsButton";
 import GlobalUploadProgress from "./components/GlobalUploadProgress";
+import AppLayout from "./components/AppLayout";
+import { AppContextProvider } from "./contexts/AppContext";
 
 const queryClient = new QueryClient();
 
@@ -19,12 +21,15 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/sugya/:id" element={<SugyaDetail />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AppContextProvider>
+            <AppLayout>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/sugya/:id" element={<SugyaDetail />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </AppLayout>
+          </AppContextProvider>
         </BrowserRouter>
         <SettingsButton />
         <GlobalUploadProgress />

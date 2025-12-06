@@ -17,8 +17,17 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 
-const GemaraTab = () => {
-  const [selectedMasechet, setSelectedMasechet] = useState<Masechet>(MASECHTOT.find(m => m.hebrewName === "בבא בתרא")!);
+interface GemaraTabProps {
+  selectedMasechet?: string | null;
+  onMasechetChange?: (masechetHebrewName: string) => void;
+}
+
+const GemaraTab = ({ selectedMasechet: selectedMasechetProp, onMasechetChange }: GemaraTabProps) => {
+  const [selectedMasechet, setSelectedMasechet] = useState<Masechet>(
+    selectedMasechetProp 
+      ? (getMasechetByHebrewName(selectedMasechetProp) || MASECHTOT.find(m => m.hebrewName === "בבא בתרא")!)
+      : MASECHTOT.find(m => m.hebrewName === "בבא בתרא")!
+  );
   const [pages, setPages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingDaf, setLoadingDaf] = useState<number | null>(null);
@@ -28,6 +37,16 @@ const GemaraTab = () => {
   const [showAllPages, setShowAllPages] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Sync with prop when it changes
+  useEffect(() => {
+    if (selectedMasechetProp) {
+      const masechet = getMasechetByHebrewName(selectedMasechetProp);
+      if (masechet) {
+        setSelectedMasechet(masechet);
+      }
+    }
+  }, [selectedMasechetProp]);
 
   useEffect(() => {
     loadPages();
@@ -167,6 +186,10 @@ const GemaraTab = () => {
       setSelectedDafim(new Set());
       setMultiSelectMode(false);
       setShowAllPages(false);
+      // Notify parent if callback provided
+      if (onMasechetChange) {
+        onMasechetChange(hebrewName);
+      }
     }
   };
 

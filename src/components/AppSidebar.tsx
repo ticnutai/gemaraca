@@ -21,6 +21,9 @@ import { MASECHTOT, SEDARIM } from "@/lib/masechtotData";
 interface AppSidebarProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
+  onMasechetSelect?: (masechetHebrewName: string) => void;
+  isPinned?: boolean;
+  onPinToggle?: () => void;
 }
 
 const menuItems = [
@@ -50,10 +53,19 @@ const menuItems = [
   },
 ];
 
-const AppSidebar = ({ activeTab, onTabChange }: AppSidebarProps) => {
+const AppSidebar = ({ 
+  activeTab, 
+  onTabChange, 
+  onMasechetSelect,
+  isPinned: isPinnedProp,
+  onPinToggle: onPinToggleProp 
+}: AppSidebarProps) => {
   const { setOpen, open: sidebarOpen } = useSidebar();
-  const [isPinned, setIsPinned] = useState(true);
+  const [isPinnedLocal, setIsPinnedLocal] = useState(true);
   const [expandedSedarim, setExpandedSedarim] = useState<Set<string>>(new Set());
+
+  // Use prop or local state
+  const isPinned = isPinnedProp !== undefined ? isPinnedProp : isPinnedLocal;
 
   const toggleSeder = (seder: string) => {
     const newExpanded = new Set(expandedSedarim);
@@ -66,7 +78,11 @@ const AppSidebar = ({ activeTab, onTabChange }: AppSidebarProps) => {
   };
 
   const handlePinToggle = () => {
-    setIsPinned(!isPinned);
+    if (onPinToggleProp) {
+      onPinToggleProp();
+    } else {
+      setIsPinnedLocal(!isPinnedLocal);
+    }
     if (!isPinned) {
       setOpen(true);
     }
@@ -82,7 +98,8 @@ const AppSidebar = ({ activeTab, onTabChange }: AppSidebarProps) => {
     <Sidebar 
       side="right" 
       className="border-l border-border/50"
-      collapsible={isPinned ? "none" : "offcanvas"}
+      collapsible={isPinned ? "none" : "icon"}
+      variant={isPinned ? "sidebar" : "floating"}
     >
       <SidebarHeader className="border-b border-border/50 p-4">
         <div className="flex items-center justify-between">
@@ -177,8 +194,11 @@ const AppSidebar = ({ activeTab, onTabChange }: AppSidebarProps) => {
                         <button
                           key={masechet.englishName}
                           onClick={() => {
-                            onTabChange("gemara");
-                            // Could emit an event or use context to select this masechet
+                            if (onMasechetSelect) {
+                              onMasechetSelect(masechet.hebrewName);
+                            } else {
+                              onTabChange("gemara");
+                            }
                           }}
                           className={cn(
                             "w-full flex items-center justify-between px-4 py-2 text-sm transition-all",
