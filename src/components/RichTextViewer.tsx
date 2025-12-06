@@ -35,8 +35,15 @@ interface RichTextViewerProps {
 const FONT_SIZES = [12, 14, 16, 18, 20, 22, 24, 28, 32];
 const FONTS = [
   { value: 'inherit', label: 'ברירת מחדל' },
-  { value: 'serif', label: 'דוד' },
-  { value: 'sans-serif', label: 'אריאל' },
+  { value: '"David Libre", "David", serif', label: 'דוד' },
+  { value: '"Frank Ruhl Libre", "Frank Ruehl", serif', label: 'פרנק רוהל' },
+  { value: '"Heebo", sans-serif', label: 'חיבו' },
+  { value: '"Assistant", sans-serif', label: 'אסיסטנט' },
+  { value: '"Secular One", sans-serif', label: 'סקולר' },
+  { value: '"Rubik", sans-serif', label: 'רוביק' },
+  { value: '"Noto Serif Hebrew", serif', label: 'נוטו סריף' },
+  { value: '"Arial", sans-serif', label: 'אריאל' },
+  { value: '"Times New Roman", serif', label: 'טיימס' },
   { value: 'monospace', label: 'קוריאר' },
 ];
 const COLORS = [
