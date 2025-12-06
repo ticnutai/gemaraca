@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Loader2, RefreshCw, Lightbulb, Scale, BookOpen } from "lucide-react";
+import { Sparkles, Loader2, RefreshCw, Lightbulb, Scale, BookOpen, Database } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -16,6 +16,7 @@ interface ModernExamplesData {
   principle: string;
   examples: Example[];
   practicalSummary: string;
+  cached?: boolean;
 }
 
 interface ModernExamplesPanelProps {
@@ -23,6 +24,7 @@ interface ModernExamplesPanelProps {
   sugyaTitle: string;
   dafYomi: string;
   masechet: string;
+  sugyaId?: string;
 }
 
 export const ModernExamplesPanel = ({
@@ -30,12 +32,43 @@ export const ModernExamplesPanel = ({
   sugyaTitle,
   dafYomi,
   masechet,
+  sugyaId,
 }: ModernExamplesPanelProps) => {
   const [data, setData] = useState<ModernExamplesData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isCached, setIsCached] = useState(false);
 
-  const generateExamples = async () => {
+  const effectiveSugyaId = sugyaId || `${masechet}-${dafYomi}`.replace(/\s+/g, '-');
+
+  // Check for cached data on mount
+  useEffect(() => {
+    checkCachedExamples();
+  }, [effectiveSugyaId]);
+
+  const checkCachedExamples = async () => {
+    try {
+      const { data: cached, error } = await supabase
+        .from('modern_examples')
+        .select('*')
+        .eq('sugya_id', effectiveSugyaId)
+        .maybeSingle();
+
+      if (cached && !error) {
+        setData({
+          principle: cached.principle,
+          examples: cached.examples as unknown as Example[],
+          practicalSummary: cached.practical_summary,
+          cached: true
+        });
+        setIsCached(true);
+      }
+    } catch (err) {
+      console.error("Error checking cached examples:", err);
+    }
+  };
+
+  const generateExamples = async (forceRegenerate = false) => {
     setIsLoading(true);
     setError(null);
     
@@ -48,6 +81,8 @@ export const ModernExamplesPanel = ({
             sugyaTitle,
             dafYomi,
             masechet,
+            sugyaId: effectiveSugyaId,
+            forceRegenerate,
           },
         }
       );
@@ -59,7 +94,13 @@ export const ModernExamplesPanel = ({
       }
 
       setData(result);
-      toast.success("ההמחשות נוצרו בהצלחה");
+      setIsCached(result.cached || false);
+      
+      if (result.cached) {
+        toast.success("נטען מהמטמון");
+      } else {
+        toast.success("ההמחשות נוצרו ונשמרו");
+      }
     } catch (err) {
       console.error("Error generating examples:", err);
       setError(err instanceof Error ? err.message : "שגיאה ביצירת ההמחשות");
@@ -81,7 +122,7 @@ export const ModernExamplesPanel = ({
             </p>
           </div>
           <Button 
-            onClick={generateExamples} 
+            onClick={() => generateExamples(false)} 
             className="gap-2"
             disabled={isLoading}
           >
@@ -110,7 +151,7 @@ export const ModernExamplesPanel = ({
       <Card className="border-destructive/20">
         <CardContent className="p-6 text-center">
           <p className="text-destructive mb-3">{error}</p>
-          <Button onClick={generateExamples} variant="outline" className="gap-2">
+          <Button onClick={() => generateExamples(false)} variant="outline" className="gap-2">
             <RefreshCw className="h-4 w-4" />
             נסה שוב
           </Button>
@@ -121,6 +162,14 @@ export const ModernExamplesPanel = ({
 
   return (
     <div className="space-y-4">
+      {/* Cached indicator */}
+      {isCached && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Database className="h-3 w-3" />
+          <span>נטען מהמטמון</span>
+        </div>
+      )}
+
       {/* Principle Card */}
       <Card className="border-primary/30 bg-gradient-to-br from-primary/10 to-transparent">
         <CardHeader className="pb-2">
@@ -145,9 +194,10 @@ export const ModernExamplesPanel = ({
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={generateExamples}
+              onClick={() => generateExamples(true)}
               disabled={isLoading}
               className="gap-1 text-xs"
+              title="צור המחשות חדשות"
             >
               <RefreshCw className="h-3 w-3" />
               חדש

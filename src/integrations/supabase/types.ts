@@ -88,6 +88,42 @@ export type Database = {
         }
         Relationships: []
       }
+      modern_examples: {
+        Row: {
+          created_at: string
+          daf_yomi: string
+          examples: Json
+          id: string
+          masechet: string
+          practical_summary: string
+          principle: string
+          sugya_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          daf_yomi: string
+          examples?: Json
+          id?: string
+          masechet: string
+          practical_summary: string
+          principle: string
+          sugya_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          daf_yomi?: string
+          examples?: Json
+          id?: string
+          masechet?: string
+          practical_summary?: string
+          principle?: string
+          sugya_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       psakei_din: {
         Row: {
           case_number: string | null
