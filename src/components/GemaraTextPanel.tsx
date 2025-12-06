@@ -13,10 +13,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Loader2, BookOpen, Image, FileText, ExternalLink, Eye, Check, ZoomIn, ZoomOut, Type, AArrowUp, AArrowDown, AlignRight, AlignCenter, AlignLeft, Bold, Highlighter } from "lucide-react";
+import { Loader2, BookOpen, Image, FileText, ExternalLink, Eye, Check, ZoomIn, ZoomOut, Type, AArrowUp, AArrowDown, AlignRight, AlignCenter, AlignLeft, Bold, Highlighter, MousePointer2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getCachedGemaraText, setCachedGemaraText } from "@/lib/pageCache";
+import { RichTextViewer } from "./RichTextViewer";
 
 const FONTS = [
   { value: 'font-serif', label: 'דוד (סריף)' },
@@ -280,36 +281,44 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
     }
   };
 
+  const getPlainText = (htmlOrArray: any): string => {
+    if (Array.isArray(htmlOrArray)) {
+      return htmlOrArray.map(line => {
+        const temp = document.createElement('div');
+        temp.innerHTML = line;
+        return temp.textContent || temp.innerText || '';
+      }).join('\n\n');
+    }
+    const temp = document.createElement('div');
+    temp.innerHTML = htmlOrArray;
+    return temp.textContent || temp.innerText || '';
+  };
+
   const renderGemaraText = () => {
     if (!gemaraText) return null;
 
     const textToShow = showHebrew ? gemaraText.he : gemaraText.text;
-    const textClasses = `mb-4 leading-loose ${textSettings.fontFamily} ${getTextAlignClass()} ${textSettings.isBold ? 'font-bold' : ''} ${textSettings.highlightColor}`;
-    
-    if (Array.isArray(textToShow)) {
-      return textToShow.map((line: string, index: number) => (
-        <p 
-          key={index} 
-          className={textClasses}
-          style={{ fontSize: `${textSettings.fontSize}px` }}
-          dir="rtl"
-          dangerouslySetInnerHTML={{ __html: cleanAndFormatText(line) }}
-        />
-      ));
-    }
+    const plainText = getPlainText(textToShow);
+    const textClasses = `leading-loose ${textSettings.fontFamily} ${getTextAlignClass()} ${textSettings.isBold ? 'font-bold' : ''} ${textSettings.highlightColor}`;
     
     return (
-      <p 
+      <RichTextViewer
+        text={plainText}
+        sourceType="gemara"
+        sourceId={sugyaId}
         className={textClasses}
-        style={{ fontSize: `${textSettings.fontSize}px` }}
-        dir="rtl"
-        dangerouslySetInnerHTML={{ __html: cleanAndFormatText(textToShow) }}
+        baseStyle={{ fontSize: `${textSettings.fontSize}px` }}
       />
     );
   };
 
   const renderTextToolbar = () => (
     <div className="flex items-center gap-1 flex-wrap p-2 bg-muted/50 rounded-lg border">
+      {/* Hint for word selection */}
+      <div className="flex items-center gap-1 text-xs text-muted-foreground border-l pl-2 ml-1">
+        <MousePointer2 className="h-3 w-3" />
+        <span>סמן מילים לעיצוב</span>
+      </div>
       {/* Font Size Controls */}
       <div className="flex items-center gap-1 border-l pl-2 ml-1">
         <Button
