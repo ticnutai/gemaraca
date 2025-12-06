@@ -60,6 +60,7 @@ interface UploadStore {
   completeSession: (sessionId: string) => void;
   clearSession: (sessionId: string) => void;
   clearAllSessions: () => void;
+  cleanupStaleSessions: () => void;
   
   // Hash storage for content-based duplicate detection
   fileHashes: Record<string, string>;
@@ -299,6 +300,34 @@ export const useUploadStore = create<UploadStore>()(
       
       clearAllSessions: () => {
         set({ sessions: {} });
+      },
+      
+      // Clean up stale sessions (older than 24 hours or stuck)
+      cleanupStaleSessions: () => {
+        set((state) => {
+          const now = Date.now();
+          const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+          
+          const cleanedSessions: Record<string, UploadSession> = {};
+          
+          Object.entries(state.sessions).forEach(([id, session]) => {
+            // Keep completed sessions for a bit
+            if (session.status === 'completed') {
+              cleanedSessions[id] = session;
+              return;
+            }
+            
+            // Remove sessions older than 24 hours
+            if (now - session.startedAt > maxAge) {
+              return; // Skip (remove)
+            }
+            
+            // Keep recent sessions
+            cleanedSessions[id] = session;
+          });
+          
+          return { sessions: cleanedSessions };
+        });
       },
       
       // Hash methods for content-based duplicate detection
