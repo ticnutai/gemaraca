@@ -65,6 +65,8 @@ interface AnalysisResult {
 }
 
 serve(async (req) => {
+  console.log("analyze-psak-din function called");
+  
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -72,6 +74,7 @@ serve(async (req) => {
   try {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
+      console.error("LOVABLE_API_KEY is not configured");
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
@@ -80,14 +83,18 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const body = await req.json();
+    console.log("Request body:", JSON.stringify(body));
     
     // Support both text-based and ID-based analysis
     let textToAnalyze = body.text;
     let psakId = body.psakId || body.psakDinId;
     const fileName = body.fileName;
 
+    console.log("psakId:", psakId, "fileName:", fileName);
+
     // If psakId provided without text, fetch from database
     if (psakId && !textToAnalyze) {
+      console.log("Fetching psak din from database...");
       const { data: psakDin, error: fetchError } = await supabase
         .from('psakei_din')
         .select('*')
@@ -95,13 +102,16 @@ serve(async (req) => {
         .single();
 
       if (fetchError || !psakDin) {
+        console.error("Error fetching psak din:", fetchError);
         throw new Error('לא נמצא פסק דין עם מזהה זה');
       }
 
+      console.log("Found psak din:", psakDin.title);
       textToAnalyze = `כותרת: ${psakDin.title}\nבית דין: ${psakDin.court}\nשנה: ${psakDin.year}\nתקציר: ${psakDin.summary}${psakDin.full_text ? `\n\nטקסט מלא: ${psakDin.full_text}` : ''}`;
     }
 
     if (!textToAnalyze || textToAnalyze.trim().length < 20) {
+      console.log("Text too short for analysis");
       return new Response(
         JSON.stringify({ 
           success: false, 

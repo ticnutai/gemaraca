@@ -155,10 +155,10 @@ const LinkedPsakimSection = ({ sugyaId, masechet, dafNumber }: LinkedPsakimSecti
 
   return (
     <>
-      <Card className="border-accent/30 bg-accent/5">
+      <Card className="border-accent/30 bg-accent/5" dir="rtl">
         <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-foreground flex items-center gap-2">
+          <div className="flex items-center justify-between mb-3 flex-row-reverse">
+            <h3 className="font-semibold text-foreground flex items-center gap-2 flex-row-reverse">
               <FileText className="w-5 h-5 text-accent" />
               פסקי דין מקושרים
               <Badge variant="secondary" className="text-xs">
@@ -170,7 +170,7 @@ const LinkedPsakimSection = ({ sugyaId, masechet, dafNumber }: LinkedPsakimSecti
                 variant="ghost"
                 size="sm"
                 onClick={() => setExpanded(!expanded)}
-                className="gap-1"
+                className="gap-1 flex-row-reverse"
               >
                 {expanded ? (
                   <>
@@ -195,27 +195,9 @@ const LinkedPsakimSection = ({ sugyaId, masechet, dafNumber }: LinkedPsakimSecti
                   className="p-3 rounded-lg bg-card border border-border hover:shadow-md transition-shadow cursor-pointer group"
                   onClick={() => handlePsakClick(psak.id)}
                 >
-                  <div className="flex items-start gap-3">
-                    <div className="flex-1 text-right">
-                      <div className="font-medium line-clamp-1 group-hover:text-primary transition-colors">
-                        {psak.title}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        {psak.court} • {psak.year}
-                      </div>
-                      {psak.source_text && (
-                        <div className="text-xs text-accent mt-1 line-clamp-1">
-                          מקור: {psak.source_text}
-                        </div>
-                      )}
-                      {psak.connection_explanation && (
-                        <div className="text-xs text-muted-foreground mt-1 line-clamp-1">
-                          {psak.connection_explanation}
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="flex items-center gap-1">
+                  <div className="flex items-start gap-3 flex-row-reverse">
+                    {/* Right side: AI analyze button and badges */}
+                    <div className="flex items-center gap-1 shrink-0">
                       {psak.confidence && (
                         <Badge 
                           variant={psak.confidence === 'high' ? 'default' : 'outline'}
@@ -241,6 +223,26 @@ const LinkedPsakimSection = ({ sugyaId, masechet, dafNumber }: LinkedPsakimSecti
                       </Button>
                       
                       <ExternalLink className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                    
+                    {/* Left side: Content */}
+                    <div className="flex-1 text-right">
+                      <div className="font-medium line-clamp-1 group-hover:text-primary transition-colors text-right">
+                        {psak.title}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1 text-right">
+                        {psak.court} • {psak.year}
+                      </div>
+                      {psak.source_text && (
+                        <div className="text-xs text-accent mt-1 line-clamp-1 text-right">
+                          מקור: {psak.source_text}
+                        </div>
+                      )}
+                      {psak.connection_explanation && (
+                        <div className="text-xs text-muted-foreground mt-1 line-clamp-1 text-right">
+                          {psak.connection_explanation}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

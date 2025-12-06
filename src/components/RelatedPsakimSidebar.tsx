@@ -141,9 +141,9 @@ const RelatedPsakimSidebar = ({ sugyaId }: RelatedPsakimSidebarProps) => {
 
   return (
     <>
-      <Card className="border border-border">
+      <Card className="border border-border" dir="rtl">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base flex items-center gap-2">
+          <CardTitle className="text-base flex items-center gap-2 flex-row-reverse justify-start">
             <Scale className="w-4 h-4" />
             פסקי דין קשורים ({psakim.length})
           </CardTitle>
@@ -154,27 +154,27 @@ const RelatedPsakimSidebar = ({ sugyaId }: RelatedPsakimSidebarProps) => {
               {psakim.map((link) => (
                 <div
                   key={link.id}
-                  className="p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors cursor-pointer"
+                  className="p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors cursor-pointer text-right"
                   onClick={() => handlePsakClick(link.psakei_din)}
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-sm text-foreground line-clamp-1">
+                  <div className="flex items-start justify-between gap-2 flex-row-reverse">
+                    <div className="flex-1 min-w-0 text-right">
+                      <h4 className="font-medium text-sm text-foreground line-clamp-1 text-right">
                         {link.psakei_din?.title}
                       </h4>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground text-right">
                         {link.psakei_din?.court} • {link.psakei_din?.year}
                       </p>
                     </div>
                     <ExternalLink className="w-4 h-4 text-muted-foreground shrink-0" />
                   </div>
                   
-                  <p className="text-xs text-foreground/70 mt-1 line-clamp-2">
+                  <p className="text-xs text-foreground/70 mt-1 line-clamp-2 text-right">
                     {link.connection_explanation}
                   </p>
                   
                   {link.psakei_din?.tags && link.psakei_din.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-2">
+                    <div className="flex flex-wrap gap-1 mt-2 justify-start">
                       {link.psakei_din.tags.slice(0, 2).map((tag, idx) => (
                         <Badge key={idx} variant="outline" className="text-[10px] py-0">
                           {tag}
