@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,9 +16,9 @@ import {
 } from "@/components/ui/accordion";
 import { supabase } from "@/integrations/supabase/client";
 import { 
-  Search, BookOpen, FileText, Filter, Sparkles, Brain, 
-  Loader2, ChevronLeft, ChevronRight, Library, Tag, 
-  BarChart3, Zap, CheckCircle2, AlertCircle
+  Search, BookOpen, FileText, Sparkles, Brain, 
+  Loader2, Library, Tag, BarChart3, Zap, Link2, 
+  ExternalLink, Save, Database, RefreshCw, CheckCircle2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -26,17 +27,21 @@ import {
   generateIndexSummary,
   AnalysisResult,
   DetectedSource,
-  DetectedTopic
 } from "@/lib/textAnalyzer";
 import PsakDinViewDialog from "./PsakDinViewDialog";
+import { toHebrewNumeral } from "@/lib/hebrewNumbers";
 
 const BATCH_SIZE = 100;
+const STORAGE_KEY = 'smart_index_last_run';
 
 const SmartIndexTab = () => {
-  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState({ current: 0, total: 0 });
   const [analysisResults, setAnalysisResults] = useState<AnalysisResult[]>([]);
+  const [savedCount, setSavedCount] = useState(0);
   const [selectedForAI, setSelectedForAI] = useState<Set<string>>(new Set());
   const [aiAnalyzing, setAiAnalyzing] = useState(false);
   const [aiProgress, setAiProgress] = useState({ current: 0, total: 0 });
@@ -48,6 +53,46 @@ const SmartIndexTab = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const { toast } = useToast();
 
+  // Load saved results on mount
+  useEffect(() => {
+    loadSavedResults();
+  }, []);
+
+  // Load previously saved analysis results from database
+  const loadSavedResults = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('smart_index_results')
+        .select(`
+          *,
+          psakei_din:psak_din_id (id, title, summary, court, year)
+        `);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const results: AnalysisResult[] = data.map((row: any) => ({
+          id: row.psak_din_id,
+          title: row.psakei_din?.title || '',
+          sources: row.sources as DetectedSource[],
+          topics: row.topics,
+          masechtot: row.masechtot || [],
+          books: row.books || [],
+          wordCount: row.word_count,
+          hasFullText: row.has_full_text
+        }));
+        
+        setAnalysisResults(results);
+        setSavedCount(results.length);
+      }
+    } catch (error) {
+      console.error('Error loading saved results:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Calculate summary statistics
   const summary = useMemo(() => {
     return generateIndexSummary(analysisResults);
@@ -56,7 +101,6 @@ const SmartIndexTab = () => {
   // Filter results based on search and filters
   const filteredResults = useMemo(() => {
     return analysisResults.filter(result => {
-      // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         const matchesTitle = result.title.toLowerCase().includes(query);
@@ -65,17 +109,14 @@ const SmartIndexTab = () => {
         if (!matchesTitle && !matchesTopic && !matchesMasechet) return false;
       }
 
-      // Category filter
       if (selectedCategory) {
         if (!result.topics.some(t => t.category === selectedCategory)) return false;
       }
 
-      // Masechet filter
       if (selectedMasechet) {
         if (!result.masechtot.includes(selectedMasechet)) return false;
       }
 
-      // Book filter
       if (selectedBook) {
         if (!result.books.includes(selectedBook)) return false;
       }
@@ -114,10 +155,9 @@ const SmartIndexTab = () => {
     return groups;
   }, [filteredResults]);
 
-  // Run text analysis on all psakim
-  const runTextAnalysis = async () => {
+  // Run text analysis and save to database
+  const runTextAnalysis = async (forceRefresh = false) => {
     setAnalyzing(true);
-    setAnalysisResults([]);
     
     try {
       // Get total count
@@ -147,13 +187,20 @@ const SmartIndexTab = () => {
         setAnalysisProgress({ current: Math.min(offset, total), total });
         setAnalysisResults([...allResults]);
 
-        // Small delay to prevent UI freeze
-        await new Promise(r => setTimeout(r, 50));
+        await new Promise(r => setTimeout(r, 30));
       }
 
+      // Save results to database
+      setSaving(true);
+      await saveResultsToDatabase(allResults);
+      setSavedCount(allResults.length);
+
+      // Save pattern-based links
+      await savePatternLinks(allResults);
+
       toast({
-        title: "ניתוח הושלם",
-        description: `נותחו ${allResults.length} פסקי דין`,
+        title: "ניתוח ושמירה הושלמו",
+        description: `נותחו ונשמרו ${allResults.length} פסקי דין`,
       });
     } catch (error) {
       console.error('Error analyzing:', error);
@@ -163,6 +210,86 @@ const SmartIndexTab = () => {
       });
     } finally {
       setAnalyzing(false);
+      setSaving(false);
+    }
+  };
+
+  // Save analysis results to database
+  const saveResultsToDatabase = async (results: AnalysisResult[]) => {
+    const batchSize = 50;
+    
+    for (let i = 0; i < results.length; i += batchSize) {
+      const batch = results.slice(i, i + batchSize);
+      
+      const insertData = batch.map(result => ({
+        psak_din_id: result.id,
+        sources: JSON.parse(JSON.stringify(result.sources)),
+        topics: JSON.parse(JSON.stringify(result.topics)),
+        masechtot: result.masechtot,
+        books: result.books,
+        word_count: result.wordCount,
+        has_full_text: result.hasFullText,
+        analysis_method: 'pattern_matching'
+      }));
+
+      const { error } = await (supabase as any)
+        .from('smart_index_results')
+        .upsert(insertData, { onConflict: 'psak_din_id' });
+
+      if (error) {
+        console.error('Error saving batch:', error);
+      }
+    }
+  };
+
+  // Save pattern-based sugya links
+  const savePatternLinks = async (results: AnalysisResult[]) => {
+    // First, delete existing pattern links
+    await supabase
+      .from('pattern_sugya_links')
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000');
+
+    const allLinks: any[] = [];
+
+    for (const result of results) {
+      const gemaraSources = result.sources.filter(
+        s => s.type === 'gemara' && s.sugyaId && s.masechet
+      );
+
+      for (const source of gemaraSources) {
+        allLinks.push({
+          psak_din_id: result.id,
+          sugya_id: source.sugyaId,
+          masechet: source.masechet,
+          daf: source.daf,
+          amud: source.amud === 'a' ? 'א' : source.amud === 'b' ? 'ב' : null,
+          source_text: source.text,
+          confidence: source.confidence
+        });
+      }
+    }
+
+    // Insert in batches
+    const batchSize = 100;
+    for (let i = 0; i < allLinks.length; i += batchSize) {
+      const batch = allLinks.slice(i, i + batchSize);
+      const { error } = await supabase
+        .from('pattern_sugya_links')
+        .insert(batch);
+
+      if (error) {
+        console.error('Error saving pattern links batch:', error);
+      }
+    }
+
+    console.log(`Saved ${allLinks.length} pattern-based links`);
+  };
+
+  // Navigate to Gemara page
+  const navigateToGemara = (source: DetectedSource) => {
+    if (source.sugyaId) {
+      navigate(`/sugya/${source.sugyaId}`);
     }
   };
 
@@ -239,7 +366,7 @@ const SmartIndexTab = () => {
       .from('psakei_din')
       .select('*')
       .eq('id', id)
-      .single();
+      .maybeSingle();
     
     if (data) {
       setSelectedPsak(data);
@@ -247,27 +374,88 @@ const SmartIndexTab = () => {
     }
   };
 
+  // Render source badge with link
+  const renderSourceBadge = (source: DetectedSource, index: number) => {
+    if (source.type === 'gemara' && source.sugyaId) {
+      const dafDisplay = source.dafNumber ? toHebrewNumeral(source.dafNumber) : '';
+      const amudDisplay = source.amud === 'a' ? 'א' : source.amud === 'b' ? 'ב' : '';
+      
+      return (
+        <Badge
+          key={index}
+          variant="default"
+          className="cursor-pointer gap-1 hover:bg-primary/80 transition-colors"
+          onClick={(e) => {
+            e.stopPropagation();
+            navigateToGemara(source);
+          }}
+        >
+          <Link2 className="w-3 h-3" />
+          {source.masechet} {dafDisplay}{amudDisplay ? ` ע"${amudDisplay}` : ''}
+        </Badge>
+      );
+    }
+    
+    return (
+      <Badge key={index} variant="outline" className="text-xs">
+        {source.text.slice(0, 30)}...
+      </Badge>
+    );
+  };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8" dir="rtl">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center space-y-4">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
+            <p className="text-muted-foreground">טוען נתונים שמורים...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 py-8" dir="rtl">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between flex-row-reverse">
+        <div className="flex items-center justify-between flex-row-reverse flex-wrap gap-4">
           <div className="text-right">
             <h2 className="text-2xl font-bold text-foreground flex items-center gap-2 flex-row-reverse">
               אינדקס חכם
               <Library className="w-6 h-6 text-primary" />
             </h2>
             <p className="text-muted-foreground text-sm mt-1">
-              ניתוח טקסט אוטומטי לזיהוי מקורות, נושאים וספרים - ללא שימוש ב-AI
+              זיהוי אוטומטי של מקורות תלמודיים והלכתיים • קישור ישיר לדפי גמרא
             </p>
           </div>
           
-          {analysisResults.length === 0 && !analyzing && (
-            <Button onClick={runTextAnalysis} className="gap-2 flex-row-reverse">
-              התחל ניתוח
-              <Zap className="w-4 h-4" />
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {savedCount > 0 && (
+              <Badge variant="secondary" className="gap-1">
+                <Database className="w-3 h-3" />
+                {savedCount} שמורים
+              </Badge>
+            )}
+            
+            {analysisResults.length === 0 && !analyzing ? (
+              <Button onClick={() => runTextAnalysis()} className="gap-2 flex-row-reverse">
+                התחל ניתוח
+                <Zap className="w-4 h-4" />
+              </Button>
+            ) : !analyzing && (
+              <Button 
+                variant="outline" 
+                onClick={() => runTextAnalysis(true)} 
+                className="gap-2 flex-row-reverse"
+              >
+                רענן ניתוח
+                <RefreshCw className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Analysis Progress */}
@@ -276,7 +464,9 @@ const SmartIndexTab = () => {
             <CardContent className="p-4">
               <div className="flex items-center gap-3 mb-2 flex-row-reverse">
                 <Loader2 className="w-5 h-5 text-primary animate-spin" />
-                <span className="font-medium">מנתח פסקי דין...</span>
+                <span className="font-medium">
+                  {saving ? 'שומר תוצאות...' : 'מנתח פסקי דין...'}
+                </span>
                 <span className="mr-auto text-sm">
                   {analysisProgress.current}/{analysisProgress.total}
                 </span>
@@ -285,13 +475,19 @@ const SmartIndexTab = () => {
                 value={(analysisProgress.current / Math.max(analysisProgress.total, 1)) * 100} 
                 className="h-2" 
               />
+              {saving && (
+                <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                  <Save className="w-3 h-3" />
+                  שומר לדאטאבייס...
+                </p>
+              )}
             </CardContent>
           </Card>
         )}
 
         {/* Summary Stats */}
         {analysisResults.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
             <Card className="bg-primary/5 border-primary/20">
               <CardContent className="p-4 text-center">
                 <div className="text-3xl font-bold text-primary">{summary.totalAnalyzed}</div>
@@ -302,6 +498,18 @@ const SmartIndexTab = () => {
               <CardContent className="p-4 text-center">
                 <div className="text-3xl font-bold text-accent">{summary.withSources}</div>
                 <div className="text-sm text-muted-foreground">עם מקורות</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-green-500/10 border-green-500/20">
+              <CardContent className="p-4 text-center">
+                <div className="text-3xl font-bold text-green-600">{summary.withGemaraLinks}</div>
+                <div className="text-sm text-muted-foreground">מקושרים לגמרא</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-secondary border-secondary/50">
+              <CardContent className="p-4 text-center">
+                <div className="text-3xl font-bold">{summary.totalGemaraLinks}</div>
+                <div className="text-sm text-muted-foreground">קישורים</div>
               </CardContent>
             </Card>
             <Card className="bg-secondary border-secondary/50">
@@ -316,21 +524,19 @@ const SmartIndexTab = () => {
                 <div className="text-sm text-muted-foreground">ספרים</div>
               </CardContent>
             </Card>
-            <Card className="bg-secondary border-secondary/50">
-              <CardContent className="p-4 text-center">
-                <div className="text-3xl font-bold">{summary.topCategories.length}</div>
-                <div className="text-sm text-muted-foreground">קטגוריות</div>
-              </CardContent>
-            </Card>
           </div>
         )}
 
         {/* Main Content */}
         {analysisResults.length > 0 && (
-          <Tabs defaultValue="browse" className="space-y-4">
-            <TabsList className="grid w-full max-w-lg grid-cols-3 mx-auto">
+          <Tabs defaultValue="gemara-links" className="space-y-4">
+            <TabsList className="grid w-full max-w-2xl grid-cols-4 mx-auto">
+              <TabsTrigger value="gemara-links" className="gap-2 flex-row-reverse">
+                קישורי גמרא
+                <Link2 className="w-4 h-4" />
+              </TabsTrigger>
               <TabsTrigger value="browse" className="gap-2 flex-row-reverse">
-                עיון לפי נושא
+                לפי נושא
                 <Tag className="w-4 h-4" />
               </TabsTrigger>
               <TabsTrigger value="masechtot" className="gap-2 flex-row-reverse">
@@ -357,7 +563,6 @@ const SmartIndexTab = () => {
                     />
                   </div>
                   
-                  {/* Filter badges */}
                   <div className="flex flex-wrap gap-2">
                     {selectedCategory && (
                       <Badge 
@@ -398,13 +603,13 @@ const SmartIndexTab = () => {
             {/* AI Analysis Selection */}
             {filteredResults.length > 0 && (
               <Card className="border-accent/30 bg-accent/5">
-                <CardContent className="p-3 flex items-center justify-between flex-row-reverse">
+                <CardContent className="p-3 flex items-center justify-between flex-row-reverse flex-wrap gap-3">
                   <div className="flex items-center gap-3 flex-row-reverse">
                     <Brain className="w-5 h-5 text-accent" />
                     <div className="text-right">
                       <p className="font-medium text-sm">ניתוח AI מעמיק</p>
                       <p className="text-xs text-muted-foreground">
-                        בחר פסקי דין לניתוח עמוק וחילוץ מקורות מדויקים
+                        ניתוח מתקדם עם AI לזיהוי מקורות מדויק יותר
                       </p>
                     </div>
                   </div>
@@ -430,7 +635,7 @@ const SmartIndexTab = () => {
                           </>
                         ) : (
                           <>
-                            נתח {selectedForAI.size} פסקים
+                            נתח {selectedForAI.size} פסקים ב-AI
                             <Sparkles className="w-4 h-4" />
                           </>
                         )}
@@ -459,6 +664,82 @@ const SmartIndexTab = () => {
                 </CardContent>
               </Card>
             )}
+
+            {/* Gemara Links Tab */}
+            <TabsContent value="gemara-links">
+              <ScrollArea className="h-[600px]">
+                <div className="space-y-3">
+                  {filteredResults
+                    .filter(r => r.sources.some(s => s.type === 'gemara' && s.sugyaId))
+                    .slice(0, 100)
+                    .map(result => {
+                      const gemaraSources = result.sources.filter(s => s.type === 'gemara' && s.sugyaId);
+                      return (
+                        <Card 
+                          key={result.id}
+                          className={`cursor-pointer hover:shadow-md transition-shadow ${
+                            selectedForAI.has(result.id) ? 'border-accent ring-1 ring-accent' : ''
+                          }`}
+                        >
+                          <CardContent className="p-4">
+                            <div className="flex items-start gap-3 flex-row-reverse">
+                              <Checkbox
+                                checked={selectedForAI.has(result.id)}
+                                onCheckedChange={() => toggleAISelection(result.id)}
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                              <div className="flex-1 text-right">
+                                <div 
+                                  className="font-medium line-clamp-1 cursor-pointer hover:text-primary"
+                                  onClick={() => handlePsakClick(result.id)}
+                                >
+                                  {result.title}
+                                </div>
+                                
+                                {/* Gemara Links */}
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                  {gemaraSources.slice(0, 5).map((source, idx) => 
+                                    renderSourceBadge(source, idx)
+                                  )}
+                                  {gemaraSources.length > 5 && (
+                                    <Badge variant="outline" className="text-xs">
+                                      +{gemaraSources.length - 5} נוספים
+                                    </Badge>
+                                  )}
+                                </div>
+
+                                {/* Topics */}
+                                {result.topics.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mt-2">
+                                    {result.topics.slice(0, 3).map((t, idx) => (
+                                      <Badge key={idx} variant="secondary" className="text-xs">
+                                        {t.topic}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                              
+                              <div className="flex flex-col items-center gap-1">
+                                <Badge variant="default" className="text-xs">
+                                  {gemaraSources.length} קישורים
+                                </Badge>
+                                <Badge 
+                                  variant={gemaraSources[0]?.confidence === 'high' ? 'default' : 'outline'}
+                                  className="text-xs"
+                                >
+                                  {gemaraSources[0]?.confidence === 'high' ? 'גבוה' : 
+                                   gemaraSources[0]?.confidence === 'medium' ? 'בינוני' : 'נמוך'}
+                                </Badge>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                </div>
+              </ScrollArea>
+            </TabsContent>
 
             {/* Browse by Topic Tab */}
             <TabsContent value="browse">
@@ -496,11 +777,10 @@ const SmartIndexTab = () => {
                                   >
                                     <div className="font-medium text-sm line-clamp-1">{result.title}</div>
                                     <div className="flex flex-wrap gap-1 mt-1">
-                                      {result.masechtot.slice(0, 3).map(m => (
-                                        <Badge key={m} variant="outline" className="text-xs">
-                                          {m}
-                                        </Badge>
-                                      ))}
+                                      {result.sources
+                                        .filter(s => s.type === 'gemara' && s.sugyaId)
+                                        .slice(0, 2)
+                                        .map((source, idx) => renderSourceBadge(source, idx))}
                                       {result.books.slice(0, 2).map(b => (
                                         <Badge key={b} variant="secondary" className="text-xs">
                                           {b}
@@ -508,19 +788,9 @@ const SmartIndexTab = () => {
                                       ))}
                                     </div>
                                   </div>
-                                  {result.sources.length > 0 && (
-                                    <Badge variant="default" className="text-xs shrink-0">
-                                      {result.sources.length} מקורות
-                                    </Badge>
-                                  )}
                                 </CardContent>
                               </Card>
                             ))}
-                            {results.length > 20 && (
-                              <p className="text-sm text-muted-foreground text-center py-2">
-                                ועוד {results.length - 20} פסקי דין נוספים...
-                              </p>
-                            )}
                           </div>
                         </AccordionContent>
                       </AccordionItem>
@@ -566,28 +836,14 @@ const SmartIndexTab = () => {
                                     <div className="font-medium text-sm line-clamp-1">{result.title}</div>
                                     <div className="flex flex-wrap gap-1 mt-1">
                                       {result.sources
-                                        .filter(s => s.masechet === masechet && s.daf)
+                                        .filter(s => s.type === 'gemara' && s.masechet === masechet && s.sugyaId)
                                         .slice(0, 3)
-                                        .map((s, i) => (
-                                          <Badge key={i} variant="outline" className="text-xs">
-                                            דף {s.daf}{s.amud ? ` ע"${s.amud}` : ''}
-                                          </Badge>
-                                        ))}
-                                      {result.topics.slice(0, 2).map(t => (
-                                        <Badge key={t.topic} variant="secondary" className="text-xs">
-                                          {t.topic}
-                                        </Badge>
-                                      ))}
+                                        .map((source, idx) => renderSourceBadge(source, idx))}
                                     </div>
                                   </div>
                                 </CardContent>
                               </Card>
                             ))}
-                            {results.length > 20 && (
-                              <p className="text-sm text-muted-foreground text-center py-2">
-                                ועוד {results.length - 20} פסקי דין נוספים...
-                              </p>
-                            )}
                           </div>
                         </AccordionContent>
                       </AccordionItem>
@@ -682,15 +938,16 @@ const SmartIndexTab = () => {
               <Library className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-xl font-semibold mb-2">אינדקס חכם</h3>
               <p className="text-muted-foreground mb-4">
-                לחץ על "התחל ניתוח" כדי לסרוק את כל פסקי הדין במערכת ולבנות אינדקס לפי נושאים, מסכתות וספרים
+                סריקה וזיהוי אוטומטי של מקורות תלמודיים והלכתיים בפסקי הדין
               </p>
               <div className="flex flex-wrap gap-2 justify-center mb-6">
-                <Badge variant="outline">זיהוי מסכתות גמרא</Badge>
+                <Badge variant="outline">זיהוי מסכתות ודפים</Badge>
+                <Badge variant="outline">קישור ישיר לגמרא</Badge>
                 <Badge variant="outline">זיהוי שולחן ערוך</Badge>
                 <Badge variant="outline">זיהוי רמב"ם</Badge>
-                <Badge variant="outline">מיון לפי נושאים</Badge>
+                <Badge variant="outline">שמירה בדאטאבייס</Badge>
               </div>
-              <Button onClick={runTextAnalysis} size="lg" className="gap-2 flex-row-reverse">
+              <Button onClick={() => runTextAnalysis()} size="lg" className="gap-2 flex-row-reverse">
                 התחל ניתוח
                 <Zap className="w-5 h-5" />
               </Button>
