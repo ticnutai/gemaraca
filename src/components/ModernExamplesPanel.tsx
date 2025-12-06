@@ -12,7 +12,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Sparkles, Loader2, RefreshCw, Lightbulb, Scale, BookOpen, Database, Type, AArrowUp, AArrowDown, AlignRight, AlignCenter, AlignLeft, Bold, Highlighter, Check, Settings2, MousePointer2 } from "lucide-react";
+import { Sparkles, Loader2, RefreshCw, Lightbulb, Scale, BookOpen, Database, Type, AArrowUp, AArrowDown, AlignRight, AlignCenter, AlignLeft, Bold, Highlighter, Check, Settings2, MousePointer2, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { RichTextViewer } from "./RichTextViewer";
@@ -21,6 +21,10 @@ const FONTS = [
   { value: 'font-serif', label: 'דוד (סריף)' },
   { value: 'font-sans', label: 'אריאל (ללא סריף)' },
   { value: 'font-mono', label: 'קוריאר (מונו)' },
+  { value: 'font-david', label: 'דוד' },
+  { value: 'font-frank', label: 'פרנק רוהל' },
+  { value: 'font-heebo', label: 'חיבו' },
+  { value: 'font-rubik', label: 'רוביק' },
 ];
 
 const HIGHLIGHT_COLORS = [
@@ -64,6 +68,10 @@ interface ModernExamplesData {
   cached?: boolean;
 }
 
+interface AdditionalExamplesData {
+  examples: Example[];
+}
+
 interface ModernExamplesPanelProps {
   gemaraText?: string;
   sugyaTitle: string;
@@ -81,6 +89,7 @@ export const ModernExamplesPanel = ({
 }: ModernExamplesPanelProps) => {
   const [data, setData] = useState<ModernExamplesData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isCached, setIsCached] = useState(false);
   const [showToolbar, setShowToolbar] = useState(false);
@@ -165,6 +174,56 @@ export const ModernExamplesPanel = ({
       toast.error("שגיאה ביצירת ההמחשות");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadMoreExamples = async () => {
+    if (!data) return;
+    setIsLoadingMore(true);
+    
+    try {
+      const { data: result, error: fnError } = await supabase.functions.invoke(
+        "generate-modern-examples",
+        {
+          body: {
+            gemaraText,
+            sugyaTitle,
+            dafYomi,
+            masechet,
+            sugyaId: effectiveSugyaId,
+            loadMore: true,
+            existingCount: data.examples.length,
+          },
+        }
+      );
+
+      if (fnError) throw fnError;
+      
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      // Append new examples to existing ones
+      const newExamples = result.examples || [];
+      const updatedData = {
+        ...data,
+        examples: [...data.examples, ...newExamples]
+      };
+      
+      setData(updatedData);
+      
+      // Update in database
+      await supabase
+        .from('modern_examples')
+        .update({ examples: updatedData.examples })
+        .eq('sugya_id', effectiveSugyaId);
+      
+      toast.success(`נוספו ${newExamples.length} דוגמאות חדשות`);
+    } catch (err) {
+      console.error("Error loading more examples:", err);
+      toast.error("שגיאה בטעינת דוגמאות נוספות");
+    } finally {
+      setIsLoadingMore(false);
     }
   };
 
@@ -392,7 +451,7 @@ export const ModernExamplesPanel = ({
           <div className="flex items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">
               <Lightbulb className="h-5 w-5 text-accent" />
-              דוגמאות מודרניות
+              דוגמאות מודרניות ({data?.examples.length || 0})
             </CardTitle>
             <Button 
               variant="ghost" 
@@ -407,7 +466,7 @@ export const ModernExamplesPanel = ({
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 max-h-[500px] overflow-y-auto">
           {data?.examples.map((example, index) => (
             <div 
               key={index} 
@@ -453,6 +512,29 @@ export const ModernExamplesPanel = ({
               </div>
             </div>
           ))}
+          
+          {/* Load More Button */}
+          <div className="flex justify-center pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={loadMoreExamples}
+              disabled={isLoadingMore}
+              className="gap-2"
+            >
+              {isLoadingMore ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  טוען...
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4" />
+                  דוגמאות נוספות
+                </>
+              )}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 

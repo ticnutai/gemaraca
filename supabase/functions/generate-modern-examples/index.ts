@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { gemaraText, sugyaTitle, dafYomi, masechet, sugyaId, forceRegenerate } = await req.json();
+    const { gemaraText, sugyaTitle, dafYomi, masechet, sugyaId, forceRegenerate, loadMore, existingCount } = await req.json();
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
@@ -44,6 +44,102 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+    }
+
+    // Handle loadMore request - generate additional examples only
+    if (loadMore) {
+      console.log(`Generating ${3} more examples for ${masechet} ${dafYomi}`);
+      
+      const loadMoreSystemPrompt = `אתה מומחה להלכה ותלמוד שמסביר מושגים עתיקים במונחים מודרניים.
+תפקידך ליצור דוגמאות מודרניות נוספות שממחישות את היסודות ההלכתיים מהגמרא.
+
+הנחיות:
+1. צור 2-3 דוגמאות מודרניות **חדשות ושונות** שממחישות את היסוד ההלכתי
+2. כל דוגמה צריכה להיות מציאותית ורלוונטית לימינו
+3. הימנע מלחזור על דוגמאות קיימות - חפש זוויות וסיטואציות חדשות
+4. השתמש בשפה פשוטה וברורה
+5. **חשוב מאוד: כתוב את כל התוכן בעברית בלבד! אין להשתמש במילים באנגלית כלל!**
+6. השתמש באימוג'י (לא טקסט) עבור האייקונים
+
+החזר את התשובה בפורמט JSON:
+{
+  "examples": [
+    {
+      "title": "כותרת הדוגמה",
+      "scenario": "תיאור המקרה המודרני",
+      "connection": "הקשר ליסוד מהגמרא",
+      "icon": "אימוג'י מתאים (לא טקסט)"
+    }
+  ]
+}`;
+
+      const loadMoreUserPrompt = `בבקשה צור דוגמאות מודרניות נוספות עבור:
+
+מסכת: ${masechet}
+דף: ${dafYomi}
+נושא: ${sugyaTitle}
+
+טקסט הגמרא:
+${gemaraText?.substring(0, 2000) || 'לא זמין'}
+
+כבר יש ${existingCount || 0} דוגמאות קיימות. צור 2-3 דוגמאות חדשות ושונות שמציגות זוויות נוספות של הסוגיה.`;
+
+      const loadMoreResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            { role: "system", content: loadMoreSystemPrompt },
+            { role: "user", content: loadMoreUserPrompt }
+          ],
+        }),
+      });
+
+      if (!loadMoreResponse.ok) {
+        if (loadMoreResponse.status === 429) {
+          return new Response(JSON.stringify({ error: "Rate limit exceeded, please try again later." }), {
+            status: 429,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        if (loadMoreResponse.status === 402) {
+          return new Response(JSON.stringify({ error: "Payment required." }), {
+            status: 402,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        const errorText = await loadMoreResponse.text();
+        console.error("AI gateway error:", loadMoreResponse.status, errorText);
+        throw new Error(`AI gateway error: ${loadMoreResponse.status}`);
+      }
+
+      const loadMoreData = await loadMoreResponse.json();
+      const loadMoreContent = loadMoreData.choices?.[0]?.message?.content;
+      
+      let loadMoreResult;
+      try {
+        const jsonMatch = loadMoreContent.match(/```(?:json)?\s*([\s\S]*?)```/);
+        const jsonStr = jsonMatch ? jsonMatch[1].trim() : loadMoreContent.trim();
+        loadMoreResult = JSON.parse(jsonStr);
+      } catch (parseError) {
+        console.error("Failed to parse load more response:", parseError);
+        loadMoreResult = {
+          examples: [{
+            title: "דוגמה נוספת",
+            scenario: loadMoreContent || "לא הצלחנו ליצור דוגמה",
+            connection: "קשר לגמרא",
+            icon: "💡"
+          }]
+        };
+      }
+
+      return new Response(JSON.stringify({ examples: loadMoreResult.examples }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     console.log(`Generating modern examples for ${masechet} ${dafYomi} - ${sugyaTitle}`);

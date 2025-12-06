@@ -13,6 +13,15 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        'david': ['"David Libre"', '"David"', 'serif'],
+        'frank': ['"Frank Ruhl Libre"', '"Frank Ruehl"', 'serif'],
+        'heebo': ['"Heebo"', 'sans-serif'],
+        'assistant': ['"Assistant"', 'sans-serif'],
+        'secular': ['"Secular One"', 'sans-serif'],
+        'rubik': ['"Rubik"', 'sans-serif'],
+        'noto-serif': ['"Noto Serif Hebrew"', 'serif'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
