@@ -27,6 +27,7 @@ const UploadPsakDinTab = () => {
   const [duplicates, setDuplicates] = useState<DuplicateFile[]>([]);
   const [checkingDuplicates, setCheckingDuplicates] = useState(false);
   const [hashProgress, setHashProgress] = useState<{ current: number; total: number } | null>(null);
+  const [extractProgress, setExtractProgress] = useState<{ current: number; total: number; zipName: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
   const { toast: showToast } = useToast();
@@ -35,6 +36,7 @@ const UploadPsakDinTab = () => {
   const [year, setYear] = useState(new Date().getFullYear().toString());
   const [tags, setTags] = useState("");
   const [showSummary, setShowSummary] = useState(false);
+  const [debugLog, setDebugLog] = useState<string[]>([]);
   
   // Use the upload controller hook
   const {
@@ -148,41 +150,78 @@ const UploadPsakDinTab = () => {
     }
   }, [hasFileHash, getFileByHash, addFileHash]);
 
-  // Extract files from ZIP
+  // Debug logging helper
+  const addDebug = useCallback((message: string) => {
+    const timestamp = new Date().toLocaleTimeString('he-IL');
+    const logMsg = `[${timestamp}] ${message}`;
+    console.log(logMsg);
+    setDebugLog(prev => [...prev.slice(-50), logMsg]); // Keep last 50 logs
+  }, []);
+
+  // Extract files from ZIP with progress tracking
   const extractZipFiles = useCallback(async (zipFile: File): Promise<File[]> => {
     const extractedFiles: File[] = [];
+    addDebug(`📦 מתחיל לחלץ ZIP: ${zipFile.name} (${(zipFile.size / 1024 / 1024).toFixed(2)} MB)`);
+    
     try {
+      addDebug(`⏳ טוען ZIP לזכרון...`);
       const zip = await JSZip.loadAsync(zipFile);
       const validExts = ['pdf', 'docx', 'doc', 'txt', 'rtf'];
       
-      const entries = Object.entries(zip.files);
-      for (const [path, zipEntry] of entries) {
-        if (zipEntry.dir) continue;
-        
+      const entries = Object.entries(zip.files).filter(([_, entry]) => !entry.dir);
+      addDebug(`📁 נמצאו ${entries.length} קבצים בתוך ה-ZIP`);
+      
+      setExtractProgress({ current: 0, total: entries.length, zipName: zipFile.name });
+      
+      let validCount = 0;
+      let skippedCount = 0;
+      
+      for (let i = 0; i < entries.length; i++) {
+        const [path, zipEntry] = entries[i];
         const fileName = path.split('/').pop() || path;
         const ext = fileName.split('.').pop()?.toLowerCase();
         
+        // Update progress every 10 files or at the end
+        if (i % 10 === 0 || i === entries.length - 1) {
+          setExtractProgress({ current: i + 1, total: entries.length, zipName: zipFile.name });
+        }
+        
         if (validExts.includes(ext || '')) {
-          const blob = await zipEntry.async('blob');
-          const file = new File([blob], fileName, { type: blob.type });
-          extractedFiles.push(file);
+          try {
+            const blob = await zipEntry.async('blob');
+            const file = new File([blob], fileName, { type: blob.type || 'application/octet-stream' });
+            extractedFiles.push(file);
+            validCount++;
+          } catch (fileErr) {
+            addDebug(`⚠️ שגיאה בחילוץ קובץ: ${fileName}`);
+            console.error(`Error extracting ${fileName}:`, fileErr);
+          }
+        } else {
+          skippedCount++;
         }
       }
       
-      console.log(`Extracted ${extractedFiles.length} files from ZIP: ${zipFile.name}`);
+      addDebug(`✅ חילוץ הושלם: ${validCount} קבצים תקינים, ${skippedCount} דולגו (סיומת לא נתמכת)`);
+      
     } catch (err) {
+      addDebug(`❌ שגיאה בחילוץ ZIP: ${err instanceof Error ? err.message : 'שגיאה לא ידועה'}`);
       console.error('Error extracting ZIP:', err);
       toast({
         title: `שגיאה בחילוץ ${zipFile.name}`,
-        description: 'לא ניתן לפתוח את קובץ ה-ZIP',
+        description: err instanceof Error ? err.message : 'לא ניתן לפתוח את קובץ ה-ZIP',
         variant: 'destructive',
       });
+    } finally {
+      setExtractProgress(null);
     }
+    
     return extractedFiles;
-  }, []);
+  }, [addDebug]);
 
   const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || []);
+    addDebug(`📥 נבחרו ${selectedFiles.length} קבצים`);
+    
     const validExts = ['pdf', 'docx', 'doc', 'txt', 'rtf', 'zip'];
     
     const validFiles: File[] = [];
@@ -193,25 +232,33 @@ const UploadPsakDinTab = () => {
       const ext = file.name.split('.').pop()?.toLowerCase();
       if (ext === 'zip') {
         zipFiles.push(file);
+        addDebug(`🗜️ זוהה ZIP: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`);
       } else if (validExts.includes(ext || '')) {
         validFiles.push(file);
       }
     }
     
+    addDebug(`📊 סיכום: ${zipFiles.length} קבצי ZIP, ${validFiles.length} קבצים רגילים`);
+    
     // Extract files from ZIPs
     if (zipFiles.length > 0) {
       toast({
         title: `מחלץ ${zipFiles.length} קבצי ZIP...`,
-        description: 'אנא המתן',
+        description: 'אנא המתן - פעולה זו עלולה לקחת זמן',
       });
       
       for (const zipFile of zipFiles) {
+        addDebug(`🔄 מעבד ZIP: ${zipFile.name}`);
         const extracted = await extractZipFiles(zipFile);
         validFiles.push(...extracted);
+        addDebug(`➕ נוספו ${extracted.length} קבצים מ-${zipFile.name}`);
       }
+      
+      addDebug(`✅ סה"כ חולצו ${validFiles.length} קבצים מכל ה-ZIPs`);
       
       toast({
         title: `חולצו ${validFiles.length} קבצים מ-ZIP`,
+        description: 'בודק כפילויות...',
       });
     }
     
@@ -222,15 +269,19 @@ const UploadPsakDinTab = () => {
       });
     }
     
+    addDebug(`🔍 בודק כפילויות עבור ${validFiles.length} קבצים...`);
     await checkDuplicates(validFiles);
+    addDebug(`✅ בדיקת כפילויות הושלמה`);
     
     // Reset input to allow re-selecting same files
     e.target.value = '';
-  }, [showToast, checkDuplicates, extractZipFiles]);
+  }, [showToast, checkDuplicates, extractZipFiles, addDebug]);
 
   const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
     const droppedFiles = Array.from(e.dataTransfer.files);
+    addDebug(`📥 נגררו ${droppedFiles.length} קבצים`);
+    
     const validExts = ['pdf', 'docx', 'doc', 'txt', 'rtf', 'zip'];
     
     const validFiles: File[] = [];
@@ -241,30 +292,40 @@ const UploadPsakDinTab = () => {
       const ext = file.name.split('.').pop()?.toLowerCase();
       if (ext === 'zip') {
         zipFiles.push(file);
+        addDebug(`🗜️ זוהה ZIP: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`);
       } else if (validExts.includes(ext || '')) {
         validFiles.push(file);
       }
     }
     
+    addDebug(`📊 סיכום: ${zipFiles.length} קבצי ZIP, ${validFiles.length} קבצים רגילים`);
+    
     // Extract files from ZIPs
     if (zipFiles.length > 0) {
       toast({
         title: `מחלץ ${zipFiles.length} קבצי ZIP...`,
-        description: 'אנא המתן',
+        description: 'אנא המתן - פעולה זו עלולה לקחת זמן',
       });
       
       for (const zipFile of zipFiles) {
+        addDebug(`🔄 מעבד ZIP: ${zipFile.name}`);
         const extracted = await extractZipFiles(zipFile);
         validFiles.push(...extracted);
+        addDebug(`➕ נוספו ${extracted.length} קבצים מ-${zipFile.name}`);
       }
+      
+      addDebug(`✅ סה"כ חולצו ${validFiles.length} קבצים מכל ה-ZIPs`);
       
       toast({
         title: `חולצו ${validFiles.length} קבצים מ-ZIP`,
+        description: 'בודק כפילויות...',
       });
     }
     
+    addDebug(`🔍 בודק כפילויות עבור ${validFiles.length} קבצים...`);
     await checkDuplicates(validFiles);
-  }, [checkDuplicates, extractZipFiles]);
+    addDebug(`✅ בדיקת כפילויות הושלמה`);
+  }, [checkDuplicates, extractZipFiles, addDebug]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -447,7 +508,24 @@ const UploadPsakDinTab = () => {
                 className="hidden"
                 {...{ webkitdirectory: "", directory: "" } as any}
               />
-              {checkingDuplicates ? (
+              {extractProgress ? (
+                <>
+                  <Archive className="w-12 h-12 mx-auto text-primary mb-4 animate-pulse" />
+                  <p className="text-foreground font-medium">
+                    מחלץ קבצים מ-ZIP...
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {extractProgress.zipName}
+                  </p>
+                  <Progress 
+                    value={(extractProgress.current / extractProgress.total) * 100} 
+                    className="h-2 mt-3 max-w-xs mx-auto" 
+                  />
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {extractProgress.current}/{extractProgress.total} קבצים
+                  </p>
+                </>
+              ) : checkingDuplicates ? (
                 <>
                   <Loader2 className="w-12 h-12 mx-auto text-accent mb-4 animate-spin" />
                   <p className="text-foreground font-medium">
@@ -462,7 +540,7 @@ const UploadPsakDinTab = () => {
                   <Upload className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
                   <p className="text-foreground font-medium">לחץ לבחירת קבצים או גרור לכאן</p>
                   <p className="text-sm text-muted-foreground mt-2">
-                    PDF, DOCX, DOC, TXT, RTF, ZIP
+                    PDF, DOCX, DOC, TXT, RTF, ZIP (נתמכים קבצי ZIP עם עד 5000 קבצים)
                   </p>
                 </>
               )}
@@ -736,6 +814,37 @@ const UploadPsakDinTab = () => {
                   <div key={index} className="flex items-center gap-2 text-sm py-1 text-destructive flex-row-reverse">
                     <AlertCircle className="w-4 h-4 flex-shrink-0" />
                     <span className="truncate text-right">{error}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Debug Log */}
+        {debugLog.length > 0 && (
+          <Card className="border border-border shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center justify-between flex-row-reverse">
+                <span className="flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  לוג פעילות ({debugLog.length})
+                </span>
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  onClick={() => setDebugLog([])}
+                  className="text-xs"
+                >
+                  נקה לוג
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="max-h-48 overflow-y-auto bg-muted/30 rounded p-2 font-mono text-xs">
+                {debugLog.map((log, index) => (
+                  <div key={index} className="py-0.5 text-right border-b border-border/30 last:border-0">
+                    {log}
                   </div>
                 ))}
               </div>
