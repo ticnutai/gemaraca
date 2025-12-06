@@ -1,9 +1,53 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Loader2, RefreshCw, Lightbulb, Scale, BookOpen, Database } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Sparkles, Loader2, RefreshCw, Lightbulb, Scale, BookOpen, Database, Type, AArrowUp, AArrowDown, AlignRight, AlignCenter, AlignLeft, Bold, Highlighter, Check, Settings2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+
+const FONTS = [
+  { value: 'font-serif', label: 'דוד (סריף)' },
+  { value: 'font-sans', label: 'אריאל (ללא סריף)' },
+  { value: 'font-mono', label: 'קוריאר (מונו)' },
+];
+
+const HIGHLIGHT_COLORS = [
+  { value: 'bg-transparent', label: 'ללא', color: 'transparent' },
+  { value: 'bg-yellow-200/60', label: 'צהוב', color: '#fef08a' },
+  { value: 'bg-green-200/60', label: 'ירוק', color: '#bbf7d0' },
+  { value: 'bg-blue-200/60', label: 'כחול', color: '#bfdbfe' },
+  { value: 'bg-pink-200/60', label: 'ורוד', color: '#fbcfe8' },
+  { value: 'bg-orange-200/60', label: 'כתום', color: '#fed7aa' },
+];
+
+const EXAMPLES_TEXT_SETTINGS_KEY = 'examples-text-settings';
+
+interface TextSettings {
+  fontSize: number;
+  fontFamily: string;
+  textAlign: 'right' | 'center' | 'left';
+  isBold: boolean;
+  highlightColor: string;
+}
+
+const defaultTextSettings: TextSettings = {
+  fontSize: 14,
+  fontFamily: 'font-sans',
+  textAlign: 'right',
+  isBold: false,
+  highlightColor: 'bg-transparent',
+};
 
 interface Example {
   title: string;
@@ -38,8 +82,21 @@ export const ModernExamplesPanel = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isCached, setIsCached] = useState(false);
+  const [showToolbar, setShowToolbar] = useState(false);
+  const [textSettings, setTextSettings] = useState<TextSettings>(() => {
+    const saved = localStorage.getItem(EXAMPLES_TEXT_SETTINGS_KEY);
+    return saved ? JSON.parse(saved) : defaultTextSettings;
+  });
 
   const effectiveSugyaId = sugyaId || `${masechet}-${dafYomi}`.replace(/\s+/g, '-');
+
+  useEffect(() => {
+    localStorage.setItem(EXAMPLES_TEXT_SETTINGS_KEY, JSON.stringify(textSettings));
+  }, [textSettings]);
+
+  const updateTextSetting = <K extends keyof TextSettings>(key: K, value: TextSettings[K]) => {
+    setTextSettings(prev => ({ ...prev, [key]: value }));
+  };
 
   // Check for cached data on mount
   useEffect(() => {
@@ -110,6 +167,128 @@ export const ModernExamplesPanel = ({
     }
   };
 
+  const getTextAlignClass = () => {
+    switch (textSettings.textAlign) {
+      case 'center': return 'text-center';
+      case 'left': return 'text-left';
+      default: return 'text-right';
+    }
+  };
+
+  const textClasses = `${textSettings.fontFamily} ${getTextAlignClass()} ${textSettings.isBold ? 'font-bold' : ''} ${textSettings.highlightColor}`;
+
+  const renderTextToolbar = () => (
+    <div className="flex items-center gap-1 flex-wrap p-2 bg-muted/50 rounded-lg border mb-4">
+      {/* Font Size Controls */}
+      <div className="flex items-center gap-1 border-l pl-2 ml-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onClick={() => updateTextSetting('fontSize', Math.max(10, textSettings.fontSize - 1))}
+          title="הקטן גופן"
+        >
+          <AArrowDown className="h-3 w-3" />
+        </Button>
+        <span className="text-xs text-muted-foreground w-6 text-center">{textSettings.fontSize}</span>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onClick={() => updateTextSetting('fontSize', Math.min(24, textSettings.fontSize + 1))}
+          title="הגדל גופן"
+        >
+          <AArrowUp className="h-3 w-3" />
+        </Button>
+      </div>
+
+      {/* Font Family */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-7 w-7" title="שנה גופן">
+            <Type className="h-3 w-3" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          {FONTS.map(font => (
+            <DropdownMenuItem
+              key={font.value}
+              onClick={() => updateTextSetting('fontFamily', font.value)}
+              className="flex items-center gap-2"
+            >
+              <span className={font.value}>{font.label}</span>
+              {textSettings.fontFamily === font.value && <Check className="h-4 w-4 text-primary" />}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* Text Alignment */}
+      <div className="flex items-center gap-0.5 border-x px-2 mx-1">
+        <Button
+          variant={textSettings.textAlign === 'right' ? 'secondary' : 'ghost'}
+          size="icon"
+          className="h-7 w-7"
+          onClick={() => updateTextSetting('textAlign', 'right')}
+          title="יישור לימין"
+        >
+          <AlignRight className="h-3 w-3" />
+        </Button>
+        <Button
+          variant={textSettings.textAlign === 'center' ? 'secondary' : 'ghost'}
+          size="icon"
+          className="h-7 w-7"
+          onClick={() => updateTextSetting('textAlign', 'center')}
+          title="יישור למרכז"
+        >
+          <AlignCenter className="h-3 w-3" />
+        </Button>
+        <Button
+          variant={textSettings.textAlign === 'left' ? 'secondary' : 'ghost'}
+          size="icon"
+          className="h-7 w-7"
+          onClick={() => updateTextSetting('textAlign', 'left')}
+          title="יישור לשמאל"
+        >
+          <AlignLeft className="h-3 w-3" />
+        </Button>
+      </div>
+
+      {/* Bold */}
+      <Button
+        variant={textSettings.isBold ? 'secondary' : 'ghost'}
+        size="icon"
+        className="h-7 w-7"
+        onClick={() => updateTextSetting('isBold', !textSettings.isBold)}
+        title="הדגשה"
+      >
+        <Bold className="h-3 w-3" />
+      </Button>
+
+      {/* Highlight Color */}
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-7 w-7" title="סימון בצבע">
+            <Highlighter className="h-3 w-3" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-40 p-2" align="start">
+          <div className="grid grid-cols-3 gap-1">
+            {HIGHLIGHT_COLORS.map(color => (
+              <button
+                key={color.value}
+                onClick={() => updateTextSetting('highlightColor', color.value)}
+                className={`h-7 rounded border ${textSettings.highlightColor === color.value ? 'ring-2 ring-primary' : ''}`}
+                style={{ backgroundColor: color.color }}
+                title={color.label}
+              />
+            ))}
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+
   if (!data && !isLoading) {
     return (
       <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5">
@@ -162,13 +341,26 @@ export const ModernExamplesPanel = ({
 
   return (
     <div className="space-y-4">
-      {/* Cached indicator */}
-      {isCached && (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Database className="h-3 w-3" />
-          <span>נטען מהמטמון</span>
-        </div>
-      )}
+      {/* Toolbar Toggle & Cached indicator */}
+      <div className="flex items-center justify-between">
+        {isCached && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Database className="h-3 w-3" />
+            <span>נטען מהמטמון</span>
+          </div>
+        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowToolbar(!showToolbar)}
+          className="gap-1 text-xs mr-auto"
+        >
+          <Settings2 className="h-3 w-3" />
+          עיצוב טקסט
+        </Button>
+      </div>
+
+      {showToolbar && renderTextToolbar()}
 
       {/* Principle Card */}
       <Card className="border-primary/30 bg-gradient-to-br from-primary/10 to-transparent">
@@ -179,7 +371,12 @@ export const ModernExamplesPanel = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-foreground font-medium">{data?.principle}</p>
+          <p 
+            className={`text-foreground font-medium ${textClasses}`}
+            style={{ fontSize: `${textSettings.fontSize}px` }}
+          >
+            {data?.principle}
+          </p>
         </CardContent>
       </Card>
 
@@ -208,19 +405,30 @@ export const ModernExamplesPanel = ({
           {data?.examples.map((example, index) => (
             <div 
               key={index} 
-              className="p-4 rounded-lg bg-muted/50 border border-border/50 space-y-2"
+              className={`p-4 rounded-lg bg-muted/50 border border-border/50 space-y-2 ${textSettings.highlightColor}`}
             >
               <div className="flex items-start gap-2">
                 <span className="text-2xl">{example.icon}</span>
                 <div className="flex-1">
-                  <h4 className="font-bold text-foreground">{example.title}</h4>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <h4 
+                    className={`font-bold text-foreground ${textSettings.fontFamily} ${getTextAlignClass()}`}
+                    style={{ fontSize: `${textSettings.fontSize + 2}px` }}
+                  >
+                    {example.title}
+                  </h4>
+                  <p 
+                    className={`text-muted-foreground mt-1 ${textClasses}`}
+                    style={{ fontSize: `${textSettings.fontSize}px` }}
+                  >
                     {example.scenario}
                   </p>
                 </div>
               </div>
               <div className="pr-10 pt-2 border-t border-border/30">
-                <p className="text-xs text-primary font-medium">
+                <p 
+                  className={`text-primary ${textClasses}`}
+                  style={{ fontSize: `${textSettings.fontSize - 1}px` }}
+                >
                   🔗 קשר לגמרא: {example.connection}
                 </p>
               </div>
@@ -238,7 +446,12 @@ export const ModernExamplesPanel = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-foreground">{data?.practicalSummary}</p>
+          <p 
+            className={`text-foreground ${textClasses}`}
+            style={{ fontSize: `${textSettings.fontSize}px` }}
+          >
+            {data?.practicalSummary}
+          </p>
         </CardContent>
       </Card>
     </div>
