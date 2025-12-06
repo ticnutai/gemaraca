@@ -2,6 +2,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import AppSidebar from "./AppSidebar";
 import AppHeader from "./AppHeader";
+import FloatingGemaraNav from "./FloatingGemaraNav";
 import { useAppContext } from "@/contexts/AppContext";
 
 interface AppLayoutProps {
@@ -60,6 +61,9 @@ const AppLayout = ({ children }: AppLayoutProps) => {
             {children}
           </main>
         </div>
+
+        {/* Floating Navigation Button - appears on all pages */}
+        <FloatingGemaraNav />
       </div>
     </SidebarProvider>
   );
