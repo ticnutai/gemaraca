@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { BookOpen, Scale, Search, Upload, Pin, PinOff, ChevronDown, ChevronLeft } from "lucide-react";
 import {
   Sidebar,
@@ -12,7 +12,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
   SidebarFooter,
-  useSidebar,
+  
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -57,71 +57,14 @@ const AppSidebar = ({
   activeTab, 
   onTabChange, 
   onMasechetSelect,
-  isPinned: isPinnedProp,
+  isPinned: isPinnedProp = true,
   onPinToggle: onPinToggleProp 
 }: AppSidebarProps) => {
-  const { setOpen, open: sidebarOpen } = useSidebar();
   const [isPinnedLocal, setIsPinnedLocal] = useState(true);
   const [expandedSedarim, setExpandedSedarim] = useState<Set<string>>(new Set());
-  const [isHovered, setIsHovered] = useState(false);
-  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Use prop or local state
+  // Use prop or local state - default to pinned for stability
   const isPinned = isPinnedProp !== undefined ? isPinnedProp : isPinnedLocal;
-
-  // Handle hover zone for opening sidebar when unpinned
-  useEffect(() => {
-    if (isPinned) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const windowWidth = window.innerWidth;
-      const hoverZone = 30; // pixels from right edge
-      
-      // Check if mouse is in the right edge zone
-      if (windowWidth - e.clientX <= hoverZone) {
-        if (!isHovered && !sidebarOpen) {
-          // Clear any pending close timeout
-          if (closeTimeoutRef.current) {
-            clearTimeout(closeTimeoutRef.current);
-            closeTimeoutRef.current = null;
-          }
-          setIsHovered(true);
-          setOpen(true);
-        }
-      }
-    };
-
-    document.addEventListener('mousemove', handleMouseMove);
-    return () => document.removeEventListener('mousemove', handleMouseMove);
-  }, [isPinned, isHovered, sidebarOpen, setOpen]);
-
-  // Handle closing sidebar after leaving hover
-  const handleMouseLeave = () => {
-    if (isPinned) return;
-    
-    // Close after 2 seconds delay
-    closeTimeoutRef.current = setTimeout(() => {
-      setIsHovered(false);
-      setOpen(false);
-    }, 2000);
-  };
-
-  const handleMouseEnter = () => {
-    // Cancel close timeout if user returns to sidebar
-    if (closeTimeoutRef.current) {
-      clearTimeout(closeTimeoutRef.current);
-      closeTimeoutRef.current = null;
-    }
-  };
-
-  // Cleanup timeouts
-  useEffect(() => {
-    return () => {
-      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-      if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
-    };
-  }, []);
 
   const toggleSeder = (seder: string) => {
     const newExpanded = new Set(expandedSedarim);
@@ -139,9 +82,6 @@ const AppSidebar = ({
     } else {
       setIsPinnedLocal(!isPinnedLocal);
     }
-    if (!isPinned) {
-      setOpen(true);
-    }
   };
 
   // קיבוץ מסכתות לפי סדר
@@ -153,15 +93,9 @@ const AppSidebar = ({
   return (
     <Sidebar 
       side="right" 
-      className={cn(
-        "border-l border-border/50 transition-all duration-300",
-        !isPinned && !sidebarOpen && "translate-x-full opacity-0 pointer-events-none",
-        !isPinned && sidebarOpen && "fixed right-0 top-0 h-full z-50 shadow-2xl"
-      )}
-      collapsible="none"
-      variant={isPinned ? "sidebar" : "floating"}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+      collapsible={isPinned ? "none" : "offcanvas"}
+      variant="sidebar"
+      className="border-l border-border/50"
     >
       <SidebarHeader className="border-b border-border/50 p-4">
         <div className="flex items-center justify-between">
