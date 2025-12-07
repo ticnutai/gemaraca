@@ -6,8 +6,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, Building2, FileText, List, BookOpen, Sparkles, Brain, Loader2, Link } from "lucide-react";
+import { Calendar, Building2, FileText, List, BookOpen, Sparkles, Brain, Loader2, Link, Plus } from "lucide-react";
 import PsakDinViewDialog from "./PsakDinViewDialog";
+import PsakDinEditDialog from "./PsakDinEditDialog";
+import PsakDinActions from "./PsakDinActions";
+import BulkActionsBar from "./BulkActionsBar";
 import GemaraPsakDinIndex from "./GemaraPsakDinIndex";
 import { useToast } from "@/hooks/use-toast";
 
@@ -25,6 +28,10 @@ const PsakDinTab = () => {
   const [totalUnlinkedCount, setTotalUnlinkedCount] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingPsak, setEditingPsak] = useState<any | null>(null);
+  const [isNewPsak, setIsNewPsak] = useState(false);
+  const [selectedForBulk, setSelectedForBulk] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
@@ -98,6 +105,52 @@ const PsakDinTab = () => {
   const handlePsakClick = (psak: any) => {
     setSelectedPsak(psak);
     setDialogOpen(true);
+  };
+
+  const handleEditPsak = async (psakId: string) => {
+    const psak = psakim.find(p => p.id === psakId);
+    if (psak) {
+      setEditingPsak(psak);
+      setIsNewPsak(false);
+      setEditDialogOpen(true);
+    }
+  };
+
+  const handleAddNew = () => {
+    setEditingPsak(null);
+    setIsNewPsak(true);
+    setEditDialogOpen(true);
+  };
+
+  const handleEditSaved = () => {
+    loadPsakim(currentPage);
+    loadLinkCounts();
+  };
+
+  const handleDeletePsak = () => {
+    loadPsakim(currentPage);
+    loadLinkCounts();
+    loadTotalUnlinkedCount();
+  };
+
+  const toggleBulkSelect = (id: string) => {
+    setSelectedForBulk(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const selectAllForBulk = () => {
+    setSelectedForBulk(new Set(psakim.map(p => p.id)));
+  };
+
+  const clearBulkSelection = () => {
+    setSelectedForBulk(new Set());
   };
 
   const toggleSelectForAnalysis = (id: string) => {
@@ -195,7 +248,17 @@ const PsakDinTab = () => {
               <div className="max-w-4xl mx-auto space-y-4">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6 flex-row-reverse">
-                  <h2 className="text-2xl font-bold text-foreground">פסקי דין אחרונים</h2>
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-2xl font-bold text-foreground">פסקי דין אחרונים</h2>
+                    <Button
+                      size="sm"
+                      onClick={handleAddNew}
+                      className="gap-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      הוסף פסק דין
+                    </Button>
+                  </div>
                   
                   {totalUnlinkedCount > 0 && (
                     <div className="flex items-center gap-3">
@@ -225,6 +288,16 @@ const PsakDinTab = () => {
                     </div>
                   )}
                 </div>
+
+                {/* Bulk Actions Bar */}
+                <BulkActionsBar
+                  selectedCount={selectedForBulk.size}
+                  totalCount={psakim.length}
+                  onSelectAll={selectAllForBulk}
+                  onClearSelection={clearBulkSelection}
+                  selectedIds={Array.from(selectedForBulk)}
+                  onDeleted={handleDeletePsak}
+                />
 
                 {/* Analysis Progress */}
                 {analyzing && (
@@ -313,13 +386,23 @@ const PsakDinTab = () => {
                             </div>
                           </div>
 
-                          {/* Left Side: Status + Checkbox */}
-                          <div className="flex items-center gap-2 shrink-0">
+                          {/* Left Side: Actions + Checkbox */}
+                          <div className="flex items-center gap-1 shrink-0">
+                            <PsakDinActions
+                              psakId={psak.id}
+                              onEdit={handleEditPsak}
+                              onDelete={handleDeletePsak}
+                              showCheckbox={true}
+                              isSelected={selectedForBulk.has(psak.id)}
+                              onSelectChange={() => toggleBulkSelect(psak.id)}
+                              compact
+                            />
                             {!hasLinks && !analyzing && (
                               <Checkbox
                                 checked={isSelected}
                                 onCheckedChange={() => toggleSelectForAnalysis(psak.id)}
                                 onClick={(e) => e.stopPropagation()}
+                                title="בחר לניתוח AI"
                               />
                             )}
                           </div>
@@ -464,6 +547,14 @@ const PsakDinTab = () => {
           psak={selectedPsak} 
           open={dialogOpen} 
           onOpenChange={setDialogOpen} 
+        />
+
+        <PsakDinEditDialog
+          psak={editingPsak}
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          onSaved={handleEditSaved}
+          isNew={isNewPsak}
         />
       </div>
     </div>
