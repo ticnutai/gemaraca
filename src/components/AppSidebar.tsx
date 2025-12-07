@@ -256,11 +256,7 @@ const AppSidebar = ({
                         <button
                           key={masechet.englishName}
                           type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            console.log('[AppSidebar] Masechet clicked:', masechet.hebrewName);
-                            console.log('[AppSidebar] onMasechetSelect exists:', !!onMasechetSelect);
+                          onClick={() => {
                             if (onMasechetSelect) {
                               onMasechetSelect(masechet.hebrewName);
                             } else {

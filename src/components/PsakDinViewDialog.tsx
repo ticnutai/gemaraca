@@ -390,13 +390,8 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
     </div>
   );
 
-  console.log('[PsakDinViewDialog] Rendering, open:', open, 'psak:', psak?.title);
-
   return (
-    <Dialog open={open} onOpenChange={(newOpen) => {
-      console.log('[PsakDinViewDialog] onOpenChange called with:', newOpen);
-      onOpenChange(newOpen);
-    }}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
         className={`flex flex-col bg-card border-border ${
           isFullscreen 
