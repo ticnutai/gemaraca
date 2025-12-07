@@ -1,7 +1,16 @@
-import { Info, BookOpen, Scale, Search, Upload, Library } from "lucide-react";
+import { Info, BookOpen, Scale, Search, Upload, Library, User, LogOut, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface AppHeaderProps {
   activeTab: string;
@@ -17,6 +26,14 @@ const tabs = [
 ];
 
 const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
+  const { user, isAuthenticated, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-primary/20 bg-primary shadow-lg">
       <div className="flex h-16 items-center justify-between px-4 md:px-6">
@@ -49,6 +66,39 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
 
         {/* Left side - Actions */}
         <div className="flex items-center gap-2">
+          {isAuthenticated ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-primary-foreground hover:bg-primary-foreground/10"
+                >
+                  <User className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="text-right">
+                <DropdownMenuItem disabled className="text-xs text-muted-foreground">
+                  {user?.email}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
+                  <LogOut className="h-4 w-4 ml-2" />
+                  התנתק
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-primary-foreground hover:bg-primary-foreground/10 gap-2"
+              onClick={() => navigate("/auth")}
+            >
+              <LogIn className="h-4 w-4" />
+              <span className="hidden md:inline">התחבר</span>
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
