@@ -62,6 +62,7 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
       if (pagesData) {
         const map: LoadedPagesMap = {};
         pagesData.forEach(page => {
+          // Store by both sefariaName and hebrewName for compatibility
           if (!map[page.masechet]) {
             map[page.masechet] = [];
           }
@@ -75,7 +76,10 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
 
   // Download masechet function
   const handleDownloadMasechet = async (masechet: Masechet) => {
-    const loadedPages = loadedPagesMap[masechet.hebrewName] || [];
+    // Check both sefariaName and hebrewName for loaded pages
+    const loadedBySefaria = loadedPagesMap[masechet.sefariaName] || [];
+    const loadedByHebrew = loadedPagesMap[masechet.hebrewName] || [];
+    const loadedPages = [...new Set([...loadedBySefaria, ...loadedByHebrew])];
     const allDafim = Array.from({ length: masechet.maxDaf - 1 }, (_, i) => i + 2);
     const dafimToLoad = allDafim.filter(daf => !loadedPages.includes(daf));
 
@@ -168,7 +172,10 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
   };
 
   const getLoadStatus = (masechet: Masechet) => {
-    const loaded = loadedPagesMap[masechet.hebrewName]?.length || 0;
+    // Check both sefariaName (used by edge function) and hebrewName for loaded pages
+    const loadedBySefaria = loadedPagesMap[masechet.sefariaName]?.length || 0;
+    const loadedByHebrew = loadedPagesMap[masechet.hebrewName]?.length || 0;
+    const loaded = Math.max(loadedBySefaria, loadedByHebrew);
     const total = masechet.maxDaf - 1;
     return { loaded, total, percent: Math.round((loaded / total) * 100) };
   };
