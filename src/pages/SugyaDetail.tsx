@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, BookOpen, Scale, ExternalLink } from "lucide-react";
+import { ArrowRight, BookOpen, Scale, ExternalLink, Lightbulb, FileText, HelpCircle } from "lucide-react";
 import DafAmudNavigator from "@/components/DafAmudNavigator";
 import FAQSection from "@/components/FAQSection";
 import PsakDinSearchButton from "@/components/PsakDinSearchButton";
@@ -315,6 +315,7 @@ const SugyaDetail = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [loadedPage, setLoadedPage] = useState<any>(null);
   const [isPageLoading, setIsPageLoading] = useState(true);
+  const [mainTab, setMainTab] = useState("gemara");
   
   const sugya = sugyotData[id || ""] || loadedPage;
 
@@ -422,6 +423,22 @@ const SugyaDetail = () => {
     }
   };
 
+  // Extract masechet info for LinkedPsakimSection
+  const getMasechetInfo = () => {
+    if (!id) return null;
+    const parts = id.split('_');
+    const masechetObj = MASECHTOT.find(m => m.sefariaName.toLowerCase() === parts[0]);
+    const dafNumMatch = parts[1]?.match(/(\d+)/);
+    const dafNum = dafNumMatch ? parseInt(dafNumMatch[1]) : 0;
+    
+    if (masechetObj && dafNum > 0) {
+      return { masechet: masechetObj.hebrewName, dafNumber: dafNum };
+    }
+    return null;
+  };
+
+  const masechetInfo = getMasechetInfo();
+
   // Show loading state while page is being fetched
   if (isPageLoading && !sugyotData[id || ""]) {
     return (
@@ -447,11 +464,9 @@ const SugyaDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto max-w-7xl px-4 py-12">
-        {/* Daf/Amud Navigator - Main navigation bar */}
-        <DafAmudNavigator className="mb-6" />
-
-        <div className="flex items-center mb-6">
+      <div className="container mx-auto max-w-7xl px-2 sm:px-4 py-4 sm:py-8">
+        {/* Header - Compact navigation */}
+        <div className="flex items-center gap-2 mb-4">
           <Button 
             variant="ghost" 
             size="sm"
@@ -463,128 +478,167 @@ const SugyaDetail = () => {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-3 space-y-8">
-          {/* Header - cleaned up, no duplicates */}
-          <div className="space-y-3">
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">{sugya.title}</h1>
-            
-            <p className="text-base md:text-lg text-muted-foreground">{sugya.summary}</p>
-            
-            <div className="flex flex-wrap gap-2">
-              {sugya.tags.map((tag: string, index: number) => (
-                <Badge key={index} variant="secondary" className="text-xs md:text-sm">
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-          </div>
+        {/* Daf/Amud Navigator - Single source of truth for masechet name */}
+        <DafAmudNavigator className="mb-6" />
 
-          {/* Gemara Text */}
-          {sugya.gemaraText && (
-            <Card className="p-8 bg-gradient-to-br from-primary/5 to-secondary/5 border-2 border-primary/20">
-              <h2 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-2">
-                <BookOpen className="w-6 h-6 text-primary" />
-                לשון הגמרא
-              </h2>
-              <div className="prose prose-lg max-w-none text-foreground leading-loose whitespace-pre-line font-serif text-[1.1rem]">
-                {sugya.gemaraText}
-              </div>
-            </Card>
-          )}
+        {/* Page Title - Simple, no duplications */}
+        <div className="mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-2">{sugya.title}</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">{sugya.summary}</p>
+        </div>
 
-          {/* Full Text */}
-          <Card className="p-8 bg-gradient-to-br from-card to-card/80">
-            <h2 className="text-2xl font-bold text-foreground mb-4">הסבר וניתוח</h2>
-            <div className="prose prose-lg max-w-none text-foreground leading-relaxed whitespace-pre-line">
-              {sugya.fullText}
-            </div>
-          </Card>
+        {/* Main Tabs - 4 Primary Tabs */}
+        <Tabs value={mainTab} onValueChange={setMainTab} className="w-full" dir="rtl">
+          <TabsList className="grid w-full grid-cols-4 mb-6 h-auto">
+            <TabsTrigger value="gemara" className="flex items-center gap-1.5 py-2.5 text-xs sm:text-sm">
+              <BookOpen className="w-4 h-4 hidden sm:block" />
+              גמרא
+            </TabsTrigger>
+            <TabsTrigger value="illustration" className="flex items-center gap-1.5 py-2.5 text-xs sm:text-sm">
+              <Lightbulb className="w-4 h-4 hidden sm:block" />
+              המחשה
+            </TabsTrigger>
+            <TabsTrigger value="psakim" className="flex items-center gap-1.5 py-2.5 text-xs sm:text-sm">
+              <Scale className="w-4 h-4 hidden sm:block" />
+              פסקי דין
+            </TabsTrigger>
+            <TabsTrigger value="analysis" className="flex items-center gap-1.5 py-2.5 text-xs sm:text-sm">
+              <HelpCircle className="w-4 h-4 hidden sm:block" />
+              הסבר
+            </TabsTrigger>
+          </TabsList>
 
-          {/* Modern Examples - AI Generated */}
-          <div className="space-y-4">
-            <h2 className="text-3xl font-bold text-foreground">המחשה לימינו</h2>
+          {/* Tab 1: גמרא - Gemara Text with nested tabs */}
+          <TabsContent value="gemara" className="mt-0 space-y-6">
+            {/* Original Gemara Text */}
+            {sugya.gemaraText && (
+              <Card className="p-4 sm:p-6 bg-gradient-to-br from-primary/5 to-secondary/5 border-2 border-primary/20">
+                <h2 className="text-lg sm:text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-primary" />
+                  לשון הגמרא
+                </h2>
+                <div className="prose prose-sm sm:prose-lg max-w-none text-foreground leading-loose whitespace-pre-line font-serif">
+                  {sugya.gemaraText}
+                </div>
+              </Card>
+            )}
+
+            {/* Nested tabs for Gemara tools */}
+            <Tabs defaultValue="text" className="w-full" dir="rtl">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="text">טקסט מקורי</TabsTrigger>
+                <TabsTrigger value="commentaries">מפרשים</TabsTrigger>
+                <TabsTrigger value="lexicon">מילון</TabsTrigger>
+              </TabsList>
+              <TabsContent value="text" className="mt-4">
+                <GemaraTextPanel sugyaId={id || ""} dafYomi={sugya.dafYomi} masechet={sugya.masechet} />
+              </TabsContent>
+              <TabsContent value="commentaries" className="mt-4">
+                <CommentariesPanel dafYomi={sugya.dafYomi} />
+              </TabsContent>
+              <TabsContent value="lexicon" className="mt-4">
+                <LexiconSearch dafYomi={sugya.dafYomi} />
+              </TabsContent>
+            </Tabs>
+          </TabsContent>
+
+          {/* Tab 2: המחשה - Modern Examples */}
+          <TabsContent value="illustration" className="mt-0 space-y-6">
             <ModernExamplesPanel
               gemaraText={sugya.gemaraText || sugya.fullText}
               sugyaTitle={sugya.title}
               dafYomi={sugya.dafYomi}
               masechet={sugya.masechet || "בבא בתרא"}
             />
-          </div>
 
-          {/* Linked Psakim from Smart Index */}
-          {id && (() => {
-            const parts = id.split('_');
-            const sefariaName = parts[0] ? parts[0].charAt(0).toUpperCase() + parts[0].slice(1) : '';
-            const masechetObj = MASECHTOT.find(m => m.sefariaName.toLowerCase() === parts[0]);
-            const dafNumMatch = parts[1]?.match(/(\d+)/);
-            const dafNum = dafNumMatch ? parseInt(dafNumMatch[1]) : 0;
-            
-            return masechetObj && dafNum > 0 ? (
-              <LinkedPsakimSection 
-                sugyaId={id} 
-                masechet={masechetObj.hebrewName}
-                dafNumber={dafNum}
-              />
-            ) : null;
-          })()}
-          <div className="space-y-6">
-            <h2 className="text-3xl font-bold text-foreground">מקורות וכלים ללימוד</h2>
-            <Tabs defaultValue="gemara" className="w-full" dir="rtl">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="gemara">טקסט הגמרא</TabsTrigger>
-                <TabsTrigger value="commentaries">מפרשים</TabsTrigger>
-                <TabsTrigger value="lexicon">מילון</TabsTrigger>
-              </TabsList>
-              <TabsContent value="gemara" className="mt-6">
-                <GemaraTextPanel sugyaId={id || ""} dafYomi={sugya.dafYomi} masechet={sugya.masechet} />
-              </TabsContent>
-              <TabsContent value="commentaries" className="mt-6">
-                <CommentariesPanel dafYomi={sugya.dafYomi} />
-              </TabsContent>
-              <TabsContent value="lexicon" className="mt-6">
-                <LexiconSearch dafYomi={sugya.dafYomi} />
-              </TabsContent>
-            </Tabs>
-          </div>
-
-          {/* Search for Psak Din */}
-          <PsakDinSearchButton
-            sugyaId={id || ""}
-            sugyaTitle={sugya.title}
-            sugyaDescription={sugya.summary}
-            onSearchComplete={fetchRealCases}
-          />
-
-          {/* Real Cases from Database */}
-          {realCases.length > 0 && (
-            <div className="space-y-6">
-              <div className="flex items-center gap-3">
-                <Scale className="w-6 h-6 text-accent" />
-                <h2 className="text-3xl font-bold text-foreground">
-                  פסקי דין אמיתיים ({realCases.length})
-                </h2>
-              </div>
-              
+            {/* Sample Cases for illustration */}
+            {sugya.cases && sugya.cases.length > 0 && (
               <div className="space-y-4">
-                {realCases.map((link: any) => {
-                  const caseData = link.psakei_din;
-                  const caseFaqItems = faqItems.filter(
-                    (faq) => faq.psak_din_id === caseData.id
-                  );
-                  
-                  return (
-                    <Card key={link.id} className="p-6 space-y-4 hover:shadow-lg transition-all border-2 border-primary/20">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 space-y-2">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <Scale className="w-5 h-5 text-muted-foreground" />
+                    <h3 className="text-lg font-bold text-muted-foreground">
+                      דוגמאות להמחשה ({sugya.cases.length})
+                    </h3>
+                  </div>
+                  <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
+                    <p className="text-xs sm:text-sm text-yellow-800 dark:text-yellow-200">
+                      💡 אלו דוגמאות להמחשה בלבד. להשגת פסקי דין אמיתיים, עבור לטאב "פסקי דין".
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  {sugya.cases.map((case_: any, index: number) => (
+                    <Card key={index} className="p-4 space-y-3 hover:shadow-lg transition-all">
+                      <div className="space-y-1">
+                        <h4 className="text-base font-bold text-foreground">{case_.title}</h4>
+                        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                          <span className="font-medium">{case_.court}</span>
+                          <span>•</span>
+                          <span>{case_.year}</span>
+                        </div>
+                      </div>
+                      <p className="text-sm text-foreground leading-relaxed">{case_.summary}</p>
+                      <div className="pt-2 border-t border-border">
+                        <p className="text-xs font-medium text-primary">
+                          <span className="text-muted-foreground">קשר לגמרא: </span>
+                          {case_.connection}
+                        </p>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Tab 3: פסקי דין - Legal Rulings */}
+          <TabsContent value="psakim" className="mt-0 space-y-6">
+            {/* Search Button */}
+            <PsakDinSearchButton
+              sugyaId={id || ""}
+              sugyaTitle={sugya.title}
+              sugyaDescription={sugya.summary}
+              onSearchComplete={fetchRealCases}
+            />
+
+            {/* Linked Psakim from Smart Index */}
+            {masechetInfo && (
+              <LinkedPsakimSection 
+                sugyaId={id || ""} 
+                masechet={masechetInfo.masechet}
+                dafNumber={masechetInfo.dafNumber}
+              />
+            )}
+
+            {/* Real Cases from Database */}
+            {realCases.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <Scale className="w-5 h-5 text-accent" />
+                  <h3 className="text-lg font-bold text-foreground">
+                    פסקי דין אמיתיים ({realCases.length})
+                  </h3>
+                </div>
+                
+                <div className="space-y-3">
+                  {realCases.map((link: any) => {
+                    const caseData = link.psakei_din;
+                    const caseFaqItems = faqItems.filter(
+                      (faq) => faq.psak_din_id === caseData.id
+                    );
+                    
+                    return (
+                      <Card key={link.id} className="p-4 space-y-3 hover:shadow-lg transition-all border-2 border-primary/20">
+                        <div className="space-y-2">
                           <div className="flex items-center gap-2">
-                            <Badge variant="default" className="bg-gradient-to-r from-primary to-secondary">
+                            <Badge variant="default" className="bg-gradient-to-r from-primary to-secondary text-xs">
                               רלוונטיות: {link.relevance_score}/10
                             </Badge>
                           </div>
-                          <h3 className="text-xl font-bold text-foreground">{caseData.title}</h3>
-                          <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
+                          <h4 className="text-base font-bold text-foreground">{caseData.title}</h4>
+                          <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
                             <span className="font-medium">{caseData.court}</span>
                             <span>•</span>
                             <span>{caseData.year}</span>
@@ -605,120 +659,100 @@ const SugyaDetail = () => {
                             </div>
                           )}
                         </div>
-                      </div>
-                      
-                      {caseData.source_url && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full gap-2"
-                          asChild
-                        >
-                          <a 
-                            href={caseData.source_url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
+                        
+                        {caseData.source_url && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full gap-2 text-xs"
+                            asChild
                           >
-                            <ExternalLink className="w-4 h-4" />
-                            צפייה בפסק הדין המלא במקור
-                          </a>
-                        </Button>
-                      )}
-                      
-                      <p className="text-foreground leading-relaxed">{caseData.summary}</p>
-                      
-                      <div className="pt-4 border-t border-border">
-                        <p className="text-sm font-medium text-primary">
-                          <span className="text-muted-foreground">קשר לגמרא: </span>
-                          {link.connection_explanation}
-                        </p>
-                      </div>
-
-                      {/* FAQ Section for this case */}
-                      {caseFaqItems.length > 0 && (
-                        <div className="pt-4 border-t border-border">
-                          <FAQSection 
-                            items={caseFaqItems} 
-                            title="שאלות ותשובות על פסק דין זה"
-                          />
-                        </div>
-                      )}
-                    </Card>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Sample Cases */}
-          {sugya.cases && sugya.cases.length > 0 && (
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <div className="flex items-center gap-3">
-                  <Scale className="w-6 h-6 text-muted-foreground" />
-                  <h2 className="text-2xl font-bold text-muted-foreground">
-                    דוגמאות להמחשה ({sugya.cases.length})
-                  </h2>
-                </div>
-                <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-                  <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                    💡 <strong>שימו לב:</strong> אלו דוגמאות להמחשה בלבד. הקישורים אינם אמיתיים. 
-                    להשגת פסקי דין אמיתיים, השתמשו בכפתור "חפש פסקי דין אמיתיים" למעלה.
-                  </p>
-                </div>
-              </div>
-              
-              <div className="space-y-4">
-                {sugya.cases.map((case_: any, index: number) => (
-                <Card key={index} className="p-6 space-y-4 hover:shadow-lg transition-all">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 space-y-2">
-                      <h3 className="text-xl font-bold text-foreground">{case_.title}</h3>
-                      <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
-                        <span className="font-medium">{case_.court}</span>
-                        <span>•</span>
-                        <span>{case_.year}</span>
-                        {case_.link && (
-                          <>
-                            <span>•</span>
-                            <span className="font-mono">{case_.link}</span>
-                          </>
+                            <a 
+                              href={caseData.source_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                              צפייה בפסק הדין המלא
+                            </a>
+                          </Button>
                         )}
-                      </div>
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      (קישור המחשה)
-                    </div>
-                  </div>
-                  
-                  <p className="text-foreground leading-relaxed">{case_.summary}</p>
-                  
-                  <div className="pt-4 border-t border-border">
-                    <p className="text-sm font-medium text-primary">
-                      <span className="text-muted-foreground">קשר לגמרא: </span>
-                      {case_.connection}
-                    </p>
-                  </div>
-                </Card>
-                ))}
+                        
+                        <p className="text-sm text-foreground leading-relaxed">{caseData.summary}</p>
+                        
+                        <div className="pt-2 border-t border-border">
+                          <p className="text-xs font-medium text-primary">
+                            <span className="text-muted-foreground">קשר לגמרא: </span>
+                            {link.connection_explanation}
+                          </p>
+                        </div>
+
+                        {caseFaqItems.length > 0 && (
+                          <div className="pt-2 border-t border-border">
+                            <FAQSection 
+                              items={caseFaqItems} 
+                              title="שאלות ותשובות"
+                            />
+                          </div>
+                        )}
+                      </Card>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {isLoading && (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">טוען פסקי דין...</p>
-            </div>
-          )}
-          </div>
+            {isLoading && (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">טוען פסקי דין...</p>
+              </div>
+            )}
 
-          {/* Sidebar - Related Psakim */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-4">
-              <RelatedPsakimSidebar sugyaId={id || ""} />
-            </div>
-          </div>
-        </div>
+            {/* Related Psakim Sidebar content */}
+            <RelatedPsakimSidebar sugyaId={id || ""} />
+          </TabsContent>
+
+          {/* Tab 4: הסבר וניתוח - Explanation and Analysis */}
+          <TabsContent value="analysis" className="mt-0 space-y-6">
+            {/* Full Text Explanation */}
+            {sugya.fullText && (
+              <Card className="p-4 sm:p-6 bg-gradient-to-br from-card to-card/80">
+                <h2 className="text-lg sm:text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-primary" />
+                  הסבר וניתוח הסוגיה
+                </h2>
+                <div className="prose prose-sm sm:prose-lg max-w-none text-foreground leading-relaxed whitespace-pre-line">
+                  {sugya.fullText}
+                </div>
+              </Card>
+            )}
+
+            {/* Tags */}
+            {sugya.tags && sugya.tags.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium text-muted-foreground">נושאים קשורים:</h3>
+                <div className="flex flex-wrap gap-2">
+                  {sugya.tags.map((tag: string, index: number) => (
+                    <Badge key={index} variant="secondary" className="text-xs">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* FAQ items if available */}
+            {faqItems.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+                  <HelpCircle className="w-5 h-5 text-primary" />
+                  שאלות נפוצות
+                </h3>
+                <FAQSection items={faqItems} />
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
