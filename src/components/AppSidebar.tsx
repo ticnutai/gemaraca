@@ -150,19 +150,15 @@ const AppSidebar = ({
     masechtot: MASECHTOT.filter(m => m.seder === seder)
   }));
 
-  // When unpinned and not hovered, hide the sidebar completely
-  if (!isPinned && !sidebarOpen) {
-    return null;
-  }
-
   return (
     <Sidebar 
       side="right" 
       className={cn(
         "border-l border-border/50 transition-all duration-300",
-        !isPinned && "fixed right-0 top-0 h-full z-50 shadow-2xl"
+        !isPinned && !sidebarOpen && "translate-x-full opacity-0 pointer-events-none",
+        !isPinned && sidebarOpen && "fixed right-0 top-0 h-full z-50 shadow-2xl"
       )}
-      collapsible={isPinned ? "none" : "offcanvas"}
+      collapsible="none"
       variant={isPinned ? "sidebar" : "floating"}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}

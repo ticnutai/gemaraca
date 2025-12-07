@@ -41,15 +41,8 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   };
 
   return (
-    <SidebarProvider defaultOpen={isPinned} open={isPinned ? undefined : undefined}>
+    <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen flex w-full bg-background overflow-x-hidden max-w-[100vw]">
-        {/* Hover trigger zone when sidebar is unpinned */}
-        {!isPinned && (
-          <div 
-            className="fixed right-0 top-0 w-8 h-full z-40 cursor-pointer"
-            aria-hidden="true"
-          />
-        )}
         
         <AppSidebar 
           activeTab={activeTab} 
