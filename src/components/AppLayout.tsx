@@ -4,6 +4,7 @@ import AppSidebar from "./AppSidebar";
 import AppHeader from "./AppHeader";
 import FloatingGemaraNav from "./FloatingGemaraNav";
 import { useAppContext } from "@/contexts/AppContext";
+import { cn } from "@/lib/utils";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -40,19 +41,17 @@ const AppLayout = ({ children }: AppLayoutProps) => {
     setIsPinned(!(isPinned ?? false));
   };
 
+  // When sidebar is not pinned, main content should take full width
+  const sidebarIsPinned = isPinned ?? true;
+
   return (
-    <SidebarProvider defaultOpen={true}>
-      <div className="min-h-screen flex w-full bg-background overflow-x-hidden max-w-[100vw]">
-        
-        <AppSidebar 
-          activeTab={activeTab} 
-          onTabChange={handleTabChange}
-          onMasechetSelect={handleMasechetSelect}
-          isPinned={isPinned ?? true}
-          onPinToggle={handlePinToggle}
-        />
-        
-        <div className="flex-1 flex flex-col min-h-screen overflow-x-hidden max-w-full">
+    <SidebarProvider defaultOpen={sidebarIsPinned}>
+      <div className="min-h-screen flex w-full bg-background overflow-x-hidden">
+        {/* Main content - takes full width when sidebar is unpinned */}
+        <div className={cn(
+          "flex-1 flex flex-col min-h-screen overflow-x-hidden transition-all duration-300",
+          sidebarIsPinned ? "md:mr-[--sidebar-width]" : "w-full"
+        )}>
           <AppHeader 
             activeTab={activeTab} 
             onTabChange={handleTabChange}
@@ -62,6 +61,15 @@ const AppLayout = ({ children }: AppLayoutProps) => {
             {children}
           </main>
         </div>
+
+        {/* Sidebar - fixed position when pinned, floating when unpinned */}
+        <AppSidebar 
+          activeTab={activeTab} 
+          onTabChange={handleTabChange}
+          onMasechetSelect={handleMasechetSelect}
+          isPinned={sidebarIsPinned}
+          onPinToggle={handlePinToggle}
+        />
 
         {/* Floating Navigation Button - appears on all pages */}
         <FloatingGemaraNav />
