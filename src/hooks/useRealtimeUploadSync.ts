@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useUploadStore } from '@/stores/uploadStore';
+import { useAuth } from '@/hooks/useAuth';
 
 // Generate unique device ID
 const getDeviceId = () => {
@@ -15,9 +16,13 @@ const getDeviceId = () => {
 export function useRealtimeUploadSync() {
   const deviceId = useRef(getDeviceId());
   const { sessions, updateProgress, setStatus } = useUploadStore();
+  const { user, isAuthenticated } = useAuth();
 
   // Broadcast local changes to database for all active sessions
   useEffect(() => {
+    // Only sync if user is authenticated
+    if (!isAuthenticated || !user) return;
+
     const activeSessions = Object.values(sessions).filter(
       s => ['uploading', 'paused', 'analyzing'].includes(s.status)
     );
@@ -39,6 +44,7 @@ export function useRealtimeUploadSync() {
             skipped_files: progress?.skipped || 0,
             current_file: progress?.current || null,
             device_id: deviceId.current,
+            user_id: user.id,
           }, {
             onConflict: 'session_id'
           });
@@ -49,10 +55,12 @@ export function useRealtimeUploadSync() {
     };
 
     syncToDb();
-  }, [sessions]);
+  }, [sessions, isAuthenticated, user]);
 
   // Listen for changes from other devices
   useEffect(() => {
+    if (!isAuthenticated) return;
+
     const channel = supabase
       .channel('upload-sessions-realtime')
       .on(
@@ -89,10 +97,12 @@ export function useRealtimeUploadSync() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [updateProgress, setStatus]);
+  }, [updateProgress, setStatus, isAuthenticated]);
 
   // Cleanup old sessions (older than 24 hours)
   useEffect(() => {
+    if (!isAuthenticated) return;
+
     const cleanup = async () => {
       const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
       await supabase
@@ -102,7 +112,7 @@ export function useRealtimeUploadSync() {
     };
     
     cleanup();
-  }, []);
+  }, [isAuthenticated]);
 
   return { deviceId: deviceId.current };
 }

@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import SugyaDetail from "./pages/SugyaDetail";
 import NotFound from "./pages/NotFound";
+import Auth from "./pages/Auth";
 import { ThemeProvider } from "./components/ThemeProvider";
 import { SettingsButton } from "./components/SettingsButton";
 import GlobalUploadProgress from "./components/GlobalUploadProgress";
@@ -22,13 +23,21 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AppContextProvider>
-            <AppLayout>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/sugya/:id" element={<SugyaDetail />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </AppLayout>
+            <Routes>
+              <Route path="/auth" element={<Auth />} />
+              <Route
+                path="/*"
+                element={
+                  <AppLayout>
+                    <Routes>
+                      <Route path="/" element={<Index />} />
+                      <Route path="/sugya/:id" element={<SugyaDetail />} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </AppLayout>
+                }
+              />
+            </Routes>
           </AppContextProvider>
         </BrowserRouter>
         <SettingsButton />
