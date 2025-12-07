@@ -6,9 +6,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Calendar, Building2, FileText, ExternalLink, Download, Eye, FileIcon, 
   Maximize2, Minimize2, AlignRight, AlignCenter, AlignLeft, AlignJustify,
-  Type, Bold, Italic, Highlighter, AArrowUp, AArrowDown, Palette
+  Type, Bold, Italic, Highlighter, AArrowUp, AArrowDown, Palette, Edit, Save, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +23,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const VIEWER_TEXT_SETTINGS_KEY = 'psak-din-viewer-text-settings';
 
@@ -90,26 +95,46 @@ interface PsakDinViewDialogProps {
   } | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSave?: () => void;
 }
 
-const PsakDinViewDialog = ({ psak, open, onOpenChange }: PsakDinViewDialogProps) => {
+const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDialogProps) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
-  // Default to "preview" tab when file exists
   const [activeTab, setActiveTab] = useState("preview");
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [textSettings, setTextSettings] = useState<TextSettings>(() => {
     const saved = localStorage.getItem(VIEWER_TEXT_SETTINGS_KEY);
     return saved ? JSON.parse(saved) : defaultTextSettings;
   });
 
+  // Editable fields
+  const [editTitle, setEditTitle] = useState("");
+  const [editCourt, setEditCourt] = useState("");
+  const [editYear, setEditYear] = useState<number | "">("");
+  const [editCaseNumber, setEditCaseNumber] = useState("");
+  const [editSummary, setEditSummary] = useState("");
+  const [editFullText, setEditFullText] = useState("");
+  const [editTags, setEditTags] = useState("");
+
   useEffect(() => {
     localStorage.setItem(VIEWER_TEXT_SETTINGS_KEY, JSON.stringify(textSettings));
   }, [textSettings]);
 
-  // Reset to preview tab when dialog opens
+  // Reset to preview tab and load edit values when dialog opens
   useEffect(() => {
     if (open && psak) {
       const sourceUrl = psak.source_url || psak.sourceUrl;
       setActiveTab(sourceUrl ? "preview" : "info");
+      setIsEditing(false);
+      // Initialize edit fields
+      setEditTitle(psak.title || "");
+      setEditCourt(psak.court || "");
+      setEditYear(psak.year || "");
+      setEditCaseNumber(psak.case_number || psak.caseNumber || "");
+      setEditSummary(psak.summary || "");
+      setEditFullText(psak.full_text || psak.fullText || "");
+      setEditTags((psak.tags || []).join(", "));
     }
   }, [open, psak]);
 
@@ -118,6 +143,57 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange }: PsakDinViewDialogProps)
   const fullText = psak.full_text || psak.fullText;
   const sourceUrl = psak.source_url || psak.sourceUrl;
   const caseNumber = psak.case_number || psak.caseNumber;
+
+  const handleSave = async () => {
+    if (!psak.id) {
+      toast.error("לא ניתן לשמור - חסר מזהה");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const tagsArray = editTags
+        .split(",")
+        .map(t => t.trim())
+        .filter(t => t.length > 0);
+
+      const { error } = await supabase
+        .from("psakei_din")
+        .update({
+          title: editTitle.trim(),
+          court: editCourt.trim(),
+          year: editYear || null,
+          case_number: editCaseNumber.trim() || null,
+          summary: editSummary.trim(),
+          full_text: editFullText.trim() || null,
+          tags: tagsArray,
+        })
+        .eq("id", psak.id);
+
+      if (error) throw error;
+
+      toast.success("פסק הדין עודכן בהצלחה");
+      setIsEditing(false);
+      onSave?.();
+    } catch (error: any) {
+      console.error("Error saving psak din:", error);
+      toast.error("שגיאה בשמירת פסק הדין");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    // Reset to original values
+    setEditTitle(psak.title || "");
+    setEditCourt(psak.court || "");
+    setEditYear(psak.year || "");
+    setEditCaseNumber(psak.case_number || psak.caseNumber || "");
+    setEditSummary(psak.summary || "");
+    setEditFullText(psak.full_text || psak.fullText || "");
+    setEditTags((psak.tags || []).join(", "));
+  };
 
   // Determine file type from URL
   const getFileType = (url: string | undefined): string => {
@@ -383,49 +459,158 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange }: PsakDinViewDialogProps)
           </TabsList>
 
           <TabsContent value="info" className="flex-1 min-h-0 mt-4">
-            {renderTextToolbar()}
+            <div className="flex items-center justify-between mb-2">
+              {!isEditing ? renderTextToolbar() : <div />}
+              <div className="flex gap-2">
+                {isEditing ? (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleCancelEdit}
+                      disabled={isSaving}
+                      className="gap-1"
+                    >
+                      <X className="w-4 h-4" />
+                      ביטול
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={handleSave}
+                      disabled={isSaving}
+                      className="gap-1"
+                    >
+                      <Save className="w-4 h-4" />
+                      {isSaving ? "שומר..." : "שמור"}
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsEditing(true)}
+                    className="gap-1"
+                    disabled={!psak.id}
+                  >
+                    <Edit className="w-4 h-4" />
+                    עריכה
+                  </Button>
+                )}
+              </div>
+            </div>
             <ScrollArea className="h-full border border-border rounded-lg">
               <div 
-                className={`p-4 space-y-4 ${textClasses}`} 
+                className={`p-4 space-y-4 ${isEditing ? '' : textClasses}`} 
                 dir="rtl"
-                style={{ fontSize: `${textSettings.fontSize}px` }}
+                style={{ fontSize: isEditing ? undefined : `${textSettings.fontSize}px` }}
               >
-                {/* Summary */}
-                <div>
-                  <h3 className="font-semibold mb-2">תקציר</h3>
-                  <p className="leading-relaxed">{psak.summary}</p>
-                </div>
-
-                {/* Connection explanation if exists */}
-                {psak.connection && (
-                  <div className="p-3 rounded-lg border">
-                    <h3 className="font-semibold mb-2">קשר לסוגיה</h3>
-                    <p className="opacity-80">{psak.connection}</p>
-                  </div>
-                )}
-
-                {/* Full text if exists */}
-                {fullText && (
-                  <div>
-                    <h3 className="font-semibold mb-2">טקסט מלא</h3>
-                    <div className="p-4 rounded-lg border whitespace-pre-wrap leading-relaxed">
-                      {fullText}
+                {isEditing ? (
+                  <>
+                    {/* Edit Mode */}
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>כותרת</Label>
+                          <Input
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            placeholder="כותרת פסק הדין"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>בית דין</Label>
+                          <Input
+                            value={editCourt}
+                            onChange={(e) => setEditCourt(e.target.value)}
+                            placeholder="שם בית הדין"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>שנה</Label>
+                          <Input
+                            type="number"
+                            value={editYear}
+                            onChange={(e) => setEditYear(e.target.value ? parseInt(e.target.value) : "")}
+                            placeholder="שנת פסק הדין"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>מספר תיק</Label>
+                          <Input
+                            value={editCaseNumber}
+                            onChange={(e) => setEditCaseNumber(e.target.value)}
+                            placeholder="מספר התיק"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>תקציר</Label>
+                        <Textarea
+                          value={editSummary}
+                          onChange={(e) => setEditSummary(e.target.value)}
+                          placeholder="תקציר פסק הדין"
+                          rows={4}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>טקסט מלא</Label>
+                        <Textarea
+                          value={editFullText}
+                          onChange={(e) => setEditFullText(e.target.value)}
+                          placeholder="טקסט מלא של פסק הדין"
+                          rows={12}
+                          className="font-serif"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>תגיות (מופרדות בפסיק)</Label>
+                        <Input
+                          value={editTags}
+                          onChange={(e) => setEditTags(e.target.value)}
+                          placeholder="תגית1, תגית2, תגית3"
+                        />
+                      </div>
                     </div>
-                  </div>
-                )}
-
-                {/* Tags */}
-                {psak.tags && psak.tags.length > 0 && (
-                  <div>
-                    <h3 className="font-semibold mb-2">תגיות</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {psak.tags.map((tag: string, idx: number) => (
-                        <Badge key={idx} variant="secondary" className="bg-muted text-muted-foreground">
-                          {tag}
-                        </Badge>
-                      ))}
+                  </>
+                ) : (
+                  <>
+                    {/* View Mode */}
+                    <div>
+                      <h3 className="font-semibold mb-2">תקציר</h3>
+                      <p className="leading-relaxed">{psak.summary}</p>
                     </div>
-                  </div>
+
+                    {psak.connection && (
+                      <div className="p-3 rounded-lg border">
+                        <h3 className="font-semibold mb-2">קשר לסוגיה</h3>
+                        <p className="opacity-80">{psak.connection}</p>
+                      </div>
+                    )}
+
+                    {fullText && (
+                      <div>
+                        <h3 className="font-semibold mb-2">טקסט מלא</h3>
+                        <div className="p-4 rounded-lg border whitespace-pre-wrap leading-relaxed">
+                          {fullText}
+                        </div>
+                      </div>
+                    )}
+
+                    {psak.tags && psak.tags.length > 0 && (
+                      <div>
+                        <h3 className="font-semibold mb-2">תגיות</h3>
+                        <div className="flex flex-wrap gap-2">
+                          {psak.tags.map((tag: string, idx: number) => (
+                            <Badge key={idx} variant="secondary" className="bg-muted text-muted-foreground">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </ScrollArea>
