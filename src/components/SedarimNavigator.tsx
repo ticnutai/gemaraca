@@ -76,14 +76,26 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
 
   // Download masechet function
   const handleDownloadMasechet = async (masechet: Masechet) => {
+    console.log('[SedarimNavigator] handleDownloadMasechet called for:', masechet.hebrewName);
+    console.log('[SedarimNavigator] loadedPagesMap:', loadedPagesMap);
+    
     // Check both sefariaName and hebrewName for loaded pages
     const loadedBySefaria = loadedPagesMap[masechet.sefariaName] || [];
     const loadedByHebrew = loadedPagesMap[masechet.hebrewName] || [];
     const loadedPages = [...new Set([...loadedBySefaria, ...loadedByHebrew])];
+    
+    console.log('[SedarimNavigator] loadedBySefaria:', loadedBySefaria);
+    console.log('[SedarimNavigator] loadedByHebrew:', loadedByHebrew);
+    console.log('[SedarimNavigator] loadedPages combined:', loadedPages);
+    
     const allDafim = Array.from({ length: masechet.maxDaf - 1 }, (_, i) => i + 2);
     const dafimToLoad = allDafim.filter(daf => !loadedPages.includes(daf));
 
+    console.log('[SedarimNavigator] allDafim count:', allDafim.length);
+    console.log('[SedarimNavigator] dafimToLoad count:', dafimToLoad.length);
+
     if (dafimToLoad.length === 0) {
+      console.log('[SedarimNavigator] All pages already loaded, showing toast');
       toast({
         title: "כל הדפים כבר נטענו",
         description: `מסכת ${masechet.hebrewName} טעונה במלואה`,
@@ -91,6 +103,7 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
       return;
     }
 
+    console.log('[SedarimNavigator] Setting downloading state to:', masechet.hebrewName);
     setDownloading(masechet.hebrewName);
     setDownloadProgress(0);
 
@@ -103,11 +116,16 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
     const DELAY_BETWEEN_BATCHES = 1000;
     let successCount = 0;
     let failCount = 0;
+    let cancelled = false;
 
     for (let i = 0; i < dafimToLoad.length; i += BATCH_SIZE) {
-      if (downloading === null) break; // cancelled
+      if (cancelled) {
+        console.log('[SedarimNavigator] Download cancelled');
+        break;
+      }
 
       const batch = dafimToLoad.slice(i, i + BATCH_SIZE);
+      console.log(`[SedarimNavigator] Processing batch ${i / BATCH_SIZE + 1}, dafim:`, batch);
       
       const results = await Promise.allSettled(
         batch.map(async (dafNumber) => {
@@ -115,7 +133,14 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
           const sugya_id = `${masechet.sefariaName.toLowerCase()}_${dafNumber}a`;
           const title = `${masechet.hebrewName} דף ${hebrewNumber}`;
 
-          const { error } = await supabase.functions.invoke('load-daf', {
+          console.log(`[SedarimNavigator] Invoking load-daf for daf ${dafNumber}:`, {
+            dafNumber,
+            sugya_id,
+            title,
+            masechet: masechet.hebrewName
+          });
+
+          const { data, error } = await supabase.functions.invoke('load-daf', {
             body: { 
               dafNumber, 
               sugya_id, 
@@ -124,33 +149,48 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
             }
           });
 
-          if (error) throw error;
+          if (error) {
+            console.error(`[SedarimNavigator] Error loading daf ${dafNumber}:`, error);
+            throw error;
+          }
+          
+          console.log(`[SedarimNavigator] Successfully loaded daf ${dafNumber}:`, data);
           return dafNumber;
         })
       );
 
-      results.forEach(result => {
+      results.forEach((result, idx) => {
         if (result.status === 'fulfilled') {
           successCount++;
+          console.log(`[SedarimNavigator] Daf ${batch[idx]} loaded successfully`);
         } else {
           failCount++;
+          console.error(`[SedarimNavigator] Daf ${batch[idx]} failed:`, result.reason);
         }
       });
 
       const totalProcessed = i + batch.length;
-      setDownloadProgress((totalProcessed / dafimToLoad.length) * 100);
+      const progress = (totalProcessed / dafimToLoad.length) * 100;
+      console.log(`[SedarimNavigator] Progress: ${totalProcessed}/${dafimToLoad.length} = ${progress.toFixed(1)}%`);
+      setDownloadProgress(progress);
 
       if (i + BATCH_SIZE < dafimToLoad.length) {
+        console.log('[SedarimNavigator] Waiting between batches...');
         await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_BATCHES));
       }
     }
 
+    console.log('[SedarimNavigator] Download complete, refreshing loaded pages');
+    
     // Refresh loaded pages
-    const { data: pagesData } = await supabase
+    const { data: pagesData, error: refreshError } = await supabase
       .from('gemara_pages')
       .select('masechet, daf_number');
     
-    if (pagesData) {
+    if (refreshError) {
+      console.error('[SedarimNavigator] Error refreshing pages:', refreshError);
+    } else if (pagesData) {
+      console.log('[SedarimNavigator] Refreshed pages count:', pagesData.length);
       const map: LoadedPagesMap = {};
       pagesData.forEach(page => {
         if (!map[page.masechet]) {
@@ -164,6 +204,8 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
     setDownloading(null);
     setDownloadProgress(0);
 
+    console.log(`[SedarimNavigator] Final results: ${successCount} success, ${failCount} failed`);
+    
     toast({
       title: "ההורדה הושלמה",
       description: `נטענו ${successCount} דפים${failCount > 0 ? `, ${failCount} נכשלו` : ''}`,
