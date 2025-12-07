@@ -346,14 +346,20 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
                   {/* Download button */}
                   {status.percent < 100 && (
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
+                        e.preventDefault();
+                        console.log('[Download Button] Clicked for masechet:', masechet.hebrewName);
+                        console.log('[Download Button] status:', status);
+                        console.log('[Download Button] isDownloading:', isDownloading);
                         handleDownloadMasechet(masechet);
                       }}
                       disabled={isDownloading}
                       className={cn(
-                        "p-1 md:p-1.5 rounded-md transition-all",
+                        "p-1 md:p-1.5 rounded-md transition-all cursor-pointer",
                         "hover:bg-accent/20 text-accent hover:text-accent",
+                        "border border-accent/30 hover:border-accent",
                         isDownloading && "animate-pulse"
                       )}
                       title={`הורד מסכת ${masechet.hebrewName}`}
