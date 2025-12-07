@@ -9,7 +9,7 @@ const Index = () => {
   const { activeTab } = useAppContext();
 
   return (
-    <div className="p-4 md:p-6 space-y-4">
+    <div className="p-2 md:p-6 space-y-3 md:space-y-4 overflow-x-hidden max-w-full">
       {/* Sedarim Navigator - 6 frames at top */}
       <SedarimNavigator />
 

@@ -42,7 +42,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
 
   return (
     <SidebarProvider defaultOpen={isPinned}>
-      <div className="min-h-screen flex w-full bg-background">
+      <div className="min-h-screen flex w-full bg-background overflow-x-hidden max-w-[100vw]">
         <AppSidebar 
           activeTab={activeTab} 
           onTabChange={handleTabChange}
@@ -51,13 +51,13 @@ const AppLayout = ({ children }: AppLayoutProps) => {
           onPinToggle={handlePinToggle}
         />
         
-        <div className="flex-1 flex flex-col min-h-screen">
+        <div className="flex-1 flex flex-col min-h-screen overflow-x-hidden max-w-full">
           <AppHeader 
             activeTab={activeTab} 
             onTabChange={handleTabChange}
           />
           
-          <main className="flex-1">
+          <main className="flex-1 overflow-x-hidden">
             {children}
           </main>
         </div>

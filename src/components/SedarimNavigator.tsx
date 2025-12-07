@@ -97,45 +97,45 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
   const remainingCount = allDafim.length - INITIAL_DAF_COUNT;
 
   return (
-    <div className={cn("space-y-4 md:space-y-6", className)}>
+    <div className={cn("space-y-3 md:space-y-6 overflow-x-hidden", className)}>
       {/* Spacing from header */}
-      <div className="pt-3 md:pt-4" />
+      <div className="pt-2 md:pt-4" />
 
-      {/* 6 Sedarim Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 md:gap-3">
+      {/* 6 Sedarim Cards - 3 columns on mobile for better fit */}
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-1.5 md:gap-3">
         {SEDARIM.map((seder) => (
           <button
             key={seder}
             onClick={() => handleSederClick(seder)}
             className={cn(
-              "p-2.5 md:p-4 rounded-xl border-2 transition-all duration-200 text-center",
-              "hover:shadow-elegant hover:scale-[1.02]",
+              "p-1.5 md:p-4 rounded-lg md:rounded-xl border transition-all duration-200 text-center",
+              "hover:shadow-elegant active:scale-95",
               selectedSeder === seder
                 ? "bg-primary text-primary-foreground border-accent shadow-gold"
                 : "bg-card border-border hover:border-accent/50"
             )}
           >
-            <BookOpen className="h-4 w-4 md:h-6 md:w-6 mx-auto mb-1" />
-            <span className="font-bold text-xs md:text-base block">{seder}</span>
-            <span className="text-[10px] md:text-xs opacity-70">{getMasechetCount(seder)} מסכתות</span>
+            <BookOpen className="h-3 w-3 md:h-6 md:w-6 mx-auto mb-0.5 md:mb-1" />
+            <span className="font-bold text-[10px] md:text-base block leading-tight">{seder}</span>
+            <span className="text-[8px] md:text-xs opacity-70 hidden sm:inline">{getMasechetCount(seder)} מסכתות</span>
           </button>
         ))}
       </div>
 
       {/* Masechtot of Selected Seder */}
       {selectedSeder && (
-        <div className="bg-card/50 rounded-xl border border-border p-3 md:p-4 animate-in fade-in slide-in-from-top-2 duration-300">
-          <div className="flex items-center gap-2 mb-3">
+        <div className="bg-card/50 rounded-lg md:rounded-xl border border-border p-2 md:p-4 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="flex items-center gap-1.5 md:gap-2 mb-2 md:mb-3">
             <button 
               onClick={() => setSelectedSeder(null)}
-              className="p-1 hover:bg-muted rounded-lg transition-colors"
+              className="p-0.5 md:p-1 hover:bg-muted rounded-lg transition-colors"
             >
-              <ChevronLeft className="h-5 w-5 rtl-flip" />
+              <ChevronLeft className="h-4 w-4 md:h-5 md:w-5 rtl-flip" />
             </button>
-            <h3 className="font-bold text-base md:text-lg">סדר {selectedSeder}</h3>
+            <h3 className="font-bold text-sm md:text-lg">סדר {selectedSeder}</h3>
           </div>
           
-          <div className="flex flex-wrap gap-1.5 md:gap-2">
+          <div className="flex flex-wrap gap-1 md:gap-2">
             {getMasechtotBySeder(selectedSeder).map((masechet) => (
               <Button
                 key={masechet.englishName}
@@ -143,12 +143,12 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
                 size="sm"
                 onClick={() => handleMasechetClick(masechet)}
                 className={cn(
-                  "transition-all text-xs md:text-sm h-8 md:h-9 px-2 md:px-3",
+                  "transition-all text-[10px] md:text-sm h-6 md:h-9 px-1.5 md:px-3",
                   selectedMasechetLocal?.englishName === masechet.englishName && "shadow-gold"
                 )}
               >
                 {masechet.hebrewName}
-                <span className="text-[10px] md:text-xs opacity-70 mr-1">({masechet.maxDaf})</span>
+                <span className="text-[8px] md:text-xs opacity-70 mr-0.5 md:mr-1 hidden sm:inline">({masechet.maxDaf})</span>
               </Button>
             ))}
           </div>
@@ -157,27 +157,27 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
 
       {/* Dafim Grid of Selected Masechet - Golden buttons like reference image */}
       {selectedMasechetLocal && (
-        <div className="bg-card rounded-xl border border-border p-3 md:p-4 animate-in fade-in slide-in-from-top-2 duration-300">
-          <div className="flex items-center gap-2 mb-3 md:mb-4">
+        <div className="bg-card rounded-lg md:rounded-xl border border-border p-2 md:p-4 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="flex items-center gap-1.5 md:gap-2 mb-2 md:mb-4">
             <button 
               onClick={() => setSelectedMasechetLocal(null)}
-              className="p-1 hover:bg-muted rounded-lg transition-colors"
+              className="p-0.5 md:p-1 hover:bg-muted rounded-lg transition-colors"
             >
-              <ChevronLeft className="h-5 w-5 rtl-flip" />
+              <ChevronLeft className="h-4 w-4 md:h-5 md:w-5 rtl-flip" />
             </button>
-            <h3 className="font-bold text-base md:text-lg">מסכת {selectedMasechetLocal.hebrewName}</h3>
-            <span className="text-xs md:text-sm text-muted-foreground">({selectedMasechetLocal.maxDaf - 1} דפים)</span>
+            <h3 className="font-bold text-sm md:text-lg">מסכת {selectedMasechetLocal.hebrewName}</h3>
+            <span className="text-[10px] md:text-sm text-muted-foreground">({selectedMasechetLocal.maxDaf - 1} דפים)</span>
           </div>
           
-          {/* Dafim grid with golden buttons */}
-          <div className="flex flex-wrap gap-1.5 md:gap-2 p-2 md:p-3 rounded-lg bg-secondary/30">
+          {/* Dafim grid with golden buttons - smaller on mobile */}
+          <div className="flex flex-wrap gap-1 md:gap-2 p-1.5 md:p-3 rounded-lg bg-secondary/30">
             {displayedDafim.map((daf) => (
               <button
                 key={daf}
                 onClick={() => handleDafClick(selectedMasechetLocal, daf, 'a')}
                 className={cn(
-                  "px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm rounded-lg transition-all",
-                  "min-w-[40px] md:min-w-[52px] font-medium",
+                  "px-1.5 py-1 md:px-3 md:py-2 text-[10px] md:text-sm rounded-md md:rounded-lg transition-all",
+                  "min-w-[32px] md:min-w-[52px] font-medium",
                   "bg-accent text-accent-foreground",
                   "hover:brightness-110 hover:shadow-md",
                   "active:scale-95"
@@ -192,9 +192,9 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
           {!isExpanded && remainingCount > 0 && (
             <button
               onClick={() => setIsExpanded(true)}
-              className="flex items-center gap-1 mt-3 md:mt-4 mx-auto text-xs md:text-sm text-accent hover:text-accent/80 transition-colors"
+              className="flex items-center gap-1 mt-2 md:mt-4 mx-auto text-[10px] md:text-sm text-accent hover:text-accent/80 transition-colors"
             >
-              <ChevronDown className="h-4 w-4" />
+              <ChevronDown className="h-3 w-3 md:h-4 md:w-4" />
               <span>הרחב ({remainingCount} נוספים)</span>
             </button>
           )}
@@ -202,9 +202,9 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
           {isExpanded && (
             <button
               onClick={() => setIsExpanded(false)}
-              className="flex items-center gap-1 mt-3 md:mt-4 mx-auto text-xs md:text-sm text-muted-foreground hover:text-foreground transition-colors"
+              className="flex items-center gap-1 mt-2 md:mt-4 mx-auto text-[10px] md:text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              <ChevronDown className="h-4 w-4 rotate-180" />
+              <ChevronDown className="h-3 w-3 md:h-4 md:w-4 rotate-180" />
               <span>צמצם</span>
             </button>
           )}
@@ -213,26 +213,26 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
 
       {/* Psak Din Examples Section */}
       {psakDinExamples.length > 0 && !selectedMasechetLocal && (
-        <div className="bg-card rounded-xl border border-border p-3 md:p-4">
-          <div className="flex items-center gap-2 mb-3 md:mb-4">
-            <Scale className="h-4 w-4 md:h-5 md:w-5 text-accent" />
-            <h3 className="font-bold text-base md:text-lg">דוגמאות פסקי דין</h3>
+        <div className="bg-card rounded-lg md:rounded-xl border border-border p-2 md:p-4">
+          <div className="flex items-center gap-1.5 md:gap-2 mb-2 md:mb-4">
+            <Scale className="h-3.5 w-3.5 md:h-5 md:w-5 text-accent" />
+            <h3 className="font-bold text-sm md:text-lg">דוגמאות פסקי דין</h3>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-1.5 md:gap-3">
             {psakDinExamples.map((psak) => (
               <button
                 key={psak.id}
                 onClick={() => handlePsakDinClick(psak.id)}
                 className={cn(
-                  "p-2.5 md:p-3 rounded-lg border text-right transition-all",
+                  "p-1.5 md:p-3 rounded-md md:rounded-lg border text-right transition-all",
                   "bg-secondary/30 border-border hover:border-accent hover:shadow-sm",
                   "hover:bg-accent/10"
                 )}
               >
-                <h4 className="font-medium text-xs md:text-sm line-clamp-2 mb-1">{psak.title}</h4>
-                <div className="flex items-center gap-2 text-[10px] md:text-xs text-muted-foreground">
-                  <span>{psak.court}</span>
+                <h4 className="font-medium text-[10px] md:text-sm line-clamp-2 mb-0.5 md:mb-1">{psak.title}</h4>
+                <div className="flex items-center gap-1 md:gap-2 text-[8px] md:text-xs text-muted-foreground">
+                  <span className="truncate max-w-[60px] md:max-w-none">{psak.court}</span>
                   <span>•</span>
                   <span>{psak.year}</span>
                 </div>
@@ -242,10 +242,10 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
           
           <button
             onClick={() => setActiveTab("psak-din")}
-            className="flex items-center gap-1 mt-3 md:mt-4 mx-auto text-xs md:text-sm text-accent hover:text-accent/80 transition-colors"
+            className="flex items-center gap-1 mt-2 md:mt-4 mx-auto text-[10px] md:text-sm text-accent hover:text-accent/80 transition-colors"
           >
             <span>צפה בכל פסקי הדין</span>
-            <ChevronLeft className="h-4 w-4 rtl-flip" />
+            <ChevronLeft className="h-3 w-3 md:h-4 md:w-4 rtl-flip" />
           </button>
         </div>
       )}
