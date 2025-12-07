@@ -114,71 +114,66 @@ const DafAmudNavigator = ({
 
   return (
     <div className={`bg-card border border-border rounded-xl shadow-sm ${className}`} dir="rtl">
-      <div className="flex items-center justify-between px-4 py-3">
-        {/* Right side - Amud navigation */}
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={goToPrevAmud}
-            disabled={!canGoPrevAmud}
-            className="h-8 w-8 text-muted-foreground hover:text-foreground"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-          
-          <div className="flex items-center gap-2 px-2">
-            <span className="w-2 h-2 rounded-full bg-primary" />
-            <span className="font-bold text-foreground min-w-[60px] text-center">
-              עמוד {amudLabel}
-            </span>
-            <span className="w-2 h-2 rounded-full bg-primary" />
-          </div>
-          
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={goToNextAmud}
-            disabled={!canGoNextAmud}
-            className="h-8 w-8 text-muted-foreground hover:text-foreground"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-        </div>
+      {/* Masechet name - separate row */}
+      <div className="text-center py-3 border-b border-border">
+        <span className="text-xl md:text-2xl font-bold text-primary">
+          {masechetData.hebrewName}
+        </span>
+      </div>
 
-        {/* Center - Current location */}
-        <div className="text-center px-4">
-          <span className="text-lg font-bold text-primary">
-            {masechetData.hebrewName} דף {hebrewDaf} עמוד {amudLabel}
-          </span>
-        </div>
-
-        {/* Left side - Daf navigation */}
+      {/* Navigation row - responsive */}
+      <div className="flex items-center justify-center gap-2 md:gap-4 px-2 md:px-4 py-3 flex-wrap">
+        {/* Daf navigation */}
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="icon"
             onClick={goToPrevDaf}
             disabled={!canGoPrevDaf}
-            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+            className="h-7 w-7 md:h-8 md:w-8 text-muted-foreground hover:text-foreground"
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
           
-          <div className="flex items-center gap-2 px-2">
-            <span className="w-2 h-2 rounded-full bg-accent" />
-            <span className="font-bold text-foreground min-w-[50px] text-center">
-              דף {hebrewDaf}
-            </span>
-            <span className="w-2 h-2 rounded-full bg-accent" />
-          </div>
+          <span className="font-bold text-foreground text-sm md:text-base px-2">
+            דף {hebrewDaf}
+          </span>
           
           <Button
             variant="ghost"
             size="icon"
             onClick={goToNextDaf}
             disabled={!canGoNextDaf}
-            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+            className="h-7 w-7 md:h-8 md:w-8 text-muted-foreground hover:text-foreground"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <span className="text-muted-foreground">|</span>
+
+        {/* Amud navigation */}
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={goToPrevAmud}
+            disabled={!canGoPrevAmud}
+            className="h-7 w-7 md:h-8 md:w-8 text-muted-foreground hover:text-foreground"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+          
+          <span className="font-bold text-foreground text-sm md:text-base px-2">
+            עמוד {amudLabel}
+          </span>
+          
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={goToNextAmud}
+            disabled={!canGoNextAmud}
+            className="h-7 w-7 md:h-8 md:w-8 text-muted-foreground hover:text-foreground"
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>

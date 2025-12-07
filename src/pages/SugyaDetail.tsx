@@ -4,8 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, BookOpen, Scale, ExternalLink } from "lucide-react";
-import DafSelector from "@/components/DafSelector";
-import DafQuickNav from "@/components/DafQuickNav";
 import DafAmudNavigator from "@/components/DafAmudNavigator";
 import FAQSection from "@/components/FAQSection";
 import PsakDinSearchButton from "@/components/PsakDinSearchButton";
@@ -453,40 +451,30 @@ const SugyaDetail = () => {
         {/* Daf/Amud Navigator - Main navigation bar */}
         <DafAmudNavigator className="mb-6" />
 
-        <div className="flex items-center justify-between mb-8 gap-4 flex-wrap">
+        <div className="flex items-center mb-6">
           <Button 
             variant="ghost" 
+            size="sm"
             onClick={() => navigate("/")}
-            className="gap-2"
+            className="gap-1 text-muted-foreground hover:text-foreground"
           >
-            חזרה לרשימת הסוגיות
             <ArrowRight className="w-4 h-4 rotate-180" />
+            חזרה
           </Button>
-          <div className="flex gap-3 flex-wrap">
-            <DafQuickNav />
-            <DafSelector />
-          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-3 space-y-8">
-          {/* Header */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-primary to-secondary">
-                <BookOpen className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <span className="text-lg font-medium text-muted-foreground">{sugya.dafYomi}</span>
-            </div>
+          {/* Header - cleaned up, no duplicates */}
+          <div className="space-y-3">
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">{sugya.title}</h1>
             
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground">{sugya.title}</h1>
-            
-            <p className="text-xl text-muted-foreground">{sugya.summary}</p>
+            <p className="text-base md:text-lg text-muted-foreground">{sugya.summary}</p>
             
             <div className="flex flex-wrap gap-2">
               {sugya.tags.map((tag: string, index: number) => (
-                <Badge key={index} variant="secondary" className="text-sm">
+                <Badge key={index} variant="secondary" className="text-xs md:text-sm">
                   {tag}
                 </Badge>
               ))}
