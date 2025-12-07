@@ -59,20 +59,20 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
         </div>
       </div>
 
-      {/* Mobile tabs */}
-      <nav className="md:hidden flex items-center gap-1 px-4 pb-3 overflow-x-auto scrollbar-hide">
+      {/* Mobile tabs - no horizontal scroll, wrap to fit */}
+      <nav className="md:hidden flex flex-wrap items-center justify-center gap-1 px-2 pb-3">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
             className={cn(
-              "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all",
+              "flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-medium transition-all",
               activeTab === tab.id
                 ? "bg-accent text-accent-foreground"
                 : "bg-primary-foreground/10 text-primary-foreground/80"
             )}
           >
-            <tab.icon className="h-3.5 w-3.5" />
+            <tab.icon className="h-3 w-3" />
             <span>{tab.label}</span>
           </button>
         ))}
