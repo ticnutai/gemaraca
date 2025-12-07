@@ -10,7 +10,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarRail,
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
@@ -57,18 +56,13 @@ const AppSidebar = ({
   activeTab, 
   onTabChange, 
   onMasechetSelect,
-  isPinned: isPinnedProp,
-  onPinToggle: onPinToggleProp 
+  isPinned = true,
+  onPinToggle 
 }: AppSidebarProps) => {
   const { setOpen, open: sidebarOpen } = useSidebar();
-  const [isPinnedLocal, setIsPinnedLocal] = useState(true);
   const [expandedSedarim, setExpandedSedarim] = useState<Set<string>>(new Set());
   const [isHovered, setIsHovered] = useState(false);
-  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Use prop or local state
-  const isPinned = isPinnedProp !== undefined ? isPinnedProp : isPinnedLocal;
 
   // Handle hover zone for opening sidebar when unpinned
   useEffect(() => {
@@ -118,7 +112,6 @@ const AppSidebar = ({
   // Cleanup timeouts
   useEffect(() => {
     return () => {
-      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
       if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
     };
   }, []);
@@ -134,10 +127,8 @@ const AppSidebar = ({
   };
 
   const handlePinToggle = () => {
-    if (onPinToggleProp) {
-      onPinToggleProp();
-    } else {
-      setIsPinnedLocal(!isPinnedLocal);
+    if (onPinToggle) {
+      onPinToggle();
     }
     if (!isPinned) {
       setOpen(true);
@@ -150,13 +141,20 @@ const AppSidebar = ({
     masechtot: MASECHTOT.filter(m => m.seder === seder)
   }));
 
+  // When unpinned and not hovered, don't render the sidebar content
+  if (!isPinned && !sidebarOpen && !isHovered) {
+    return null;
+  }
+
   return (
     <Sidebar 
       side="right" 
       className={cn(
-        "border-l border-border/50 transition-all duration-300",
-        !isPinned && !sidebarOpen && "translate-x-full opacity-0 pointer-events-none",
-        !isPinned && sidebarOpen && "fixed right-0 top-0 h-full z-50 shadow-2xl"
+        "border-l border-border/50 transition-all duration-300 bg-sidebar",
+        isPinned 
+          ? "fixed right-0 top-0 h-full z-40" 
+          : "fixed right-0 top-0 h-full z-50 shadow-2xl",
+        !isPinned && !sidebarOpen && "translate-x-full opacity-0 pointer-events-none"
       )}
       collapsible="none"
       variant={isPinned ? "sidebar" : "floating"}
@@ -229,6 +227,7 @@ const AppSidebar = ({
                 <div key={group.seder} className="rounded-lg overflow-hidden">
                   {/* כותרת סדר */}
                   <button
+                    type="button"
                     onClick={() => toggleSeder(group.seder)}
                     className={cn(
                       "w-full flex items-center justify-between px-3 py-2 text-sm font-medium transition-all",
@@ -265,7 +264,7 @@ const AppSidebar = ({
                           }}
                           className={cn(
                             "w-full flex items-center justify-between px-4 py-2 text-sm transition-all",
-                            "hover:bg-accent/10 text-foreground",
+                            "hover:bg-accent/10 text-foreground cursor-pointer",
                             index !== group.masechtot.length - 1 && "border-b border-border/20"
                           )}
                         >
@@ -289,8 +288,6 @@ const AppSidebar = ({
           גמרא להלכה © 2024
         </div>
       </SidebarFooter>
-
-      <SidebarRail />
     </Sidebar>
   );
 };
