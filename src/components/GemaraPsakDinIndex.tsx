@@ -122,67 +122,166 @@ const GemaraPsakDinIndex = () => {
 
   const loadIndexData = async () => {
     try {
-      const { data: links, error } = await supabase
-        .from('sugya_psak_links')
-        .select(`
-          id,
-          psak_din_id,
-          sugya_id,
-          connection_explanation,
-          relevance_score,
-          psakei_din (
+      // Load from both tables: sugya_psak_links (AI-based) and pattern_sugya_links (pattern-based)
+      const [sugyaLinksResult, patternLinksResult] = await Promise.all([
+        supabase
+          .from('sugya_psak_links')
+          .select(`
             id,
-            title,
-            court,
-            year,
-            summary,
-            tags,
-            source_url
-          )
-        `);
+            psak_din_id,
+            sugya_id,
+            connection_explanation,
+            relevance_score,
+            psakei_din (
+              id,
+              title,
+              court,
+              year,
+              summary,
+              tags,
+              source_url
+            )
+          `),
+        supabase
+          .from('pattern_sugya_links')
+          .select(`
+            id,
+            psak_din_id,
+            sugya_id,
+            masechet,
+            daf,
+            amud,
+            source_text,
+            confidence,
+            psakei_din:psak_din_id (
+              id,
+              title,
+              court,
+              year,
+              summary,
+              tags,
+              source_url
+            )
+          `)
+      ]);
 
-      if (error) throw error;
+      if (sugyaLinksResult.error) throw sugyaLinksResult.error;
+      if (patternLinksResult.error) throw patternLinksResult.error;
 
-      setAllLinks(links || []);
+      const sugyaLinks = sugyaLinksResult.data || [];
+      const patternLinks = patternLinksResult.data || [];
       
-      console.log('Total links received:', links?.length || 0);
+      console.log('sugya_psak_links count:', sugyaLinks.length);
+      console.log('pattern_sugya_links count:', patternLinks.length);
+
+      // Combine both sources, converting pattern_sugya_links format to PsakLink format
+      const combinedLinks: PsakLink[] = [];
+      const seenIds = new Set<string>();
+
+      // Add sugya_psak_links first
+      sugyaLinks.forEach((link: any) => {
+        if (link.psakei_din && !seenIds.has(link.id)) {
+          seenIds.add(link.id);
+          combinedLinks.push(link);
+        }
+      });
+
+      // Add pattern_sugya_links, converting format
+      patternLinks.forEach((link: any) => {
+        const uniqueKey = `pattern_${link.id}`;
+        if (link.psakei_din && !seenIds.has(uniqueKey)) {
+          seenIds.add(uniqueKey);
+          combinedLinks.push({
+            id: link.id,
+            psak_din_id: link.psak_din_id,
+            sugya_id: link.sugya_id,
+            connection_explanation: link.source_text || '',
+            relevance_score: link.confidence === 'high' ? 8 : link.confidence === 'medium' ? 6 : 4,
+            psakei_din: link.psakei_din
+          });
+        }
+      });
+
+      setAllLinks(combinedLinks);
+      
+      console.log('Total combined links:', combinedLinks.length);
 
       // בניית אינדקס ישירות מהמסכתות
       const index: IndexEntry[] = [];
       
       for (const masechet of MASECHTOT) {
         const sefariaName = masechet.sefariaName;
+        const hebrewName = masechet.hebrewName;
         
-        // חיפוש כל הקישורים שמתחילים בשם המסכת
-        const masechetLinks = (links || []).filter((link: any) => {
+        // חיפוש כל הקישורים - כולל מ-pattern_sugya_links שמשתמש בשמות עבריים
+        const masechetLinks = combinedLinks.filter((link: any) => {
           const sugyaId = link.sugya_id || '';
-          // מחפש רק פורמט של מסכת_מספר (לא null, undefined, או תווים מיוחדים)
-          if (!sugyaId.startsWith(sefariaName + '_')) return false;
-          const afterMasechet = sugyaId.slice(sefariaName.length + 1);
-          // וידוא שמתחיל במספר ולא ב-null/undefined
-          return /^\d+/.test(afterMasechet);
+          
+          // Check Sefaria format (sefariaName_number)
+          if (sugyaId.toLowerCase().startsWith(sefariaName.toLowerCase() + '_')) {
+            const afterMasechet = sugyaId.slice(sefariaName.length + 1);
+            return /^\d+/.test(afterMasechet);
+          }
+          
+          // Check Hebrew format (from pattern links)
+          if (sugyaId.includes(hebrewName.toLowerCase().replace(/ /g, '_'))) {
+            return true;
+          }
+          
+          return false;
+        });
+        
+        // Also search by pattern_sugya_links that use Hebrew masechet names
+        const patternMasechetLinks = patternLinks.filter((link: any) => 
+          link.masechet === hebrewName
+        );
+        
+        // Add pattern links that weren't caught by sugya_id matching
+        patternMasechetLinks.forEach((link: any) => {
+          const exists = masechetLinks.some(ml => ml.id === link.id);
+          if (!exists && link.psakei_din) {
+            masechetLinks.push({
+              id: link.id,
+              psak_din_id: link.psak_din_id,
+              sugya_id: link.sugya_id,
+              connection_explanation: link.source_text || '',
+              relevance_score: link.confidence === 'high' ? 8 : link.confidence === 'medium' ? 6 : 4,
+              psakei_din: link.psakei_din
+            });
+          }
         });
         
         if (masechetLinks.length === 0) continue;
         
-        console.log(`Found ${masechetLinks.length} links for ${sefariaName}`);
+        console.log(`Found ${masechetLinks.length} links for ${sefariaName} (${hebrewName})`);
         
         // קיבוץ לפי דף
         const dafMap = new Map<number, { sugya_id: string; count: number }>();
         
         masechetLinks.forEach((link: any) => {
+          let dafNumber: number | null = null;
           const sugyaId = link.sugya_id || '';
+          
+          // Try to extract daf from sugya_id (Sefaria format)
           const afterMasechet = sugyaId.slice(sefariaName.length + 1);
           const dafMatch = afterMasechet.match(/^(\d+)/);
-          
           if (dafMatch) {
-            const dafNumber = parseInt(dafMatch[1]);
-            if (dafNumber >= 2 && dafNumber <= masechet.maxDaf) {
-              if (!dafMap.has(dafNumber)) {
-                dafMap.set(dafNumber, { sugya_id: sugyaId, count: 0 });
-              }
-              dafMap.get(dafNumber)!.count++;
+            dafNumber = parseInt(dafMatch[1]);
+          }
+          
+          // If not found, try from pattern_sugya_links daf field
+          if (!dafNumber) {
+            const patternLink = patternLinks.find(pl => pl.id === link.id);
+            if (patternLink?.daf) {
+              dafNumber = parseInt(patternLink.daf);
             }
+          }
+          
+          if (dafNumber && dafNumber >= 2 && dafNumber <= masechet.maxDaf) {
+            if (!dafMap.has(dafNumber)) {
+              dafMap.set(dafNumber, { sugya_id: sugyaId || `${sefariaName.toLowerCase()}_${dafNumber}a`, count: 0 });
+            }
+            dafMap.get(dafNumber)!.count++;
           }
         });
         
@@ -220,31 +319,81 @@ const GemaraPsakDinIndex = () => {
       const masechetObj = MASECHTOT.find(m => m.hebrewName === masechet);
       const sefariaName = masechetObj?.sefariaName || '';
       
-      // חיפוש כל הקישורים לדף זה (כולל כל וריאציות ה-amud)
-      const { data, error } = await supabase
-        .from('sugya_psak_links')
-        .select(`
-          id,
-          psak_din_id,
-          sugya_id,
-          connection_explanation,
-          relevance_score,
-          psakei_din (
+      // חיפוש בשתי הטבלאות במקביל
+      const [sugyaLinksResult, patternLinksResult] = await Promise.all([
+        supabase
+          .from('sugya_psak_links')
+          .select(`
             id,
-            title,
-            court,
-            year,
-            summary,
-            tags,
-            source_url
-          )
-        `)
-        .like('sugya_id', `${sefariaName}_${daf}%`);
+            psak_din_id,
+            sugya_id,
+            connection_explanation,
+            relevance_score,
+            psakei_din (
+              id,
+              title,
+              court,
+              year,
+              summary,
+              tags,
+              source_url
+            )
+          `)
+          .like('sugya_id', `${sefariaName}_${daf}%`),
+        supabase
+          .from('pattern_sugya_links')
+          .select(`
+            id,
+            psak_din_id,
+            sugya_id,
+            source_text,
+            confidence,
+            psakei_din:psak_din_id (
+              id,
+              title,
+              court,
+              year,
+              summary,
+              tags,
+              source_url
+            )
+          `)
+          .eq('masechet', masechet)
+          .eq('daf', daf.toString())
+      ]);
 
-      if (error) throw error;
+      if (sugyaLinksResult.error) throw sugyaLinksResult.error;
+      if (patternLinksResult.error) throw patternLinksResult.error;
+
+      // Combine and deduplicate
+      const combined: PsakLink[] = [];
+      const seenPsakIds = new Set<string>();
+
+      // Add sugya_psak_links
+      (sugyaLinksResult.data || []).forEach((link: any) => {
+        if (link.psakei_din && !seenPsakIds.has(link.psak_din_id)) {
+          seenPsakIds.add(link.psak_din_id);
+          combined.push(link);
+        }
+      });
+
+      // Add pattern_sugya_links, converting format
+      (patternLinksResult.data || []).forEach((link: any) => {
+        if (link.psakei_din && !seenPsakIds.has(link.psak_din_id)) {
+          seenPsakIds.add(link.psak_din_id);
+          combined.push({
+            id: link.id,
+            psak_din_id: link.psak_din_id,
+            sugya_id: link.sugya_id,
+            connection_explanation: link.source_text || `מקור: ${masechet} דף ${daf}`,
+            relevance_score: link.confidence === 'high' ? 8 : link.confidence === 'medium' ? 6 : 4,
+            psakei_din: link.psakei_din
+          });
+        }
+      });
 
       // סינון לפי תגית אם נבחרה
-      let filteredData = data || [];
+      let filteredData = combined;
       if (selectedTag !== "all") {
         filteredData = filteredData.filter((link: any) => 
           link.psakei_din?.tags?.includes(selectedTag)

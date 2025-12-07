@@ -48,7 +48,8 @@ const LinkedPsakimSection = ({ sugyaId, masechet, dafNumber }: LinkedPsakimSecti
   const loadLinkedPsakim = async () => {
     setLoading(true);
     try {
-      // Get pattern-based links
+      // pattern_sugya_links stores masechet in Hebrew, so search by Hebrew name
+      // Also try with the provided masechet value in case it's already Hebrew
       const { data: patternLinks } = await supabase
         .from('pattern_sugya_links')
         .select(`
@@ -58,6 +59,19 @@ const LinkedPsakimSection = ({ sugyaId, masechet, dafNumber }: LinkedPsakimSecti
         `)
         .eq('masechet', masechet)
         .eq('daf', dafNumber.toString());
+
+      // Also check by sugya_id pattern which includes the daf
+      const sugyaPatternA = sugyaId.endsWith('a') ? sugyaId : `${sugyaId.replace(/[ab]$/, '')}a`;
+      const sugyaPatternB = sugyaId.endsWith('b') ? sugyaId : `${sugyaId.replace(/[ab]$/, '')}b`;
+      
+      const { data: patternLinksBySugya } = await supabase
+        .from('pattern_sugya_links')
+        .select(`
+          source_text,
+          confidence,
+          psakei_din:psak_din_id (id, title, summary, court, year)
+        `)
+        .or(`sugya_id.eq.${sugyaPatternA},sugya_id.eq.${sugyaPatternB}`);
 
       // Get AI-based links (sugya_psak_links)
       const { data: aiLinks } = await supabase
@@ -73,7 +87,20 @@ const LinkedPsakimSection = ({ sugyaId, masechet, dafNumber }: LinkedPsakimSecti
       const combined: LinkedPsak[] = [];
       const seenIds = new Set<string>();
 
+      // Add pattern links by masechet/daf
       patternLinks?.forEach((link: any) => {
+        if (link.psakei_din && !seenIds.has(link.psakei_din.id)) {
+          seenIds.add(link.psakei_din.id);
+          combined.push({
+            ...link.psakei_din,
+            source_text: link.source_text,
+            confidence: link.confidence
+          });
+        }
+      });
+
+      // Add pattern links by sugya_id
+      patternLinksBySugya?.forEach((link: any) => {
         if (link.psakei_din && !seenIds.has(link.psakei_din.id)) {
           seenIds.add(link.psakei_din.id);
           combined.push({
