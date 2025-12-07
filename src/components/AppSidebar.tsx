@@ -255,7 +255,12 @@ const AppSidebar = ({
                       {group.masechtot.map((masechet, index) => (
                         <button
                           key={masechet.englishName}
-                          onClick={() => {
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            console.log('[AppSidebar] Masechet clicked:', masechet.hebrewName);
+                            console.log('[AppSidebar] onMasechetSelect exists:', !!onMasechetSelect);
                             if (onMasechetSelect) {
                               onMasechetSelect(masechet.hebrewName);
                             } else {

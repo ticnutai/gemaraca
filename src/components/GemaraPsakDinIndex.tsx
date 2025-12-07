@@ -259,8 +259,14 @@ const GemaraPsakDinIndex = () => {
   };
 
   const handlePsakClick = (psak: any) => {
+    console.log('[GemaraPsakDinIndex] handlePsakClick called with:', psak);
+    if (!psak) {
+      console.log('[GemaraPsakDinIndex] No psak data provided!');
+      return;
+    }
     setDialogPsak(psak);
     setDialogOpen(true);
+    console.log('[GemaraPsakDinIndex] Dialog should open now, dialogOpen set to true');
   };
 
   const handleTagClick = (tag: string) => {
@@ -605,7 +611,12 @@ return (
                       <Card 
                         key={link.id} 
                         className="p-4 cursor-pointer hover:bg-accent/50 transition-colors border-r-4 border-r-primary/50"
-                        onClick={() => handlePsakClick(link.psakei_din)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          console.log('[GemaraPsakDinIndex] Card clicked, link:', link);
+                          console.log('[GemaraPsakDinIndex] psakei_din:', link.psakei_din);
+                          handlePsakClick(link.psakei_din);
+                        }}
                       >
                         <div className="flex items-start justify-between gap-2">
                           <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0 mt-1" />
