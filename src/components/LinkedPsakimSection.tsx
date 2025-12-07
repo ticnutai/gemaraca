@@ -3,10 +3,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
-import { FileText, Brain, Loader2, ChevronDown, ChevronUp, ExternalLink, Sparkles } from "lucide-react";
+import { FileText, Brain, Loader2, ChevronDown, ChevronUp, ExternalLink, Sparkles, Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import PsakDinViewDialog from "./PsakDinViewDialog";
+import PsakDinEditDialog from "./PsakDinEditDialog";
+import PsakDinActions from "./PsakDinActions";
 
 interface LinkedPsakimSectionProps {
   sugyaId: string;
@@ -32,6 +35,10 @@ const LinkedPsakimSection = ({ sugyaId, masechet, dafNumber }: LinkedPsakimSecti
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
   const [selectedPsak, setSelectedPsak] = useState<any | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingPsak, setEditingPsak] = useState<any | null>(null);
+  const [isNewPsak, setIsNewPsak] = useState(false);
+  const [selectedForBulk, setSelectedForBulk] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   useEffect(() => {
@@ -137,6 +144,30 @@ const LinkedPsakimSection = ({ sugyaId, masechet, dafNumber }: LinkedPsakimSecti
     }
   };
 
+  const handleEditPsak = async (psakId: string) => {
+    const { data } = await supabase
+      .from('psakei_din')
+      .select('*')
+      .eq('id', psakId)
+      .maybeSingle();
+    
+    if (data) {
+      setEditingPsak(data);
+      setIsNewPsak(false);
+      setEditDialogOpen(true);
+    }
+  };
+
+  const handleAddNew = () => {
+    setEditingPsak(null);
+    setIsNewPsak(true);
+    setEditDialogOpen(true);
+  };
+
+  const handleSaved = () => {
+    loadLinkedPsakim();
+  };
+
   if (loading) {
     return (
       <Card className="border-accent/30">
@@ -165,26 +196,37 @@ const LinkedPsakimSection = ({ sugyaId, masechet, dafNumber }: LinkedPsakimSecti
                 {psakim.length}
               </Badge>
             </h3>
-            {psakim.length > 3 && (
+            <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setExpanded(!expanded)}
-                className="gap-1 flex-row-reverse"
+                onClick={handleAddNew}
+                className="gap-1 h-7 px-2"
               >
-                {expanded ? (
-                  <>
-                    הסתר
-                    <ChevronUp className="w-4 h-4" />
-                  </>
-                ) : (
-                  <>
-                    הצג הכל ({psakim.length})
-                    <ChevronDown className="w-4 h-4" />
-                  </>
-                )}
+                <Plus className="w-4 h-4" />
+                הוסף
               </Button>
-            )}
+              {psakim.length > 3 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setExpanded(!expanded)}
+                  className="gap-1 flex-row-reverse"
+                >
+                  {expanded ? (
+                    <>
+                      הסתר
+                      <ChevronUp className="w-4 h-4" />
+                    </>
+                  ) : (
+                    <>
+                      הצג הכל ({psakim.length})
+                      <ChevronDown className="w-4 h-4" />
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
           </div>
 
           <ScrollArea className={expanded ? "h-[300px]" : ""}>
@@ -196,8 +238,14 @@ const LinkedPsakimSection = ({ sugyaId, masechet, dafNumber }: LinkedPsakimSecti
                   onClick={() => handlePsakClick(psak.id)}
                 >
                   <div className="flex items-start gap-3 flex-row-reverse">
-                    {/* Right side: AI analyze button and badges */}
+                    {/* Right side: Actions */}
                     <div className="flex items-center gap-1 shrink-0">
+                      <PsakDinActions
+                        psakId={psak.id}
+                        onEdit={handleEditPsak}
+                        onDelete={handleSaved}
+                        compact
+                      />
                       {psak.confidence && (
                         <Badge 
                           variant={psak.confidence === 'high' ? 'default' : 'outline'}
@@ -256,6 +304,14 @@ const LinkedPsakimSection = ({ sugyaId, masechet, dafNumber }: LinkedPsakimSecti
         psak={selectedPsak}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
+      />
+
+      <PsakDinEditDialog
+        psak={editingPsak}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onSaved={handleSaved}
+        isNew={isNewPsak}
       />
     </>
   );

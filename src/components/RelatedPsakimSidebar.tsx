@@ -2,9 +2,12 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Scale, ExternalLink } from "lucide-react";
+import { Scale, ExternalLink, Plus } from "lucide-react";
 import PsakDinViewDialog from "./PsakDinViewDialog";
+import PsakDinEditDialog from "./PsakDinEditDialog";
+import PsakDinActions from "./PsakDinActions";
 
 interface RelatedPsakimSidebarProps {
   sugyaId: string;
@@ -31,6 +34,9 @@ const RelatedPsakimSidebar = ({ sugyaId }: RelatedPsakimSidebarProps) => {
   const [loading, setLoading] = useState(true);
   const [selectedPsak, setSelectedPsak] = useState<any | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingPsak, setEditingPsak] = useState<any | null>(null);
+  const [isNewPsak, setIsNewPsak] = useState(false);
 
   useEffect(() => {
     if (sugyaId) {
@@ -111,6 +117,30 @@ const RelatedPsakimSidebar = ({ sugyaId }: RelatedPsakimSidebarProps) => {
     setDialogOpen(true);
   };
 
+  const handleEditPsak = async (psakId: string) => {
+    const { data } = await supabase
+      .from('psakei_din')
+      .select('*')
+      .eq('id', psakId)
+      .maybeSingle();
+    
+    if (data) {
+      setEditingPsak(data);
+      setIsNewPsak(false);
+      setEditDialogOpen(true);
+    }
+  };
+
+  const handleAddNew = () => {
+    setEditingPsak(null);
+    setIsNewPsak(true);
+    setEditDialogOpen(true);
+  };
+
+  const handleSaved = () => {
+    loadRelatedPsakim();
+  };
+
   if (loading) {
     return (
       <Card className="border border-border">
@@ -143,10 +173,20 @@ const RelatedPsakimSidebar = ({ sugyaId }: RelatedPsakimSidebarProps) => {
     <>
       <Card className="border border-border" dir="rtl">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base flex items-center gap-2 flex-row-reverse justify-start">
-            <Scale className="w-4 h-4" />
-            פסקי דין קשורים ({psakim.length})
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2 flex-row-reverse justify-start">
+              <Scale className="w-4 h-4" />
+              פסקי דין קשורים ({psakim.length})
+            </CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleAddNew}
+              className="gap-1 h-7 px-2"
+            >
+              <Plus className="w-4 h-4" />
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           <ScrollArea className="h-[calc(100vh-300px)] max-h-[600px]">
@@ -166,7 +206,17 @@ const RelatedPsakimSidebar = ({ sugyaId }: RelatedPsakimSidebarProps) => {
                         {link.psakei_din?.court} • {link.psakei_din?.year}
                       </p>
                     </div>
-                    <ExternalLink className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <div className="flex items-center gap-1 shrink-0">
+                      {link.psakei_din?.id && (
+                        <PsakDinActions
+                          psakId={link.psakei_din.id}
+                          onEdit={handleEditPsak}
+                          onDelete={handleSaved}
+                          compact
+                        />
+                      )}
+                      <ExternalLink className="w-4 h-4 text-muted-foreground" />
+                    </div>
                   </div>
                   
                   <p className="text-xs text-foreground/70 mt-1 line-clamp-2 text-right">
@@ -193,6 +243,14 @@ const RelatedPsakimSidebar = ({ sugyaId }: RelatedPsakimSidebarProps) => {
         psak={selectedPsak}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
+      />
+
+      <PsakDinEditDialog
+        psak={editingPsak}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onSaved={handleSaved}
+        isNew={isNewPsak}
       />
     </>
   );
