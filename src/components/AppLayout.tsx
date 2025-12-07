@@ -37,7 +37,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   };
 
   const handlePinToggle = () => {
-    setIsPinned(!isPinned);
+    setIsPinned(!(isPinned ?? false));
   };
 
   return (
@@ -48,7 +48,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
           activeTab={activeTab} 
           onTabChange={handleTabChange}
           onMasechetSelect={handleMasechetSelect}
-          isPinned={isPinned}
+          isPinned={isPinned ?? true}
           onPinToggle={handlePinToggle}
         />
         
