@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
-import { BookOpen, ChevronLeft, ChevronDown, Scale } from "lucide-react";
+import { BookOpen, ChevronLeft, ChevronDown, Scale, Download, Loader2, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SEDARIM, getMasechtotBySeder, Masechet } from "@/lib/masechtotData";
-import { toDafFormat } from "@/lib/hebrewNumbers";
+import { toDafFormat, toHebrewNumeral } from "@/lib/hebrewNumbers";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "@/contexts/AppContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface SedarimNavigatorProps {
   className?: string;
@@ -20,31 +22,156 @@ interface PsakDinExample {
   summary: string;
 }
 
+interface LoadedPagesMap {
+  [masechetName: string]: number[];
+}
+
 const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { setSelectedMasechet, setActiveTab } = useAppContext();
   const [selectedSeder, setSelectedSeder] = useState<string | null>(null);
   const [selectedMasechetLocal, setSelectedMasechetLocal] = useState<Masechet | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [psakDinExamples, setPsakDinExamples] = useState<PsakDinExample[]>([]);
+  const [loadedPagesMap, setLoadedPagesMap] = useState<LoadedPagesMap>({});
+  const [downloading, setDownloading] = useState<string | null>(null);
+  const [downloadProgress, setDownloadProgress] = useState(0);
 
   const INITIAL_DAF_COUNT = 20;
 
-  // Load sample Psakei Din
+  // Load sample Psakei Din and loaded pages
   useEffect(() => {
-    const loadPsakDinExamples = async () => {
-      const { data } = await supabase
+    const loadData = async () => {
+      // Load Psakei Din examples
+      const { data: psakData } = await supabase
         .from('psakei_din')
         .select('id, title, court, year, summary')
         .order('created_at', { ascending: false })
         .limit(6);
       
-      if (data) {
-        setPsakDinExamples(data);
+      if (psakData) {
+        setPsakDinExamples(psakData);
+      }
+
+      // Load all gemara pages to check what's already loaded
+      const { data: pagesData } = await supabase
+        .from('gemara_pages')
+        .select('masechet, daf_number');
+      
+      if (pagesData) {
+        const map: LoadedPagesMap = {};
+        pagesData.forEach(page => {
+          if (!map[page.masechet]) {
+            map[page.masechet] = [];
+          }
+          map[page.masechet].push(page.daf_number);
+        });
+        setLoadedPagesMap(map);
       }
     };
-    loadPsakDinExamples();
+    loadData();
   }, []);
+
+  // Download masechet function
+  const handleDownloadMasechet = async (masechet: Masechet) => {
+    const loadedPages = loadedPagesMap[masechet.hebrewName] || [];
+    const allDafim = Array.from({ length: masechet.maxDaf - 1 }, (_, i) => i + 2);
+    const dafimToLoad = allDafim.filter(daf => !loadedPages.includes(daf));
+
+    if (dafimToLoad.length === 0) {
+      toast({
+        title: "כל הדפים כבר נטענו",
+        description: `מסכת ${masechet.hebrewName} טעונה במלואה`,
+      });
+      return;
+    }
+
+    setDownloading(masechet.hebrewName);
+    setDownloadProgress(0);
+
+    toast({
+      title: "מתחיל הורדה",
+      description: `מוריד ${dafimToLoad.length} דפים ממסכת ${masechet.hebrewName}`,
+    });
+
+    const BATCH_SIZE = 5;
+    const DELAY_BETWEEN_BATCHES = 1000;
+    let successCount = 0;
+    let failCount = 0;
+
+    for (let i = 0; i < dafimToLoad.length; i += BATCH_SIZE) {
+      if (downloading === null) break; // cancelled
+
+      const batch = dafimToLoad.slice(i, i + BATCH_SIZE);
+      
+      const results = await Promise.allSettled(
+        batch.map(async (dafNumber) => {
+          const hebrewNumber = toHebrewNumeral(dafNumber);
+          const sugya_id = `${masechet.sefariaName.toLowerCase()}_${dafNumber}a`;
+          const title = `${masechet.hebrewName} דף ${hebrewNumber}`;
+
+          const { error } = await supabase.functions.invoke('load-daf', {
+            body: { 
+              dafNumber, 
+              sugya_id, 
+              title,
+              masechet: masechet.hebrewName
+            }
+          });
+
+          if (error) throw error;
+          return dafNumber;
+        })
+      );
+
+      results.forEach(result => {
+        if (result.status === 'fulfilled') {
+          successCount++;
+        } else {
+          failCount++;
+        }
+      });
+
+      const totalProcessed = i + batch.length;
+      setDownloadProgress((totalProcessed / dafimToLoad.length) * 100);
+
+      if (i + BATCH_SIZE < dafimToLoad.length) {
+        await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_BATCHES));
+      }
+    }
+
+    // Refresh loaded pages
+    const { data: pagesData } = await supabase
+      .from('gemara_pages')
+      .select('masechet, daf_number');
+    
+    if (pagesData) {
+      const map: LoadedPagesMap = {};
+      pagesData.forEach(page => {
+        if (!map[page.masechet]) {
+          map[page.masechet] = [];
+        }
+        map[page.masechet].push(page.daf_number);
+      });
+      setLoadedPagesMap(map);
+    }
+
+    setDownloading(null);
+    setDownloadProgress(0);
+
+    toast({
+      title: "ההורדה הושלמה",
+      description: `נטענו ${successCount} דפים${failCount > 0 ? `, ${failCount} נכשלו` : ''}`,
+      variant: failCount > 0 ? "destructive" : "default",
+    });
+  };
+
+  const getLoadStatus = (masechet: Masechet) => {
+    const loaded = loadedPagesMap[masechet.hebrewName]?.length || 0;
+    const total = masechet.maxDaf - 1;
+    return { loaded, total, percent: Math.round((loaded / total) * 100) };
+  };
 
   const handleSederClick = (seder: string) => {
     if (selectedSeder === seder) {
@@ -135,23 +262,81 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
             <h3 className="font-bold text-sm md:text-lg">סדר {selectedSeder}</h3>
           </div>
           
-          <div className="flex flex-wrap gap-1 md:gap-2">
-            {getMasechtotBySeder(selectedSeder).map((masechet) => (
-              <Button
-                key={masechet.englishName}
-                variant={selectedMasechetLocal?.englishName === masechet.englishName ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleMasechetClick(masechet)}
-                className={cn(
-                  "transition-all text-[10px] md:text-sm h-6 md:h-9 px-1.5 md:px-3",
-                  selectedMasechetLocal?.englishName === masechet.englishName && "shadow-gold"
-                )}
-              >
-                {masechet.hebrewName}
-                <span className="text-[8px] md:text-xs opacity-70 mr-0.5 md:mr-1 hidden sm:inline">({masechet.maxDaf})</span>
-              </Button>
-            ))}
+          <div className="flex flex-wrap gap-1.5 md:gap-2">
+            {getMasechtotBySeder(selectedSeder).map((masechet) => {
+              const status = getLoadStatus(masechet);
+              const isDownloading = downloading === masechet.hebrewName;
+              
+              return (
+                <div key={masechet.englishName} className="flex items-center gap-0.5 md:gap-1">
+                  <Button
+                    variant={selectedMasechetLocal?.englishName === masechet.englishName ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleMasechetClick(masechet)}
+                    className={cn(
+                      "transition-all text-[10px] md:text-sm h-6 md:h-9 px-1.5 md:px-3",
+                      selectedMasechetLocal?.englishName === masechet.englishName && "shadow-gold",
+                      status.percent === 100 && "border-green-500/50"
+                    )}
+                  >
+                    {masechet.hebrewName}
+                    {status.loaded > 0 && (
+                      <span className={cn(
+                        "text-[8px] md:text-xs mr-0.5 md:mr-1",
+                        status.percent === 100 ? "text-green-500" : "opacity-70"
+                      )}>
+                        {status.percent === 100 ? (
+                          <Check className="h-3 w-3 inline" />
+                        ) : (
+                          `${status.loaded}/${status.total}`
+                        )}
+                      </span>
+                    )}
+                  </Button>
+                  
+                  {/* Download button */}
+                  {status.percent < 100 && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDownloadMasechet(masechet);
+                      }}
+                      disabled={isDownloading}
+                      className={cn(
+                        "p-1 md:p-1.5 rounded-md transition-all",
+                        "hover:bg-accent/20 text-accent hover:text-accent",
+                        isDownloading && "animate-pulse"
+                      )}
+                      title={`הורד מסכת ${masechet.hebrewName}`}
+                    >
+                      {isDownloading ? (
+                        <Loader2 className="h-3 w-3 md:h-4 md:w-4 animate-spin" />
+                      ) : (
+                        <Download className="h-3 w-3 md:h-4 md:w-4" />
+                      )}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
+          
+          {/* Download progress bar */}
+          {downloading && getMasechtotBySeder(selectedSeder).some(m => m.hebrewName === downloading) && (
+            <div className="mt-2 md:mt-3 space-y-1">
+              <div className="flex items-center justify-between text-[10px] md:text-xs text-muted-foreground">
+                <span>מוריד {downloading}...</span>
+                <button
+                  onClick={() => setDownloading(null)}
+                  className="p-0.5 hover:bg-destructive/20 rounded"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+              <Progress value={downloadProgress} className="h-1.5 md:h-2" />
+              <span className="text-[8px] md:text-xs text-muted-foreground">{Math.round(downloadProgress)}%</span>
+            </div>
+          )}
         </div>
       )}
 
