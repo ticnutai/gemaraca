@@ -169,7 +169,7 @@ const UploadPsakDinTab = () => {
     try {
       addDebug(`⏳ טוען ZIP לזכרון...`);
       const zip = await JSZip.loadAsync(zipFile);
-      const validExts = ['pdf', 'docx', 'doc', 'txt', 'rtf'];
+      const validExts = ['pdf', 'docx', 'doc', 'txt', 'rtf', 'html', 'htm'];
       
       const entries = Object.entries(zip.files).filter(([_, entry]) => !entry.dir);
       addDebug(`📁 נמצאו ${entries.length} קבצים בתוך ה-ZIP`);
@@ -225,7 +225,7 @@ const UploadPsakDinTab = () => {
     const selectedFiles = Array.from(e.target.files || []);
     addDebug(`📥 נבחרו ${selectedFiles.length} קבצים`);
     
-    const validExts = ['pdf', 'docx', 'doc', 'txt', 'rtf', 'zip'];
+    const validExts = ['pdf', 'docx', 'doc', 'txt', 'rtf', 'zip', 'html', 'htm'];
     
     const regularFiles: File[] = [];
     const zipFiles: File[] = [];
@@ -463,7 +463,7 @@ const UploadPsakDinTab = () => {
                 ref={fileInputRef}
                 type="file"
                 multiple
-                accept=".pdf,.docx,.doc,.txt,.rtf,.zip"
+                accept=".pdf,.docx,.doc,.txt,.rtf,.zip,.html,.htm"
                 onChange={handleFileSelect}
                 className="hidden"
               />
@@ -471,7 +471,7 @@ const UploadPsakDinTab = () => {
                 ref={folderInputRef}
                 type="file"
                 multiple
-                accept=".pdf,.docx,.doc,.txt,.rtf,.zip"
+                accept=".pdf,.docx,.doc,.txt,.rtf,.zip,.html,.htm"
                 onChange={handleFileSelect}
                 className="hidden"
                 {...{ webkitdirectory: "", directory: "" } as any}
