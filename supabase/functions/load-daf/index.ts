@@ -54,6 +54,33 @@ serve(async (req) => {
   }
 
   try {
+    // Verify JWT authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: "נדרשת התחברות למערכת" }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+    
+    const token = authHeader.replace('Bearer ', '');
+    const { data: userData, error: authError } = await authClient.auth.getUser(token);
+    
+    if (authError || !userData?.user) {
+      return new Response(
+        JSON.stringify({ error: "טוקן לא תקין" }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    console.log(`Authenticated user: ${userData.user.id}`);
+
     console.log('=== LOAD DAF REQUEST START ===');
     const body = await req.json();
     console.log('Request body:', JSON.stringify(body));
@@ -76,10 +103,10 @@ serve(async (req) => {
 
     console.log('Loading daf:', dafNumber, 'sugya_id:', sugya_id, 'title:', title, 'masechet:', masechetName);
 
-    // Create Supabase client
+    // Create Supabase client with service role for writes
     console.log('Creating Supabase client...');
     const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
+      supabaseUrl,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
     console.log('Supabase client created');
