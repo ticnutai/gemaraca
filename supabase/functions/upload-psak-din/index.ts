@@ -61,9 +61,39 @@ serve(async (req) => {
   
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    
+    // Verify JWT authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      console.log("No auth header provided");
+      return new Response(
+        JSON.stringify({ success: false, error: "נדרשת התחברות למערכת" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    // Verify the token
+    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+    
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await authClient.auth.getUser(token);
+    
+    if (claimsError || !claimsData?.user) {
+      console.log("Invalid token:", claimsError?.message);
+      return new Response(
+        JSON.stringify({ success: false, error: "טוקן לא תקין - יש להתחבר מחדש" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    console.log(`Authenticated user: ${claimsData.user.id}`);
+    
+    // Use service role for actual operations
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
     const formData = await req.formData();
     const files = formData.getAll("files") as File[];
     const metadata = formData.get("metadata") as string;

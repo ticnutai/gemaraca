@@ -1,10 +1,10 @@
 project_id = "jaotdqumpcfhcbkgtfib"
 
 [functions.search-psak-din]
-verify_jwt = true
+verify_jwt = false
 
 [functions.analyze-psak-din]
-verify_jwt = true
+verify_jwt = false
 
 [functions.get-gemara-text]
 verify_jwt = false
@@ -16,16 +16,16 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.load-daf]
-verify_jwt = true
+verify_jwt = false
 
 [functions.upload-psak-din]
-verify_jwt = true
+verify_jwt = false
 
 [functions.cleanup-duplicates]
-verify_jwt = true
+verify_jwt = false
 
 [functions.bulk-analyze]
-verify_jwt = true
+verify_jwt = false
 
 [functions.generate-modern-examples]
-verify_jwt = true
+verify_jwt = false
