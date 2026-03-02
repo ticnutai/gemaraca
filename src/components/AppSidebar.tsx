@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { BookOpen, Scale, Search, Upload, Pin, PinOff, ChevronDown, ChevronLeft } from "lucide-react";
+import { BookOpen, Scale, Search, Upload, Pin, PinOff, ChevronDown, ChevronLeft, ArrowDownToLine } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -49,6 +49,12 @@ const menuItems = [
     title: "העלאה",
     icon: Upload,
     description: "העלאת מסמכים",
+  },
+  {
+    id: "download",
+    title: "הורדה",
+    icon: ArrowDownToLine,
+    description: "הורדת פסקי דין",
   },
 ];
 
