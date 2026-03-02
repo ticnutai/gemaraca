@@ -10,6 +10,7 @@ import Auth from "./pages/Auth";
 import { ThemeProvider } from "./components/ThemeProvider";
 import { SettingsButton } from "./components/SettingsButton";
 import GlobalUploadProgress from "./components/GlobalUploadProgress";
+import GlobalDownloadProgress from "./components/GlobalDownloadProgress";
 import AppLayout from "./components/AppLayout";
 import { AppContextProvider } from "./contexts/AppContext";
 
@@ -42,6 +43,7 @@ const App = () => (
         </BrowserRouter>
         <SettingsButton />
         <GlobalUploadProgress />
+        <GlobalDownloadProgress />
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>

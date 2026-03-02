@@ -1,4 +1,4 @@
-import { Info, BookOpen, Scale, Search, Upload, Library, User, LogOut, LogIn } from "lucide-react";
+import { Info, BookOpen, Scale, Search, Upload, Library, User, LogOut, LogIn, ArrowDownToLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
@@ -23,6 +23,7 @@ const tabs = [
   { id: "smart-index", label: "אינדקס חכם", icon: Library },
   { id: "search", label: "חיפוש", icon: Search },
   { id: "upload", label: "העלאה", icon: Upload },
+  { id: "download", label: "הורדה", icon: ArrowDownToLine },
 ];
 
 const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
