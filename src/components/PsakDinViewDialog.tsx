@@ -99,7 +99,7 @@ interface PsakDinViewDialogProps {
 }
 
 const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDialogProps) => {
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(true);
   const [activeTab, setActiveTab] = useState("preview");
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);

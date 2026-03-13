@@ -20,8 +20,11 @@ import {
   Search, BookOpen, FileText, Sparkles, Brain, 
   Loader2, Library, Tag, BarChart3, Zap, Link2, 
   ExternalLink, Save, Database, RefreshCw, CheckCircle2,
-  ArrowUpDown, ArrowUp, ArrowDown, Calendar, Filter, SlidersHorizontal
+  ArrowUpDown, ArrowUp, ArrowDown, Calendar, Filter, SlidersHorizontal,
+  ScrollText, BookOpenCheck
 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -64,6 +67,7 @@ const SmartIndexTab = () => {
   const [selectedBook, setSelectedBook] = useState<string | null>(null);
   const [selectedPsak, setSelectedPsak] = useState<any | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [summaryDialog, setSummaryDialog] = useState<{ open: boolean; title: string; summary: string | null; loading: boolean }>({ open: false, title: '', summary: null, loading: false });
   
   // Sorting state
   const [sortBy, setSortBy] = useState<'daf-asc' | 'daf-desc' | 'date-asc' | 'date-desc' | 'links-asc' | 'links-desc' | 'confidence' | 'none'>('none');
@@ -434,6 +438,52 @@ const SmartIndexTab = () => {
     }
   };
 
+  // Extract case summary from psak full text
+  const extractCaseSummary = (text: string): string | null => {
+    // Try to find a case summary section
+    const patterns = [
+      /(?:תקציר(?:\s+ה?מקרה)?|רקע\s+עובדתי|העובדות|תמצית\s+ה?עובדות|נושא\s+ה?תביעה|עניינו\s+של\s+פסק|תיאור\s+ה?מקרה|רקע\s+כללי|ה?סוגיה\s+שלפנינו|תקציר)\s*[:.\-–—]?\s*([\s\S]{20,800}?)(?:\n\s*\n|\n(?:[א-ת]+\s*[:.\-])|$)/i,
+      /(?:^|\n)\s*(?:א\.|1\.)\s*([\s\S]{20,500}?)(?:\n\s*(?:ב\.|2\.))/,
+    ];
+
+    for (const pat of patterns) {
+      const match = text.match(pat);
+      if (match?.[1]) {
+        return match[1].trim().replace(/\s+/g, ' ');
+      }
+    }
+
+    // Fallback: first meaningful paragraph (skip header/metadata lines)
+    const lines = text.split('\n').filter(l => l.trim().length > 30);
+    if (lines.length > 0) {
+      const firstParagraph = lines.slice(0, 3).join(' ').trim();
+      if (firstParagraph.length > 50) {
+        return firstParagraph.slice(0, 500) + (firstParagraph.length > 500 ? '...' : '');
+      }
+    }
+
+    return null;
+  };
+
+  // Open case summary dialog
+  const handleShowSummary = async (id: string, title: string) => {
+    setSummaryDialog({ open: true, title, summary: null, loading: true });
+
+    const { data } = await supabase
+      .from('psakei_din')
+      .select('summary, full_text')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (data) {
+      const fullTextSummary = data.full_text ? extractCaseSummary(data.full_text) : null;
+      const displaySummary = fullTextSummary || data.summary || null;
+      setSummaryDialog(prev => ({ ...prev, summary: displaySummary, loading: false }));
+    } else {
+      setSummaryDialog(prev => ({ ...prev, summary: null, loading: false }));
+    }
+  };
+
   // Toggle selection for AI analysis
   const toggleAISelection = (id: string) => {
     setSelectedForAI(prev => {
@@ -569,6 +619,7 @@ const SmartIndexTab = () => {
   }
 
   return (
+    <TooltipProvider delayDuration={300}>
     <div className="container mx-auto px-4 py-8" dir="rtl">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
@@ -993,6 +1044,7 @@ const SmartIndexTab = () => {
                       <>
                         {pageItems.map(result => {
                       const gemaraSources = result.sources.filter(s => s.type === 'gemara' && s.sugyaId);
+                      const firstGemaraSource = gemaraSources[0];
                       return (
                         <Card 
                           key={result.id}
@@ -1008,12 +1060,19 @@ const SmartIndexTab = () => {
                                 onClick={(e) => e.stopPropagation()}
                               />
                               <div className="flex-1 text-right">
-                                <div 
-                                  className="font-medium line-clamp-1 cursor-pointer hover:text-primary"
-                                  onClick={() => handlePsakClick(result.id)}
-                                >
-                                  {result.title}
-                                </div>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div 
+                                      className="font-medium line-clamp-1 cursor-pointer hover:text-primary"
+                                      onClick={() => handlePsakClick(result.id)}
+                                    >
+                                      {result.title}
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" className="max-w-sm text-right">
+                                    <p>{result.title}</p>
+                                  </TooltipContent>
+                                </Tooltip>
                                 
                                 {/* Gemara Links */}
                                 <div className="flex flex-wrap gap-2 mt-2">
@@ -1039,7 +1098,7 @@ const SmartIndexTab = () => {
                                 )}
                               </div>
                               
-                              <div className="flex flex-col items-center gap-1">
+                              <div className="flex flex-col items-center gap-2">
                                 <Badge variant="default" className="text-xs">
                                   {gemaraSources.length} קישורים
                                 </Badge>
@@ -1050,6 +1109,46 @@ const SmartIndexTab = () => {
                                   {gemaraSources[0]?.confidence === 'high' ? 'גבוה' : 
                                    gemaraSources[0]?.confidence === 'medium' ? 'בינוני' : 'נמוך'}
                                 </Badge>
+                                <div className="flex items-center gap-1 mt-1">
+                                  {/* Case summary button */}
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleShowSummary(result.id, result.title);
+                                        }}
+                                      >
+                                        <ScrollText className="w-4 h-4 text-muted-foreground" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top">תקציר המקרה</TooltipContent>
+                                  </Tooltip>
+                                  {/* Navigate directly to first gemara source */}
+                                  {firstGemaraSource?.sugyaId && (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-7 w-7"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            navigateToGemara(firstGemaraSource);
+                                          }}
+                                        >
+                                          <BookOpenCheck className="w-4 h-4 text-primary" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top">
+                                        פתח גמרא - {firstGemaraSource.masechet} {firstGemaraSource.daf}
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </CardContent>
@@ -1087,7 +1186,9 @@ const SmartIndexTab = () => {
                         </AccordionTrigger>
                         <AccordionContent>
                           <div className="space-y-2 pt-2">
-                            {results.slice(0, 20).map(result => (
+                            {results.slice(0, 20).map(result => {
+                              const firstGemara = result.sources.find(s => s.type === 'gemara' && s.sugyaId);
+                              return (
                               <Card 
                                 key={result.id}
                                 className={`cursor-pointer hover:shadow-md transition-shadow ${
@@ -1104,7 +1205,14 @@ const SmartIndexTab = () => {
                                     className="flex-1 text-right"
                                     onClick={() => handlePsakClick(result.id)}
                                   >
-                                    <div className="font-medium text-sm line-clamp-1">{result.title}</div>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <div className="font-medium text-sm line-clamp-1">{result.title}</div>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top" className="max-w-sm text-right">
+                                        <p>{result.title}</p>
+                                      </TooltipContent>
+                                    </Tooltip>
                                     <div className="flex flex-wrap gap-1 mt-1">
                                       {result.sources
                                         .filter(s => s.type === 'gemara' && s.sugyaId)
@@ -1117,9 +1225,30 @@ const SmartIndexTab = () => {
                                       ))}
                                     </div>
                                   </div>
+                                  <div className="flex items-center gap-1">
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); handleShowSummary(result.id, result.title); }}>
+                                          <ScrollText className="w-3.5 h-3.5 text-muted-foreground" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top">תקציר המקרה</TooltipContent>
+                                    </Tooltip>
+                                    {firstGemara?.sugyaId && (
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); navigateToGemara(firstGemara); }}>
+                                            <BookOpenCheck className="w-3.5 h-3.5 text-primary" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top">פתח גמרא - {firstGemara.masechet} {firstGemara.daf}</TooltipContent>
+                                      </Tooltip>
+                                    )}
+                                  </div>
                                 </CardContent>
                               </Card>
-                            ))}
+                              );
+                            })}
                           </div>
                         </AccordionContent>
                       </AccordionItem>
@@ -1242,7 +1371,9 @@ const SmartIndexTab = () => {
                                     רשימת פסקי דין ({results.length})
                                   </p>
                                   <div className="space-y-2 max-h-60 overflow-y-auto">
-                                    {results.slice(0, 15).map(result => (
+                                    {results.slice(0, 15).map(result => {
+                                      const firstGemara = result.sources.find(s => s.type === 'gemara' && s.sugyaId);
+                                      return (
                                       <Card 
                                         key={result.id}
                                         className={`cursor-pointer hover:shadow-md transition-shadow ${
@@ -1259,7 +1390,14 @@ const SmartIndexTab = () => {
                                             className="flex-1 text-right"
                                             onClick={() => handlePsakClick(result.id)}
                                           >
-                                            <div className="font-medium text-sm line-clamp-1">{result.title}</div>
+                                            <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                <div className="font-medium text-sm line-clamp-1">{result.title}</div>
+                                              </TooltipTrigger>
+                                              <TooltipContent side="top" className="max-w-sm text-right">
+                                                <p>{result.title}</p>
+                                              </TooltipContent>
+                                            </Tooltip>
                                             <div className="flex flex-wrap gap-1 mt-1">
                                               {result.sources
                                                 .filter(s => s.type === 'gemara' && s.masechet === masechet && s.sugyaId)
@@ -1267,9 +1405,30 @@ const SmartIndexTab = () => {
                                                 .map((source, idx) => renderSourceBadge(source, idx))}
                                             </div>
                                           </div>
+                                          <div className="flex items-center gap-1">
+                                            <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); handleShowSummary(result.id, result.title); }}>
+                                                  <ScrollText className="w-3.5 h-3.5 text-muted-foreground" />
+                                                </Button>
+                                              </TooltipTrigger>
+                                              <TooltipContent side="top">תקציר המקרה</TooltipContent>
+                                            </Tooltip>
+                                            {firstGemara?.sugyaId && (
+                                              <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); navigateToGemara(firstGemara); }}>
+                                                    <BookOpenCheck className="w-3.5 h-3.5 text-primary" />
+                                                  </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent side="top">פתח גמרא - {firstGemara.masechet} {firstGemara.daf}</TooltipContent>
+                                              </Tooltip>
+                                            )}
+                                          </div>
                                         </CardContent>
                                       </Card>
-                                    ))}
+                                      );
+                                    })}
                                     {results.length > 15 && (
                                       <p className="text-xs text-muted-foreground text-center py-2">
                                         +{results.length - 15} נוספים
@@ -1396,8 +1555,34 @@ const SmartIndexTab = () => {
           open={dialogOpen}
           onOpenChange={setDialogOpen}
         />
+
+        {/* Case Summary Dialog */}
+        <Dialog open={summaryDialog.open} onOpenChange={(open) => setSummaryDialog(prev => ({ ...prev, open }))}>
+          <DialogContent className="max-w-lg bg-card" dir="rtl">
+            <DialogHeader>
+              <DialogTitle className="text-right text-lg">{summaryDialog.title}</DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="max-h-[60vh]">
+              {summaryDialog.loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : summaryDialog.summary ? (
+                <div className="text-right leading-relaxed whitespace-pre-wrap p-1">
+                  {summaryDialog.summary}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <ScrollText className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                  <p>לא נמצא תקציר מקרה לפסק דין זה</p>
+                </div>
+              )}
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
+    </TooltipProvider>
   );
 };
 
