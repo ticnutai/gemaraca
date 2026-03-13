@@ -28,6 +28,7 @@ const presetColors = [
 export function SettingsButton() {
   const { theme, setTheme, customColors, setCustomColors } = useTheme();
   const [showCustomizer, setShowCustomizer] = useState(false);
+  const [showDevPanel, setShowDevPanel] = useState(false);
   const [localColors, setLocalColors] = useState<CustomColors>(customColors);
 
   const handleColorChange = (key: keyof CustomColors, value: string) => {
