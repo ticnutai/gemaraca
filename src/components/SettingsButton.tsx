@@ -1,6 +1,8 @@
-import { useState } from "react";
-import { Settings, Check, Palette, ChevronRight, Pipette } from "lucide-react";
+import { useState, lazy, Suspense } from "react";
+import { Settings, Check, Palette, ChevronRight, Pipette, Code2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+const DevMigrationsPanel = lazy(() => import("@/components/DevMigrationsPanel"));
 import {
   Popover,
   PopoverContent,
