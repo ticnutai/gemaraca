@@ -6,6 +6,7 @@ interface CacheEntry<T> {
 }
 
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+const MAX_STORAGE_BYTES = 4 * 1024 * 1024; // 4MB per cache key
 const PAGE_CACHE_KEY = 'gemara_pages_cache';
 const TEXT_CACHE_KEY = 'gemara_text_cache';
 
@@ -65,10 +66,18 @@ function saveToStorage<T>(storageKey: string, key: string, data: T): void {
     // Limit cache size to prevent localStorage overflow
     const keys = Object.keys(cache);
     if (keys.length > 100) {
-      // Remove oldest entries
       const sorted = keys.sort((a, b) => cache[a].timestamp - cache[b].timestamp);
       for (let i = 0; i < 20; i++) {
         delete cache[sorted[i]];
+      }
+    }
+    
+    const serialized = JSON.stringify(cache);
+    // Enforce byte-size limit
+    if (serialized.length > MAX_STORAGE_BYTES) {
+      const sorted = Object.keys(cache).sort((a, b) => cache[a].timestamp - cache[b].timestamp);
+      while (JSON.stringify(cache).length > MAX_STORAGE_BYTES && sorted.length > 1) {
+        delete cache[sorted.shift()!];
       }
     }
     

@@ -138,7 +138,7 @@ const SearchPsakDinTab = () => {
                 placeholder="הזן נושא לחיפוש... (לדוגמה: שכנים, נזיקין, קניין)"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && !loading && handleSearch()}
+                onKeyDown={(e) => e.key === 'Enter' && !loading && handleSearch()}
                 className="flex-1 bg-card border-border"
                 disabled={loading}
               />

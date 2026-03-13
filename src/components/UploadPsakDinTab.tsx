@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -65,9 +65,9 @@ const UploadPsakDinTab = () => {
   
   // Clean up stale sessions on mount
   const { cleanupStaleSessions, addFileHash, hasFileHash, getFileByHash } = useUploadStore();
-  useState(() => {
+  useEffect(() => {
     cleanupStaleSessions();
-  });
+  }, []);
   
   // Derived state
   const activeSessions = getActiveSessions();

@@ -43,6 +43,7 @@ const FAQSection = ({ items, title = "שאלות ותשובות נפוצות" }:
             >
               <button
                 onClick={() => setExpandedId(isExpanded ? null : item.id)}
+                aria-expanded={isExpanded}
                 className="w-full p-6 text-right flex items-center justify-between gap-4 hover:bg-muted/50 transition-colors"
               >
                 <div className="flex-1">
@@ -52,9 +53,9 @@ const FAQSection = ({ items, title = "שאלות ותשובות נפוצות" }:
                 </div>
                 <div className="flex-shrink-0">
                   {isExpanded ? (
-                    <ChevronUp className="w-5 h-5 text-muted-foreground" />
+                    <ChevronUp className="w-5 h-5 text-muted-foreground" aria-hidden="true" />
                   ) : (
-                    <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                    <ChevronDown className="w-5 h-5 text-muted-foreground" aria-hidden="true" />
                   )}
                 </div>
               </button>

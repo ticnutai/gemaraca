@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Suspense } from "react";
 import Index from "./pages/Index";
 import SugyaDetail from "./pages/SugyaDetail";
 import NotFound from "./pages/NotFound";
@@ -13,10 +14,20 @@ import GlobalUploadProgress from "./components/GlobalUploadProgress";
 import GlobalDownloadProgress from "./components/GlobalDownloadProgress";
 import AppLayout from "./components/AppLayout";
 import { AppContextProvider } from "./contexts/AppContext";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      retry: 2,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
+  <ErrorBoundary>
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
       <TooltipProvider>
@@ -24,6 +35,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AppContextProvider>
+            <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
             <SettingsButton />
             <GlobalUploadProgress />
             <GlobalDownloadProgress />
@@ -33,11 +45,13 @@ const App = () => (
               <Route path="/sugya/:id" element={<AppLayout><SugyaDetail /></AppLayout>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </Suspense>
           </AppContextProvider>
         </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;

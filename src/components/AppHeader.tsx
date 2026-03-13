@@ -85,7 +85,7 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
-                  <LogOut className="h-4 w-4 ml-2" />
+                  <LogOut className="h-4 w-4 ms-2" />
                   התנתק
                 </DropdownMenuItem>
               </DropdownMenuContent>

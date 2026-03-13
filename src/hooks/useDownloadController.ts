@@ -275,9 +275,9 @@ export function useDownloadController() {
     abortRef.current = null;
     activeRef.current = false;
     pausedRef.current = false;
-    setSessionStatus(sessionId, 'error');
+    clearSession(sessionId);
     toast({ title: 'ההורדה בוטלה', variant: 'destructive' });
-  }, [setSessionStatus]);
+  }, [clearSession]);
 
   return {
     sessions,

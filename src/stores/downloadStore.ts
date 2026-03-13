@@ -80,7 +80,7 @@ export const useDownloadStore = create<DownloadStore>()(
                 items: session.items.map((item) =>
                   item.id === itemId ? { ...item, status: 'done' as const } : item
                 ),
-                completedIds: [...session.completedIds, itemId],
+                completedIds: session.completedIds.includes(itemId) ? session.completedIds : [...session.completedIds, itemId],
               },
             },
           };
@@ -135,12 +135,14 @@ export const useDownloadStore = create<DownloadStore>()(
     {
       name: 'download-store-v1',
       partialize: (state) => ({
+        // Only persist non-completed sessions to avoid unbounded growth
         sessions: Object.fromEntries(
-          Object.entries(state.sessions).map(([id, s]) => [
+          Object.entries(state.sessions)
+            .filter(([, s]) => s.status !== 'completed')
+            .map(([id, s]) => [
             id,
             {
               ...s,
-              // Don't persist blob URLs
               items: s.items.map((i) => ({ ...i, blobUrl: undefined })),
             },
           ])

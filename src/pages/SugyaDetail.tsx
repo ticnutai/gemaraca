@@ -75,11 +75,11 @@ const SugyaDetail = () => {
           title: data.title,
           dafYomi: data.daf_yomi,
           summary: `דף ${data.daf_yomi}`,
-          tags: ["גמרא", hebrewMasechetName],
+          tags: data.tags || ["גמרא", hebrewMasechetName],
           masechet: masechetName,
-          gemaraText: "",
-          fullText: "",
-          cases: []
+          gemaraText: data.gemara_text || "",
+          fullText: data.full_text || "",
+          cases: data.cases || []
         };
         
         // Save to cache
@@ -251,7 +251,7 @@ const SugyaDetail = () => {
                 <GemaraTextPanel sugyaId={id || ""} dafYomi={sugya.dafYomi} masechet={sugya.masechet} />
               </TabsContent>
               <TabsContent value="commentaries" className="mt-4">
-                <CommentariesPanel dafYomi={sugya.dafYomi} />
+                <CommentariesPanel dafYomi={sugya.dafYomi} masechet={sugya.masechet} />
               </TabsContent>
               <TabsContent value="lexicon" className="mt-4">
                 <LexiconSearch dafYomi={sugya.dafYomi} />

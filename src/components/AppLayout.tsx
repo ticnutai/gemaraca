@@ -50,7 +50,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
         {/* Main content - takes full width when sidebar is unpinned */}
         <div className={cn(
           "flex-1 flex flex-col min-h-screen overflow-x-hidden transition-all duration-300",
-          sidebarIsPinned ? "md:mr-[--sidebar-width]" : "w-full"
+          sidebarIsPinned ? "md:me-[--sidebar-width]" : "w-full"
         )}>
           <AppHeader 
             activeTab={activeTab} 

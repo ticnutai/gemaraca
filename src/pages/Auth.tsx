@@ -16,8 +16,11 @@ const passwordSchema = z.string().min(6, "סיסמה חייבת להכיל לפ�
 export default function Auth() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [activeTab, setActiveTab] = useState("signin");
+  const [signinEmail, setSigninEmail] = useState("");
+  const [signinPassword, setSigninPassword] = useState("");
+  const [signupEmail, setSignupEmail] = useState("");
+  const [signupPassword, setSignupPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
   useEffect(() => {
@@ -38,6 +41,8 @@ export default function Auth() {
   }, [navigate]);
 
   const validateInputs = (isSignup: boolean): boolean => {
+    const email = isSignup ? signupEmail : signinEmail;
+    const password = isSignup ? signupPassword : signinPassword;
     try {
       emailSchema.parse(email);
     } catch (e) {
@@ -72,8 +77,8 @@ export default function Auth() {
     const redirectUrl = `${window.location.origin}/`;
 
     const { error } = await supabase.auth.signUp({
-      email,
-      password,
+      email: signupEmail,
+      password: signupPassword,
       options: {
         emailRedirectTo: redirectUrl,
       },
@@ -100,8 +105,8 @@ export default function Auth() {
     setIsLoading(true);
 
     const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+      email: signinEmail,
+      password: signinPassword,
     });
 
     setIsLoading(false);
@@ -130,7 +135,7 @@ export default function Auth() {
           <CardDescription>התחבר או הירשם כדי לגשת לכל התכונות</CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="signin" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">התחברות</TabsTrigger>
               <TabsTrigger value="signup">הרשמה</TabsTrigger>
@@ -143,8 +148,8 @@ export default function Auth() {
                   <Input
                     id="signin-email"
                     type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    value={signinEmail}
+                    onChange={(e) => setSigninEmail(e.target.value)}
                     placeholder="your@email.com"
                     required
                     disabled={isLoading}
@@ -155,8 +160,8 @@ export default function Auth() {
                   <Input
                     id="signin-password"
                     type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    value={signinPassword}
+                    onChange={(e) => setSigninPassword(e.target.value)}
                     placeholder="••••••••"
                     required
                     disabled={isLoading}
@@ -165,7 +170,7 @@ export default function Auth() {
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="me-2 h-4 w-4 animate-spin" />
                       מתחבר...
                     </>
                   ) : (
@@ -182,8 +187,8 @@ export default function Auth() {
                   <Input
                     id="signup-email"
                     type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    value={signupEmail}
+                    onChange={(e) => setSignupEmail(e.target.value)}
                     placeholder="your@email.com"
                     required
                     disabled={isLoading}
@@ -194,8 +199,8 @@ export default function Auth() {
                   <Input
                     id="signup-password"
                     type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    value={signupPassword}
+                    onChange={(e) => setSignupPassword(e.target.value)}
                     placeholder="לפחות 6 תווים"
                     required
                     disabled={isLoading}
@@ -216,7 +221,7 @@ export default function Auth() {
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="me-2 h-4 w-4 animate-spin" />
                       נרשם...
                     </>
                   ) : (

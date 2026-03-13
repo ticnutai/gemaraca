@@ -9,6 +9,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 
 interface CommentariesPanelProps {
   dafYomi: string;
+  masechet?: string;
 }
 
 interface Commentary {
@@ -25,7 +26,7 @@ interface Commentary {
   collectiveTitle: any;
 }
 
-export default function CommentariesPanel({ dafYomi }: CommentariesPanelProps) {
+export default function CommentariesPanel({ dafYomi, masechet: masechetProp }: CommentariesPanelProps) {
   const [commentaries, setCommentaries] = useState<Commentary[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -64,7 +65,7 @@ export default function CommentariesPanel({ dafYomi }: CommentariesPanelProps) {
 
   const convertDafYomiToSefariaRef = (dafYomi: string): string => {
     const parts = dafYomi.trim().split(' ');
-    const masechet = "Bava_Batra";
+    const masechet = masechetProp || "Bava_Batra";
     
     if (parts.length >= 3) {
       const dafNum = parts[parts.length - 2];

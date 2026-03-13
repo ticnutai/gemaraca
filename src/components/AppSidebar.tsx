@@ -297,7 +297,7 @@ const AppSidebar = ({
 
       <SidebarFooter className="border-t border-border/50 p-3">
         <div className="text-center text-xs text-muted-foreground">
-          גמרא להלכה © 2024
+          גמרא להלכה © {new Date().getFullYear()}
         </div>
       </SidebarFooter>
     </Sidebar>

@@ -283,16 +283,15 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   };
 
   const getPlainText = (htmlOrArray: any): string => {
+    const parser = new DOMParser();
+    const extract = (html: string): string => {
+      const doc = parser.parseFromString(html, 'text/html');
+      return doc.body.textContent || '';
+    };
     if (Array.isArray(htmlOrArray)) {
-      return htmlOrArray.map(line => {
-        const temp = document.createElement('div');
-        temp.innerHTML = line;
-        return temp.textContent || temp.innerText || '';
-      }).join('\n\n');
+      return htmlOrArray.map(line => extract(String(line))).join('\n\n');
     }
-    const temp = document.createElement('div');
-    temp.innerHTML = htmlOrArray;
-    return temp.textContent || temp.innerText || '';
+    return extract(String(htmlOrArray || ''));
   };
 
   const renderGemaraText = () => {

@@ -245,10 +245,40 @@ const OTHER_BOOKS = [
   { name: 'שלחן ערוך הרב', pattern: /שלחן\s*ערוך\s*הרב|שו"ע\s*הרב|שו״ע\s*הרב|אדה"ז|אדה״ז/gi }
 ];
 
+// Pre-compiled Shulchan Aruch patterns (avoid re-creating in analyzeText loop)
+const SHULCHAN_ARUCH_COMPILED = SHULCHAN_ARUCH_SECTIONS.flatMap(section => {
+  const allNames = [section.name, ...section.aliases];
+  return allNames.map(name => ({
+    sectionName: section.name,
+    regex: new RegExp(
+      `(שולחן\\s*ערוך\\s*|שו"ע\\s*|שו״ע\\s*)?${escapeRegex(name)}\\s*(?:סימן\\s*|סי'\\s*|סי׳\\s*)?([א-ת]{1,3}|\\d{1,3})?(?:\\s*(?:סעיף|ס"ק|ס״ק)\\s*([א-ת]{1,3}|\\d{1,3}))?`,
+      'gi'
+    )
+  }));
+});
+
+// Pre-compiled Rambam patterns
+const RAMBAM_COMPILED = RAMBAM_BOOKS.map(book => ({
+  book,
+  regex: new RegExp(
+    `(רמב"ם|רמב״ם|משנה\\s*תורה)?\\s*${escapeRegex(book)}\\s*(?:פרק\\s*|פ'\\s*|פ״\\s*)?([א-ת]{1,3}|\\d{1,3})?(?:\\s*(?:הלכה|הל')\\s*([א-ת]{1,3}|\\d{1,3}))?`,
+    'gi'
+  )
+}));
+
+// Pre-compiled topic patterns
+const TOPIC_COMPILED = Object.entries(TOPIC_CATEGORIES).flatMap(([category, keywords]) =>
+  keywords.map(keyword => ({
+    keyword,
+    category,
+    regex: new RegExp(`(?:^|[\\s,.:;!?"'()\\[\\]{}])${escapeRegex(keyword)}(?:$|[\\s,.:;!?"'()\\[\\]{}])`, 'gi')
+  }))
+);
+
 /**
  * Generate sugya_id from masechet and daf info
  */
-export function generateSugyaIdFromSource(source: DetectedSource): string | null {
+export function generateSugyaId(source: DetectedSource): string | null {
   if (source.type !== 'gemara' || !source.masechetSefaria || !source.dafNumber) {
     return null;
   }
@@ -367,34 +397,25 @@ export function analyzeText(text: string): { sources: DetectedSource[], topics: 
     }
   }
 
-  // 3. Detect Shulchan Aruch references
-  for (const section of SHULCHAN_ARUCH_SECTIONS) {
-    const allNames = [section.name, ...section.aliases];
-    for (const name of allNames) {
-      const pattern = new RegExp(
-        `(שולחן\\s*ערוך\\s*|שו"ע\\s*|שו״ע\\s*)?${escapeRegex(name)}\\s*(?:סימן\\s*|סי'\\s*|סי׳\\s*)?([א-ת]{1,3}|\\d{1,3})?(?:\\s*(?:סעיף|ס"ק|ס״ק)\\s*([א-ת]{1,3}|\\d{1,3}))?`,
-        'gi'
-      );
-      let match;
-      while ((match = pattern.exec(text)) !== null) {
-        sources.push({
-          type: 'shulchan_aruch',
-          text: match[0],
-          section: section.name,
-          halacha: match[2] || undefined,
-          confidence: match[2] ? 'high' : 'medium'
-        });
-        detectedBooks.add('שולחן ערוך');
-      }
+  // 3. Detect Shulchan Aruch references (using pre-compiled patterns)
+  for (const { sectionName, regex } of SHULCHAN_ARUCH_COMPILED) {
+    const pattern = new RegExp(regex.source, regex.flags);
+    let match;
+    while ((match = pattern.exec(text)) !== null) {
+      sources.push({
+        type: 'shulchan_aruch',
+        text: match[0],
+        section: sectionName,
+        halacha: match[2] || undefined,
+        confidence: match[2] ? 'high' : 'medium'
+      });
+      detectedBooks.add('שולחן ערוך');
     }
   }
 
-  // 4. Detect Rambam references
-  for (const book of RAMBAM_BOOKS) {
-    const pattern = new RegExp(
-      `(רמב"ם|רמב״ם|משנה\\s*תורה)?\\s*${escapeRegex(book)}\\s*(?:פרק\\s*|פ'\\s*|פ״\\s*)?([א-ת]{1,3}|\\d{1,3})?(?:\\s*(?:הלכה|הל')\\s*([א-ת]{1,3}|\\d{1,3}))?`,
-      'gi'
-    );
+  // 4. Detect Rambam references (using pre-compiled patterns)
+  for (const { book, regex } of RAMBAM_COMPILED) {
+    const pattern = new RegExp(regex.source, regex.flags);
     let match;
     while ((match = pattern.exec(text)) !== null) {
       sources.push({
@@ -416,18 +437,15 @@ export function analyzeText(text: string): { sources: DetectedSource[], topics: 
     }
   }
 
-  // 6. Detect topics
-  for (const [category, keywords] of Object.entries(TOPIC_CATEGORIES)) {
-    for (const keyword of keywords) {
-      // Use word boundary for Hebrew
-      const pattern = new RegExp(`(?:^|[\\s,.:;!?"'()\\[\\]{}])${escapeRegex(keyword)}(?:$|[\\s,.:;!?"'()\\[\\]{}])`, 'gi');
-      const matches = text.match(pattern);
-      if (matches && matches.length > 0) {
-        if (!topicCounts[keyword]) {
-          topicCounts[keyword] = { category, count: 0 };
-        }
-        topicCounts[keyword].count += matches.length;
+  // 6. Detect topics (using pre-compiled patterns)
+  for (const { keyword, category, regex } of TOPIC_COMPILED) {
+    const pattern = new RegExp(regex.source, regex.flags);
+    const matches = text.match(pattern);
+    if (matches && matches.length > 0) {
+      if (!topicCounts[keyword]) {
+        topicCounts[keyword] = { category, count: 0 };
       }
+      topicCounts[keyword].count += matches.length;
     }
   }
 

@@ -18,9 +18,9 @@ export function useRealtimeUploadSync() {
   const { sessions, updateProgress, setStatus } = useUploadStore();
   const { user, isAuthenticated } = useAuth();
 
-  // Broadcast local changes to database for all active sessions
+  // Broadcast local changes to database — debounced to avoid DB spam
+  const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    // Only sync if user is authenticated
     if (!isAuthenticated || !user) return;
 
     const activeSessions = Object.values(sessions).filter(
@@ -29,10 +29,11 @@ export function useRealtimeUploadSync() {
 
     if (activeSessions.length === 0) return;
 
-    const syncToDb = async () => {
+    // Debounce: wait 2s after last change before syncing
+    if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
+    syncTimerRef.current = setTimeout(async () => {
       for (const session of activeSessions) {
         const progress = session.uploadProgress;
-        
         try {
           await supabase.from('upload_sessions').upsert({
             session_id: session.id,
@@ -52,9 +53,9 @@ export function useRealtimeUploadSync() {
           console.error('Error syncing upload progress:', err);
         }
       }
-    };
+    }, 2000);
 
-    syncToDb();
+    return () => { if (syncTimerRef.current) clearTimeout(syncTimerRef.current); };
   }, [sessions, isAuthenticated, user]);
 
   // Listen for changes from other devices
@@ -68,8 +69,9 @@ export function useRealtimeUploadSync() {
         {
           event: '*',
           schema: 'public',
-          table: 'upload_sessions'
-        },
+          table: 'upload_sessions',
+          filter: user ? `user_id=eq.${user.id}` : undefined
+        } as any,
         (payload) => {
           const data = payload.new as any;
           
@@ -97,7 +99,7 @@ export function useRealtimeUploadSync() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [updateProgress, setStatus, isAuthenticated]);
+  }, [updateProgress, setStatus, isAuthenticated, user]);
 
   // Cleanup old sessions (older than 24 hours)
   useEffect(() => {
@@ -105,14 +107,16 @@ export function useRealtimeUploadSync() {
 
     const cleanup = async () => {
       const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      if (!user) return;
       await supabase
         .from('upload_sessions')
         .delete()
+        .eq('user_id', user.id)
         .lt('updated_at', cutoff);
     };
     
     cleanup();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user]);
 
   return { deviceId: deviceId.current };
 }
