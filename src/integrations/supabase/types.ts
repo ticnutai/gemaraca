@@ -88,6 +88,54 @@ export type Database = {
         }
         Relationships: []
       }
+      migration_history: {
+        Row: {
+          created_at: string
+          description: string | null
+          error_message: string | null
+          executed_at: string | null
+          executed_by: string | null
+          execution_time_ms: number | null
+          id: string
+          name: string
+          rows_affected: number | null
+          source: string
+          source_url: string | null
+          sql_content: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          error_message?: string | null
+          executed_at?: string | null
+          executed_by?: string | null
+          execution_time_ms?: number | null
+          id?: string
+          name: string
+          rows_affected?: number | null
+          source?: string
+          source_url?: string | null
+          sql_content: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          error_message?: string | null
+          executed_at?: string | null
+          executed_by?: string | null
+          execution_time_ms?: number | null
+          id?: string
+          name?: string
+          rows_affected?: number | null
+          source?: string
+          source_url?: string | null
+          sql_content?: string
+          status?: string
+        }
+        Relationships: []
+      }
       modern_examples: {
         Row: {
           created_at: string
