@@ -1,4 +1,4 @@
-import { Info, BookOpen, Scale, Search, Upload, Library, User, LogOut, LogIn, ArrowDownToLine } from "lucide-react";
+import { Info, BookOpen, Scale, Search, Upload, Library, User, LogOut, LogIn, ArrowDownToLine, BookMarked } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
@@ -21,6 +21,7 @@ const tabs = [
   { id: "gemara", label: "גמרא", icon: BookOpen },
   { id: "psak-din", label: "פסקי דין", icon: Scale },
   { id: "smart-index", label: "אינדקס חכם", icon: Library },
+  { id: "advanced-index", label: "אינדקס מתקדם", icon: BookMarked },
   { id: "search", label: "חיפוש", icon: Search },
   { id: "upload", label: "העלאה", icon: Upload },
   { id: "download", label: "הורדה", icon: ArrowDownToLine },

@@ -2,6 +2,7 @@ import PsakDinTab from "@/components/PsakDinTab";
 import SearchPsakDinTab from "@/components/SearchPsakDinTab";
 import UploadPsakDinTab from "@/components/UploadPsakDinTab";
 import SmartIndexTab from "@/components/SmartIndexTab";
+import AdvancedIndexTab from "@/components/AdvancedIndexTab";
 import DownloadManagerTab from "@/components/DownloadManagerTab";
 import SedarimNavigator from "@/components/SedarimNavigator";
 import { useAppContext } from "@/contexts/AppContext";
@@ -22,6 +23,7 @@ const Index = () => {
           {activeTab === "search" && <SearchPsakDinTab />}
           {activeTab === "upload" && <UploadPsakDinTab />}
           {activeTab === "download" && <DownloadManagerTab />}
+          {activeTab === "advanced-index" && <AdvancedIndexTab />}
         </div>
       )}
     </div>

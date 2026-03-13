@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Reference projects
+clever-doc-indexer-main/
+
+# Supabase temp
+supabase/.temp/
