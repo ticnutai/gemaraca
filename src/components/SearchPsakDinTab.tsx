@@ -18,6 +18,30 @@ const SearchPsakDinTab = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const { toast } = useToast();
 
+  // Local text search fallback using ilike
+  const localSearch = async (searchQuery: string): Promise<any[]> => {
+    const pattern = `%${searchQuery}%`;
+    const { data, error } = await supabase
+      .from('psakei_din')
+      .select('id, title, summary, court, year, case_number, source_url, tags')
+      .or(`title.ilike.${pattern},summary.ilike.${pattern}`)
+      .order('year', { ascending: false })
+      .limit(30);
+
+    if (error || !data) return [];
+    return data.map(p => ({
+      id: p.id,
+      title: p.title,
+      summary: p.summary,
+      court: p.court,
+      year: p.year,
+      caseNumber: p.case_number,
+      sourceUrl: p.source_url,
+      tags: p.tags,
+      source: 'local',
+    }));
+  };
+
   const handleSearch = async () => {
     if (!query.trim()) {
       toast({
@@ -31,6 +55,7 @@ const SearchPsakDinTab = () => {
     setResults([]);
     
     try {
+      // Try AI search first
       const { data, error } = await supabase.functions.invoke('search-psak-din', {
         body: { query: query.trim() }
       });
@@ -38,34 +63,54 @@ const SearchPsakDinTab = () => {
       if (error) throw error;
 
       if (data.error) {
-        toast({
-          title: "שגיאה בחיפוש",
-          description: data.error,
-          variant: "destructive",
-        });
-        return;
+        throw new Error(data.error);
       }
 
-      setResults(data.results || []);
-      setHasSearched(true);
-      
-      if (data.results?.length === 0) {
-        toast({
-          title: "לא נמצאו תוצאות",
-          description: "נסה מילות חיפוש אחרות",
-        });
+      const aiResults = data.results || [];
+
+      if (aiResults.length > 0) {
+        setResults(aiResults);
+        setHasSearched(true);
+        toast({ title: `נמצאו ${aiResults.length} תוצאות` });
       } else {
-        toast({
-          title: `נמצאו ${data.results.length} תוצאות`,
-        });
+        // Fallback: local text search
+        const localResults = await localSearch(query.trim());
+        setResults(localResults);
+        setHasSearched(true);
+
+        if (localResults.length > 0) {
+          toast({ title: `נמצאו ${localResults.length} תוצאות (חיפוש מקומי)` });
+        } else {
+          toast({
+            title: "לא נמצאו תוצאות",
+            description: "נסה מילות חיפוש אחרות",
+          });
+        }
       }
     } catch (error) {
-      console.error('Search error:', error);
-      toast({
-        title: "שגיאה בחיפוש",
-        description: "נסה שוב מאוחר יותר",
-        variant: "destructive",
-      });
+      console.error('AI search error, falling back to local:', error);
+      // Fallback on any error: local text search
+      try {
+        const localResults = await localSearch(query.trim());
+        setResults(localResults);
+        setHasSearched(true);
+
+        if (localResults.length > 0) {
+          toast({ title: `נמצאו ${localResults.length} תוצאות (חיפוש מקומי)` });
+        } else {
+          toast({
+            title: "לא נמצאו תוצאות",
+            description: "נסה מילות חיפוש אחרות",
+          });
+        }
+      } catch (localErr) {
+        console.error('Local search also failed:', localErr);
+        toast({
+          title: "שגיאה בחיפוש",
+          description: "נסה שוב מאוחר יותר",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }

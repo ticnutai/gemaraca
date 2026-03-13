@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -6,10 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, FileText, Archive, X, Loader2, CheckCircle, AlertCircle, FolderUp, Sparkles, Brain, Copy, Ban, Hash, Layers } from "lucide-react";
+import { Upload, FileText, Archive, X, Loader2, CheckCircle, AlertCircle, FolderUp, Sparkles, Brain, Copy, Ban, Hash, Layers, LogIn } from "lucide-react";
 import { useToast, toast } from "@/hooks/use-toast";
 import { useUploadStore } from "@/stores/uploadStore";
 import { useUploadController } from "@/hooks/useUploadController";
+import { useAuth } from "@/hooks/useAuth";
 import { calculateFileHashes } from "@/lib/fileHash";
 import { isOnline } from "@/lib/uploadUtils";
 import UploadSummaryDialog from "./UploadSummaryDialog";
@@ -28,6 +30,8 @@ interface ExtractedZip {
 }
 
 const UploadPsakDinTab = () => {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [extractedZips, setExtractedZips] = useState<ExtractedZip[]>([]);
   const [duplicates, setDuplicates] = useState<DuplicateFile[]>([]);
   const [checkingDuplicates, setCheckingDuplicates] = useState(false);
@@ -380,6 +384,23 @@ const UploadPsakDinTab = () => {
       <div className="max-w-4xl mx-auto space-y-6 text-right">
         {/* Database Statistics */}
         <PsakDinStats />
+
+        {/* Auth Gate */}
+        {!authLoading && !isAuthenticated && (
+          <Card className="border-2 border-amber-400/50 bg-amber-50 dark:bg-amber-950/30">
+            <CardContent className="p-6 text-center space-y-3">
+              <LogIn className="w-10 h-10 mx-auto text-amber-600 dark:text-amber-400" />
+              <h3 className="text-lg font-semibold">נדרשת התחברות להעלאת פסקי דין</h3>
+              <p className="text-sm text-muted-foreground">
+                כדי להעלות, לערוך ולמחוק פסקי דין יש להתחבר למערכת
+              </p>
+              <Button onClick={() => navigate('/auth')} className="gap-2">
+                <LogIn className="w-4 h-4" />
+                התחבר עכשיו
+              </Button>
+            </CardContent>
+          </Card>
+        )}
         
         {/* Active Uploads Banner */}
         {isActive && (
@@ -445,7 +466,7 @@ const UploadPsakDinTab = () => {
           </Card>
         )}
 
-        <Card className="border border-border shadow-sm">
+        <Card className={`border border-border shadow-sm ${!isAuthenticated ? 'opacity-50 pointer-events-none' : ''}`}>
           <CardHeader>
             <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2 flex-row-reverse">
               <Upload className="w-5 h-5" />
