@@ -47,7 +47,24 @@ export function SettingsButton() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
+    <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2">
+      {/* Dev Button */}
+      <Button
+        size="icon"
+        variant="outline"
+        className="h-10 w-10 rounded-full shadow-lg bg-card border-border hover:bg-muted"
+        onClick={() => setShowDevPanel(true)}
+        title="פיתוח - מיגרציות"
+      >
+        <Code2 className="h-4 w-4" />
+      </Button>
+
+      <Suspense fallback={null}>
+        {showDevPanel && (
+          <DevMigrationsPanel open={showDevPanel} onClose={() => setShowDevPanel(false)} />
+        )}
+      </Suspense>
+
       <Popover>
         <PopoverTrigger asChild>
           <Button
