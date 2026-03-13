@@ -1,6 +1,8 @@
-import { useState } from "react";
-import { Settings, Check, Palette, ChevronRight, Pipette } from "lucide-react";
+import { useState, lazy, Suspense } from "react";
+import { Settings, Check, Palette, ChevronRight, Pipette, Code2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+const DevMigrationsPanel = lazy(() => import("@/components/DevMigrationsPanel"));
 import {
   Popover,
   PopoverContent,
@@ -26,6 +28,7 @@ const presetColors = [
 export function SettingsButton() {
   const { theme, setTheme, customColors, setCustomColors } = useTheme();
   const [showCustomizer, setShowCustomizer] = useState(false);
+  const [showDevPanel, setShowDevPanel] = useState(false);
   const [localColors, setLocalColors] = useState<CustomColors>(customColors);
 
   const handleColorChange = (key: keyof CustomColors, value: string) => {
@@ -44,7 +47,24 @@ export function SettingsButton() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
+    <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2">
+      {/* Dev Button */}
+      <Button
+        size="icon"
+        variant="outline"
+        className="h-10 w-10 rounded-full shadow-lg bg-card border-border hover:bg-muted"
+        onClick={() => setShowDevPanel(true)}
+        title="פיתוח - מיגרציות"
+      >
+        <Code2 className="h-4 w-4" />
+      </Button>
+
+      <Suspense fallback={null}>
+        {showDevPanel && (
+          <DevMigrationsPanel open={showDevPanel} onClose={() => setShowDevPanel(false)} />
+        )}
+      </Suspense>
+
       <Popover>
         <PopoverTrigger asChild>
           <Button
