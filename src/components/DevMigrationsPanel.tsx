@@ -33,7 +33,11 @@ import {
   Trash2,
   Copy,
   Database,
+  Activity,
 } from "lucide-react";
+import { lazy, Suspense } from "react";
+
+const MonitoringTab = lazy(() => import("@/components/MonitoringTab"));
 import { cn } from "@/lib/utils";
 
 interface Migration {
