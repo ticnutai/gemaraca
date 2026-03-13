@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { Search, Calendar, Building2, FileText, ExternalLink, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -12,6 +13,7 @@ const SearchPsakDinTab = () => {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const [selectedPsak, setSelectedPsak] = useState<any | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const { toast } = useToast();
@@ -45,6 +47,7 @@ const SearchPsakDinTab = () => {
       }
 
       setResults(data.results || []);
+      setHasSearched(true);
       
       if (data.results?.length === 0) {
         toast({
@@ -111,9 +114,22 @@ const SearchPsakDinTab = () => {
         </Card>
 
         {loading && (
-          <div className="text-center text-muted-foreground py-8">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-            <p>מחפש במאגרי פסקי הדין...</p>
+          <div className="space-y-4 py-4">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="border rounded-lg p-4 space-y-3">
+                <Skeleton className="h-5 w-1/2" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!loading && hasSearched && results.length === 0 && (
+          <div className="text-center py-12">
+            <Search className="w-10 h-10 mx-auto text-muted-foreground/40 mb-3" />
+            <p className="text-muted-foreground font-medium">לא נמצאו תוצאות</p>
+            <p className="text-sm text-muted-foreground mt-1">נסה מילות חיפוש אחרות או ניסוח שונה</p>
           </div>
         )}
 

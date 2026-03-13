@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { BookOpen, ChevronLeft, ChevronDown, Scale, Download, Loader2, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SEDARIM, getMasechtotBySeder, Masechet } from "@/lib/masechtotData";
@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { useAppContext } from "@/contexts/AppContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface SedarimNavigatorProps {
   className?: string;
@@ -33,28 +34,30 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
   const [selectedSeder, setSelectedSeder] = useState<string | null>(null);
   const [selectedMasechetLocal, setSelectedMasechetLocal] = useState<Masechet | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [psakDinExamples, setPsakDinExamples] = useState<PsakDinExample[]>([]);
-  const [loadedPagesMap, setLoadedPagesMap] = useState<LoadedPagesMap>({});
   const [downloading, setDownloading] = useState<string | null>(null);
   const [downloadProgress, setDownloadProgress] = useState(0);
+  const queryClient = useQueryClient();
 
   const INITIAL_DAF_COUNT = 20;
 
-  // Load sample Psakei Din and loaded pages
-  useEffect(() => {
-    const loadData = async () => {
-      // Load Psakei Din examples
-      const { data: psakData } = await supabase
+  // Load Psakei Din examples with caching
+  const { data: psakDinExamples = [] } = useQuery({
+    queryKey: ['sedarim-psak-examples'],
+    queryFn: async () => {
+      const { data } = await supabase
         .from('psakei_din')
         .select('id, title, court, year, summary')
         .order('created_at', { ascending: false })
         .limit(6);
-      
-      if (psakData) {
-        setPsakDinExamples(psakData);
-      }
+      return (data || []) as PsakDinExample[];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
 
-      // Load all gemara pages to check what's already loaded (paginated)
+  // Load loaded pages map with caching
+  const { data: loadedPagesMap = {} } = useQuery({
+    queryKey: ['sedarim-loaded-pages'],
+    queryFn: async () => {
       const map: LoadedPagesMap = {};
       let pgOffset = 0;
       const PG_SIZE = 1000;
@@ -72,10 +75,10 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
         if (pagesData.length < PG_SIZE) pgMore = false;
         pgOffset += PG_SIZE;
       }
-      setLoadedPagesMap(map);
-    };
-    loadData();
-  }, []);
+      return map;
+    },
+    staleTime: 2 * 60 * 1000,
+  });
 
   // Download masechet function
   const handleDownloadMasechet = async (masechet: Masechet) => {
@@ -151,25 +154,8 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
       }
     }
 
-    // Refresh loaded pages (paginated)
-    const refreshMap: LoadedPagesMap = {};
-    let rfOffset = 0;
-    const RF_SIZE = 1000;
-    let rfMore = true;
-    while (rfMore) {
-      const { data: pagesData } = await supabase
-        .from('gemara_pages')
-        .select('masechet, daf_number')
-        .range(rfOffset, rfOffset + RF_SIZE - 1);
-      if (!pagesData || pagesData.length === 0) { rfMore = false; break; }
-      pagesData.forEach(page => {
-        if (!refreshMap[page.masechet]) refreshMap[page.masechet] = [];
-        refreshMap[page.masechet].push(page.daf_number);
-      });
-      if (pagesData.length < RF_SIZE) rfMore = false;
-      rfOffset += RF_SIZE;
-    }
-    setLoadedPagesMap(refreshMap);
+    // Refresh loaded pages cache
+    await queryClient.invalidateQueries({ queryKey: ['sedarim-loaded-pages'] });
 
     setDownloading(null);
     setDownloadProgress(0);

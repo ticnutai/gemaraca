@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Accordion,
   AccordionContent,
@@ -43,13 +44,14 @@ import { toHebrewNumeral } from "@/lib/hebrewNumbers";
 import { MASECHTOT } from "@/lib/masechtotData";
 
 const BATCH_SIZE = 500;
+const LOAD_PAGE_SIZE = 100;
+const DISPLAY_PAGE_SIZE = 50;
 const STORAGE_KEY = 'smart_index_last_run';
 
 const SmartIndexTab = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState({ current: 0, total: 0 });
   const [analysisResults, setAnalysisResults] = useState<AnalysisResult[]>([]);
   const [savedCount, setSavedCount] = useState(0);
@@ -67,6 +69,7 @@ const SmartIndexTab = () => {
   const [sortBy, setSortBy] = useState<'daf-asc' | 'daf-desc' | 'date-asc' | 'date-desc' | 'links-asc' | 'links-desc' | 'confidence' | 'none'>('none');
   const [filterConfidence, setFilterConfidence] = useState<'all' | 'high' | 'medium' | 'low'>('all');
   const [filterHasFullText, setFilterHasFullText] = useState<boolean | null>(null);
+  const [displayPage, setDisplayPage] = useState(0);
   
   const { toast } = useToast();
 
@@ -79,14 +82,13 @@ const SmartIndexTab = () => {
   const loadSavedResults = async () => {
     setLoading(true);
     try {
-      const PAGE_SIZE = 1000;
       let allResults: AnalysisResult[] = [];
       let page = 0;
       let hasMore = true;
 
       while (hasMore) {
-        const from = page * PAGE_SIZE;
-        const to = from + PAGE_SIZE - 1;
+        const from = page * LOAD_PAGE_SIZE;
+        const to = from + LOAD_PAGE_SIZE - 1;
 
         const { data, error } = await supabase
           .from('smart_index_results')
@@ -112,7 +114,7 @@ const SmartIndexTab = () => {
           allResults = [...allResults, ...pageResults];
         }
 
-        hasMore = data?.length === PAGE_SIZE;
+        hasMore = data?.length === LOAD_PAGE_SIZE;
         page++;
       }
 
@@ -250,108 +252,66 @@ const SmartIndexTab = () => {
     return groups;
   }, [filteredResults]);
 
-  // Run text analysis and save to database
-  const runTextAnalysis = async (forceRefresh = false) => {
-    setAnalyzing(true);
-    
-    try {
-      // Get total count
-      const { count } = await supabase
-        .from('psakei_din')
-        .select('*', { count: 'exact', head: true });
-      
-      const total = count || 0;
-      setAnalysisProgress({ current: 0, total });
-
-      const allResults: AnalysisResult[] = [];
-      let offset = 0;
-
-      while (offset < total) {
-        const { data: psakim, error } = await supabase
-          .from('psakei_din')
-          .select('id, title, summary, full_text, tags')
-          .range(offset, offset + BATCH_SIZE - 1);
-
-        if (error) throw error;
-        if (!psakim || psakim.length === 0) break;
-
-        const batchResults = batchAnalyze(psakim);
-        allResults.push(...batchResults);
-
-        offset += BATCH_SIZE;
-        setAnalysisProgress({ current: Math.min(offset, total), total });
-        setAnalysisResults([...allResults]);
-
-        await new Promise(r => setTimeout(r, 30));
-      }
-
-      // Save results to database
-      setSaving(true);
-      await saveResultsToDatabase(allResults);
-      setSavedCount(allResults.length);
-
-      // Save pattern-based links
-      await savePatternLinks(allResults);
-
-      toast({
-        title: "ניתוח ושמירה הושלמו",
-        description: `נותחו ונשמרו ${allResults.length} פסקי דין`,
-      });
-    } catch (error) {
-      console.error('Error analyzing:', error);
-      toast({
-        title: "שגיאה בניתוח",
-        variant: "destructive",
-      });
-    } finally {
-      setAnalyzing(false);
-      setSaving(false);
+  // Get IDs of psakim already indexed in the database
+  const getIndexedPsakIds = async (): Promise<Set<string>> => {
+    const ids = new Set<string>();
+    let page = 0;
+    let hasMore = true;
+    while (hasMore) {
+      const from = page * 1000;
+      const { data, error } = await supabase
+        .from('smart_index_results')
+        .select('psak_din_id')
+        .range(from, from + 999);
+      if (error || !data || data.length === 0) break;
+      for (const row of data) ids.add(row.psak_din_id);
+      hasMore = data.length === 1000;
+      page++;
     }
+    return ids;
   };
 
-  // Save analysis results to database
-  const saveResultsToDatabase = async (results: AnalysisResult[]) => {
-    const batchSize = 50;
-    
-    for (let i = 0; i < results.length; i += batchSize) {
-      const batch = results.slice(i, i + batchSize);
-      
-      const insertData = batch.map(result => ({
-        psak_din_id: result.id,
-        sources: JSON.parse(JSON.stringify(result.sources)),
-        topics: JSON.parse(JSON.stringify(result.topics)),
-        masechtot: result.masechtot,
-        books: result.books,
-        word_count: result.wordCount,
-        has_full_text: result.hasFullText,
-        analysis_method: 'pattern_matching'
-      }));
+  // Save a single batch of analysis results to db immediately
+  const saveBatchToDatabase = async (results: AnalysisResult[]) => {
+    const insertData = results.map(result => ({
+      psak_din_id: result.id,
+      sources: JSON.parse(JSON.stringify(result.sources)),
+      topics: JSON.parse(JSON.stringify(result.topics)),
+      masechtot: result.masechtot,
+      books: result.books,
+      word_count: result.wordCount,
+      has_full_text: result.hasFullText,
+      analysis_method: 'pattern_matching'
+    }));
 
+    // Upsert in sub-batches of 50
+    for (let i = 0; i < insertData.length; i += 50) {
+      const chunk = insertData.slice(i, i + 50);
       const { error } = await (supabase as any)
         .from('smart_index_results')
-        .upsert(insertData, { onConflict: 'psak_din_id' });
-
+        .upsert(chunk, { onConflict: 'psak_din_id' });
       if (error) {
-        console.error('Error saving batch:', error);
+        console.error('Error saving index batch:', error);
       }
     }
   };
 
-  // Save pattern-based sugya links
-  const savePatternLinks = async (results: AnalysisResult[]) => {
-    // First, delete existing pattern links
+  // Save pattern links for a batch (delete old links for these psakim, then insert new)
+  const saveBatchPatternLinks = async (results: AnalysisResult[]) => {
+    const psakIds = results.map(r => r.id);
+
+    // Delete old pattern links for these specific psakim
     await supabase
       .from('pattern_sugya_links')
       .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000');
+      .in('psak_din_id', psakIds);
 
+    // Collect all new links
     const allLinks: any[] = [];
-
     for (const result of results) {
       const gemaraSources = result.sources.filter(
         s => s.type === 'gemara' && s.sugyaId && s.masechet
       );
-
       for (const source of gemaraSources) {
         allLinks.push({
           psak_din_id: result.id,
@@ -365,20 +325,106 @@ const SmartIndexTab = () => {
       }
     }
 
-    // Insert in batches
-    const batchSize = 100;
-    for (let i = 0; i < allLinks.length; i += batchSize) {
-      const batch = allLinks.slice(i, i + batchSize);
+    // Insert in sub-batches
+    for (let i = 0; i < allLinks.length; i += 100) {
+      const batch = allLinks.slice(i, i + 100);
       const { error } = await supabase
         .from('pattern_sugya_links')
         .insert(batch);
-
       if (error) {
         console.error('Error saving pattern links batch:', error);
       }
     }
+  };
 
-    console.log(`Saved ${allLinks.length} pattern-based links`);
+  // Run text analysis with incremental save and resume
+  const runTextAnalysis = async (forceRefresh = false) => {
+    setAnalyzing(true);
+    
+    try {
+      // 1. Get already-indexed IDs (unless force refresh)
+      let alreadyIndexedIds = new Set<string>();
+      if (!forceRefresh) {
+        alreadyIndexedIds = await getIndexedPsakIds();
+      }
+
+      // 2. Get all psak IDs
+      const { count } = await supabase
+        .from('psakei_din')
+        .select('*', { count: 'exact', head: true });
+      
+      const totalPsakim = count || 0;
+
+      // Keep already-loaded results for non-refreshed items
+      const existingResults = forceRefresh ? [] : [...analysisResults];
+      let newSavedCount = forceRefresh ? 0 : savedCount;
+      let processedSoFar = 0;
+
+      // Calculate how many need processing
+      let totalToProcess = totalPsakim;
+      if (!forceRefresh && alreadyIndexedIds.size > 0) {
+        // We'll count as we go (can't know exact un-indexed count without fetching)
+        totalToProcess = totalPsakim - alreadyIndexedIds.size;
+      }
+      setAnalysisProgress({ current: 0, total: Math.max(totalToProcess, 1) });
+
+      let offset = 0;
+
+      while (offset < totalPsakim) {
+        const { data: psakim, error } = await supabase
+          .from('psakei_din')
+          .select('id, title, summary, full_text, tags')
+          .range(offset, offset + BATCH_SIZE - 1);
+
+        if (error) throw error;
+        if (!psakim || psakim.length === 0) break;
+
+        // Filter out already-indexed psakim (unless force refresh)
+        const toAnalyze = forceRefresh
+          ? psakim
+          : psakim.filter(p => !alreadyIndexedIds.has(p.id));
+
+        if (toAnalyze.length > 0) {
+          // 3. Analyze this batch
+          const batchResults = batchAnalyze(toAnalyze);
+
+          // 4. Immediately save to database (cloud)
+          await saveBatchToDatabase(batchResults);
+          await saveBatchPatternLinks(batchResults);
+
+          // 5. Update UI state incrementally
+          existingResults.push(...batchResults);
+          newSavedCount += batchResults.length;
+          processedSoFar += toAnalyze.length;
+
+          setAnalysisResults([...existingResults]);
+          setSavedCount(newSavedCount);
+          setAnalysisProgress({ current: processedSoFar, total: Math.max(totalToProcess, 1) });
+        } else {
+          // All items in this batch are already indexed — skip
+          processedSoFar += 0; // no change, but advance offset
+        }
+
+        offset += BATCH_SIZE;
+        await new Promise(r => setTimeout(r, 30));
+      }
+
+      toast({
+        title: "ניתוח ושמירה הושלמו",
+        description: processedSoFar > 0
+          ? `נותחו ונשמרו ${processedSoFar} פסקי דין חדשים (סה"כ ${newSavedCount})`
+          : "כל פסקי הדין כבר מאונדקסים",
+      });
+    } catch (error) {
+      console.error('Error analyzing:', error);
+      toast({
+        title: "שגיאה בניתוח",
+        description: "האינדקס שנשמר עד כה לא אבד — ניתן להמשיך שוב",
+        variant: "destructive",
+      });
+    } finally {
+      setAnalyzing(false);
+    }
   };
 
   // Navigate to Gemara page
@@ -502,10 +548,20 @@ const SmartIndexTab = () => {
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8" dir="rtl">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center space-y-4">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
-            <p className="text-muted-foreground">טוען נתונים שמורים...</p>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-10 w-32" />
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            {[...Array(3)].map((_, i) => (
+              <Skeleton key={i} className="h-24 rounded-lg" />
+            ))}
+          </div>
+          <div className="space-y-3">
+            {[...Array(5)].map((_, i) => (
+              <Skeleton key={i} className="h-16 rounded-lg" />
+            ))}
           </div>
         </div>
       </div>
@@ -531,24 +587,27 @@ const SmartIndexTab = () => {
             {savedCount > 0 && (
               <Badge variant="secondary" className="gap-1">
                 <Database className="w-3 h-3" />
-                {savedCount} שמורים
+                {savedCount} שמורים בענן
               </Badge>
             )}
             
-            {analysisResults.length === 0 && !analyzing ? (
-              <Button onClick={() => runTextAnalysis()} className="gap-2 flex-row-reverse">
-                התחל ניתוח
-                <Zap className="w-4 h-4" />
-              </Button>
-            ) : !analyzing && (
-              <Button 
-                variant="outline" 
-                onClick={() => runTextAnalysis(true)} 
-                className="gap-2 flex-row-reverse"
-              >
-                רענן ניתוח
-                <RefreshCw className="w-4 h-4" />
-              </Button>
+            {!analyzing && (
+              <>
+                <Button onClick={() => runTextAnalysis()} className="gap-2 flex-row-reverse">
+                  {analysisResults.length === 0 ? 'התחל ניתוח' : 'המשך אינדקוס'}
+                  <Zap className="w-4 h-4" />
+                </Button>
+                {analysisResults.length > 0 && (
+                  <Button 
+                    variant="outline" 
+                    onClick={() => runTextAnalysis(true)} 
+                    className="gap-2 flex-row-reverse"
+                  >
+                    רענן הכול
+                    <RefreshCw className="w-4 h-4" />
+                  </Button>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -560,7 +619,7 @@ const SmartIndexTab = () => {
               <div className="flex items-center gap-3 mb-2 flex-row-reverse">
                 <Loader2 className="w-5 h-5 text-primary animate-spin" />
                 <span className="font-medium">
-                  {saving ? 'שומר תוצאות...' : 'מנתח פסקי דין...'}
+                  מנתח ושומר פסקי דין...
                 </span>
                 <span className="mr-auto text-sm">
                   {analysisProgress.current}/{analysisProgress.total}
@@ -570,12 +629,10 @@ const SmartIndexTab = () => {
                 value={(analysisProgress.current / Math.max(analysisProgress.total, 1)) * 100} 
                 className="h-2" 
               />
-              {saving && (
-                <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-                  <Save className="w-3 h-3" />
-                  שומר לדאטאבייס...
-                </p>
-              )}
+              <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                <Save className="w-3 h-3" />
+                כל תוצאה נשמרת מיד לענן • ניתן לעצור ולהמשיך מאוחר יותר
+              </p>
             </CardContent>
           </Card>
         )}
@@ -928,10 +985,13 @@ const SmartIndexTab = () => {
             <TabsContent value="gemara-links">
               <ScrollArea className="h-[600px]">
                 <div className="space-y-3">
-                  {filteredResults
-                    .filter(r => r.sources.some(s => s.type === 'gemara' && s.sugyaId))
-                    .slice(0, 100)
-                    .map(result => {
+                  {(() => {
+                    const gemaraFiltered = filteredResults.filter(r => r.sources.some(s => s.type === 'gemara' && s.sugyaId));
+                    const totalDisplayPages = Math.ceil(gemaraFiltered.length / DISPLAY_PAGE_SIZE);
+                    const pageItems = gemaraFiltered.slice(displayPage * DISPLAY_PAGE_SIZE, (displayPage + 1) * DISPLAY_PAGE_SIZE);
+                    return (
+                      <>
+                        {pageItems.map(result => {
                       const gemaraSources = result.sources.filter(s => s.type === 'gemara' && s.sugyaId);
                       return (
                         <Card 
@@ -996,6 +1056,16 @@ const SmartIndexTab = () => {
                         </Card>
                       );
                     })}
+                        {totalDisplayPages > 1 && (
+                          <div className="flex items-center justify-center gap-2 py-3">
+                            <Button variant="outline" size="sm" disabled={displayPage === 0} onClick={() => setDisplayPage(p => p - 1)}>הקודם</Button>
+                            <span className="text-sm text-muted-foreground">עמוד {displayPage + 1} מתוך {totalDisplayPages}</span>
+                            <Button variant="outline" size="sm" disabled={displayPage >= totalDisplayPages - 1} onClick={() => setDisplayPage(p => p + 1)}>הבא</Button>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               </ScrollArea>
             </TabsContent>

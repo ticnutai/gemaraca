@@ -1,52 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { MASECHTOT, parseHebrewNumber } from "../_shared/masechtotData.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-// List of known Masechtot with Hebrew names
-const MASECHTOT = [
-  { name: "ברכות", english: "Berakhot", maxDaf: 64 },
-  { name: "שבת", english: "Shabbat", maxDaf: 157 },
-  { name: "עירובין", english: "Eruvin", maxDaf: 105 },
-  { name: "פסחים", english: "Pesachim", maxDaf: 121 },
-  { name: "שקלים", english: "Shekalim", maxDaf: 22 },
-  { name: "יומא", english: "Yoma", maxDaf: 88 },
-  { name: "סוכה", english: "Sukkah", maxDaf: 56 },
-  { name: "ביצה", english: "Beitza", maxDaf: 40 },
-  { name: "ראש השנה", english: "Rosh Hashanah", maxDaf: 35 },
-  { name: "תענית", english: "Taanit", maxDaf: 31 },
-  { name: "מגילה", english: "Megillah", maxDaf: 32 },
-  { name: "מועד קטן", english: "Moed Katan", maxDaf: 29 },
-  { name: "חגיגה", english: "Chagigah", maxDaf: 27 },
-  { name: "יבמות", english: "Yevamot", maxDaf: 122 },
-  { name: "כתובות", english: "Ketubot", maxDaf: 112 },
-  { name: "נדרים", english: "Nedarim", maxDaf: 91 },
-  { name: "נזיר", english: "Nazir", maxDaf: 66 },
-  { name: "סוטה", english: "Sotah", maxDaf: 49 },
-  { name: "גיטין", english: "Gittin", maxDaf: 90 },
-  { name: "קידושין", english: "Kiddushin", maxDaf: 82 },
-  { name: "בבא קמא", english: "Bava Kamma", maxDaf: 119 },
-  { name: "בבא מציעא", english: "Bava Metzia", maxDaf: 119 },
-  { name: "בבא בתרא", english: "Bava Batra", maxDaf: 176 },
-  { name: "סנהדרין", english: "Sanhedrin", maxDaf: 113 },
-  { name: "מכות", english: "Makkot", maxDaf: 24 },
-  { name: "שבועות", english: "Shevuot", maxDaf: 49 },
-  { name: "עבודה זרה", english: "Avodah Zarah", maxDaf: 76 },
-  { name: "הוריות", english: "Horayot", maxDaf: 14 },
-  { name: "זבחים", english: "Zevachim", maxDaf: 120 },
-  { name: "מנחות", english: "Menachot", maxDaf: 110 },
-  { name: "חולין", english: "Chullin", maxDaf: 142 },
-  { name: "בכורות", english: "Bekhorot", maxDaf: 61 },
-  { name: "ערכין", english: "Arakhin", maxDaf: 34 },
-  { name: "תמורה", english: "Temurah", maxDaf: 34 },
-  { name: "כריתות", english: "Keritot", maxDaf: 28 },
-  { name: "מעילה", english: "Meilah", maxDaf: 22 },
-  { name: "תמיד", english: "Tamid", maxDaf: 33 },
-  { name: "נידה", english: "Niddah", maxDaf: 73 },
-];
 
 interface AnalysisResult {
   title: string;
@@ -237,26 +196,10 @@ ${textToAnalyze.substring(0, 10000)}
       
       // Fix common issues: Hebrew numbers in daf field
       let jsonStr = jsonMatch[0];
-      // Replace Hebrew numbers with Arabic numerals for daf field
-      const hebrewToNumber: { [key: string]: number } = {
-        'א': 1, 'ב': 2, 'ג': 3, 'ד': 4, 'ה': 5, 'ו': 6, 'ז': 7, 'ח': 8, 'ט': 9,
-        'י': 10, 'יא': 11, 'יב': 12, 'יג': 13, 'יד': 14, 'טו': 15, 'טז': 16, 'יז': 17, 'יח': 18, 'יט': 19,
-        'כ': 20, 'כא': 21, 'כב': 22, 'כג': 23, 'כד': 24, 'כה': 25, 'כו': 26, 'כז': 27, 'כח': 28, 'כט': 29,
-        'ל': 30, 'לא': 31, 'לב': 32, 'לג': 33, 'לד': 34, 'לה': 35, 'לו': 36, 'לז': 37, 'לח': 38, 'לט': 39,
-        'מ': 40, 'מא': 41, 'מב': 42, 'מג': 43, 'מד': 44, 'מה': 45, 'מו': 46, 'מז': 47, 'מח': 48, 'מט': 49,
-        'נ': 50, 'נא': 51, 'נב': 52, 'נג': 53, 'נד': 54, 'נה': 55, 'נו': 56, 'נז': 57, 'נח': 58, 'נט': 59,
-        'ס': 60, 'סא': 61, 'סב': 62, 'סג': 63, 'סד': 64, 'סה': 65, 'סו': 66, 'סז': 67, 'סח': 68, 'סט': 69,
-        'ע': 70, 'עא': 71, 'עב': 72, 'עג': 73, 'עד': 74, 'עה': 75, 'עו': 76, 'עז': 77, 'עח': 78, 'עט': 79,
-        'פ': 80, 'פא': 81, 'פב': 82, 'פג': 83, 'פד': 84, 'פה': 85, 'פו': 86, 'פז': 87, 'פח': 88, 'פט': 89,
-        'צ': 90, 'צא': 91, 'צב': 92, 'צג': 93, 'צד': 94, 'צה': 95, 'צו': 96, 'צז': 97, 'צח': 98, 'צט': 99,
-        'ק': 100, 'קא': 101, 'קב': 102, 'קג': 103, 'קד': 104, 'קה': 105, 'קו': 106, 'קז': 107, 'קח': 108, 'קט': 109,
-        'קי': 110, 'קיא': 111, 'קיב': 112, 'קיג': 113, 'קיד': 114, 'קטו': 115, 'קטז': 116, 'קיז': 117, 'קיח': 118, 'קיט': 119,
-        'קכ': 120, 'קל': 130, 'קמ': 140, 'קנ': 150, 'קס': 160, 'קסג': 163, 'קע': 170, 'קעו': 176,
-      };
       
       // Fix Hebrew numbers in daf field: "daf": לט, -> "daf": 39,
       jsonStr = jsonStr.replace(/"daf":\s*([א-ת]+)\s*,/g, (match: string, hebrewNum: string) => {
-        const num = hebrewToNumber[hebrewNum.trim()];
+        const num = parseHebrewNumber(hebrewNum.trim());
         return num ? `"daf": ${num},` : match;
       });
       

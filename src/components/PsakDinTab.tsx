@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { Calendar, Building2, FileText, List, BookOpen, Sparkles, Brain, Loader2, Link, Plus } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import PsakDinViewDialog from "./PsakDinViewDialog";
 import PsakDinEditDialog from "./PsakDinEditDialog";
 import PsakDinActions from "./PsakDinActions";
@@ -38,9 +39,15 @@ const PsakDinTab = () => {
 
   useEffect(() => {
     loadPsakim(currentPage);
-    loadLinkCounts();
     loadTotalUnlinkedCount();
   }, [currentPage]);
+
+  // Load link counts after psakim are loaded (only for visible page)
+  useEffect(() => {
+    if (psakim.length > 0) {
+      loadLinkCounts(psakim.map(p => p.id));
+    }
+  }, [psakim]);
 
   const loadPsakim = async (page: number) => {
     setLoading(true);
@@ -64,31 +71,25 @@ const PsakDinTab = () => {
     }
   };
 
-  const loadLinkCounts = async () => {
+  const loadLinkCounts = async (psakIds: string[]) => {
+    if (psakIds.length === 0) return;
     try {
-      const PAGE = 1000;
-      let offset = 0;
       const counts = new Map<string, number>();
-      let fetchMore = true;
+      const { data, error } = await supabase
+        .from('sugya_psak_links')
+        .select('psak_din_id')
+        .in('psak_din_id', psakIds);
 
-      while (fetchMore) {
-        const { data, error } = await supabase
-          .from('sugya_psak_links')
-          .select('psak_din_id')
-          .range(offset, offset + PAGE - 1);
+      if (error) throw error;
+      (data || []).forEach(link => {
+        counts.set(link.psak_din_id, (counts.get(link.psak_din_id) || 0) + 1);
+      });
 
-        if (error) throw error;
-        if (!data || data.length === 0) { fetchMore = false; break; }
-
-        data.forEach(link => {
-          counts.set(link.psak_din_id, (counts.get(link.psak_din_id) || 0) + 1);
-        });
-
-        if (data.length < PAGE) fetchMore = false;
-        offset += PAGE;
-      }
-
-      setPsakLinks(counts);
+      setPsakLinks(prev => {
+        const merged = new Map(prev);
+        counts.forEach((v, k) => merged.set(k, v));
+        return merged;
+      });
     } catch (error) {
       console.error('Error loading link counts:', error);
     }
@@ -96,19 +97,27 @@ const PsakDinTab = () => {
 
   const loadTotalUnlinkedCount = async () => {
     try {
-      // Get total psakei din count
-      const { count: totalCount } = await supabase
+      const { count: totalPsakim } = await supabase
         .from('psakei_din')
         .select('*', { count: 'exact', head: true });
 
-      // Get linked psakei din count  
-      const { data: linkedData } = await supabase
-        .from('sugya_psak_links')
-        .select('psak_din_id');
+      // Count distinct linked psakei din (paginated)
+      const linkedIds = new Set<string>();
+      let offset = 0;
+      const PAGE = 1000;
+      let more = true;
+      while (more) {
+        const { data } = await supabase
+          .from('sugya_psak_links')
+          .select('psak_din_id')
+          .range(offset, offset + PAGE - 1);
+        if (!data || data.length === 0) { more = false; break; }
+        data.forEach(l => linkedIds.add(l.psak_din_id));
+        if (data.length < PAGE) more = false;
+        offset += PAGE;
+      }
       
-      const uniqueLinkedIds = new Set(linkedData?.map(l => l.psak_din_id) || []);
-      
-      setTotalUnlinkedCount((totalCount || 0) - uniqueLinkedIds.size);
+      setTotalUnlinkedCount((totalPsakim || 0) - linkedIds.size);
     } catch (error) {
       console.error('Error loading unlinked count:', error);
     }
@@ -136,12 +145,10 @@ const PsakDinTab = () => {
 
   const handleEditSaved = () => {
     loadPsakim(currentPage);
-    loadLinkCounts();
   };
 
   const handleDeletePsak = () => {
     loadPsakim(currentPage);
-    loadLinkCounts();
     loadTotalUnlinkedCount();
   };
 
@@ -255,7 +262,17 @@ const PsakDinTab = () => {
 
           <TabsContent value="recent">
             {loading ? (
-              <div className="text-center py-8 text-muted-foreground">טוען...</div>
+              <div className="space-y-4 py-4">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="flex items-center gap-3 p-4 border rounded-lg">
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-5 w-3/4" />
+                      <Skeleton className="h-4 w-1/2" />
+                    </div>
+                    <Skeleton className="h-8 w-20" />
+                  </div>
+                ))}
+              </div>
             ) : (
               <div className="max-w-4xl mx-auto space-y-4">
                 {/* Header */}
@@ -357,7 +374,19 @@ const PsakDinTab = () => {
                   </Card>
                 )}
                 
-                {psakim.map((psak) => {
+                {psakim.length === 0 ? (
+                  <Card className="border-dashed border-2">
+                    <CardContent className="p-12 text-center">
+                      <FileText className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
+                      <h3 className="text-lg font-medium text-muted-foreground mb-2">אין פסקי דין עדיין</h3>
+                      <p className="text-sm text-muted-foreground mb-4">התחל בהעלאת פסקי דין כדי לראות אותם כאן</p>
+                      <Button onClick={handleAddNew} className="gap-2">
+                        <Plus className="w-4 h-4" />
+                        הוסף פסק דין ראשון
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ) : psakim.map((psak) => {
                   const hasLinks = psakLinks.has(psak.id);
                   const linkCount = psakLinks.get(psak.id) || 0;
                   const isSelected = selectedForAnalysis.has(psak.id);

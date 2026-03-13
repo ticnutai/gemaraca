@@ -1,51 +1,11 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { MASECHTOT_MAP } from "../_shared/masechtotData.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-// רשימת המסכתות עם שמות Sefaria
-const MASECHTOT_MAP: Record<string, string> = {
-  "ברכות": "Berakhot",
-  "שבת": "Shabbat",
-  "עירובין": "Eruvin",
-  "פסחים": "Pesachim",
-  "שקלים": "Shekalim",
-  "יומא": "Yoma",
-  "סוכה": "Sukkah",
-  "ביצה": "Beitzah",
-  "ראש השנה": "Rosh_Hashanah",
-  "תענית": "Taanit",
-  "מגילה": "Megillah",
-  "מועד קטן": "Moed_Katan",
-  "חגיגה": "Chagigah",
-  "יבמות": "Yevamot",
-  "כתובות": "Ketubot",
-  "נדרים": "Nedarim",
-  "נזיר": "Nazir",
-  "סוטה": "Sotah",
-  "גיטין": "Gittin",
-  "קידושין": "Kiddushin",
-  "בבא קמא": "Bava_Kamma",
-  "בבא מציעא": "Bava_Metzia",
-  "בבא בתרא": "Bava_Batra",
-  "סנהדרין": "Sanhedrin",
-  "מכות": "Makkot",
-  "שבועות": "Shevuot",
-  "עבודה זרה": "Avodah_Zarah",
-  "הוריות": "Horayot",
-  "זבחים": "Zevachim",
-  "מנחות": "Menachot",
-  "חולין": "Chullin",
-  "בכורות": "Bekhorot",
-  "ערכין": "Arakhin",
-  "תמורה": "Temurah",
-  "כריתות": "Keritot",
-  "מעילה": "Meilah",
-  "נידה": "Niddah",
 };
 
 serve(async (req) => {

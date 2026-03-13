@@ -1,48 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { TRACTATE_NAMES as TRACTATES, ABBREVIATIONS, GEMATRIA, parseHebrewNumber } from "../_shared/masechtotData.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
 };
-
-const TRACTATES = [
-  "ברכות","שבת","עירובין","פסחים","ראש השנה","יומא","סוכה","ביצה",
-  "תענית","מגילה","חגיגה","יבמות","כתובות","נדרים","נזיר","גיטין",
-  "קידושין","בבא קמא","בבא מציעא","בבא בתרא","סנהדרין","מכות","שבועות",
-  "עבודה זרה","הוריות","זבחים","מנחות","חולין","בכורות","ערכין",
-  "תמורה","כריתות","מעילה","נידה",
-];
-
-const ABBREVIATIONS: Record<string, string> = {
-  'ב"ק': "בבא קמא", 'בב"ק': "בבא קמא", "ב״ק": "בבא קמא",
-  'ב"מ': "בבא מציעא", 'בב"מ': "בבא מציעא", "ב״מ": "בבא מציעא",
-  'ב"ב': "בבא בתרא", 'בב"ב': "בבא בתרא", "ב״ב": "בבא בתרא",
-  'ר"ה': "ראש השנה", "ר״ה": "ראש השנה",
-  'ע"ז': "עבודה זרה", "ע״ז": "עבודה זרה",
-  'מו"ק': "מועד קטן", "מו״ק": "מועד קטן",
-};
-
-const GEMATRIA: Record<string, number> = {
-  "א": 1, "ב": 2, "ג": 3, "ד": 4, "ה": 5, "ו": 6, "ז": 7, "ח": 8, "ט": 9,
-  "י": 10, "כ": 20, "ל": 30, "מ": 40, "נ": 50, "ס": 60, "ע": 70, "פ": 80, "צ": 90,
-  "ק": 100, "ר": 200, "ש": 300, "ת": 400,
-  "ך": 20, "ם": 40, "ן": 50, "ף": 80, "ץ": 90,
-};
-
-function parseHebrewNumber(s: string): number | null {
-  const clean = s.replace(/['"״׳]/g, "").trim();
-  if (!clean) return null;
-  const num = parseInt(clean, 10);
-  if (!isNaN(num)) return num;
-  let total = 0;
-  for (const ch of clean) {
-    const val = GEMATRIA[ch];
-    if (val) total += val;
-    else return null;
-  }
-  return total > 0 ? total : null;
-}
 
 function numberToHebrewLetter(n: number): string {
   const units = ["", "א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט"];

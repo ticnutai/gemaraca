@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -198,8 +199,13 @@ const LinkedPsakimSection = ({ sugyaId, masechet, dafNumber }: LinkedPsakimSecti
   if (loading) {
     return (
       <Card className="border-accent/30">
-        <CardContent className="p-4 text-center">
-          <Loader2 className="w-5 h-5 animate-spin mx-auto text-muted-foreground" />
+        <CardContent className="p-4 space-y-3">
+          {[...Array(2)].map((_, i) => (
+            <div key={i} className="space-y-1.5">
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-3 w-1/2" />
+            </div>
+          ))}
         </CardContent>
       </Card>
     );

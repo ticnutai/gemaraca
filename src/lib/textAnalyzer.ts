@@ -1,4 +1,5 @@
 import { MASECHTOT, Masechet } from './masechtotData';
+import { fromHebrewNumeral } from './hebrewNumbers';
 
 // Types for analysis results
 export interface DetectedSource {
@@ -90,23 +91,12 @@ export function parseHebrewNumber(hebrew: string): number | null {
   // Clean the string
   const cleaned = hebrew.trim().replace(/['"״׳]/g, '');
   
-  // Direct lookup
+  // Direct lookup from pre-built table (handles quote variations)
   if (HEBREW_NUMBERS[hebrew]) return HEBREW_NUMBERS[hebrew];
   if (HEBREW_NUMBERS[cleaned]) return HEBREW_NUMBERS[cleaned];
   
-  // Try to parse digit by digit
-  let total = 0;
-  for (const char of cleaned) {
-    if (HEBREW_LETTERS.includes(char)) {
-      total += HEBREW_LETTERS.indexOf(char);
-    } else if (HEBREW_TENS.includes(char)) {
-      total += HEBREW_TENS.indexOf(char) * 10;
-    } else if (HEBREW_HUNDREDS.includes(char)) {
-      total += HEBREW_HUNDREDS.indexOf(char) * 100;
-    }
-  }
-  
-  return total > 0 ? total : null;
+  // Fall back to canonical Hebrew numeral parser
+  return fromHebrewNumeral(cleaned);
 }
 
 // Build enhanced regex patterns for masechtot

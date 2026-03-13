@@ -1,15 +1,14 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useDownloadController } from "@/hooks/useDownloadController";
 import { useDownloadStore } from "@/stores/downloadStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Download,
   Search,
   CheckSquare,
   Square,
@@ -36,7 +35,7 @@ interface PsakDinItem {
   summary: string;
 }
 
-const PAGE_SIZE = 100;
+const PAGE_SIZE = 50;
 
 const DownloadManagerTab = () => {
   const [items, setItems] = useState<PsakDinItem[]>([]);
@@ -44,42 +43,67 @@ const DownloadManagerTab = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [courtFilter, setCourt] = useState<string>("all");
   const [yearFilter, setYear] = useState<string>("all");
   const [page, setPage] = useState(0);
+  const [courts, setCourts] = useState<string[]>([]);
+  const [years, setYears] = useState<number[]>([]);
 
   const { startDownload } = useDownloadController();
   const activeSession = useDownloadStore((s) => s.getActiveSession());
 
-  // Load all items with pagination
+  // Debounce search
   useEffect(() => {
-    loadAllItems();
+    const timer = setTimeout(() => { setDebouncedSearch(searchQuery); setPage(0); }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Load filter options once
+  useEffect(() => {
+    (async () => {
+      const { data: courtData } = await supabase
+        .from('psakei_din')
+        .select('court')
+        .order('court');
+      if (courtData) {
+        setCourts([...new Set(courtData.map(r => r.court).filter(Boolean))].sort());
+      }
+      const { data: yearData } = await supabase
+        .from('psakei_din')
+        .select('year')
+        .order('year', { ascending: false });
+      if (yearData) {
+        setYears([...new Set(yearData.map(r => r.year).filter(Boolean))].sort((a, b) => b - a));
+      }
+    })();
   }, []);
 
-  const loadAllItems = async () => {
+  // Server-side filtered + paginated load
+  useEffect(() => {
+    loadPage();
+  }, [page, debouncedSearch, courtFilter, yearFilter]);
+
+  const loadPage = async () => {
     setLoading(true);
     try {
-      let allItems: PsakDinItem[] = [];
-      let from = 0;
-      const batchSize = 1000;
+      let query = supabase
+        .from("psakei_din")
+        .select("id, title, court, year, summary", { count: "exact" })
+        .order("year", { ascending: false });
 
-      while (true) {
-        const { data, error } = await supabase
-          .from("psakei_din")
-          .select("id, title, court, year, summary")
-          .order("year", { ascending: false })
-          .range(from, from + batchSize - 1);
-
-        if (error) throw error;
-        if (!data || data.length === 0) break;
-
-        allItems = [...allItems, ...data];
-        if (data.length < batchSize) break;
-        from += batchSize;
+      if (debouncedSearch) {
+        query = query.or(`title.ilike.%${debouncedSearch}%,court.ilike.%${debouncedSearch}%,summary.ilike.%${debouncedSearch}%`);
       }
+      if (courtFilter !== "all") query = query.eq("court", courtFilter);
+      if (yearFilter !== "all") query = query.eq("year", parseInt(yearFilter));
 
-      setItems(allItems);
-      setTotalCount(allItems.length);
+      const from = page * PAGE_SIZE;
+      const { data, error, count } = await query.range(from, from + PAGE_SIZE - 1);
+
+      if (error) throw error;
+      setItems(data || []);
+      setTotalCount(count || 0);
     } catch (err) {
       console.error("Error loading items:", err);
     } finally {
@@ -87,40 +111,7 @@ const DownloadManagerTab = () => {
     }
   };
 
-  // Get unique courts and years for filters
-  const courts = useMemo(
-    () => [...new Set(items.map((i) => i.court))].sort(),
-    [items]
-  );
-  const years = useMemo(
-    () => [...new Set(items.map((i) => i.year))].sort((a, b) => b - a),
-    [items]
-  );
-
-  // Filtered items
-  const filtered = useMemo(() => {
-    return items.filter((item) => {
-      if (searchQuery) {
-        const q = searchQuery.toLowerCase();
-        if (
-          !item.title.toLowerCase().includes(q) &&
-          !item.court.toLowerCase().includes(q) &&
-          !item.summary?.toLowerCase().includes(q)
-        )
-          return false;
-      }
-      if (courtFilter !== "all" && item.court !== courtFilter) return false;
-      if (yearFilter !== "all" && item.year !== parseInt(yearFilter)) return false;
-      return true;
-    });
-  }, [items, searchQuery, courtFilter, yearFilter]);
-
-  // Paginated view
-  const paginatedItems = useMemo(
-    () => filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE),
-    [filtered, page]
-  );
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {
@@ -132,8 +123,8 @@ const DownloadManagerTab = () => {
   }, []);
 
   const selectAll = useCallback(() => {
-    setSelectedIds(new Set(filtered.map((i) => i.id)));
-  }, [filtered]);
+    setSelectedIds(new Set(items.map((i) => i.id)));
+  }, [items]);
 
   const deselectAll = useCallback(() => {
     setSelectedIds(new Set());
@@ -142,10 +133,10 @@ const DownloadManagerTab = () => {
   const selectVisible = useCallback(() => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      paginatedItems.forEach((i) => next.add(i.id));
+      items.forEach((i) => next.add(i.id));
       return next;
     });
-  }, [paginatedItems]);
+  }, [items]);
 
   const handleDownload = useCallback(
     async (format: "zip" | "html") => {
@@ -156,8 +147,8 @@ const DownloadManagerTab = () => {
     [items, selectedIds, startDownload]
   );
 
-  const allFilteredSelected =
-    filtered.length > 0 && filtered.every((i) => selectedIds.has(i.id));
+  const allPageSelected =
+    items.length > 0 && items.every((i) => selectedIds.has(i.id));
 
   return (
     <div className="p-4 md:p-6 space-y-4" dir="rtl">
@@ -177,15 +168,12 @@ const DownloadManagerTab = () => {
           <Input
             placeholder="חיפוש לפי כותרת, בית דין..."
             value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setPage(0);
-            }}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="pr-9"
           />
         </div>
 
-        <Select value={courtFilter} onValueChange={(v) => { setCourt(v); setPage(0); }}>
+        <Select value={courtFilter} onValueChange={(v) => { setCourt(v); setPage(0); setSelectedIds(new Set()); }}>
           <SelectTrigger className="w-[180px]">
             <Filter className="w-4 h-4 ml-2" />
             <SelectValue placeholder="בית דין" />
@@ -200,7 +188,7 @@ const DownloadManagerTab = () => {
           </SelectContent>
         </Select>
 
-        <Select value={yearFilter} onValueChange={(v) => { setYear(v); setPage(0); }}>
+        <Select value={yearFilter} onValueChange={(v) => { setYear(v); setPage(0); setSelectedIds(new Set()); }}>
           <SelectTrigger className="w-[120px]">
             <SelectValue placeholder="שנה" />
           </SelectTrigger>
@@ -221,17 +209,14 @@ const DownloadManagerTab = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={allFilteredSelected ? deselectAll : selectAll}
+            onClick={allPageSelected ? deselectAll : selectAll}
           >
-            {allFilteredSelected ? (
+            {allPageSelected ? (
               <Square className="w-4 h-4 ml-1" />
             ) : (
               <CheckSquare className="w-4 h-4 ml-1" />
             )}
-            {allFilteredSelected ? "בטל הכל" : `בחר הכל (${filtered.length})`}
-          </Button>
-          <Button variant="outline" size="sm" onClick={selectVisible}>
-            בחר עמוד נוכחי
+            {allPageSelected ? "בטל הכל" : `בחר עמוד (${items.length})`}
           </Button>
           {selectedIds.size > 0 && (
             <Badge variant="default">
@@ -258,15 +243,22 @@ const DownloadManagerTab = () => {
 
       {/* Items list */}
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <span className="mr-3 text-muted-foreground">טוען פסקי דין...</span>
+        <div className="space-y-2 py-4">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="flex items-center gap-3 p-3 border-b">
+              <Skeleton className="h-5 w-5 rounded" />
+              <div className="flex-1 space-y-1.5">
+                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-3 w-1/3" />
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
         <>
           <ScrollArea className="h-[400px] border rounded-lg">
             <div className="divide-y divide-border">
-              {paginatedItems.map((item) => {
+              {items.map((item) => {
                 const isSelected = selectedIds.has(item.id);
                 return (
                   <div
@@ -291,9 +283,11 @@ const DownloadManagerTab = () => {
                   </div>
                 );
               })}
-              {paginatedItems.length === 0 && (
-                <div className="p-8 text-center text-muted-foreground">
-                  לא נמצאו פסקי דין
+              {items.length === 0 && (
+                <div className="p-12 text-center">
+                  <FileText className="w-10 h-10 mx-auto text-muted-foreground/40 mb-3" />
+                  <p className="text-muted-foreground font-medium">לא נמצאו פסקי דין</p>
+                  <p className="text-sm text-muted-foreground mt-1">נסה לשנות את הסינון או את מילות החיפוש</p>
                 </div>
               )}
             </div>
