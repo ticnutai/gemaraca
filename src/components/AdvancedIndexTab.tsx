@@ -15,6 +15,7 @@ import CardsView from './talmud-index/CardsView';
 import TreeViewIndex from './talmud-index/TreeViewIndex';
 import PsakDinViewDialog from './PsakDinViewDialog';
 import IndexingControlPanel from './IndexingControlPanel';
+import DebugDiagnosticDialog from './DebugDiagnosticDialog';
 import { TalmudRefWithPsak, TRACTATES, ValidationStatus, ViewMode } from './talmud-index/types';
 
 export default function AdvancedIndexTab() {
@@ -110,14 +111,17 @@ export default function AdvancedIndexTab() {
   return (
     <div className="space-y-4 p-4 md:p-6" dir="rtl">
       {/* Header */}
-      <div className="text-right">
-        <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-          <BookOpen className="w-5 h-5 text-primary" />
-          אינדקס תלמודי מתקדם
-        </h2>
-        <p className="text-muted-foreground text-sm mt-1">
-          חילוץ וניהול הפניות תלמודיות מפסקי דין • ולידציה ומעקב
-        </p>
+      <div className="flex items-center justify-between">
+        <div className="text-right">
+          <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+            <BookOpen className="w-5 h-5 text-primary" />
+            אינדקס תלמודי מתקדם
+          </h2>
+          <p className="text-muted-foreground text-sm mt-1">
+            חילוץ וניהול הפניות תלמודיות מפסקי דין • ולידציה ומעקב
+          </p>
+        </div>
+        <DebugDiagnosticDialog />
       </div>
 
       {/* Indexing Engine Control Panel */}
