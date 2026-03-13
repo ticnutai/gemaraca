@@ -246,7 +246,7 @@ export default function DevMigrationsPanel({ open, onClose }: { open: boolean; o
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); if (v === 'history') loadHistory(); }} className="flex-1 overflow-hidden flex flex-col">
-          <TabsList className="grid grid-cols-3 w-full">
+          <TabsList className="grid grid-cols-4 w-full">
             <TabsTrigger value="editor" className="gap-1">
               <FileCode className="h-4 w-4" />
               עורך SQL
@@ -254,6 +254,10 @@ export default function DevMigrationsPanel({ open, onClose }: { open: boolean; o
             <TabsTrigger value="http" className="gap-1">
               <Globe className="h-4 w-4" />
               ייבוא HTTP
+            </TabsTrigger>
+            <TabsTrigger value="monitoring" className="gap-1">
+              <Activity className="h-4 w-4" />
+              מוניטורינג
             </TabsTrigger>
             <TabsTrigger value="history" className="gap-1">
               <History className="h-4 w-4" />
