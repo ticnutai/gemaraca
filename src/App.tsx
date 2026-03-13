@@ -5,9 +5,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Suspense, lazy } from "react";
 import { ThemeProvider } from "./components/ThemeProvider";
-import { SettingsButton } from "./components/SettingsButton";
-import GlobalUploadProgress from "./components/GlobalUploadProgress";
-import GlobalDownloadProgress from "./components/GlobalDownloadProgress";
 import AppLayout from "./components/AppLayout";
 import { AppContextProvider } from "./contexts/AppContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -17,6 +14,11 @@ const Index = lazy(() => import("./pages/Index"));
 const SugyaDetail = lazy(() => import("./pages/SugyaDetail"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Auth = lazy(() => import("./pages/Auth"));
+
+// Lazy-loaded global overlays — only loaded when actually needed
+const SettingsButton = lazy(() => import("./components/SettingsButton").then(m => ({ default: m.SettingsButton })));
+const GlobalUploadProgress = lazy(() => import("./components/GlobalUploadProgress"));
+const GlobalDownloadProgress = lazy(() => import("./components/GlobalDownloadProgress"));
 
 const queryClient = new QueryClient({
   defaultOptions: {

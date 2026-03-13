@@ -16,6 +16,7 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
+    target: 'es2020',
     rollupOptions: {
       output: {
         manualChunks: {
@@ -32,6 +33,7 @@ export default defineConfig(({ mode }) => ({
           ],
           'icons': ['lucide-react'],
           'supabase': ['@supabase/supabase-js'],
+          'recharts': ['recharts'],
         },
       },
     },

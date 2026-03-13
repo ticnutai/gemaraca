@@ -2,7 +2,7 @@ import { useRef, useCallback, useEffect } from 'react';
 import { useDownloadStore, DownloadItem } from '@/stores/downloadStore';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import JSZip from 'jszip';
+import type JSZip from 'jszip';
 
 const DEFAULT_CONCURRENCY = 3;
 const RETRY_DELAYS = [1000, 3000, 5000];
@@ -215,7 +215,8 @@ export function useDownloadController() {
       if (format === 'zip') {
         setSessionStatus(sessionId, 'packaging');
         
-        const zip = new JSZip();
+        const { default: JSZipLib } = await import('jszip');
+        const zip = new JSZipLib();
         downloadedContents.forEach((data, _id) => {
           const safeName = data.title.replace(/[\\/:*?"<>|]/g, '_').substring(0, 100);
           zip.file(`${safeName}.html`, data.content);

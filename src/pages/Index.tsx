@@ -1,9 +1,9 @@
 import { lazy, Suspense } from "react";
-import SedarimNavigator from "@/components/SedarimNavigator";
 import { useAppContext } from "@/contexts/AppContext";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // Lazy-loaded tab components (code splitting)
+const SedarimNavigator = lazy(() => import("@/components/SedarimNavigator"));
 const PsakDinTab = lazy(() => import("@/components/PsakDinTab"));
 const SearchPsakDinTab = lazy(() => import("@/components/SearchPsakDinTab"));
 const UploadPsakDinTab = lazy(() => import("@/components/UploadPsakDinTab"));
@@ -25,8 +25,10 @@ const Index = () => {
 
   return (
     <div className="p-2 md:p-6 space-y-3 md:space-y-4 overflow-x-hidden max-w-full">
-      {/* Sedarim Navigator - 6 frames at top */}
-      <SedarimNavigator />
+      {/* Sedarim Navigator - lazy loaded */}
+      <Suspense fallback={<Skeleton className="h-32 w-full rounded-xl" />}>
+        <SedarimNavigator />
+      </Suspense>
 
       {/* Content cards - only show for non-gemara tabs */}
       {activeTab !== "gemara" && (

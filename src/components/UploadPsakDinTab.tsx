@@ -16,7 +16,6 @@ import { calculateFileHashes } from "@/lib/fileHash";
 import { isOnline } from "@/lib/uploadUtils";
 import UploadSummaryDialog from "./UploadSummaryDialog";
 import PsakDinStats from "./PsakDinStats";
-import JSZip from "jszip";
 
 interface DuplicateFile {
   name: string;
@@ -172,6 +171,7 @@ const UploadPsakDinTab = () => {
     
     try {
       addDebug(`⏳ טוען ZIP לזכרון...`);
+      const { default: JSZip } = await import('jszip');
       const zip = await JSZip.loadAsync(zipFile);
       const validExts = ['pdf', 'docx', 'doc', 'txt', 'rtf', 'html', 'htm'];
       

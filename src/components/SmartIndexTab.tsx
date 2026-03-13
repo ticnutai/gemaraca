@@ -50,6 +50,7 @@ const BATCH_SIZE = 500;
 const LOAD_PAGE_SIZE = 500;
 const DISPLAY_PAGE_SIZE = 50;
 const MAX_MEMORY_RESULTS = 2000;
+const INITIAL_LOAD_SIZE = 200;
 const STORAGE_KEY = 'smart_index_last_run';
 
 const SmartIndexTab = () => {
@@ -83,48 +84,67 @@ const SmartIndexTab = () => {
     loadSavedResults();
   }, []);
 
-  // Load previously saved analysis results from database with pagination
+  // Load previously saved analysis results from database — initial fast load then background
   const loadSavedResults = async () => {
     setLoading(true);
     try {
-      let allResults: AnalysisResult[] = [];
-      let page = 0;
-      let hasMore = true;
+      // Fast initial load — just the first page for immediate display
+      const { data: initialData, error: initialError } = await supabase
+        .from('smart_index_results')
+        .select(`
+          *,
+          psakei_din:psak_din_id (id, title, summary, court, year)
+        `)
+        .range(0, INITIAL_LOAD_SIZE - 1);
 
-      while (hasMore) {
-        const from = page * LOAD_PAGE_SIZE;
-        const to = from + LOAD_PAGE_SIZE - 1;
+      if (initialError) throw initialError;
 
-        const { data, error } = await supabase
-          .from('smart_index_results')
-          .select(`
-            *,
-            psakei_din:psak_din_id (id, title, summary, court, year)
-          `)
-          .range(from, to);
+      const mapRow = (row: any): AnalysisResult => ({
+        id: row.psak_din_id,
+        title: row.psakei_din?.title || '',
+        sources: row.sources as DetectedSource[],
+        topics: row.topics,
+        masechtot: row.masechtot || [],
+        books: row.books || [],
+        wordCount: row.word_count,
+        hasFullText: row.has_full_text
+      });
 
-        if (error) throw error;
+      const initialResults = (initialData || []).map(mapRow);
+      setAnalysisResults(initialResults);
+      setSavedCount(initialResults.length);
+      setLoading(false);
 
-        if (data && data.length > 0) {
-          const pageResults: AnalysisResult[] = data.map((row: any) => ({
-            id: row.psak_din_id,
-            title: row.psakei_din?.title || '',
-            sources: row.sources as DetectedSource[],
-            topics: row.topics,
-            masechtot: row.masechtot || [],
-            books: row.books || [],
-            wordCount: row.word_count,
-            hasFullText: row.has_full_text
-          }));
-          allResults = [...allResults, ...pageResults];
+      // Load remaining in background if there are more
+      if (initialData && initialData.length === INITIAL_LOAD_SIZE) {
+        let allResults = [...initialResults];
+        let page = 1;
+        let hasMore = true;
+
+        while (hasMore && allResults.length < MAX_MEMORY_RESULTS) {
+          const from = page * LOAD_PAGE_SIZE;
+          const to = from + LOAD_PAGE_SIZE - 1;
+
+          const { data, error } = await supabase
+            .from('smart_index_results')
+            .select(`
+              *,
+              psakei_din:psak_din_id (id, title, summary, court, year)
+            `)
+            .range(from, to);
+
+          if (error) throw error;
+
+          if (data && data.length > 0) {
+            allResults = [...allResults, ...data.map(mapRow)];
+            setAnalysisResults(allResults);
+            setSavedCount(allResults.length);
+          }
+
+          hasMore = data?.length === LOAD_PAGE_SIZE && allResults.length < MAX_MEMORY_RESULTS;
+          page++;
         }
-
-        hasMore = data?.length === LOAD_PAGE_SIZE && allResults.length < MAX_MEMORY_RESULTS;
-        page++;
       }
-
-      setAnalysisResults(allResults);
-      setSavedCount(allResults.length);
     } catch (error) {
       console.error('Error loading saved results:', error);
     } finally {

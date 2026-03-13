@@ -103,21 +103,13 @@ const PsakDinTab = () => {
         .from('psakei_din')
         .select('*', { count: 'exact', head: true });
 
-      // Count distinct linked psakei din (paginated)
-      const linkedIds = new Set<string>();
-      let offset = 0;
-      const PAGE = 1000;
-      let more = true;
-      while (more) {
-        const { data } = await supabase
-          .from('sugya_psak_links')
-          .select('psak_din_id')
-          .range(offset, offset + PAGE - 1);
-        if (!data || data.length === 0) { more = false; break; }
-        data.forEach(l => linkedIds.add(l.psak_din_id));
-        if (data.length < PAGE) more = false;
-        offset += PAGE;
-      }
+      // Count distinct linked psakei din with single query
+      const { data } = await supabase
+        .from('sugya_psak_links')
+        .select('psak_din_id')
+        .limit(10000);
+      
+      const linkedIds = new Set((data || []).map(l => l.psak_din_id));
       
       setTotalUnlinkedCount((totalPsakim || 0) - linkedIds.size);
     } catch (error) {

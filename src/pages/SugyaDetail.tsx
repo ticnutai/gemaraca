@@ -50,8 +50,8 @@ const SugyaDetail = () => {
 
   useEffect(() => {
     if (id) {
-      loadPageFromDB();
-      fetchRealCases();
+      // Run both queries in parallel instead of sequentially
+      Promise.all([loadPageFromDB(), fetchRealCases()]);
     }
   }, [id]);
 
@@ -121,9 +121,10 @@ const SugyaDetail = () => {
         console.error('Error fetching real cases:', error);
       } else {
         setRealCases(data || []);
-        // Fetch FAQ items for all the psakei din
+        // Fetch FAQ items in parallel — don't wait for cases to finish rendering
         if (data && data.length > 0) {
           const psakDinIds = data.map((link: any) => link.psak_din_id);
+          // Fire and forget — don't cascade
           fetchFAQItems(psakDinIds);
         }
       }

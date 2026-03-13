@@ -54,30 +54,24 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Load loaded pages map with caching
+  // Load loaded pages map with caching — single query with aggregation
   const { data: loadedPagesMap = {} } = useQuery({
     queryKey: ['sedarim-loaded-pages'],
     queryFn: async () => {
       const map: LoadedPagesMap = {};
-      let pgOffset = 0;
-      const PG_SIZE = 1000;
-      let pgMore = true;
-      while (pgMore) {
-        const { data: pagesData } = await supabase
-          .from('gemara_pages')
-          .select('masechet, daf_number')
-          .range(pgOffset, pgOffset + PG_SIZE - 1);
-        if (!pagesData || pagesData.length === 0) { pgMore = false; break; }
+      const { data: pagesData } = await supabase
+        .from('gemara_pages')
+        .select('masechet, daf_number')
+        .limit(5000);
+      if (pagesData) {
         pagesData.forEach(page => {
           if (!map[page.masechet]) map[page.masechet] = [];
           map[page.masechet].push(page.daf_number);
         });
-        if (pagesData.length < PG_SIZE) pgMore = false;
-        pgOffset += PG_SIZE;
       }
       return map;
     },
-    staleTime: 2 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Download masechet function

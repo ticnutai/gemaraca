@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { BookOpen, Scale, Search, Upload, Pin, PinOff, ChevronDown, ChevronLeft, ArrowDownToLine, BookMarked } from "lucide-react";
 import {
   Sidebar,
@@ -98,7 +98,7 @@ const AppSidebar = ({
       }
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mousemove', handleMouseMove, { passive: true });
     return () => document.removeEventListener('mousemove', handleMouseMove);
   }, [isPinned, isHovered, sidebarOpen, setOpen]);
 
@@ -147,11 +147,11 @@ const AppSidebar = ({
     }
   };
 
-  // קיבוץ מסכתות לפי סדר
-  const groupedMasechtot = SEDARIM.map(seder => ({
+  // קיבוץ מסכתות לפי סדר — memoized
+  const groupedMasechtot = useMemo(() => SEDARIM.map(seder => ({
     seder,
     masechtot: MASECHTOT.filter(m => m.seder === seder)
-  }));
+  })), []);
 
   // When unpinned and not hovered, don't render the sidebar content
   if (!isPinned && !sidebarOpen && !isHovered) {

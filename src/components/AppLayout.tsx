@@ -2,9 +2,11 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import AppSidebar from "./AppSidebar";
 import AppHeader from "./AppHeader";
-import FloatingGemaraNav from "./FloatingGemaraNav";
+import { lazy, Suspense } from "react";
 import { useAppContext } from "@/contexts/AppContext";
 import { cn } from "@/lib/utils";
+
+const FloatingGemaraNav = lazy(() => import("./FloatingGemaraNav"));
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -71,8 +73,10 @@ const AppLayout = ({ children }: AppLayoutProps) => {
           onPinToggle={handlePinToggle}
         />
 
-        {/* Floating Navigation Button - appears on all pages */}
-        <FloatingGemaraNav />
+        {/* Floating Navigation Button - lazy loaded */}
+        <Suspense fallback={null}>
+          <FloatingGemaraNav />
+        </Suspense>
       </div>
     </SidebarProvider>
   );

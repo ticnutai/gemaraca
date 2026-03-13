@@ -43,6 +43,56 @@ interface GemaraTextPanelProps {
 
 type ViewMode = 'text' | 'sefaria' | 'edaf-image' | 'edaf-site';
 
+// Pre-defined lookup maps — avoid re-creating on every render
+const HEBREW_TO_NUMBER_STR: Record<string, string> = {
+  'א': '1', 'ב': '2', 'ג': '3', 'ד': '4', 'ה': '5',
+  'ו': '6', 'ז': '7', 'ח': '8', 'ט': '9', 'י': '10',
+  'יא': '11', 'יב': '12', 'יג': '13', 'יד': '14', 'טו': '15',
+  'טז': '16', 'יז': '17', 'יח': '18', 'יט': '19', 'כ': '20',
+  'כא': '21', 'כב': '22', 'כג': '23', 'כד': '24', 'כה': '25',
+  'כו': '26', 'כז': '27', 'כח': '28', 'כט': '29', 'ל': '30',
+  'לא': '31', 'לב': '32', 'לג': '33', 'לד': '34', 'לה': '35',
+  'לו': '36', 'לז': '37', 'לח': '38', 'לט': '39', 'מ': '40'
+};
+
+const HEBREW_TO_NUMBER_INT: Record<string, number> = {
+  'א': 1, 'ב': 2, 'ג': 3, 'ד': 4, 'ה': 5,
+  'ו': 6, 'ז': 7, 'ח': 8, 'ט': 9, 'י': 10,
+  'יא': 11, 'יב': 12, 'יג': 13, 'יד': 14, 'טו': 15,
+  'טז': 16, 'יז': 17, 'יח': 18, 'יט': 19, 'כ': 20,
+  'כא': 21, 'כב': 22, 'כג': 23, 'כד': 24, 'כה': 25,
+  'כו': 26, 'כז': 27, 'כח': 28, 'כט': 29, 'ל': 30,
+  'לא': 31, 'לב': 32, 'לג': 33, 'לד': 34, 'לה': 35
+};
+
+const EDAF_MASECHET_MAP: Record<string, number> = {
+  'Bava_Batra': 23, 'Megillah': 12, 'Berachot': 1, 'Shabbat': 2,
+  'Eruvin': 3, 'Pesachim': 4, 'Shekalim': 5, 'Yoma': 6,
+  'Sukkah': 7, 'Beitzah': 8, 'Rosh_Hashanah': 9, 'Taanit': 10,
+  'Chagigah': 11, 'Moed_Katan': 13, 'Yevamot': 14, 'Ketubot': 15,
+  'Nedarim': 16, 'Nazir': 17, 'Sotah': 18, 'Gittin': 19,
+  'Kiddushin': 20, 'Bava_Kamma': 21, 'Bava_Metzia': 22,
+  'Sanhedrin': 24, 'Makkot': 25, 'Shevuot': 26, 'Avodah_Zarah': 27,
+  'Horayot': 28, 'Zevachim': 29, 'Menachot': 30, 'Chullin': 31,
+  'Bechorot': 32, 'Arachin': 33, 'Temurah': 34, 'Keritot': 35,
+  'Meilah': 36, 'Niddah': 37
+};
+
+const EDAF_FOLDER_MAP: Record<string, string> = {
+  'Bava_Batra': 'bavabatra', 'Megillah': 'megillah', 'Berachot': 'berachot',
+  'Shabbat': 'shabbat', 'Eruvin': 'eruvin', 'Pesachim': 'pesachim',
+  'Yoma': 'yoma', 'Sukkah': 'sukkah', 'Beitzah': 'beitzah',
+  'Rosh_Hashanah': 'roshhashanah', 'Taanit': 'taanis', 'Chagigah': 'chagigah',
+  'Moed_Katan': 'moedkatan', 'Yevamot': 'yevamos', 'Ketubot': 'kesubos',
+  'Nedarim': 'nedarim', 'Nazir': 'nazir', 'Sotah': 'sotah',
+  'Gittin': 'gittin', 'Kiddushin': 'kiddushin', 'Bava_Kamma': 'bavakama',
+  'Bava_Metzia': 'bavametzia', 'Sanhedrin': 'sanhedrin', 'Makkot': 'makkos',
+  'Shevuot': 'shevuos', 'Avodah_Zarah': 'avodazarah', 'Horayot': 'horayos',
+  'Zevachim': 'zevachim', 'Menachot': 'menachos', 'Chullin': 'chullin',
+  'Bechorot': 'bechoros', 'Arachin': 'erchin', 'Temurah': 'temurah',
+  'Keritot': 'kerisus', 'Meilah': 'meilah', 'Niddah': 'niddah'
+};
+
 const VIEW_LABELS: Record<ViewMode, { label: string; icon: React.ReactNode; description: string }> = {
   'text': { label: 'טקסט מעוצב', icon: <FileText className="h-4 w-4" />, description: 'טקסט נקי מ-Sefaria' },
   'sefaria': { label: 'תצוגת ספריא', icon: <BookOpen className="h-4 w-4" />, description: 'קורא ספריא מלא' },
@@ -166,16 +216,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
       return `${masechet}.2a`;
     }
     
-    const hebrewToNumber: Record<string, string> = {
-      'א': '1', 'ב': '2', 'ג': '3', 'ד': '4', 'ה': '5',
-      'ו': '6', 'ז': '7', 'ח': '8', 'ט': '9', 'י': '10',
-      'יא': '11', 'יב': '12', 'יג': '13', 'יד': '14', 'טו': '15',
-      'טז': '16', 'יז': '17', 'יח': '18', 'יט': '19', 'כ': '20',
-      'כא': '21', 'כב': '22', 'כג': '23', 'כד': '24', 'כה': '25',
-      'כו': '26', 'כז': '27', 'כח': '28', 'כט': '29', 'ל': '30',
-      'לא': '31', 'לב': '32', 'לג': '33', 'לד': '34', 'לה': '35',
-      'לו': '36', 'לז': '37', 'לח': '38', 'לט': '39', 'מ': '40'
-    };
+    const hebrewToNumber = HEBREW_TO_NUMBER_STR;
     
     const dafNumber = hebrewToNumber[dafNum] || dafNum;
     return `${masechet}.${dafNumber}${amud}`;
@@ -192,15 +233,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
         amud = parts[1].includes('ב') ? 'b' : 'a';
       }
       
-      const hebrewToNumber: Record<string, number> = {
-        'א': 1, 'ב': 2, 'ג': 3, 'ד': 4, 'ה': 5,
-        'ו': 6, 'ז': 7, 'ח': 8, 'ט': 9, 'י': 10,
-        'יא': 11, 'יב': 12, 'יג': 13, 'יד': 14, 'טו': 15,
-        'טז': 16, 'יז': 17, 'יח': 18, 'יט': 19, 'כ': 20,
-        'כא': 21, 'כב': 22, 'כג': 23, 'כד': 24, 'כה': 25,
-        'כו': 26, 'כז': 27, 'כח': 28, 'כט': 29, 'ל': 30,
-        'לא': 31, 'לב': 32, 'לג': 33, 'לד': 34, 'לה': 35
-      };
+      const hebrewToNumber = HEBREW_TO_NUMBER_INT;
       
       return {
         daf: hebrewToNumber[dafNum] || 2,
@@ -219,19 +252,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   const getEdafSiteUrl = (): string => {
     const { daf, amud } = getDafInfo(dafYomi);
     // Map masechet to E-Daf ID
-    const edafMasechetMap: Record<string, number> = {
-      'Bava_Batra': 23, 'Megillah': 12, 'Berachot': 1, 'Shabbat': 2,
-      'Eruvin': 3, 'Pesachim': 4, 'Shekalim': 5, 'Yoma': 6,
-      'Sukkah': 7, 'Beitzah': 8, 'Rosh_Hashanah': 9, 'Taanit': 10,
-      'Chagigah': 11, 'Moed_Katan': 13, 'Yevamot': 14, 'Ketubot': 15,
-      'Nedarim': 16, 'Nazir': 17, 'Sotah': 18, 'Gittin': 19,
-      'Kiddushin': 20, 'Bava_Kamma': 21, 'Bava_Metzia': 22,
-      'Sanhedrin': 24, 'Makkot': 25, 'Shevuot': 26, 'Avodah_Zarah': 27,
-      'Horayot': 28, 'Zevachim': 29, 'Menachot': 30, 'Chullin': 31,
-      'Bechorot': 32, 'Arachin': 33, 'Temurah': 34, 'Keritot': 35,
-      'Meilah': 36, 'Niddah': 37
-    };
-    const masechetId = edafMasechetMap[masechet] || 23;
+    const masechetId = EDAF_MASECHET_MAP[masechet] || 23;
     return `https://www.e-daf.com/index.asp?ID=${masechetId}&masession=${daf}${amud.toUpperCase()}`;
   };
 
@@ -239,21 +260,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   const getEdafImageUrl = (): string => {
     const { daf, amud } = getDafInfo(dafYomi);
     // Convert Sefaria name to E-Daf folder name
-    const edafFolderMap: Record<string, string> = {
-      'Bava_Batra': 'bavabatra', 'Megillah': 'megillah', 'Berachot': 'berachot',
-      'Shabbat': 'shabbat', 'Eruvin': 'eruvin', 'Pesachim': 'pesachim',
-      'Yoma': 'yoma', 'Sukkah': 'sukkah', 'Beitzah': 'beitzah',
-      'Rosh_Hashanah': 'roshhashanah', 'Taanit': 'taanis', 'Chagigah': 'chagigah',
-      'Moed_Katan': 'moedkatan', 'Yevamot': 'yevamos', 'Ketubot': 'kesubos',
-      'Nedarim': 'nedarim', 'Nazir': 'nazir', 'Sotah': 'sotah',
-      'Gittin': 'gittin', 'Kiddushin': 'kiddushin', 'Bava_Kamma': 'bavakama',
-      'Bava_Metzia': 'bavametzia', 'Sanhedrin': 'sanhedrin', 'Makkot': 'makkos',
-      'Shevuot': 'shevuos', 'Avodah_Zarah': 'avodazarah', 'Horayot': 'horayos',
-      'Zevachim': 'zevachim', 'Menachot': 'menachos', 'Chullin': 'chullin',
-      'Bechorot': 'bechoros', 'Arachin': 'erchin', 'Temurah': 'temurah',
-      'Keritot': 'kerisus', 'Meilah': 'meilah', 'Niddah': 'niddah'
-    };
-    const folder = edafFolderMap[masechet] || masechet.toLowerCase().replace(/_/g, '');
+    const folder = EDAF_FOLDER_MAP[masechet] || masechet.toLowerCase().replace(/_/g, '');
     return `https://www.e-daf.com/dafImages/${folder}/${daf}${amud}.gif`;
   };
 
