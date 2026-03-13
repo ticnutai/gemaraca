@@ -24,26 +24,17 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AppContextProvider>
+            <SettingsButton />
+            <GlobalUploadProgress />
+            <GlobalDownloadProgress />
             <Routes>
               <Route path="/auth" element={<Auth />} />
-              <Route
-                path="/*"
-                element={
-                  <AppLayout>
-                    <Routes>
-                      <Route path="/" element={<Index />} />
-                      <Route path="/sugya/:id" element={<SugyaDetail />} />
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </AppLayout>
-                }
-              />
+              <Route path="/" element={<AppLayout><Index /></AppLayout>} />
+              <Route path="/sugya/:id" element={<AppLayout><SugyaDetail /></AppLayout>} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </AppContextProvider>
         </BrowserRouter>
-        <SettingsButton />
-        <GlobalUploadProgress />
-        <GlobalDownloadProgress />
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>

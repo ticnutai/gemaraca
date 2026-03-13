@@ -54,22 +54,25 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
         setPsakDinExamples(psakData);
       }
 
-      // Load all gemara pages to check what's already loaded
-      const { data: pagesData } = await supabase
-        .from('gemara_pages')
-        .select('masechet, daf_number');
-      
-      if (pagesData) {
-        const map: LoadedPagesMap = {};
+      // Load all gemara pages to check what's already loaded (paginated)
+      const map: LoadedPagesMap = {};
+      let pgOffset = 0;
+      const PG_SIZE = 1000;
+      let pgMore = true;
+      while (pgMore) {
+        const { data: pagesData } = await supabase
+          .from('gemara_pages')
+          .select('masechet, daf_number')
+          .range(pgOffset, pgOffset + PG_SIZE - 1);
+        if (!pagesData || pagesData.length === 0) { pgMore = false; break; }
         pagesData.forEach(page => {
-          // Store by both sefariaName and hebrewName for compatibility
-          if (!map[page.masechet]) {
-            map[page.masechet] = [];
-          }
+          if (!map[page.masechet]) map[page.masechet] = [];
           map[page.masechet].push(page.daf_number);
         });
-        setLoadedPagesMap(map);
+        if (pagesData.length < PG_SIZE) pgMore = false;
+        pgOffset += PG_SIZE;
       }
+      setLoadedPagesMap(map);
     };
     loadData();
   }, []);
@@ -148,21 +151,25 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
       }
     }
 
-    // Refresh loaded pages
-    const { data: pagesData } = await supabase
-      .from('gemara_pages')
-      .select('masechet, daf_number');
-    
-    if (pagesData) {
-      const map: LoadedPagesMap = {};
+    // Refresh loaded pages (paginated)
+    const refreshMap: LoadedPagesMap = {};
+    let rfOffset = 0;
+    const RF_SIZE = 1000;
+    let rfMore = true;
+    while (rfMore) {
+      const { data: pagesData } = await supabase
+        .from('gemara_pages')
+        .select('masechet, daf_number')
+        .range(rfOffset, rfOffset + RF_SIZE - 1);
+      if (!pagesData || pagesData.length === 0) { rfMore = false; break; }
       pagesData.forEach(page => {
-        if (!map[page.masechet]) {
-          map[page.masechet] = [];
-        }
-        map[page.masechet].push(page.daf_number);
+        if (!refreshMap[page.masechet]) refreshMap[page.masechet] = [];
+        refreshMap[page.masechet].push(page.daf_number);
       });
-      setLoadedPagesMap(map);
+      if (pagesData.length < RF_SIZE) rfMore = false;
+      rfOffset += RF_SIZE;
     }
+    setLoadedPagesMap(refreshMap);
 
     setDownloading(null);
     setDownloadProgress(0);

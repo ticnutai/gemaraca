@@ -1,3 +1,5 @@
+import { MASECHTOT } from '@/lib/masechtotData';
+
 export type ValidationStatus = 'correct' | 'incorrect' | 'pending' | 'ignored';
 
 export interface TalmudReference {
@@ -28,13 +30,7 @@ export interface RefItemProps {
   onClickRef: (ref: TalmudRefWithPsak) => void;
 }
 
-export const TRACTATES = [
-  'ברכות','שבת','עירובין','פסחים','ראש השנה','יומא','סוכה','ביצה',
-  'תענית','מגילה','חגיגה','יבמות','כתובות','נדרים','נזיר','גיטין',
-  'קידושין','בבא קמא','בבא מציעא','בבא בתרא','סנהדרין','מכות','שבועות',
-  'עבודה זרה','הוריות','זבחים','מנחות','חולין','בכורות','ערכין',
-  'תמורה','כריתות','מעילה','נידה',
-];
+export const TRACTATES = MASECHTOT.map(m => m.hebrewName);
 
 export function escapeHtml(text: string) {
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');

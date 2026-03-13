@@ -66,16 +66,28 @@ const PsakDinTab = () => {
 
   const loadLinkCounts = async () => {
     try {
-      const { data, error } = await supabase
-        .from('sugya_psak_links')
-        .select('psak_din_id');
-
-      if (error) throw error;
-
+      const PAGE = 1000;
+      let offset = 0;
       const counts = new Map<string, number>();
-      data?.forEach(link => {
-        counts.set(link.psak_din_id, (counts.get(link.psak_din_id) || 0) + 1);
-      });
+      let fetchMore = true;
+
+      while (fetchMore) {
+        const { data, error } = await supabase
+          .from('sugya_psak_links')
+          .select('psak_din_id')
+          .range(offset, offset + PAGE - 1);
+
+        if (error) throw error;
+        if (!data || data.length === 0) { fetchMore = false; break; }
+
+        data.forEach(link => {
+          counts.set(link.psak_din_id, (counts.get(link.psak_din_id) || 0) + 1);
+        });
+
+        if (data.length < PAGE) fetchMore = false;
+        offset += PAGE;
+      }
+
       setPsakLinks(counts);
     } catch (error) {
       console.error('Error loading link counts:', error);
