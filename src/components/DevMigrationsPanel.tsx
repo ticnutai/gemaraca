@@ -33,7 +33,11 @@ import {
   Trash2,
   Copy,
   Database,
+  Activity,
 } from "lucide-react";
+import { lazy, Suspense } from "react";
+
+const MonitoringTab = lazy(() => import("@/components/MonitoringTab"));
 import { cn } from "@/lib/utils";
 
 interface Migration {
@@ -242,7 +246,7 @@ export default function DevMigrationsPanel({ open, onClose }: { open: boolean; o
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); if (v === 'history') loadHistory(); }} className="flex-1 overflow-hidden flex flex-col">
-          <TabsList className="grid grid-cols-3 w-full">
+          <TabsList className="grid grid-cols-4 w-full">
             <TabsTrigger value="editor" className="gap-1">
               <FileCode className="h-4 w-4" />
               עורך SQL
@@ -250,6 +254,10 @@ export default function DevMigrationsPanel({ open, onClose }: { open: boolean; o
             <TabsTrigger value="http" className="gap-1">
               <Globe className="h-4 w-4" />
               ייבוא HTTP
+            </TabsTrigger>
+            <TabsTrigger value="monitoring" className="gap-1">
+              <Activity className="h-4 w-4" />
+              מוניטורינג
             </TabsTrigger>
             <TabsTrigger value="history" className="gap-1">
               <History className="h-4 w-4" />
@@ -477,6 +485,13 @@ export default function DevMigrationsPanel({ open, onClose }: { open: boolean; o
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Monitoring Tab */}
+          <TabsContent value="monitoring" className="flex-1 overflow-auto mt-2">
+            <Suspense fallback={<div className="flex items-center justify-center h-32"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
+              <MonitoringTab />
+            </Suspense>
           </TabsContent>
 
           {/* History Tab */}

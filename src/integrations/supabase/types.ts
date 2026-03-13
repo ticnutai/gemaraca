@@ -52,6 +52,48 @@ export type Database = {
           },
         ]
       }
+      function_logs: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          function_name: string
+          id: string
+          ip_address: string | null
+          request_body: Json | null
+          response_summary: string | null
+          status: string
+          status_code: number | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          function_name: string
+          id?: string
+          ip_address?: string | null
+          request_body?: Json | null
+          response_summary?: string | null
+          status?: string
+          status_code?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          function_name?: string
+          id?: string
+          ip_address?: string | null
+          request_body?: Json | null
+          response_summary?: string | null
+          status?: string
+          status_code?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       gemara_pages: {
         Row: {
           created_at: string
