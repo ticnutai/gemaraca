@@ -487,6 +487,13 @@ export default function DevMigrationsPanel({ open, onClose }: { open: boolean; o
             </Card>
           </TabsContent>
 
+          {/* Monitoring Tab */}
+          <TabsContent value="monitoring" className="flex-1 overflow-auto mt-2">
+            <Suspense fallback={<div className="flex items-center justify-center h-32"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
+              <MonitoringTab />
+            </Suspense>
+          </TabsContent>
+
           {/* History Tab */}
           <TabsContent value="history" className="flex-1 overflow-hidden mt-2">
             <ScrollArea className="h-[400px]">
