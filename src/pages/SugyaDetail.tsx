@@ -1,22 +1,34 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRight, BookOpen, Scale, ExternalLink, Lightbulb, FileText, HelpCircle } from "lucide-react";
 import DafAmudNavigator from "@/components/DafAmudNavigator";
 import FAQSection from "@/components/FAQSection";
 import PsakDinSearchButton from "@/components/PsakDinSearchButton";
-import GemaraTextPanel from "@/components/GemaraTextPanel";
-import CommentariesPanel from "@/components/CommentariesPanel";
-import LexiconSearch from "@/components/LexiconSearch";
-import RelatedPsakimSidebar from "@/components/RelatedPsakimSidebar";
-import LinkedPsakimSection from "@/components/LinkedPsakimSection";
-import { ModernExamplesPanel } from "@/components/ModernExamplesPanel";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MASECHTOT } from "@/lib/masechtotData";
 import { getCachedPage, setCachedPage } from "@/lib/pageCache";
+
+// Lazy-loaded heavy sub-panels
+const GemaraTextPanel = lazy(() => import("@/components/GemaraTextPanel"));
+const CommentariesPanel = lazy(() => import("@/components/CommentariesPanel"));
+const LexiconSearch = lazy(() => import("@/components/LexiconSearch"));
+const RelatedPsakimSidebar = lazy(() => import("@/components/RelatedPsakimSidebar"));
+const LinkedPsakimSection = lazy(() => import("@/components/LinkedPsakimSection"));
+const ModernExamplesPanel = lazy(() => import("@/components/ModernExamplesPanel").then(m => ({ default: m.ModernExamplesPanel })));
+
+const PanelFallback = () => (
+  <div className="space-y-3 p-4">
+    <Skeleton className="h-6 w-40" />
+    <Skeleton className="h-4 w-full" />
+    <Skeleton className="h-4 w-3/4" />
+    <Skeleton className="h-24 w-full" />
+  </div>
+);
 
 // Helper function to get Hebrew name from Sefaria name
 const getMasechetHebrewName = (sefariaName: string): string => {
@@ -248,25 +260,33 @@ const SugyaDetail = () => {
                 <TabsTrigger value="lexicon">מילון</TabsTrigger>
               </TabsList>
               <TabsContent value="text" className="mt-4">
-                <GemaraTextPanel sugyaId={id || ""} dafYomi={sugya.dafYomi} masechet={sugya.masechet} />
+                <Suspense fallback={<PanelFallback />}>
+                  <GemaraTextPanel sugyaId={id || ""} dafYomi={sugya.dafYomi} masechet={sugya.masechet} />
+                </Suspense>
               </TabsContent>
               <TabsContent value="commentaries" className="mt-4">
-                <CommentariesPanel dafYomi={sugya.dafYomi} masechet={sugya.masechet} />
+                <Suspense fallback={<PanelFallback />}>
+                  <CommentariesPanel dafYomi={sugya.dafYomi} masechet={sugya.masechet} />
+                </Suspense>
               </TabsContent>
               <TabsContent value="lexicon" className="mt-4">
-                <LexiconSearch dafYomi={sugya.dafYomi} />
+                <Suspense fallback={<PanelFallback />}>
+                  <LexiconSearch dafYomi={sugya.dafYomi} />
+                </Suspense>
               </TabsContent>
             </Tabs>
           </TabsContent>
 
           {/* Tab 2: המחשה - Modern Examples */}
           <TabsContent value="illustration" className="mt-0 space-y-6">
-            <ModernExamplesPanel
-              gemaraText={sugya.gemaraText || sugya.fullText}
-              sugyaTitle={sugya.title}
-              dafYomi={sugya.dafYomi}
-              masechet={sugya.masechet || "בבא בתרא"}
-            />
+            <Suspense fallback={<PanelFallback />}>
+              <ModernExamplesPanel
+                gemaraText={sugya.gemaraText || sugya.fullText}
+                sugyaTitle={sugya.title}
+                dafYomi={sugya.dafYomi}
+                masechet={sugya.masechet || "בבא בתרא"}
+              />
+            </Suspense>
 
             {/* Sample Cases for illustration */}
             {sugya.cases && sugya.cases.length > 0 && (
@@ -322,11 +342,13 @@ const SugyaDetail = () => {
 
             {/* Linked Psakim from Smart Index */}
             {masechetInfo && (
-              <LinkedPsakimSection 
-                sugyaId={id || ""} 
-                masechet={masechetInfo.masechet}
-                dafNumber={masechetInfo.dafNumber}
-              />
+              <Suspense fallback={<PanelFallback />}>
+                <LinkedPsakimSection 
+                  sugyaId={id || ""} 
+                  masechet={masechetInfo.masechet}
+                  dafNumber={masechetInfo.dafNumber}
+                />
+              </Suspense>
             )}
 
             {/* Real Cases from Database */}
@@ -426,7 +448,9 @@ const SugyaDetail = () => {
             )}
 
             {/* Related Psakim Sidebar content */}
-            <RelatedPsakimSidebar sugyaId={id || ""} />
+            <Suspense fallback={<PanelFallback />}>
+              <RelatedPsakimSidebar sugyaId={id || ""} />
+            </Suspense>
           </TabsContent>
 
           {/* Tab 4: הסבר וניתוח - Explanation and Analysis */}

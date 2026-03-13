@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, BookMarked, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 interface CommentariesPanelProps {
@@ -27,41 +28,7 @@ interface Commentary {
 }
 
 export default function CommentariesPanel({ dafYomi, masechet: masechetProp }: CommentariesPanelProps) {
-  const [commentaries, setCommentaries] = useState<Commentary[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-
-  useEffect(() => {
-    loadCommentaries();
-  }, [dafYomi]);
-
-  const loadCommentaries = async () => {
-    setIsLoading(true);
-    try {
-      const ref = convertDafYomiToSefariaRef(dafYomi);
-      
-      const { data, error } = await supabase.functions.invoke('get-commentaries', {
-        body: { ref }
-      });
-
-      if (error) throw error;
-
-      if (data?.success) {
-        setCommentaries(data.data);
-      } else {
-        throw new Error(data?.error || 'Failed to load commentaries');
-      }
-    } catch (error) {
-      console.error('Error loading commentaries:', error);
-      toast({
-        title: "שגיאה בטעינת מפרשים",
-        description: "לא הצלחנו לטעון את המפרשים. נסה שוב מאוחר יותר.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const convertDafYomiToSefariaRef = (dafYomi: string): string => {
     const parts = dafYomi.trim().split(' ');
@@ -85,6 +52,31 @@ export default function CommentariesPanel({ dafYomi, masechet: masechetProp }: C
     
     return "Bava_Batra.2a";
   };
+
+  const sefariaRef = convertDafYomiToSefariaRef(dafYomi);
+
+  const { data: commentaries = [], isLoading } = useQuery({
+    queryKey: ['commentaries', sefariaRef],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke('get-commentaries', {
+        body: { ref: sefariaRef }
+      });
+      if (error) throw error;
+      if (data?.success) return data.data as Commentary[];
+      throw new Error(data?.error || 'Failed to load commentaries');
+    },
+    staleTime: Infinity,
+    retry: 1,
+    meta: {
+      onError: () => {
+        toast({
+          title: "שגיאה בטעינת מפרשים",
+          description: "לא הצלחנו לטעון את המפרשים. נסה שוב מאוחר יותר.",
+          variant: "destructive",
+        });
+      }
+    }
+  });
 
   const renderCommentaryText = (text: string | string[]) => {
     if (Array.isArray(text)) {

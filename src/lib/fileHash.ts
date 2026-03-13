@@ -11,7 +11,7 @@ export async function calculateFileHash(file: File): Promise<string> {
 }
 
 /**
- * Calculate hashes for multiple files in parallel with chunking
+ * Calculate hashes for multiple files using adaptive concurrency
  * Returns a Map of file name to hash
  */
 export async function calculateFileHashes(
@@ -19,26 +19,30 @@ export async function calculateFileHashes(
   onProgress?: (completed: number, total: number) => void
 ): Promise<Map<string, string>> {
   const result = new Map<string, string>();
-  const CHUNK_SIZE = 5;
+  const CONCURRENCY = navigator.hardwareConcurrency || 4;
+  let completed = 0;
   
-  for (let i = 0; i < files.length; i += CHUNK_SIZE) {
-    const chunk = files.slice(i, i + CHUNK_SIZE);
-    const hashes = await Promise.all(chunk.map(async (file) => {
+  const queue = [...files];
+  const workers: Promise<void>[] = [];
+  
+  const processFile = async () => {
+    while (queue.length > 0) {
+      const file = queue.shift()!;
       try {
         const hash = await calculateFileHash(file);
-        return { name: file.name, hash };
+        result.set(file.name, hash);
       } catch {
-        // If hashing fails, use file name + size as fallback
-        return { name: file.name, hash: `${file.name}-${file.size}` };
+        result.set(file.name, `${file.name}-${file.size}`);
       }
-    }));
-    
-    hashes.forEach(({ name, hash }) => {
-      result.set(name, hash);
-    });
-    
-    onProgress?.(Math.min(i + CHUNK_SIZE, files.length), files.length);
+      completed++;
+      onProgress?.(completed, files.length);
+    }
+  };
+  
+  for (let i = 0; i < Math.min(CONCURRENCY, files.length); i++) {
+    workers.push(processFile());
   }
   
+  await Promise.all(workers);
   return result;
 }

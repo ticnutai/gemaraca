@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { Calendar, Building2, FileText, List, BookOpen, Sparkles, Brain, Loader2, Link, Plus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useQuery } from "@tanstack/react-query";
 import PsakDinViewDialog from "./PsakDinViewDialog";
 import PsakDinEditDialog from "./PsakDinEditDialog";
 import PsakDinActions from "./PsakDinActions";
@@ -42,12 +43,37 @@ const PsakDinTab = () => {
     loadTotalUnlinkedCount();
   }, [currentPage]);
 
-  // Load link counts after psakim are loaded (only for visible page)
+  // React Query for link counts — cached per page of psakim IDs
+  const psakIds = psakim.map(p => p.id);
+  const { data: linkCountsData } = useQuery({
+    queryKey: ['psak-link-counts', psakIds],
+    queryFn: async () => {
+      if (psakIds.length === 0) return new Map<string, number>();
+      const counts = new Map<string, number>();
+      const { data, error } = await supabase
+        .from('sugya_psak_links')
+        .select('psak_din_id')
+        .in('psak_din_id', psakIds);
+      if (error) throw error;
+      (data || []).forEach(link => {
+        counts.set(link.psak_din_id, (counts.get(link.psak_din_id) || 0) + 1);
+      });
+      return counts;
+    },
+    enabled: psakIds.length > 0,
+    staleTime: 5 * 60 * 1000, // cache 5 min
+  });
+
+  // Sync React Query result to state (for compatibility)
   useEffect(() => {
-    if (psakim.length > 0) {
-      loadLinkCounts(psakim.map(p => p.id));
+    if (linkCountsData) {
+      setPsakLinks(prev => {
+        const merged = new Map(prev);
+        linkCountsData.forEach((v, k) => merged.set(k, v));
+        return merged;
+      });
     }
-  }, [psakim]);
+  }, [linkCountsData]);
 
   const loadPsakim = async (page: number) => {
     setLoading(true);
@@ -68,30 +94,6 @@ const PsakDinTab = () => {
       console.error('Error loading psakim:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadLinkCounts = async (psakIds: string[]) => {
-    if (psakIds.length === 0) return;
-    try {
-      const counts = new Map<string, number>();
-      const { data, error } = await supabase
-        .from('sugya_psak_links')
-        .select('psak_din_id')
-        .in('psak_din_id', psakIds);
-
-      if (error) throw error;
-      (data || []).forEach(link => {
-        counts.set(link.psak_din_id, (counts.get(link.psak_din_id) || 0) + 1);
-      });
-
-      setPsakLinks(prev => {
-        const merged = new Map(prev);
-        counts.forEach((v, k) => merged.set(k, v));
-        return merged;
-      });
-    } catch (error) {
-      console.error('Error loading link counts:', error);
     }
   };
 
@@ -172,7 +174,7 @@ const PsakDinTab = () => {
     setSelectedForBulk(new Set());
   };
 
-  const toggleSelectForAnalysis = (id: string) => {
+  const toggleSelectForAnalysis = useCallback((id: string) => {
     setSelectedForAnalysis(prev => {
       const newSet = new Set(prev);
       if (newSet.has(id)) {
@@ -182,7 +184,7 @@ const PsakDinTab = () => {
       }
       return newSet;
     });
-  };
+  }, []);
 
   const selectAllForAnalysis = () => {
     const unlinkedPsakim = psakim.filter(p => !psakLinks.has(p.id));

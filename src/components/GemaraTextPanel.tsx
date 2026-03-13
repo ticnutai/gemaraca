@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -294,16 +294,21 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
     return extract(String(htmlOrArray || ''));
   };
 
+  // Memoize plain text extraction (expensive DOMParser)
+  const memoizedPlainText = useMemo(() => {
+    if (!gemaraText) return '';
+    const textToShow = showHebrew ? gemaraText.he : gemaraText.text;
+    return getPlainText(textToShow);
+  }, [gemaraText, showHebrew]);
+
   const renderGemaraText = () => {
     if (!gemaraText) return null;
 
-    const textToShow = showHebrew ? gemaraText.he : gemaraText.text;
-    const plainText = getPlainText(textToShow);
     const textClasses = `leading-loose ${textSettings.fontFamily} ${getTextAlignClass()} ${textSettings.isBold ? 'font-bold' : ''} ${textSettings.highlightColor}`;
     
     return (
       <RichTextViewer
-        text={plainText}
+        text={memoizedPlainText}
         sourceType="gemara"
         sourceId={sugyaId}
         className={textClasses}

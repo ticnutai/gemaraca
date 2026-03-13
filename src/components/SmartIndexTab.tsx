@@ -47,8 +47,9 @@ import { toHebrewNumeral } from "@/lib/hebrewNumbers";
 import { MASECHTOT } from "@/lib/masechtotData";
 
 const BATCH_SIZE = 500;
-const LOAD_PAGE_SIZE = 100;
+const LOAD_PAGE_SIZE = 500;
 const DISPLAY_PAGE_SIZE = 50;
+const MAX_MEMORY_RESULTS = 2000;
 const STORAGE_KEY = 'smart_index_last_run';
 
 const SmartIndexTab = () => {
@@ -118,7 +119,7 @@ const SmartIndexTab = () => {
           allResults = [...allResults, ...pageResults];
         }
 
-        hasMore = data?.length === LOAD_PAGE_SIZE;
+        hasMore = data?.length === LOAD_PAGE_SIZE && allResults.length < MAX_MEMORY_RESULTS;
         page++;
       }
 

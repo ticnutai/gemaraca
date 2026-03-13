@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Loader2, Search, BookA } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 
 interface LexiconSearchProps {
   dafYomi: string;
@@ -20,48 +21,8 @@ interface LexiconResult {
 
 export default function LexiconSearch({ dafYomi }: LexiconSearchProps) {
   const [searchWord, setSearchWord] = useState("");
-  const [result, setResult] = useState<LexiconResult | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [activeSearch, setActiveSearch] = useState("");
   const { toast } = useToast();
-
-  const handleSearch = async () => {
-    if (!searchWord.trim()) {
-      toast({
-        title: "נא להזין מילה לחיפוש",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const ref = convertDafYomiToSefariaRef(dafYomi);
-      
-      const { data, error } = await supabase.functions.invoke('search-lexicon', {
-        body: { 
-          word: searchWord.trim(),
-          lookupRef: ref
-        }
-      });
-
-      if (error) throw error;
-
-      if (data?.success) {
-        setResult(data.data);
-      } else {
-        throw new Error(data?.error || 'Failed to search lexicon');
-      }
-    } catch (error) {
-      console.error('Error searching lexicon:', error);
-      toast({
-        title: "שגיאה בחיפוש במילון",
-        description: "לא הצלחנו לחפש במילון. נסה שוב מאוחר יותר.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const convertDafYomiToSefariaRef = (dafYomi: string): string => {
     const parts = dafYomi.trim().split(' ');
@@ -84,6 +45,30 @@ export default function LexiconSearch({ dafYomi }: LexiconSearchProps) {
     }
     
     return "Bava_Batra.2a";
+  };
+
+  const ref = convertDafYomiToSefariaRef(dafYomi);
+
+  const { data: result, isLoading } = useQuery({
+    queryKey: ['lexicon', activeSearch, ref],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke('search-lexicon', {
+        body: { word: activeSearch.trim(), lookupRef: ref }
+      });
+      if (error) throw error;
+      if (data?.success) return data.data as LexiconResult;
+      throw new Error(data?.error || 'Failed to search lexicon');
+    },
+    enabled: !!activeSearch,
+    staleTime: 60 * 60 * 1000, // cache 1 hour
+  });
+
+  const handleSearch = () => {
+    if (!searchWord.trim()) {
+      toast({ title: "נא להזין מילה לחיפוש", variant: "destructive" });
+      return;
+    }
+    setActiveSearch(searchWord.trim());
   };
 
   return (

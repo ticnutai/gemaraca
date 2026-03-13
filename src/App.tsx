@@ -3,11 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { Suspense } from "react";
-import Index from "./pages/Index";
-import SugyaDetail from "./pages/SugyaDetail";
-import NotFound from "./pages/NotFound";
-import Auth from "./pages/Auth";
+import { Suspense, lazy } from "react";
 import { ThemeProvider } from "./components/ThemeProvider";
 import { SettingsButton } from "./components/SettingsButton";
 import GlobalUploadProgress from "./components/GlobalUploadProgress";
@@ -15,6 +11,12 @@ import GlobalDownloadProgress from "./components/GlobalDownloadProgress";
 import AppLayout from "./components/AppLayout";
 import { AppContextProvider } from "./contexts/AppContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+
+// Lazy-loaded route pages (code splitting)
+const Index = lazy(() => import("./pages/Index"));
+const SugyaDetail = lazy(() => import("./pages/SugyaDetail"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Auth = lazy(() => import("./pages/Auth"));
 
 const queryClient = new QueryClient({
   defaultOptions: {

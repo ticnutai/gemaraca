@@ -1,11 +1,24 @@
-import PsakDinTab from "@/components/PsakDinTab";
-import SearchPsakDinTab from "@/components/SearchPsakDinTab";
-import UploadPsakDinTab from "@/components/UploadPsakDinTab";
-import SmartIndexTab from "@/components/SmartIndexTab";
-import AdvancedIndexTab from "@/components/AdvancedIndexTab";
-import DownloadManagerTab from "@/components/DownloadManagerTab";
+import { lazy, Suspense } from "react";
 import SedarimNavigator from "@/components/SedarimNavigator";
 import { useAppContext } from "@/contexts/AppContext";
+import { Skeleton } from "@/components/ui/skeleton";
+
+// Lazy-loaded tab components (code splitting)
+const PsakDinTab = lazy(() => import("@/components/PsakDinTab"));
+const SearchPsakDinTab = lazy(() => import("@/components/SearchPsakDinTab"));
+const UploadPsakDinTab = lazy(() => import("@/components/UploadPsakDinTab"));
+const SmartIndexTab = lazy(() => import("@/components/SmartIndexTab"));
+const AdvancedIndexTab = lazy(() => import("@/components/AdvancedIndexTab"));
+const DownloadManagerTab = lazy(() => import("@/components/DownloadManagerTab"));
+
+const TabFallback = () => (
+  <div className="p-6 space-y-4">
+    <Skeleton className="h-8 w-48" />
+    <Skeleton className="h-4 w-full" />
+    <Skeleton className="h-4 w-3/4" />
+    <Skeleton className="h-32 w-full" />
+  </div>
+);
 
 const Index = () => {
   const { activeTab } = useAppContext();
@@ -18,12 +31,14 @@ const Index = () => {
       {/* Content cards - only show for non-gemara tabs */}
       {activeTab !== "gemara" && (
         <div className="bg-card rounded-2xl shadow-lg border border-border/50 overflow-hidden">
-          {activeTab === "psak-din" && <PsakDinTab />}
-          {activeTab === "smart-index" && <SmartIndexTab />}
-          {activeTab === "search" && <SearchPsakDinTab />}
-          {activeTab === "upload" && <UploadPsakDinTab />}
-          {activeTab === "download" && <DownloadManagerTab />}
-          {activeTab === "advanced-index" && <AdvancedIndexTab />}
+          <Suspense fallback={<TabFallback />}>
+            {activeTab === "psak-din" && <PsakDinTab />}
+            {activeTab === "smart-index" && <SmartIndexTab />}
+            {activeTab === "search" && <SearchPsakDinTab />}
+            {activeTab === "upload" && <UploadPsakDinTab />}
+            {activeTab === "download" && <DownloadManagerTab />}
+            {activeTab === "advanced-index" && <AdvancedIndexTab />}
+          </Suspense>
         </div>
       )}
     </div>
