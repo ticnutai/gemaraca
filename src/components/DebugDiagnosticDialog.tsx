@@ -12,7 +12,7 @@ import {
   Database, Globe, User, Table2, FunctionSquare, Clock,
 } from 'lucide-react';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+
 
 type CheckStatus = 'idle' | 'running' | 'pass' | 'fail' | 'warn';
 
@@ -189,25 +189,23 @@ export default function DebugDiagnosticDialog() {
       updateCheck('edge_fn', { status: 'running' });
       const t = Date.now();
       try {
-        const res = await fetch(`${SUPABASE_URL}/functions/v1/extract-references`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: '', documentId: '' }),
+        const { data, error: fnError } = await supabase.functions.invoke('extract-references', {
+          body: { text: '', documentId: '' },
         });
         const elapsed = Date.now() - t;
 
-        if (res.status === 400) {
-          // Expected - function exists and rejects empty input
-          updateCheck('edge_fn', { status: 'pass', detail: `Edge Function מגיב (${elapsed}ms) - דחה קלט ריק כצפוי`, durationMs: elapsed });
-        } else if (res.status === 401 || res.status === 403) {
-          updateCheck('edge_fn', { status: 'warn', detail: `Edge Function דורש אימות (${res.status}). ודא שאתה מחובר.`, durationMs: elapsed });
-        } else if (res.status === 404) {
-          updateCheck('edge_fn', { status: 'fail', detail: 'Edge Function לא נמצא (404). ודא שה-function מופעל ב-Supabase Dashboard.', durationMs: elapsed });
-        } else if (res.status === 500 || res.status === 502 || res.status === 503) {
-          const body = await res.text().catch(() => '');
-          updateCheck('edge_fn', { status: 'fail', detail: `Edge Function שגיאת שרת (${res.status}): ${body.slice(0, 200)}`, durationMs: elapsed });
+        if (fnError) {
+          const msg = fnError.message || String(fnError);
+          if (msg.includes('404') || msg.includes('not found')) {
+            updateCheck('edge_fn', { status: 'fail', detail: 'Edge Function לא נמצא (404). ודא שה-function מופעל ב-Supabase Dashboard.', durationMs: elapsed });
+          } else if (msg.includes('401') || msg.includes('403')) {
+            updateCheck('edge_fn', { status: 'warn', detail: `Edge Function דורש אימות. ודא שאתה מחובר.`, durationMs: elapsed });
+          } else {
+            // 400 for empty input is expected - function is alive
+            updateCheck('edge_fn', { status: 'pass', detail: `Edge Function מגיב (${elapsed}ms) - ${msg}`, durationMs: elapsed });
+          }
         } else {
-          updateCheck('edge_fn', { status: 'pass', detail: `תשובה ${res.status} (${elapsed}ms)`, durationMs: elapsed });
+          updateCheck('edge_fn', { status: 'pass', detail: `Edge Function מגיב (${elapsed}ms)`, durationMs: elapsed });
         }
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
@@ -221,19 +219,15 @@ export default function DebugDiagnosticDialog() {
       const t = Date.now();
       try {
         const testText = 'על פי הגמרא בבבא קמא דף ב עמוד א וכן בסנהדרין דף לז עמוד ב';
-        const res = await fetch(`${SUPABASE_URL}/functions/v1/extract-references`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: testText, documentId: 'debug-test', useAI: false }),
+        const { data, error: fnError } = await supabase.functions.invoke('extract-references', {
+          body: { text: testText, documentId: 'debug-test', useAI: false },
         });
         const elapsed = Date.now() - t;
 
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-          updateCheck('sample_extract', { status: 'fail', detail: `שגיאה בחילוץ: ${err.error || res.status}`, durationMs: elapsed });
+        if (fnError) {
+          updateCheck('sample_extract', { status: 'fail', detail: `שגיאה בחילוץ: ${fnError.message}`, durationMs: elapsed });
         } else {
-          const data = await res.json();
-          const refs = data.references ?? [];
+          const refs = data?.references ?? [];
           if (refs.length >= 2) {
             const names = refs.map((r: Record<string, string>) => r.normalized).join(', ');
             updateCheck('sample_extract', { status: 'pass', detail: `נמצאו ${refs.length} הפניות: ${names} (${elapsed}ms)`, durationMs: elapsed });

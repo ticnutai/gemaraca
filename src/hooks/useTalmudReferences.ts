@@ -4,7 +4,7 @@ import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 import type { TalmudReference, ValidationStatus } from '@/components/talmud-index/types';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+
 
 export function useTalmudReferences(psakDinId?: string) {
   return useQuery({
@@ -48,18 +48,15 @@ export function useExtractReferences() {
 
   return useMutation({
     mutationFn: async ({ text, psakDinId, useAI }: { text: string; psakDinId: string; useAI: boolean }) => {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/extract-references`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, documentId: psakDinId, useAI }),
+      const { data, error: fnError } = await supabase.functions.invoke('extract-references', {
+        body: { text, documentId: psakDinId, useAI },
       });
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: `שגיאה ${res.status}` }));
-        throw new Error(err.error ?? `שגיאה ${res.status}`);
+      if (fnError) {
+        throw new Error(fnError.message ?? `שגיאה בקריאה ל-Edge Function`);
       }
 
-      const { references } = await res.json();
+      const references = data?.references;
 
       if (!references?.length) {
         return { count: 0 };
@@ -109,15 +106,13 @@ export function useBatchExtractReferences() {
         if (!psak.text) continue;
 
         try {
-          const res = await fetch(`${SUPABASE_URL}/functions/v1/extract-references`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: psak.text, documentId: psak.id, useAI }),
+          const { data, error: fnError } = await supabase.functions.invoke('extract-references', {
+            body: { text: psak.text, documentId: psak.id, useAI },
           });
 
-          if (!res.ok) continue;
+          if (fnError) continue;
 
-          const { references } = await res.json();
+          const references = data?.references;
           if (!references?.length) continue;
 
           // Delete existing refs

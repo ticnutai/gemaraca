@@ -5,8 +5,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { useIndexingStore } from '@/stores/indexingStore';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-
 interface PsakToProcess {
   id: string;
   title: string;
@@ -46,19 +44,15 @@ async function extractSinglePsak(
   userId: string | null,
   signal: AbortSignal,
 ): Promise<number> {
-  const res = await fetch(`${SUPABASE_URL}/functions/v1/extract-references`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text: psak.text, documentId: psak.id, useAI }),
-    signal,
+  const { data, error: fnError } = await supabase.functions.invoke('extract-references', {
+    body: { text: psak.text, documentId: psak.id, useAI },
   });
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-    throw new Error(err.error ?? `שגיאה ${res.status}`);
+  if (fnError) {
+    throw new Error(fnError.message ?? `שגיאה בקריאה ל-Edge Function`);
   }
 
-  const { references } = await res.json();
+  const references = data?.references;
   if (!references?.length) return 0;
 
   // Delete existing refs for this psak
