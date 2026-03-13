@@ -1,18 +1,24 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Check, X, RotateCcw, FileText, EyeOff } from 'lucide-react';
-import { TalmudRefWithPsak, highlightRawInContext, ValidationStatus } from './types';
+import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card';
+import { TalmudRefWithPsak, highlightRawInContext, extractContextLines, escapeHtml, ValidationStatus } from './types';
 
 interface Props {
   data: TalmudRefWithPsak;
   onValidate: (id: string, status: ValidationStatus, autoDismissIds?: string[]) => void;
   onClickRef: (ref: TalmudRefWithPsak) => void;
+  highlightColor?: string;
+  highlightBg?: string;
 }
 
-export default function RefCard({ data, onValidate, onClickRef }: Props) {
+export default function RefCard({ data, onValidate, onClickRef, highlightColor, highlightBg }: Props) {
   const isApproved = data.validation_status === 'correct';
   const isRejected = data.validation_status === 'incorrect';
   const isIgnored = data.validation_status === 'ignored';
+
+  const matchContext = extractContextLines(data.context_snippet, data.raw_reference, 0);
+  const hoverContext = extractContextLines(data.context_snippet, data.raw_reference, 3);
 
   return (
     <div
@@ -59,11 +65,51 @@ export default function RefCard({ data, onValidate, onClickRef }: Props) {
         זוהה: "<span className="font-semibold text-foreground">{data.raw_reference}</span>"
       </p>
 
-      {data.context_snippet && (
+      {matchContext && (
+        <HoverCard openDelay={200} closeDelay={100}>
+          <HoverCardTrigger asChild>
+            <div
+              className="text-sm text-muted-foreground bg-muted/40 rounded px-3 py-2 leading-relaxed cursor-default truncate"
+              dangerouslySetInnerHTML={{
+                __html: highlightRawInContext(matchContext.matchLine, data.raw_reference, highlightColor, highlightBg)
+              }}
+            />
+          </HoverCardTrigger>
+          {hoverContext && hoverContext.surroundLines.length > 1 && (
+            <HoverCardContent
+              side="top"
+              align="start"
+              className="w-[420px] max-w-[90vw] p-3 text-right"
+              dir="rtl"
+            >
+              <div className="text-xs text-muted-foreground mb-1.5 font-semibold">הקשר מורחב (±3 שורות)</div>
+              <div className="text-sm leading-relaxed space-y-1 whitespace-pre-wrap">
+                {hoverContext.surroundLines.map((line, i) => {
+                  const isMatch = line === matchContext.matchLine;
+                  return (
+                    <div
+                      key={i}
+                      className={isMatch ? 'rounded px-1.5 py-0.5' : 'text-muted-foreground'}
+                      style={isMatch ? { background: highlightBg || 'hsl(var(--primary) / 0.1)' } : undefined}
+                      dangerouslySetInnerHTML={{
+                        __html: isMatch
+                          ? highlightRawInContext(line, data.raw_reference, highlightColor, highlightBg)
+                          : escapeHtml(line)
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            </HoverCardContent>
+          )}
+        </HoverCard>
+      )}
+
+      {!matchContext && data.context_snippet && (
         <div
           className="text-sm text-muted-foreground bg-muted/40 rounded px-3 py-2 leading-relaxed whitespace-pre-wrap"
           dangerouslySetInnerHTML={{
-            __html: highlightRawInContext(data.context_snippet, data.raw_reference)
+            __html: highlightRawInContext(data.context_snippet, data.raw_reference, highlightColor, highlightBg)
           }}
         />
       )}

@@ -7,9 +7,11 @@ interface Props {
   grouped: Record<string, TalmudRefWithPsak[]>;
   onValidate: (id: string, status: ValidationStatus, autoDismissIds?: string[]) => void;
   onClickRef: (ref: TalmudRefWithPsak) => void;
+  highlightColor?: string;
+  highlightBg?: string;
 }
 
-export default function ListView({ grouped, onValidate, onClickRef }: Props) {
+export default function ListView({ grouped, onValidate, onClickRef, highlightColor, highlightBg }: Props) {
   const sortedTractates = Object.keys(grouped).sort((a, b) => {
     const ia = TRACTATES.indexOf(a);
     const ib = TRACTATES.indexOf(b);
@@ -29,7 +31,7 @@ export default function ListView({ grouped, onValidate, onClickRef }: Props) {
               {grouped[tractate]
                 .sort((a, b) => Number(a.daf) - Number(b.daf) || (a.amud ?? '').localeCompare(b.amud ?? ''))
                 .map(ref => (
-                  <RefCard key={ref.id} data={ref} onValidate={onValidate} onClickRef={onClickRef} />
+                  <RefCard key={ref.id} data={ref} onValidate={onValidate} onClickRef={onClickRef} highlightColor={highlightColor} highlightBg={highlightBg} />
                 ))}
             </div>
           </div>

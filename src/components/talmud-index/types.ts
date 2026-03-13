@@ -36,11 +36,35 @@ export function escapeHtml(text: string) {
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-export function highlightRawInContext(context: string, raw: string): string {
+export const HIGHLIGHT_COLORS = [
+  { name: 'כחול', value: '#3b82f6', bg: 'rgba(59,130,246,0.18)' },
+  { name: 'ירוק', value: '#22c55e', bg: 'rgba(34,197,94,0.18)' },
+  { name: 'סגול', value: '#a855f7', bg: 'rgba(168,85,247,0.18)' },
+  { name: 'כתום', value: '#f97316', bg: 'rgba(249,115,22,0.18)' },
+  { name: 'ורוד', value: '#ec4899', bg: 'rgba(236,72,153,0.18)' },
+  { name: 'אדום', value: '#ef4444', bg: 'rgba(239,68,68,0.18)' },
+  { name: 'צהוב', value: '#eab308', bg: 'rgba(234,179,8,0.25)' },
+];
+
+export function highlightRawInContext(context: string, raw: string, color?: string, bgColor?: string): string {
   const escaped = escapeHtml(context);
   const rawEscaped = escapeHtml(raw);
   const pattern = new RegExp(`(${rawEscaped.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'g');
+  if (color && bgColor) {
+    return escaped.replace(pattern, `<mark style="background:${bgColor};color:${color};font-weight:700;border-radius:3px;padding:0 2px">$1</mark>`);
+  }
   return escaped.replace(pattern, '<mark class="bg-primary/20 text-primary font-bold rounded px-0.5">$1</mark>');
+}
+
+/** Extract the line containing `raw` and optionally ±N surrounding lines */
+export function extractContextLines(snippet: string | null, raw: string, surroundCount = 0): { matchLine: string; surroundLines: string[] } | null {
+  if (!snippet) return null;
+  const lines = snippet.split(/\n|\. /).map(l => l.trim()).filter(Boolean);
+  const idx = lines.findIndex(l => l.includes(raw));
+  if (idx === -1) return null;
+  const start = Math.max(0, idx - surroundCount);
+  const end = Math.min(lines.length, idx + surroundCount + 1);
+  return { matchLine: lines[idx], surroundLines: lines.slice(start, end) };
 }
 
 /** Convert a number (or numeric string) to Hebrew gematria letters */

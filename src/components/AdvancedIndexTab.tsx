@@ -16,7 +16,7 @@ import TreeViewIndex from './talmud-index/TreeViewIndex';
 import PsakDinViewDialog from './PsakDinViewDialog';
 import IndexingControlPanel from './IndexingControlPanel';
 import DebugDiagnosticDialog from './DebugDiagnosticDialog';
-import { TalmudRefWithPsak, TRACTATES, ValidationStatus, ViewMode } from './talmud-index/types';
+import { TalmudRefWithPsak, TRACTATES, ValidationStatus, ViewMode, HIGHLIGHT_COLORS } from './talmud-index/types';
 
 export default function AdvancedIndexTab() {
   const { data: refs, isLoading } = useAllReferencesGrouped();
@@ -26,6 +26,8 @@ export default function AdvancedIndexTab() {
   const [hideResolved, setHideResolved] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('tree');
   const [selectedRef, setSelectedRef] = useState<TalmudRefWithPsak | null>(null);
+  const [highlightIdx, setHighlightIdx] = useState(0);
+  const activeColor = HIGHLIGHT_COLORS[highlightIdx];
 
   const filtered = refs?.filter(r => {
     if (hideResolved && (r.validation_status === 'incorrect' || r.validation_status === 'ignored' || r.validation_status === 'correct')) return false;
@@ -239,6 +241,18 @@ export default function AdvancedIndexTab() {
             </Button>
           ))}
         </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-muted-foreground">צבע הדגשה:</span>
+          {HIGHLIGHT_COLORS.map((c, i) => (
+            <button
+              key={c.value}
+              className={`w-5 h-5 rounded-full border-2 transition-all ${i === highlightIdx ? 'border-foreground scale-110' : 'border-transparent opacity-60 hover:opacity-100'}`}
+              style={{ background: c.value }}
+              onClick={() => setHighlightIdx(i)}
+              title={c.name}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Index content */}
@@ -264,11 +278,11 @@ export default function AdvancedIndexTab() {
         </div>
       ) : (
         <>
-          {viewMode === 'tree' && <TreeViewIndex grouped={grouped} onValidate={handleValidate} onClickRef={(ref) => openPsakDialog(ref)} />}
-          {viewMode === 'list' && <ListView grouped={grouped} onValidate={handleValidate} onClickRef={(ref) => openPsakDialog(ref)} />}
-          {viewMode === 'accordion' && <AccordionView grouped={grouped} onValidate={handleValidate} onClickRef={(ref) => openPsakDialog(ref)} />}
-          {viewMode === 'table' && <IndexTableView filtered={filtered} onValidate={handleValidate} onClickRef={(ref) => openPsakDialog(ref)} />}
-          {viewMode === 'cards' && <CardsView grouped={grouped} onValidate={handleValidate} onClickRef={(ref) => openPsakDialog(ref)} />}
+          {viewMode === 'tree' && <TreeViewIndex grouped={grouped} onValidate={handleValidate} onClickRef={(ref) => openPsakDialog(ref)} highlightColor={activeColor.value} highlightBg={activeColor.bg} />}
+          {viewMode === 'list' && <ListView grouped={grouped} onValidate={handleValidate} onClickRef={(ref) => openPsakDialog(ref)} highlightColor={activeColor.value} highlightBg={activeColor.bg} />}
+          {viewMode === 'accordion' && <AccordionView grouped={grouped} onValidate={handleValidate} onClickRef={(ref) => openPsakDialog(ref)} highlightColor={activeColor.value} highlightBg={activeColor.bg} />}
+          {viewMode === 'table' && <IndexTableView filtered={filtered} onValidate={handleValidate} onClickRef={(ref) => openPsakDialog(ref)} highlightColor={activeColor.value} highlightBg={activeColor.bg} />}
+          {viewMode === 'cards' && <CardsView grouped={grouped} onValidate={handleValidate} onClickRef={(ref) => openPsakDialog(ref)} highlightColor={activeColor.value} highlightBg={activeColor.bg} />}
         </>
       )}
 

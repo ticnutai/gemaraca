@@ -2,16 +2,19 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card';
 import { Check, X, EyeOff } from 'lucide-react';
-import { TalmudRefWithPsak, TRACTATES, toHebrewDaf, toHebrewAmud, ValidationStatus } from './types';
+import { TalmudRefWithPsak, TRACTATES, toHebrewDaf, toHebrewAmud, highlightRawInContext, extractContextLines, escapeHtml, ValidationStatus } from './types';
 
 interface Props {
   filtered: TalmudRefWithPsak[];
   onValidate: (id: string, status: ValidationStatus, autoDismissIds?: string[]) => void;
   onClickRef: (ref: TalmudRefWithPsak) => void;
+  highlightColor?: string;
+  highlightBg?: string;
 }
 
-export default function IndexTableView({ filtered, onValidate, onClickRef }: Props) {
+export default function IndexTableView({ filtered, onValidate, onClickRef, highlightColor, highlightBg }: Props) {
   const sorted = [...filtered].sort((a, b) => {
     const ia = TRACTATES.indexOf(a.tractate);
     const ib = TRACTATES.indexOf(b.tractate);
@@ -32,6 +35,7 @@ export default function IndexTableView({ filtered, onValidate, onClickRef }: Pro
             <TableHead className="text-right">ביטחון</TableHead>
             <TableHead className="text-right">סטטוס</TableHead>
             <TableHead className="text-right">פעולות</TableHead>
+            <TableHead className="text-right">שורת הקשר</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -94,6 +98,46 @@ export default function IndexTableView({ filtered, onValidate, onClickRef }: Pro
                     <EyeOff className="w-3 h-3 text-muted-foreground" />
                   </Button>
                 </div>
+              </TableCell>
+              <TableCell className="max-w-[200px]">
+                {(() => {
+                  const ctx = extractContextLines(ref.context_snippet, ref.raw_reference, 3);
+                  if (!ctx) return <span className="text-xs text-muted-foreground">—</span>;
+                  return (
+                    <HoverCard openDelay={200} closeDelay={100}>
+                      <HoverCardTrigger asChild>
+                        <span
+                          className="text-xs text-muted-foreground truncate block cursor-default max-w-[200px]"
+                          dangerouslySetInnerHTML={{
+                            __html: highlightRawInContext(ctx.matchLine, ref.raw_reference, highlightColor, highlightBg)
+                          }}
+                        />
+                      </HoverCardTrigger>
+                      {ctx.surroundLines.length > 1 && (
+                        <HoverCardContent side="top" align="start" className="w-[400px] max-w-[90vw] p-3 text-right" dir="rtl">
+                          <div className="text-xs text-muted-foreground mb-1.5 font-semibold">הקשר מורחב (±3 שורות)</div>
+                          <div className="text-sm leading-relaxed space-y-1 whitespace-pre-wrap">
+                            {ctx.surroundLines.map((line, i) => {
+                              const isMatch = line === ctx.matchLine;
+                              return (
+                                <div
+                                  key={i}
+                                  className={isMatch ? 'rounded px-1.5 py-0.5' : 'text-muted-foreground'}
+                                  style={isMatch ? { background: highlightBg || 'hsl(var(--primary) / 0.1)' } : undefined}
+                                  dangerouslySetInnerHTML={{
+                                    __html: isMatch
+                                      ? highlightRawInContext(line, ref.raw_reference, highlightColor, highlightBg)
+                                      : escapeHtml(line)
+                                  }}
+                                />
+                              );
+                            })}
+                          </div>
+                        </HoverCardContent>
+                      )}
+                    </HoverCard>
+                  );
+                })()}
               </TableCell>
             </TableRow>
           ))}

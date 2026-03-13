@@ -10,9 +10,11 @@ interface Props {
   grouped: Record<string, TalmudRefWithPsak[]>;
   onValidate: (id: string, status: ValidationStatus, autoDismissIds?: string[]) => void;
   onClickRef: (ref: TalmudRefWithPsak) => void;
+  highlightColor?: string;
+  highlightBg?: string;
 }
 
-export default function TreeViewIndex({ grouped, onValidate, onClickRef }: Props) {
+export default function TreeViewIndex({ grouped, onValidate, onClickRef, highlightColor, highlightBg }: Props) {
   const [openTractates, setOpenTractates] = useState<Record<string, boolean>>({});
   const [openDafs, setOpenDafs] = useState<Record<string, boolean>>({});
 
@@ -71,7 +73,7 @@ export default function TreeViewIndex({ grouped, onValidate, onClickRef }: Props
                             {dafRefs
                               .sort((a, b) => (a.amud ?? '').localeCompare(b.amud ?? ''))
                               .map(ref => (
-                                <RefCard key={ref.id} data={ref} onValidate={onValidate} onClickRef={onClickRef} />
+                                <RefCard key={ref.id} data={ref} onValidate={onValidate} onClickRef={onClickRef} highlightColor={highlightColor} highlightBg={highlightBg} />
                               ))}
                           </div>
                         </CollapsibleContent>
