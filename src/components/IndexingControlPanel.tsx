@@ -131,6 +131,16 @@ export default function IndexingControlPanel() {
             <Cpu className="w-4 h-4 text-primary" />
             מנוע אינדוקס
             <StatusBadge status={status} />
+            {isActive && useAI && (
+              <Badge variant="outline" className="text-[10px] border-purple-500/50 text-purple-600">
+                AI + Regex
+              </Badge>
+            )}
+            {isActive && !useAI && (
+              <Badge variant="outline" className="text-[10px] border-blue-500/50 text-blue-600">
+                Regex בלבד
+              </Badge>
+            )}
           </CardTitle>
 
           {/* Action Buttons */}

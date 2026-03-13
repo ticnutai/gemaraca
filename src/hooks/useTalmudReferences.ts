@@ -31,13 +31,26 @@ export function useAllReferencesGrouped() {
   return useQuery({
     queryKey: ['talmud_references', 'grouped'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('talmud_references')
-        .select('*, psakei_din(title, court)')
-        .order('tractate', { ascending: true })
-        .order('daf', { ascending: true });
-      if (error) throw error;
-      return data as (TalmudReference & { psakei_din: { title: string; court: string } })[];
+      const PAGE_SIZE = 1000;
+      let all: (TalmudReference & { psakei_din: { title: string; court: string } })[] = [];
+      let offset = 0;
+      let done = false;
+
+      while (!done) {
+        const { data, error } = await supabase
+          .from('talmud_references')
+          .select('*, psakei_din(title, court)')
+          .order('tractate', { ascending: true })
+          .order('daf', { ascending: true })
+          .range(offset, offset + PAGE_SIZE - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) { done = true; break; }
+        all = all.concat(data as typeof all);
+        if (data.length < PAGE_SIZE) { done = true; }
+        offset += PAGE_SIZE;
+      }
+
+      return all;
     },
   });
 }

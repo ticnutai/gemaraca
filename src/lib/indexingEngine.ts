@@ -107,15 +107,24 @@ export async function runIndexingEngine(userId: string | null): Promise<void> {
       return;
     }
 
-    // 2. Get already-indexed psak_din_ids if skipIndexed
+    // 2. Get already-indexed psak_din_ids if skipIndexed (paginate to avoid 1000 limit)
     let indexedIds = new Set<string>();
     if (skipIndexed) {
-      const { data: indexed } = await supabase
-        .from('talmud_references')
-        .select('psak_din_id');
-
-      if (indexed) {
-        indexedIds = new Set(indexed.map(r => r.psak_din_id));
+      const PAGE = 1000;
+      let off = 0;
+      let fetchMore = true;
+      while (fetchMore) {
+        const { data: indexed } = await supabase
+          .from('talmud_references')
+          .select('psak_din_id')
+          .range(off, off + PAGE - 1);
+        if (indexed && indexed.length > 0) {
+          for (const r of indexed) indexedIds.add(r.psak_din_id);
+          if (indexed.length < PAGE) fetchMore = false;
+          off += PAGE;
+        } else {
+          fetchMore = false;
+        }
       }
     }
 

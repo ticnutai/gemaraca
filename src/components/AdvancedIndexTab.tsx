@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { BookOpen, Search, List, ChevronsUpDown, TableIcon, LayoutGrid, TreePine } from 'lucide-react';
+import { BookOpen, Search, List, ChevronsUpDown, TableIcon, LayoutGrid, TreePine, Bot, Regex } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
@@ -43,6 +43,8 @@ export default function AdvancedIndexTab() {
   const uniqueTractates = [...new Set(refs?.map(r => r.tractate) ?? [])];
   const resolvedCount = refs?.filter(r => r.validation_status === 'incorrect' || r.validation_status === 'ignored' || r.validation_status === 'correct').length ?? 0;
   const pendingCount = refs?.filter(r => r.validation_status === 'pending').length ?? 0;
+  const regexCount = refs?.filter(r => r.source === 'regex').length ?? 0;
+  const aiCount = refs?.filter(r => r.source === 'ai').length ?? 0;
 
   const handleValidate = useCallback((id: string, status: ValidationStatus, explicitAutoDismiss?: string[]) => {
     if (explicitAutoDismiss) {
@@ -129,7 +131,7 @@ export default function AdvancedIndexTab() {
 
       {/* Summary Stats */}
       {(refs?.length ?? 0) > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
           <Card className="bg-primary/5 border-primary/20">
             <CardContent className="p-3 text-center">
               <div className="text-2xl font-bold text-primary">{refs?.length ?? 0}</div>
@@ -158,6 +160,22 @@ export default function AdvancedIndexTab() {
             <CardContent className="p-3 text-center">
               <div className="text-2xl font-bold">{new Set(refs?.map(r => r.psak_din_id)).size}</div>
               <div className="text-xs text-muted-foreground">פסקי דין</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-blue-500/10 border-blue-500/20">
+            <CardContent className="p-3 text-center">
+              <div className="text-2xl font-bold text-blue-600 flex items-center justify-center gap-1">
+                <Regex className="w-4 h-4" />{regexCount}
+              </div>
+              <div className="text-xs text-muted-foreground">Regex</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-purple-500/10 border-purple-500/20">
+            <CardContent className="p-3 text-center">
+              <div className="text-2xl font-bold text-purple-600 flex items-center justify-center gap-1">
+                <Bot className="w-4 h-4" />{aiCount}
+              </div>
+              <div className="text-xs text-muted-foreground">AI</div>
             </CardContent>
           </Card>
         </div>
