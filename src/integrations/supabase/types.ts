@@ -311,62 +311,6 @@ export type Database = {
           },
         ]
       }
-      talmud_references: {
-        Row: {
-          id: string
-          psak_din_id: string
-          tractate: string
-          daf: string
-          amud: string | null
-          raw_reference: string
-          normalized: string
-          confidence: string
-          source: string
-          context_snippet: string | null
-          validation_status: string
-          created_at: string
-          user_id: string | null
-        }
-        Insert: {
-          id?: string
-          psak_din_id: string
-          tractate: string
-          daf: string
-          amud?: string | null
-          raw_reference: string
-          normalized: string
-          confidence?: string
-          source?: string
-          context_snippet?: string | null
-          validation_status?: string
-          created_at?: string
-          user_id?: string | null
-        }
-        Update: {
-          id?: string
-          psak_din_id?: string
-          tractate?: string
-          daf?: string
-          amud?: string | null
-          raw_reference?: string
-          normalized?: string
-          confidence?: string
-          source?: string
-          context_snippet?: string | null
-          validation_status?: string
-          created_at?: string
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "talmud_references_psak_din_id_fkey"
-            columns: ["psak_din_id"]
-            isOneToOne: false
-            referencedRelation: "psakei_din"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       sugya_psak_links: {
         Row: {
           connection_explanation: string
@@ -395,6 +339,62 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "sugya_psak_links_psak_din_id_fkey"
+            columns: ["psak_din_id"]
+            isOneToOne: false
+            referencedRelation: "psakei_din"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      talmud_references: {
+        Row: {
+          amud: string | null
+          confidence: string
+          context_snippet: string | null
+          created_at: string
+          daf: string
+          id: string
+          normalized: string
+          psak_din_id: string
+          raw_reference: string
+          source: string
+          tractate: string
+          user_id: string | null
+          validation_status: string
+        }
+        Insert: {
+          amud?: string | null
+          confidence?: string
+          context_snippet?: string | null
+          created_at?: string
+          daf: string
+          id?: string
+          normalized: string
+          psak_din_id: string
+          raw_reference: string
+          source?: string
+          tractate: string
+          user_id?: string | null
+          validation_status?: string
+        }
+        Update: {
+          amud?: string | null
+          confidence?: string
+          context_snippet?: string | null
+          created_at?: string
+          daf?: string
+          id?: string
+          normalized?: string
+          psak_din_id?: string
+          raw_reference?: string
+          source?: string
+          tractate?: string
+          user_id?: string | null
+          validation_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "talmud_references_psak_din_id_fkey"
             columns: ["psak_din_id"]
             isOneToOne: false
             referencedRelation: "psakei_din"
