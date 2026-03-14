@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useAllReferencesGrouped, useValidateReference } from '@/hooks/useTalmudReferences';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -22,6 +22,7 @@ export default function AdvancedIndexTab() {
   const { data: refs, isLoading } = useAllReferencesGrouped();
   const validateRef = useValidateReference();
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterTractate, setFilterTractate] = useState('all');
   const [hideResolved, setHideResolved] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('tree');
@@ -29,24 +30,47 @@ export default function AdvancedIndexTab() {
   const [highlightIdx, setHighlightIdx] = useState(0);
   const activeColor = HIGHLIGHT_COLORS[highlightIdx];
 
-  const filtered = refs?.filter(r => {
-    if (hideResolved && (r.validation_status === 'incorrect' || r.validation_status === 'ignored' || r.validation_status === 'correct')) return false;
-    if (filterTractate !== 'all' && r.tractate !== filterTractate) return false;
-    if (search && !r.normalized.includes(search) && !r.raw_reference.includes(search) && !r.psakei_din?.title?.includes(search)) return false;
-    return true;
-  }) ?? [];
+  // Debounce search input by 300ms
+  const searchTimer = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => {
+    searchTimer.current = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(searchTimer.current);
+  }, [search]);
 
-  const grouped = filtered.reduce<Record<string, TalmudRefWithPsak[]>>((acc, ref) => {
-    if (!acc[ref.tractate]) acc[ref.tractate] = [];
-    acc[ref.tractate].push(ref);
-    return acc;
-  }, {});
+  // Memoized filtering — only recalculates when deps actually change
+  const filtered = useMemo(() => {
+    return refs?.filter(r => {
+      if (hideResolved && (r.validation_status === 'incorrect' || r.validation_status === 'ignored' || r.validation_status === 'correct')) return false;
+      if (filterTractate !== 'all' && r.tractate !== filterTractate) return false;
+      if (debouncedSearch && !r.normalized.includes(debouncedSearch) && !r.raw_reference.includes(debouncedSearch) && !r.psakei_din?.title?.includes(debouncedSearch)) return false;
+      return true;
+    }) ?? [];
+  }, [refs, hideResolved, filterTractate, debouncedSearch]);
 
-  const uniqueTractates = [...new Set(refs?.map(r => r.tractate) ?? [])];
-  const resolvedCount = refs?.filter(r => r.validation_status === 'incorrect' || r.validation_status === 'ignored' || r.validation_status === 'correct').length ?? 0;
-  const pendingCount = refs?.filter(r => r.validation_status === 'pending').length ?? 0;
-  const regexCount = refs?.filter(r => r.source === 'regex').length ?? 0;
-  const aiCount = refs?.filter(r => r.source === 'ai').length ?? 0;
+  // Memoized grouping
+  const grouped = useMemo(() => {
+    return filtered.reduce<Record<string, TalmudRefWithPsak[]>>((acc, ref) => {
+      if (!acc[ref.tractate]) acc[ref.tractate] = [];
+      acc[ref.tractate].push(ref);
+      return acc;
+    }, {});
+  }, [filtered]);
+
+  // Memoized stats — avoids re-scanning 13k items on every render
+  const { uniqueTractates, resolvedCount, pendingCount, regexCount, aiCount, psakCount } = useMemo(() => {
+    const tractateSet = new Set<string>();
+    const psakSet = new Set<string>();
+    let resolved = 0, pending = 0, regex = 0, ai = 0;
+    for (const r of refs ?? []) {
+      tractateSet.add(r.tractate);
+      psakSet.add(r.psak_din_id);
+      const s = r.validation_status;
+      if (s === 'incorrect' || s === 'ignored' || s === 'correct') resolved++;
+      else pending++;
+      if (r.source === 'regex') regex++; else ai++;
+    }
+    return { uniqueTractates: [...tractateSet], resolvedCount: resolved, pendingCount: pending, regexCount: regex, aiCount: ai, psakCount: psakSet.size };
+  }, [refs]);
 
   const handleValidate = useCallback((id: string, status: ValidationStatus, explicitAutoDismiss?: string[]) => {
     if (explicitAutoDismiss) {
@@ -73,6 +97,17 @@ export default function AdvancedIndexTab() {
 
     validateRef.mutate({ id, status, autoDismissIds: autoDismissIds.length > 0 ? autoDismissIds : undefined });
   }, [refs, validateRef]);
+
+  // Memoized tractate options for the select dropdown
+  const tractateOptions = useMemo(() => {
+    const countMap = new Map<string, number>();
+    for (const r of refs ?? []) {
+      countMap.set(r.tractate, (countMap.get(r.tractate) ?? 0) + 1);
+    }
+    return uniqueTractates
+      .sort((a, b) => TRACTATES.indexOf(a) - TRACTATES.indexOf(b))
+      .map(t => ({ value: t, label: `${t} (${countMap.get(t) ?? 0})` }));
+  }, [refs, uniqueTractates]);
 
   const handleClickRef = (ref: TalmudRefWithPsak) => {
     setSelectedRef(ref);
@@ -160,7 +195,7 @@ export default function AdvancedIndexTab() {
           </Card>
           <Card className="bg-secondary border-secondary/50">
             <CardContent className="p-3 text-center">
-              <div className="text-2xl font-bold">{new Set(refs?.map(r => r.psak_din_id)).size}</div>
+              <div className="text-2xl font-bold">{psakCount}</div>
               <div className="text-xs text-muted-foreground">פסקי דין</div>
             </CardContent>
           </Card>
@@ -200,9 +235,9 @@ export default function AdvancedIndexTab() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">כל המסכתות ({refs?.length ?? 0})</SelectItem>
-            {uniqueTractates.sort((a, b) => TRACTATES.indexOf(a) - TRACTATES.indexOf(b)).map(t => (
-              <SelectItem key={t} value={t}>
-                {t} ({refs?.filter(r => r.tractate === t).length})
+            {tractateOptions.map(t => (
+              <SelectItem key={t.value} value={t.value}>
+                {t.label}
               </SelectItem>
             ))}
           </SelectContent>

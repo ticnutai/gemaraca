@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Check, X, RotateCcw, FileText, EyeOff } from 'lucide-react';
@@ -12,7 +13,7 @@ interface Props {
   highlightBg?: string;
 }
 
-export default function RefCard({ data, onValidate, onClickRef, highlightColor, highlightBg }: Props) {
+export default memo(function RefCard({ data, onValidate, onClickRef, highlightColor, highlightBg }: Props) {
   const isApproved = data.validation_status === 'correct';
   const isRejected = data.validation_status === 'incorrect';
   const isIgnored = data.validation_status === 'ignored';
@@ -152,4 +153,4 @@ export default function RefCard({ data, onValidate, onClickRef, highlightColor, 
       </div>
     </div>
   );
-}
+});
