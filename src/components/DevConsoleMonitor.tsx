@@ -15,7 +15,7 @@ export interface ConsoleEntry {
 }
 
 interface DevConsoleMonitorProps {
-  enabled: boolean;
+  enabled?: boolean;
 }
 
 // Persistent storage key
