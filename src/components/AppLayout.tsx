@@ -26,7 +26,6 @@ const AppLayout = ({ children }: AppLayoutProps) => {
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
-    // Navigate to home if on a detail page
     if (location.pathname !== '/') {
       navigate('/');
     }
@@ -44,19 +43,19 @@ const AppLayout = ({ children }: AppLayoutProps) => {
     setIsPinned(!(isPinned ?? false));
   };
 
-  // When sidebar is not pinned, main content should take full width
   const sidebarIsPinned = isPinned ?? true;
   const isMobile = useIsMobile();
 
-  // On mobile, sidebar should always start closed regardless of pin state
+  // On mobile, sidebar should always start closed
   const defaultSidebarOpen = isMobile ? false : sidebarIsPinned;
 
   return (
     <SidebarProvider defaultOpen={defaultSidebarOpen}>
       <div className="min-h-screen flex w-full bg-background">
-        {/* Main content - takes full width when sidebar is unpinned */}
+        {/* Main content - reflows based on sidebar pin state */}
         <div className={cn(
           "flex-1 flex flex-col min-h-screen transition-all duration-300",
+          // When pinned, reserve space for sidebar on the right
           sidebarIsPinned && !isMobile ? "md:me-[--sidebar-width]" : "w-full"
         )}>
           <AppHeader 
@@ -69,7 +68,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
           </main>
         </div>
 
-        {/* Sidebar - fixed position when pinned, floating when unpinned */}
+        {/* Sidebar */}
         <AppSidebar 
           activeTab={activeTab} 
           onTabChange={handleTabChange}
@@ -79,7 +78,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
           isMobile={isMobile}
         />
 
-        {/* Floating Navigation Button - lazy loaded */}
+        {/* Floating Navigation Button */}
         <Suspense fallback={null}>
           <FloatingGemaraNav />
         </Suspense>
