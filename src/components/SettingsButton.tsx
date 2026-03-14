@@ -1,8 +1,10 @@
 import { useState, lazy, Suspense } from "react";
-import { Settings, Check, Palette, ChevronRight, Pipette, Code2 } from "lucide-react";
+import { Settings, Check, Palette, ChevronRight, Pipette, Code2, Bug, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const DevMigrationsPanel = lazy(() => import("@/components/DevMigrationsPanel"));
+const DevConsoleMonitor = lazy(() => import("@/components/DevConsoleMonitor"));
+const DevPerformanceMonitor = lazy(() => import("@/components/DevPerformanceMonitor"));
 import {
   Popover,
   PopoverContent,
@@ -29,7 +31,24 @@ export function SettingsButton() {
   const { theme, setTheme, customColors, setCustomColors } = useTheme();
   const [showCustomizer, setShowCustomizer] = useState(false);
   const [showDevPanel, setShowDevPanel] = useState(false);
+  const [showDevTab, setShowDevTab] = useState(false);
   const [localColors, setLocalColors] = useState<CustomColors>(customColors);
+  
+  // Dev tools toggles — persisted in localStorage
+  const [consoleMonitorEnabled, setConsoleMonitorEnabled] = useState(() => localStorage.getItem("dev-console-enabled") === "true");
+  const [perfMonitorEnabled, setPerfMonitorEnabled] = useState(() => localStorage.getItem("dev-perf-enabled") === "true");
+
+  const toggleConsoleMonitor = () => {
+    const next = !consoleMonitorEnabled;
+    setConsoleMonitorEnabled(next);
+    localStorage.setItem("dev-console-enabled", String(next));
+  };
+
+  const togglePerfMonitor = () => {
+    const next = !perfMonitorEnabled;
+    setPerfMonitorEnabled(next);
+    localStorage.setItem("dev-perf-enabled", String(next));
+  };
 
   const handleColorChange = (key: keyof CustomColors, value: string) => {
     setLocalColors(prev => ({ ...prev, [key]: value }));
@@ -79,7 +98,7 @@ export function SettingsButton() {
           align="end" 
           className="w-72 p-3 bg-card border-border"
         >
-          {!showCustomizer ? (
+          {!showCustomizer && !showDevTab ? (
             <>
               <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border">
                 <Palette className="h-4 w-4 text-accent" />
@@ -129,6 +148,95 @@ export function SettingsButton() {
                     ) : null}
                   </button>
                 ))}
+              </div>
+
+              {/* Dev Tools Section */}
+              <div className="mt-3 pt-2 border-t border-border">
+                <button
+                  onClick={() => setShowDevTab(true)}
+                  className="w-full flex items-center gap-3 p-2 rounded-lg transition-all hover:bg-muted/50"
+                >
+                  <div className="flex gap-1">
+                    <Bug className="w-4 h-4 text-orange-500" />
+                    <Zap className="w-4 h-4 text-yellow-500" />
+                  </div>
+                  <div className="flex-1 text-right">
+                    <div className="font-medium text-sm">כלי פיתוח</div>
+                    <div className="text-xs text-muted-foreground">קונסול שגיאות וביצועים</div>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground rotate-180" />
+                </button>
+              </div>
+            </>
+          ) : showDevTab ? (
+            <>
+              <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border">
+                <button
+                  onClick={() => setShowDevTab(false)}
+                  className="p-1 hover:bg-muted rounded"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+                <Code2 className="h-4 w-4 text-accent" />
+                <span className="font-medium">כלי פיתוח</span>
+              </div>
+
+              <div className="space-y-3">
+                {/* Console Monitor Toggle */}
+                <button
+                  onClick={toggleConsoleMonitor}
+                  className={cn(
+                    "w-full flex items-center gap-3 p-3 rounded-lg transition-all border",
+                    consoleMonitorEnabled
+                      ? "bg-orange-500/10 border-orange-500/30"
+                      : "bg-muted/30 border-border hover:bg-muted/50"
+                  )}
+                >
+                  <Bug className={cn("h-5 w-5", consoleMonitorEnabled ? "text-orange-500" : "text-muted-foreground")} />
+                  <div className="flex-1 text-right">
+                    <div className="font-medium text-sm">מוניטור קונסול</div>
+                    <div className="text-xs text-muted-foreground">שגיאות, אזהרות, ביצועים</div>
+                  </div>
+                  <div className={cn(
+                    "w-10 h-5 rounded-full transition-colors relative",
+                    consoleMonitorEnabled ? "bg-orange-500" : "bg-muted-foreground/30"
+                  )}>
+                    <div className={cn(
+                      "absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all",
+                      consoleMonitorEnabled ? "left-0.5" : "right-0.5"
+                    )} />
+                  </div>
+                </button>
+
+                {/* Performance Monitor Toggle */}
+                <button
+                  onClick={togglePerfMonitor}
+                  className={cn(
+                    "w-full flex items-center gap-3 p-3 rounded-lg transition-all border",
+                    perfMonitorEnabled
+                      ? "bg-yellow-500/10 border-yellow-500/30"
+                      : "bg-muted/30 border-border hover:bg-muted/50"
+                  )}
+                >
+                  <Zap className={cn("h-5 w-5", perfMonitorEnabled ? "text-yellow-500" : "text-muted-foreground")} />
+                  <div className="flex-1 text-right">
+                    <div className="font-medium text-sm">מוניטור ביצועים</div>
+                    <div className="text-xs text-muted-foreground">FPS, זמני טעינה, זיכרון</div>
+                  </div>
+                  <div className={cn(
+                    "w-10 h-5 rounded-full transition-colors relative",
+                    perfMonitorEnabled ? "bg-yellow-500" : "bg-muted-foreground/30"
+                  )}>
+                    <div className={cn(
+                      "absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all",
+                      perfMonitorEnabled ? "left-0.5" : "right-0.5"
+                    )} />
+                  </div>
+                </button>
+
+                <p className="text-xs text-muted-foreground text-center pt-1">
+                  הכפתורים הצפים יופיעו בכל דף
+                </p>
               </div>
             </>
           ) : (
@@ -216,6 +324,12 @@ export function SettingsButton() {
           )}
         </PopoverContent>
       </Popover>
+
+      {/* Floating Dev Tools */}
+      <Suspense fallback={null}>
+        {consoleMonitorEnabled && <DevConsoleMonitor enabled />}
+        {perfMonitorEnabled && <DevPerformanceMonitor enabled />}
+      </Suspense>
     </div>
   );
 }
