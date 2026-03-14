@@ -175,7 +175,7 @@ const AppSidebar = ({
       <Sidebar 
         side="right" 
         className={cn(
-          "border-l border-border/50 bg-sidebar",
+          "border-l border-border/50 !bg-sidebar",
           // Transition for smooth open/close
           "transition-all duration-300 ease-in-out",
           isMobile
@@ -188,6 +188,7 @@ const AppSidebar = ({
         )}
         collapsible="none"
         variant="sidebar"
+        style={{ backgroundColor: 'hsl(var(--sidebar-background, var(--background)))' }}
         onMouseEnter={isMobile ? undefined : handleMouseEnter}
         onMouseLeave={isMobile ? undefined : handleMouseLeave}
       >

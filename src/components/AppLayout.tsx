@@ -43,8 +43,9 @@ const AppLayout = ({ children }: AppLayoutProps) => {
     setIsPinned(!(isPinned ?? false));
   };
 
-  const sidebarIsPinned = isPinned ?? true;
+  const sidebarIsPinned = isPinned ?? false;
   const isMobile = useIsMobile();
+  const { open: sidebarOpen } = useSidebar();
 
   // On mobile, sidebar should always start closed
   const defaultSidebarOpen = isMobile ? false : sidebarIsPinned;
