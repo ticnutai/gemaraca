@@ -51,7 +51,16 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
   const [explorerOpen, setExplorerOpen] = useState(false);
   const queryClient = useQueryClient();
 
-  const enqueueJob = useGemaraDownloadStore((s) => s.enqueueJob);
+  const enqueueJobRaw = useGemaraDownloadStore((s) => s.enqueueJob);
+
+  const enqueueJob = async (job: Parameters<typeof enqueueJobRaw>[0]) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast({ title: 'נדרשת התחברות', description: 'יש להתחבר למערכת לפני הורדת דפים', variant: 'destructive' });
+      return;
+    }
+    enqueueJobRaw(job);
+  };
 
   const INITIAL_DAF_COUNT = 20;
 

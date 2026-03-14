@@ -24,6 +24,7 @@ import { useQuery } from "@tanstack/react-query";
 import PsakDinViewDialog from "./PsakDinViewDialog";
 import { useGemaraDownloadStore } from "@/stores/gemaraDownloadStore";
 import { buildMasechetJob, buildSederJob, buildShasJob } from "@/hooks/useGemaraDownloadEngine";
+import { useToast } from "@/hooks/use-toast";
 
 // ─── Types ──────────────────────────────────────────────
 type Step = "sedarim" | "masechtot" | "dafim" | "psakim";
@@ -76,7 +77,17 @@ const MasechetExplorerDialog = ({ open, onOpenChange }: MasechetExplorerDialogPr
   const [viewPsak, setViewPsak] = useState<any>(null);
   const [viewPsakOpen, setViewPsakOpen] = useState(false);
 
-  const enqueueJob = useGemaraDownloadStore((s) => s.enqueueJob);
+  const enqueueJobRaw = useGemaraDownloadStore((s) => s.enqueueJob);
+  const { toast: downloadToast } = useToast();
+
+  const enqueueJob = async (job: Parameters<typeof enqueueJobRaw>[0]) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      downloadToast({ title: 'נדרשת התחברות', description: 'יש להתחבר למערכת לפני הורדת דפים', variant: 'destructive' });
+      return;
+    }
+    enqueueJobRaw(job);
+  };
 
   // Load psak counts per masechet and daf
   const { data: psakCounts = {} } = useQuery<PsakCount>({

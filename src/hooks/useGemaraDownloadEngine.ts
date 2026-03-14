@@ -174,6 +174,20 @@ export function useGemaraDownloadEngine() {
     runningRef.current = true;
 
     try {
+      // Verify auth before starting
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({ title: 'נדרשת התחברות', description: 'יש להתחבר למערכת לפני הורדת דפים', variant: 'destructive' });
+        // Pause all queued jobs so they can be resumed after login
+        const { jobs, queue } = useGemaraDownloadStore.getState();
+        const { errorJob } = useGemaraDownloadStore.getState();
+        for (const id of queue) {
+          if (jobs[id]?.status === 'queued') errorJob(id, 'נדרשת התחברות');
+        }
+        runningRef.current = false;
+        return;
+      }
+
       while (true) {
         const { jobs, queue } = useGemaraDownloadStore.getState();
         // Find next queued job
