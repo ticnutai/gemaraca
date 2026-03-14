@@ -171,7 +171,7 @@ async function executeMigration(client: any, body: any, userId: string) {
       .from('migration_history')
       .update({
         status: 'failed',
-        error_message: execError.message,
+        error_message: (execError as Error).message,
         execution_time_ms: executionTime,
         executed_at: new Date().toISOString(),
       })
