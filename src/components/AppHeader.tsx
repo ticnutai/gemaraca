@@ -86,7 +86,7 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
                   <span>עוד</span>
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="text-right" dir="rtl">
+              <DropdownMenuContent align="end" className="text-right">
                 {moreTabs.map((tab) => (
                   <DropdownMenuItem
                     key={tab.id}

@@ -175,7 +175,7 @@ const AppSidebar = ({
       <Sidebar 
         side="right" 
         className={cn(
-          "border-l border-border/50 bg-sidebar",
+          "border-l border-border/50 !bg-sidebar",
           // Transition for smooth open/close
           "transition-all duration-300 ease-in-out",
           isMobile
@@ -188,6 +188,7 @@ const AppSidebar = ({
         )}
         collapsible="none"
         variant="sidebar"
+        style={{ backgroundColor: 'hsl(var(--sidebar-background, var(--background)))' }}
         onMouseEnter={isMobile ? undefined : handleMouseEnter}
         onMouseLeave={isMobile ? undefined : handleMouseLeave}
       >
@@ -197,19 +198,21 @@ const AppSidebar = ({
             <h2 className="text-lg font-semibold text-foreground">ניווט ראשי</h2>
             <p className="text-xs text-muted-foreground">מסכתות ופסקי דין</p>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handlePinToggle}
-            className={cn("h-8 w-8", isMobile && "hidden")}
-            title={isPinned ? "אוטו-הייד" : "נעץ סיידבר"}
-          >
-            {isPinned ? (
-              <Pin className="h-4 w-4 text-accent" />
-            ) : (
-              <PinOff className="h-4 w-4 text-muted-foreground" />
-            )}
-          </Button>
+          {!isMobile && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handlePinToggle}
+              className="h-9 w-9 border border-border/50 rounded-lg"
+              title={isPinned ? "אוטו-הייד" : "נעץ סיידבר"}
+            >
+              {isPinned ? (
+                <Pin className="h-4 w-4 text-primary" />
+              ) : (
+                <PinOff className="h-4 w-4 text-muted-foreground" />
+              )}
+            </Button>
+          )}
         </div>
       </SidebarHeader>
       

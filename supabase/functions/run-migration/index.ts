@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
     }
   } catch (error) {
     console.error('Migration error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: (error as Error).message }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
@@ -171,7 +171,7 @@ async function executeMigration(client: any, body: any, userId: string) {
       .from('migration_history')
       .update({
         status: 'failed',
-        error_message: execError.message,
+        error_message: (execError as Error).message,
         execution_time_ms: executionTime,
         executed_at: new Date().toISOString(),
       })
@@ -180,7 +180,7 @@ async function executeMigration(client: any, body: any, userId: string) {
     return new Response(JSON.stringify({
       success: false,
       migrationId: migration.id,
-      error: execError.message,
+      error: (execError as Error).message,
       executionTime,
     }), {
       status: 200, // still 200 so client can read the error
@@ -264,7 +264,7 @@ async function fetchFromUrl(url: string) {
     });
 
   } catch (error) {
-    return new Response(JSON.stringify({ error: `שגיאה בשליפת URL: ${error.message}` }), {
+    return new Response(JSON.stringify({ error: `שגיאה בשליפת URL: ${(error as Error).message}` }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }

@@ -59,20 +59,17 @@ export default function GlobalSearchTab() {
       // Search gemara pages
       const { data: gemaraPages } = await supabase
         .from("gemara_pages")
-        .select("sugya_id, title, daf_yomi, masechet, gemara_text")
-        .or(`title.ilike.%${q}%,gemara_text.ilike.%${q}%,daf_yomi.ilike.%${q}%`)
+        .select("sugya_id, title, daf_yomi, masechet")
+        .or(`title.ilike.%${q}%,daf_yomi.ilike.%${q}%`)
         .limit(15);
 
       if (gemaraPages) {
-        for (const p of gemaraPages) {
-          const text = p.gemara_text || "";
-          const idx = text.toLowerCase().indexOf(q.toLowerCase());
-          const snippet = idx >= 0 ? "..." + text.slice(Math.max(0, idx - 40), idx + 80) + "..." : "";
+        for (const p of gemaraPages as any[]) {
           allResults.push({
             id: p.sugya_id,
             type: "gemara",
             title: p.title || p.daf_yomi,
-            snippet: snippet || p.daf_yomi,
+            snippet: p.daf_yomi,
             meta: `${p.masechet} • ${p.daf_yomi}`,
           });
         }

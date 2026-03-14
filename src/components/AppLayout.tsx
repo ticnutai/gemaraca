@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarProvider, useSidebar } from "@/components/ui/sidebar";
 import AppSidebar from "./AppSidebar";
 import AppHeader from "./AppHeader";
 import { lazy, Suspense } from "react";
@@ -13,7 +13,7 @@ interface AppLayoutProps {
   children: React.ReactNode;
 }
 
-const AppLayout = ({ children }: AppLayoutProps) => {
+const AppLayoutInner = ({ children }: AppLayoutProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { 
@@ -23,6 +23,8 @@ const AppLayout = ({ children }: AppLayoutProps) => {
     isPinned, 
     setIsPinned 
   } = useAppContext();
+  const { open: sidebarOpen } = useSidebar();
+  const isMobile = useIsMobile();
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
@@ -43,46 +45,54 @@ const AppLayout = ({ children }: AppLayoutProps) => {
     setIsPinned(!(isPinned ?? false));
   };
 
-  const sidebarIsPinned = isPinned ?? true;
-  const isMobile = useIsMobile();
+  const sidebarIsPinned = isPinned ?? false;
+  // Reserve margin when pinned OR when unpinned but sidebar is open (hover)
+  const shouldReserveSpace = !isMobile && (sidebarIsPinned || sidebarOpen);
 
-  // On mobile, sidebar should always start closed
+  return (
+    <div className="min-h-screen flex w-full bg-background">
+      {/* Main content - reflows based on sidebar state */}
+      <div className={cn(
+        "flex-1 flex flex-col min-h-screen transition-all duration-300",
+        shouldReserveSpace ? "md:me-[--sidebar-width]" : "w-full"
+      )}>
+        <AppHeader 
+          activeTab={activeTab} 
+          onTabChange={handleTabChange}
+        />
+        
+        <main className="flex-1">
+          {children}
+        </main>
+      </div>
+
+      {/* Sidebar */}
+      <AppSidebar 
+        activeTab={activeTab} 
+        onTabChange={handleTabChange}
+        onMasechetSelect={handleMasechetSelect}
+        isPinned={sidebarIsPinned}
+        onPinToggle={handlePinToggle}
+        isMobile={isMobile}
+      />
+
+      {/* Floating Navigation Button */}
+      <Suspense fallback={null}>
+        <FloatingGemaraNav />
+      </Suspense>
+    </div>
+  );
+};
+
+const AppLayout = ({ children }: AppLayoutProps) => {
+  const { isPinned } = useAppContext();
+  const isMobile = useIsMobile();
+  const sidebarIsPinned = isPinned ?? false;
   const defaultSidebarOpen = isMobile ? false : sidebarIsPinned;
 
   return (
     <SidebarProvider defaultOpen={defaultSidebarOpen}>
-      <div className="min-h-screen flex w-full bg-background">
-        {/* Main content - reflows based on sidebar pin state */}
-        <div className={cn(
-          "flex-1 flex flex-col min-h-screen transition-all duration-300",
-          // When pinned, reserve space for sidebar on the right
-          sidebarIsPinned && !isMobile ? "md:me-[--sidebar-width]" : "w-full"
-        )}>
-          <AppHeader 
-            activeTab={activeTab} 
-            onTabChange={handleTabChange}
-          />
-          
-          <main className="flex-1">
-            {children}
-          </main>
-        </div>
-
-        {/* Sidebar */}
-        <AppSidebar 
-          activeTab={activeTab} 
-          onTabChange={handleTabChange}
-          onMasechetSelect={handleMasechetSelect}
-          isPinned={sidebarIsPinned}
-          onPinToggle={handlePinToggle}
-          isMobile={isMobile}
-        />
-
-        {/* Floating Navigation Button */}
-        <Suspense fallback={null}>
-          <FloatingGemaraNav />
-        </Suspense>
-      </div>
+      <AppLayoutInner>{children}</AppLayoutInner>
     </SidebarProvider>
   );
 };
