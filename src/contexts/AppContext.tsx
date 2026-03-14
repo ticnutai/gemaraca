@@ -19,7 +19,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const [selectedMasechet, setSelectedMasechet] = useState<string | null>(null);
   const [isPinned, setIsPinned] = useState(() => {
     const saved = localStorage.getItem(SIDEBAR_PINNED_KEY);
-    return saved !== null ? saved === 'true' : true;
+    return saved !== null ? saved === 'true' : false; // Default: auto-hide (unpinned)
   });
 
   // Save pinned state to localStorage
