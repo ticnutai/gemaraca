@@ -6,8 +6,10 @@ import { lazy, Suspense } from "react";
 import { useAppContext } from "@/contexts/AppContext";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useGemaraDownloadEngine } from "@/hooks/useGemaraDownloadEngine";
 
 const FloatingGemaraNav = lazy(() => import("./FloatingGemaraNav"));
+const GemaraDownloadFloat = lazy(() => import("./GemaraDownloadFloat"));
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -25,6 +27,9 @@ const AppLayoutInner = ({ children }: AppLayoutProps) => {
   } = useAppContext();
   const { open: sidebarOpen } = useSidebar();
   const isMobile = useIsMobile();
+
+  // Start the background download engine (processes queued jobs)
+  useGemaraDownloadEngine();
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
@@ -79,6 +84,11 @@ const AppLayoutInner = ({ children }: AppLayoutProps) => {
       {/* Floating Navigation Button */}
       <Suspense fallback={null}>
         <FloatingGemaraNav />
+      </Suspense>
+
+      {/* Gemara Download Progress Float */}
+      <Suspense fallback={null}>
+        <GemaraDownloadFloat />
       </Suspense>
     </div>
   );

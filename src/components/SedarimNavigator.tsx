@@ -4,6 +4,8 @@ import { cn } from "@/lib/utils";
 import { SEDARIM, getMasechtotBySeder, MASECHTOT, Masechet } from "@/lib/masechtotData";
 import { toDafFormat, toHebrewNumeral } from "@/lib/hebrewNumbers";
 import { Button } from "@/components/ui/button";
+import { useGemaraDownloadStore } from "@/stores/gemaraDownloadStore";
+import { buildMasechetJob, buildSederJob, buildShasJob } from "@/hooks/useGemaraDownloadEngine";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useNavigate } from "react-router-dom";
@@ -48,6 +50,8 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [explorerOpen, setExplorerOpen] = useState(false);
   const queryClient = useQueryClient();
+
+  const enqueueJob = useGemaraDownloadStore((s) => s.enqueueJob);
 
   const INITIAL_DAF_COUNT = 20;
 
@@ -397,6 +401,13 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
               <ChevronLeft className="h-4 w-4 md:h-5 md:w-5 rtl-flip" />
             </button>
             <h3 className="font-bold text-sm md:text-lg">סדר {selectedSeder}</h3>
+            <button
+              onClick={() => enqueueJob(buildSederJob(selectedSeder))}
+              className="mr-auto p-1.5 rounded-lg hover:bg-primary/10 transition-colors"
+              title={`הורד סדר ${selectedSeder}`}
+            >
+              <Download className="h-4 w-4 text-primary" />
+            </button>
           </div>
           
           <div className="flex flex-wrap gap-1.5 md:gap-2">
@@ -438,22 +449,16 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
                       onClick={(e) => {
                         e.stopPropagation();
                         e.preventDefault();
-                        handleDownloadMasechet(masechet);
+                        enqueueJob(buildMasechetJob(masechet));
                       }}
-                      disabled={isDownloading}
                       className={cn(
                         "p-1 md:p-1.5 rounded-md transition-all cursor-pointer",
                         "hover:bg-accent/20 text-accent hover:text-accent",
                         "border border-accent/30 hover:border-accent",
-                        isDownloading && "animate-pulse"
                       )}
                       title={`הורד מסכת ${masechet.hebrewName}`}
                     >
-                      {isDownloading ? (
-                        <Loader2 className="h-3 w-3 md:h-4 md:w-4 animate-spin" />
-                      ) : (
-                        <Download className="h-3 w-3 md:h-4 md:w-4" />
-                      )}
+                      <Download className="h-3 w-3 md:h-4 md:w-4" />
                     </button>
                   )}
 

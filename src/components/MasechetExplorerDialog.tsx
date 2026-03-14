@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   BookOpen, ChevronLeft, Scale, Sparkles, ArrowRight,
   Loader2, Crown, Star, Flame, TrendingUp,
-  Building2, Calendar, ChevronDown, ExternalLink,
+  Building2, Calendar, ChevronDown, ExternalLink, Download,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SEDARIM, getMasechtotBySeder, MASECHTOT, Masechet } from "@/lib/masechtotData";
@@ -22,6 +22,8 @@ import { useNavigate } from "react-router-dom";
 import { useAppContext } from "@/contexts/AppContext";
 import { useQuery } from "@tanstack/react-query";
 import PsakDinViewDialog from "./PsakDinViewDialog";
+import { useGemaraDownloadStore } from "@/stores/gemaraDownloadStore";
+import { buildMasechetJob, buildSederJob, buildShasJob } from "@/hooks/useGemaraDownloadEngine";
 
 // ─── Types ──────────────────────────────────────────────
 type Step = "sedarim" | "masechtot" | "dafim" | "psakim";
@@ -73,6 +75,8 @@ const MasechetExplorerDialog = ({ open, onOpenChange }: MasechetExplorerDialogPr
   const [loadingPsakim, setLoadingPsakim] = useState(false);
   const [viewPsak, setViewPsak] = useState<any>(null);
   const [viewPsakOpen, setViewPsakOpen] = useState(false);
+
+  const enqueueJob = useGemaraDownloadStore((s) => s.enqueueJob);
 
   // Load psak counts per masechet and daf
   const { data: psakCounts = {} } = useQuery<PsakCount>({
@@ -299,6 +303,15 @@ const MasechetExplorerDialog = ({ open, onOpenChange }: MasechetExplorerDialogPr
           <ScrollArea className="h-[60vh] px-5 py-4">
             {/* ──── Step 1: Sedarim ──── */}
             {step === "sedarim" && (
+              <div className="space-y-3">
+              {/* Download all Shas button */}
+              <button
+                onClick={(e) => { e.stopPropagation(); enqueueJob(buildShasJob()); }}
+                className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 transition-all text-primary text-sm font-semibold"
+              >
+                <Download className="h-4 w-4" />
+                הורד את כל הש״ס
+              </button>
               <div className="grid grid-cols-2 gap-3" dir="rtl">
                 {SEDARIM.map((seder) => {
                   const meta = SEDER_META[seder] || SEDER_META["זרעים"];
@@ -329,27 +342,47 @@ const MasechetExplorerDialog = ({ open, onOpenChange }: MasechetExplorerDialogPr
                         )}
                       </div>
                       <h3 className="font-bold text-lg mt-3">סדר {seder}</h3>
-                      <p className="text-sm text-muted-foreground mt-0.5">{masechtot.length} מסכתות</p>
+                      <div className="flex items-center justify-between mt-1">
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          onClick={(e) => { e.stopPropagation(); enqueueJob(buildSederJob(seder)); }}
+                          className="p-1.5 rounded-lg bg-background/70 hover:bg-primary/20 transition-colors cursor-pointer"
+                          title={`הורד סדר ${seder}`}
+                        >
+                          <Download className="h-3.5 w-3.5 text-primary" />
+                        </span>
+                        <p className="text-sm text-muted-foreground">{masechtot.length} מסכתות</p>
+                      </div>
                     </button>
                   );
                 })}
+              </div>
               </div>
             )}
 
             {/* ──── Step 2: Masechtot ──── */}
             {step === "masechtot" && selectedSeder && (
               <div className="space-y-2">
+                {/* Download entire seder button */}
+                <button
+                  onClick={() => enqueueJob(buildSederJob(selectedSeder))}
+                  className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl border border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 transition-all text-primary text-sm font-semibold"
+                >
+                  <Download className="h-4 w-4" />
+                  הורד את כל סדר {selectedSeder}
+                </button>
                 {getMasechtotBySeder(selectedSeder).map((m) => {
                   const count = psakCounts[m.sefariaName]?.total || 0;
                   const dafCount = Object.keys(psakCounts[m.sefariaName]?.byDaf || {}).length;
                   const coverage = Math.round((dafCount / (m.maxDaf - 1)) * 100);
 
                   return (
+                    <div key={m.englishName} className="flex items-stretch gap-2">
                     <button
-                      key={m.englishName}
                       onClick={() => handleMasechetSelect(m)}
                       className={cn(
-                        "w-full flex items-center gap-4 p-4 rounded-xl border border-border transition-all duration-200",
+                        "flex-1 flex items-center gap-4 p-4 rounded-xl border border-border transition-all duration-200",
                         "hover:shadow-md hover:border-primary/30 hover:bg-primary/5 active:scale-[0.99]",
                         "bg-card text-right"
                       )}
@@ -394,6 +427,15 @@ const MasechetExplorerDialog = ({ open, onOpenChange }: MasechetExplorerDialogPr
                       )}
                       <ChevronLeft className="h-4 w-4 text-muted-foreground/50" />
                     </button>
+                    {/* Download masechet button */}
+                    <button
+                      onClick={() => enqueueJob(buildMasechetJob(m))}
+                      className="shrink-0 p-3 rounded-xl border border-border hover:bg-primary/10 hover:border-primary/30 transition-all"
+                      title={`הורד מסכת ${m.hebrewName}`}
+                    >
+                      <Download className="h-4 w-4 text-primary" />
+                    </button>
+                  </div>
                   );
                 })}
               </div>
@@ -402,6 +444,14 @@ const MasechetExplorerDialog = ({ open, onOpenChange }: MasechetExplorerDialogPr
             {/* ──── Step 3: Dafim ──── */}
             {step === "dafim" && selectedMasechetLocal && (
               <div>
+                {/* Download masechet button */}
+                <button
+                  onClick={() => enqueueJob(buildMasechetJob(selectedMasechetLocal))}
+                  className="w-full flex items-center justify-center gap-2 p-2.5 mb-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 transition-all text-primary text-sm font-semibold"
+                >
+                  <Download className="h-4 w-4" />
+                  הורד מסכת {selectedMasechetLocal.hebrewName}
+                </button>
                 {/* Quick stats */}
                 {(psakCounts[selectedMasechetLocal.sefariaName]?.total || 0) > 0 && (
                   <div className="flex items-center gap-3 mb-4 p-3 rounded-lg bg-primary/5 border border-primary/10">
