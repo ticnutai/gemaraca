@@ -155,10 +155,11 @@ const AppSidebar = ({
     masechtot: MASECHTOT.filter(m => m.seder === seder)
   })), []);
 
-  // Close sidebar on mobile after item click
+  // Close sidebar on mobile after item click, or when unpinned on desktop
   const closeSidebarOnMobile = () => {
-    if (isMobile) {
+    if (isMobile || !isPinned) {
       setOpen(false);
+      setIsHovered(false);
     }
   };
 
@@ -169,11 +170,14 @@ const AppSidebar = ({
 
   return (
     <>
-      {/* Mobile overlay backdrop */}
-      {isMobile && sidebarOpen && (
+      {/* Overlay backdrop — mobile always, desktop when unpinned & open */}
+      {((isMobile && sidebarOpen) || (!isMobile && !isPinned && sidebarOpen)) && (
         <div 
-          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
-          onClick={() => setOpen(false)}
+          className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px]"
+          onClick={() => {
+            setOpen(false);
+            setIsHovered(false);
+          }}
         />
       )}
       <Sidebar 

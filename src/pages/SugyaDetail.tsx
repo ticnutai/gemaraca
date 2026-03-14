@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MASECHTOT } from "@/lib/masechtotData";
 import { getCachedPage, setCachedPage } from "@/lib/pageCache";
+import { toHebrewNumeral } from "@/lib/hebrewNumbers";
 
 // Lazy-loaded heavy sub-panels
 const GemaraTextPanel = lazy(() => import("@/components/GemaraTextPanel"));
@@ -34,6 +35,21 @@ const PanelFallback = () => (
 const getMasechetHebrewName = (sefariaName: string): string => {
   const masechet = MASECHTOT.find(m => m.sefariaName === sefariaName);
   return masechet?.hebrewName || sefariaName;
+};
+
+// Parse sugya_id like "bava_batra_2a" into masechet + daf + amud
+const parseSugyaId = (sugyaId: string) => {
+  for (const m of MASECHTOT) {
+    const prefix = m.sefariaName.toLowerCase() + '_';
+    if (sugyaId.startsWith(prefix)) {
+      const rest = sugyaId.slice(prefix.length);
+      const match = rest.match(/^(\d+)([ab])$/);
+      if (match) {
+        return { masechet: m, dafNumber: parseInt(match[1]), amud: match[2] as 'a' | 'b' };
+      }
+    }
+  }
+  return null;
 };
 
 const SugyaDetail = () => {
@@ -97,6 +113,26 @@ const SugyaDetail = () => {
         // Save to cache
         setCachedPage(id, pageData);
         setLoadedPage(pageData);
+      } else {
+        // Page not in DB — create a fallback page from the sugya_id
+        const parsed = parseSugyaId(id);
+        if (parsed) {
+          const { masechet, dafNumber, amud } = parsed;
+          const amudStr = amud === 'a' ? 'ע"א' : 'ע"ב';
+          const dafYomi = `${masechet.hebrewName} ${toHebrewNumeral(dafNumber)} ${amudStr}`;
+          const fallbackPage = {
+            title: `${masechet.hebrewName} דף ${toHebrewNumeral(dafNumber)}`,
+            dafYomi,
+            summary: `דף ${dafYomi}`,
+            tags: ["גמרא", masechet.hebrewName],
+            masechet: masechet.sefariaName,
+            gemaraText: "",
+            fullText: "",
+            cases: []
+          };
+          setCachedPage(id, fallbackPage);
+          setLoadedPage(fallbackPage);
+        }
       }
     } catch (error) {
       console.error('Error loading page from DB:', error);
@@ -156,13 +192,9 @@ const SugyaDetail = () => {
   // Extract masechet info for LinkedPsakimSection
   const getMasechetInfo = () => {
     if (!id) return null;
-    const parts = id.split('_');
-    const masechetObj = MASECHTOT.find(m => m.sefariaName.toLowerCase() === parts[0]);
-    const dafNumMatch = parts[1]?.match(/(\d+)/);
-    const dafNum = dafNumMatch ? parseInt(dafNumMatch[1]) : 0;
-    
-    if (masechetObj && dafNum > 0) {
-      return { masechet: masechetObj.hebrewName, dafNumber: dafNum };
+    const parsed = parseSugyaId(id);
+    if (parsed) {
+      return { masechet: parsed.masechet.hebrewName, dafNumber: parsed.dafNumber };
     }
     return null;
   };

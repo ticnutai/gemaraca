@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BookOpen, ChevronLeft, ChevronDown, Scale, Download, Loader2, Check, X } from "lucide-react";
+import { BookOpen, ChevronLeft, ChevronDown, Scale, Download, Loader2, Check, X, MoreVertical, Trash2, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SEDARIM, getMasechtotBySeder, Masechet } from "@/lib/masechtotData";
 import { toDafFormat, toHebrewNumeral } from "@/lib/hebrewNumbers";
@@ -36,6 +36,8 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [downloading, setDownloading] = useState<string | null>(null);
   const [downloadProgress, setDownloadProgress] = useState(0);
+  const [managingMasechet, setManagingMasechet] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const INITIAL_DAF_COUNT = 20;
@@ -168,6 +170,50 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
     const loaded = Math.max(loadedBySefaria, loadedByHebrew);
     const total = masechet.maxDaf - 1;
     return { loaded, total, percent: Math.round((loaded / total) * 100) };
+  };
+
+  // Delete all downloaded pages for a masechet
+  const handleDeleteMasechet = async (masechet: Masechet) => {
+    setDeleting(masechet.hebrewName);
+    try {
+      // Delete by sefariaName (how load-daf stores it)
+      const { error: err1 } = await supabase
+        .from('gemara_pages')
+        .delete()
+        .eq('masechet', masechet.sefariaName);
+      // Also delete by hebrewName in case some were stored that way
+      const { error: err2 } = await supabase
+        .from('gemara_pages')
+        .delete()
+        .eq('masechet', masechet.hebrewName);
+
+      if (err1 && err2) throw err1;
+
+      await queryClient.invalidateQueries({ queryKey: ['sedarim-loaded-pages'] });
+      toast({
+        title: "נמחק בהצלחה",
+        description: `כל הדפים של מסכת ${masechet.hebrewName} נמחקו`,
+      });
+    } catch (error) {
+      console.error('Error deleting masechet:', error);
+      toast({
+        title: "שגיאה",
+        description: "לא ניתן למחוק את הדפים",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleting(null);
+      setManagingMasechet(null);
+    }
+  };
+
+  // Delete then re-download
+  const handleRedownloadMasechet = async (masechet: Masechet) => {
+    setManagingMasechet(null);
+    await handleDeleteMasechet(masechet);
+    // Small delay to let queries refresh
+    await new Promise(r => setTimeout(r, 500));
+    handleDownloadMasechet(masechet);
   };
 
   const handleSederClick = (seder: string) => {
@@ -315,6 +361,55 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
                         <Download className="h-3 w-3 md:h-4 md:w-4" />
                       )}
                     </button>
+                  )}
+
+                  {/* Manage button (delete / re-download) — shown when masechet has loaded pages */}
+                  {status.loaded > 0 && (
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setManagingMasechet(managingMasechet === masechet.hebrewName ? null : masechet.hebrewName);
+                        }}
+                        className="p-1 md:p-1.5 rounded-md transition-all cursor-pointer hover:bg-muted text-muted-foreground hover:text-foreground"
+                        title={`ניהול מסכת ${masechet.hebrewName}`}
+                      >
+                        <MoreVertical className="h-3 w-3 md:h-4 md:w-4" />
+                      </button>
+                      {managingMasechet === masechet.hebrewName && (
+                        <div className="absolute top-full left-0 mt-1 z-50 bg-card border border-border rounded-lg shadow-lg p-1 min-w-[160px] animate-in fade-in slide-in-from-top-1 duration-150">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteMasechet(masechet);
+                            }}
+                            disabled={deleting === masechet.hebrewName}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-xs rounded-md hover:bg-destructive/10 text-destructive transition-colors"
+                          >
+                            {deleting === masechet.hebrewName ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-3.5 w-3.5" />
+                            )}
+                            <span>מחק מידע</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRedownloadMasechet(masechet);
+                            }}
+                            disabled={deleting === masechet.hebrewName || isDownloading}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-xs rounded-md hover:bg-accent/10 text-accent transition-colors"
+                          >
+                            <RefreshCw className="h-3.5 w-3.5" />
+                            <span>הורד מחדש</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               );
