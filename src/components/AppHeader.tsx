@@ -37,11 +37,11 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-primary/20 bg-primary shadow-lg">
+    <header className="sticky top-0 z-50 w-full border-b border-primary/20 bg-primary shadow-lg safe-area-top">
       <div className="flex h-16 items-center justify-between px-4 md:px-6">
         {/* Right side - Logo and title */}
         <div className="flex items-center gap-4">
-          <SidebarTrigger className="text-primary-foreground hover:bg-primary-foreground/10" />
+          <SidebarTrigger className="text-primary-foreground hover:bg-primary-foreground/10 min-h-[44px] min-w-[44px]" />
           <h1 className="text-xl md:text-2xl font-bold text-accent tracking-wide">
             גמרא להלכה
           </h1>
@@ -111,20 +111,20 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
         </div>
       </div>
 
-      {/* Mobile tabs - no horizontal scroll, wrap to fit */}
-      <nav className="md:hidden flex flex-wrap items-center justify-center gap-1 px-2 pb-3">
+      {/* Mobile tabs - horizontal scroll, bigger touch targets */}
+      <nav className="md:hidden flex items-center gap-1.5 px-3 pb-3 overflow-x-auto scrollbar-hide">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
             className={cn(
-              "flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-medium transition-all",
+              "flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all whitespace-nowrap min-h-[44px]",
               activeTab === tab.id
                 ? "bg-accent text-accent-foreground"
                 : "bg-primary-foreground/10 text-primary-foreground/80"
             )}
           >
-            <tab.icon className="h-3 w-3" />
+            <tab.icon className="h-4 w-4 shrink-0" />
             <span>{tab.label}</span>
           </button>
         ))}

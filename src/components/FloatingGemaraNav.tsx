@@ -94,7 +94,7 @@ const FloatingGemaraNav = ({ className }: FloatingGemaraNavProps) => {
       <button
         onClick={() => setIsOpen(true)}
         className={cn(
-          "fixed bottom-6 left-6 z-50 w-14 h-14 rounded-full",
+          "fixed bottom-6 end-6 z-50 w-14 h-14 rounded-full",
           "bg-primary text-primary-foreground shadow-lg",
           "flex items-center justify-center",
           "hover:scale-110 transition-transform duration-200",
@@ -130,7 +130,7 @@ const FloatingGemaraNav = ({ className }: FloatingGemaraNavProps) => {
                     variant="ghost"
                     size="sm"
                     onClick={goBack}
-                    className="gap-1"
+                    className="gap-1 min-h-[44px]"
                   >
                     חזרה
                     <ChevronRight className="w-4 h-4" />
@@ -237,12 +237,12 @@ const FloatingGemaraNav = ({ className }: FloatingGemaraNavProps) => {
             </ScrollArea>
 
             {/* Footer - Breadcrumb */}
-            <div className="p-3 border-t border-border bg-muted/30 text-sm text-muted-foreground">
+            <div className="p-3 border-t border-border bg-muted/30 text-sm text-muted-foreground safe-area-bottom">
               <div className="flex items-center gap-2 flex-wrap">
                 {selectedSeder && (
                   <>
                     <span 
-                      className="cursor-pointer hover:text-foreground"
+                      className="cursor-pointer hover:text-foreground px-2 py-1 rounded"
                       onClick={() => {
                         setLevel('seder');
                         setSelectedSeder(null);
@@ -258,7 +258,7 @@ const FloatingGemaraNav = ({ className }: FloatingGemaraNavProps) => {
                   <>
                     <span>›</span>
                     <span 
-                      className="cursor-pointer hover:text-foreground"
+                      className="cursor-pointer hover:text-foreground px-2 py-1 rounded"
                       onClick={() => {
                         setLevel('masechet');
                         setSelectedMasechet(null);
@@ -273,7 +273,7 @@ const FloatingGemaraNav = ({ className }: FloatingGemaraNavProps) => {
                   <>
                     <span>›</span>
                     <span 
-                      className="cursor-pointer hover:text-foreground"
+                      className="cursor-pointer hover:text-foreground px-2 py-1 rounded"
                       onClick={() => {
                         setLevel('daf');
                         setSelectedDaf(null);

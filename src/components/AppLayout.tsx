@@ -5,6 +5,7 @@ import AppHeader from "./AppHeader";
 import { lazy, Suspense } from "react";
 import { useAppContext } from "@/contexts/AppContext";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const FloatingGemaraNav = lazy(() => import("./FloatingGemaraNav"));
 
@@ -45,21 +46,25 @@ const AppLayout = ({ children }: AppLayoutProps) => {
 
   // When sidebar is not pinned, main content should take full width
   const sidebarIsPinned = isPinned ?? true;
+  const isMobile = useIsMobile();
+
+  // On mobile, sidebar should always start closed regardless of pin state
+  const defaultSidebarOpen = isMobile ? false : sidebarIsPinned;
 
   return (
-    <SidebarProvider defaultOpen={sidebarIsPinned}>
-      <div className="min-h-screen flex w-full bg-background overflow-x-hidden">
+    <SidebarProvider defaultOpen={defaultSidebarOpen}>
+      <div className="min-h-screen flex w-full bg-background">
         {/* Main content - takes full width when sidebar is unpinned */}
         <div className={cn(
-          "flex-1 flex flex-col min-h-screen overflow-x-hidden transition-all duration-300",
-          sidebarIsPinned ? "md:me-[--sidebar-width]" : "w-full"
+          "flex-1 flex flex-col min-h-screen transition-all duration-300",
+          sidebarIsPinned && !isMobile ? "md:me-[--sidebar-width]" : "w-full"
         )}>
           <AppHeader 
             activeTab={activeTab} 
             onTabChange={handleTabChange}
           />
           
-          <main className="flex-1 overflow-x-hidden">
+          <main className="flex-1">
             {children}
           </main>
         </div>
@@ -71,6 +76,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
           onMasechetSelect={handleMasechetSelect}
           isPinned={sidebarIsPinned}
           onPinToggle={handlePinToggle}
+          isMobile={isMobile}
         />
 
         {/* Floating Navigation Button - lazy loaded */}

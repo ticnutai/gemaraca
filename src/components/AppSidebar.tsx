@@ -23,6 +23,7 @@ interface AppSidebarProps {
   onMasechetSelect?: (masechetHebrewName: string) => void;
   isPinned?: boolean;
   onPinToggle?: () => void;
+  isMobile?: boolean;
 }
 
 const menuItems = [
@@ -69,16 +70,17 @@ const AppSidebar = ({
   onTabChange, 
   onMasechetSelect,
   isPinned = true,
-  onPinToggle 
+  onPinToggle,
+  isMobile = false
 }: AppSidebarProps) => {
   const { setOpen, open: sidebarOpen } = useSidebar();
   const [expandedSedarim, setExpandedSedarim] = useState<Set<string>>(new Set());
   const [isHovered, setIsHovered] = useState(false);
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Handle hover zone for opening sidebar when unpinned
+  // Handle hover zone for opening sidebar when unpinned — desktop only
   useEffect(() => {
-    if (isPinned) return;
+    if (isPinned || isMobile) return;
 
     const handleMouseMove = (e: MouseEvent) => {
       const windowWidth = window.innerWidth;
@@ -153,26 +155,43 @@ const AppSidebar = ({
     masechtot: MASECHTOT.filter(m => m.seder === seder)
   })), []);
 
+  // Close sidebar on mobile after item click
+  const closeSidebarOnMobile = () => {
+    if (isMobile) {
+      setOpen(false);
+    }
+  };
+
   // When unpinned and not hovered, don't render the sidebar content
   if (!isPinned && !sidebarOpen && !isHovered) {
     return null;
   }
 
   return (
-    <Sidebar 
-      side="right" 
-      className={cn(
-        "border-l border-border/50 transition-all duration-300 bg-sidebar",
-        isPinned 
-          ? "fixed right-0 top-0 h-full z-40" 
-          : "fixed right-0 top-0 h-full z-50 shadow-2xl",
-        !isPinned && !sidebarOpen && "translate-x-full opacity-0 pointer-events-none"
+    <>
+      {/* Mobile overlay backdrop */}
+      {isMobile && sidebarOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+          onClick={() => setOpen(false)}
+        />
       )}
-      collapsible="none"
-      variant={isPinned ? "sidebar" : "floating"}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
+      <Sidebar 
+        side="right" 
+        className={cn(
+          "border-l border-border/50 transition-all duration-300 bg-sidebar",
+          isMobile
+            ? "fixed right-0 top-0 h-full z-50 w-[85vw] max-w-[320px] shadow-2xl"
+            : isPinned 
+              ? "fixed right-0 top-0 h-full z-40" 
+              : "fixed right-0 top-0 h-full z-50 shadow-2xl",
+          !isMobile && !isPinned && !sidebarOpen && "translate-x-full opacity-0 pointer-events-none"
+        )}
+        collapsible="none"
+        variant={isPinned && !isMobile ? "sidebar" : "floating"}
+        onMouseEnter={isMobile ? undefined : handleMouseEnter}
+        onMouseLeave={isMobile ? undefined : handleMouseLeave}
+      >
       <SidebarHeader className="border-b border-border/50 p-4">
         <div className="flex items-center justify-between">
           <div>
@@ -183,7 +202,7 @@ const AppSidebar = ({
             variant="ghost"
             size="icon"
             onClick={handlePinToggle}
-            className="h-8 w-8"
+            className={cn("h-8 w-8", isMobile && "hidden")}
             title={isPinned ? "בטל נעיצה" : "נעץ סיידבר"}
           >
             {isPinned ? (
@@ -195,7 +214,7 @@ const AppSidebar = ({
         </div>
       </SidebarHeader>
       
-      <SidebarContent className="px-2">
+      <SidebarContent className="px-2 overflow-y-auto">
         {/* תפריט ניווט */}
         <SidebarGroup>
           <SidebarGroupLabel className="text-muted-foreground text-xs mb-2 px-2">
@@ -206,7 +225,7 @@ const AppSidebar = ({
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
-                    onClick={() => onTabChange(item.id)}
+                    onClick={() => { onTabChange(item.id); closeSidebarOnMobile(); }}
                     isActive={activeTab === item.id}
                     tooltip={item.description}
                     className={cn(
@@ -242,7 +261,7 @@ const AppSidebar = ({
                     type="button"
                     onClick={() => toggleSeder(group.seder)}
                     className={cn(
-                      "w-full flex items-center justify-between px-3 py-2 text-sm font-medium transition-all",
+                      "w-full flex items-center justify-between px-3 py-3 text-sm font-medium transition-all min-h-[44px]",
                       "bg-secondary/50 hover:bg-secondary text-foreground rounded-lg",
                       expandedSedarim.has(group.seder) && "rounded-b-none"
                     )}
@@ -273,9 +292,10 @@ const AppSidebar = ({
                             } else {
                               onTabChange("gemara");
                             }
+                            closeSidebarOnMobile();
                           }}
                           className={cn(
-                            "w-full flex items-center justify-between px-4 py-2 text-sm transition-all",
+                            "w-full flex items-center justify-between px-4 py-3 text-sm transition-all min-h-[44px]",
                             "hover:bg-accent/10 text-foreground cursor-pointer",
                             index !== group.masechtot.length - 1 && "border-b border-border/20"
                           )}
@@ -301,6 +321,7 @@ const AppSidebar = ({
         </div>
       </SidebarFooter>
     </Sidebar>
+    </>
   );
 };
 

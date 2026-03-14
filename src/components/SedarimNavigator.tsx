@@ -226,22 +226,22 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
       <div className="pt-2 md:pt-4" />
 
       {/* 6 Sedarim Cards - 3 columns on mobile for better fit */}
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-1.5 md:gap-3">
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-2 md:gap-3">
         {SEDARIM.map((seder) => (
           <button
             key={seder}
             onClick={() => handleSederClick(seder)}
             className={cn(
-              "p-1.5 md:p-4 rounded-lg md:rounded-xl border transition-all duration-200 text-center",
+              "p-2.5 md:p-4 rounded-lg md:rounded-xl border transition-all duration-200 text-center min-h-[56px]",
               "hover:shadow-elegant active:scale-95",
               selectedSeder === seder
                 ? "bg-primary text-primary-foreground border-accent shadow-gold"
                 : "bg-card border-border hover:border-accent/50"
             )}
           >
-            <BookOpen className="h-3 w-3 md:h-6 md:w-6 mx-auto mb-0.5 md:mb-1" />
-            <span className="font-bold text-[10px] md:text-base block leading-tight">{seder}</span>
-            <span className="text-[8px] md:text-xs opacity-70 hidden sm:inline">{getMasechetCount(seder)} מסכתות</span>
+            <BookOpen className="h-4 w-4 md:h-6 md:w-6 mx-auto mb-0.5 md:mb-1" />
+            <span className="font-bold text-xs md:text-base block leading-tight">{seder}</span>
+            <span className="text-[10px] md:text-xs opacity-70 hidden xs:inline">{getMasechetCount(seder)} מסכתות</span>
           </button>
         ))}
       </div>
@@ -271,7 +271,7 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
                     size="sm"
                     onClick={() => handleMasechetClick(masechet)}
                     className={cn(
-                      "transition-all text-[10px] md:text-sm h-6 md:h-9 px-1.5 md:px-3",
+                      "transition-all text-xs md:text-sm h-8 md:h-9 px-2 md:px-3 min-h-[36px]",
                       selectedMasechetLocal?.englishName === masechet.englishName && "shadow-gold",
                       status.percent === 100 && "border-green-500/50"
                     )}
@@ -279,7 +279,7 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
                     {masechet.hebrewName}
                     {status.loaded > 0 && (
                       <span className={cn(
-                        "text-[8px] md:text-xs mr-0.5 md:mr-1",
+                        "text-[10px] md:text-xs mr-0.5 md:mr-1",
                         status.percent === 100 ? "text-green-500" : "opacity-70"
                       )}>
                         {status.percent === 100 ? (
@@ -354,15 +354,18 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
             <span className="text-[10px] md:text-sm text-muted-foreground">({selectedMasechetLocal.maxDaf - 1} דפים)</span>
           </div>
           
-          {/* Dafim grid with golden buttons - smaller on mobile */}
-          <div className="flex flex-wrap gap-1 md:gap-2 p-1.5 md:p-3 rounded-lg bg-secondary/30">
+          {/* Dafim grid with golden buttons — scrollable on mobile when expanded */}
+          <div className={cn(
+            "flex flex-wrap gap-1.5 md:gap-2 p-2 md:p-3 rounded-lg bg-secondary/30",
+            isExpanded && "max-h-[50vh] overflow-y-auto"
+          )}>
             {displayedDafim.map((daf) => (
               <button
                 key={daf}
                 onClick={() => handleDafClick(selectedMasechetLocal, daf, 'a')}
                 className={cn(
-                  "px-1.5 py-1 md:px-3 md:py-2 text-[10px] md:text-sm rounded-md md:rounded-lg transition-all",
-                  "min-w-[32px] md:min-w-[52px] font-medium",
+                  "px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm rounded-md md:rounded-lg transition-all",
+                  "min-w-[40px] min-h-[36px] md:min-w-[52px] font-medium",
                   "bg-accent text-accent-foreground",
                   "hover:brightness-110 hover:shadow-md",
                   "active:scale-95"
@@ -377,7 +380,7 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
           {!isExpanded && remainingCount > 0 && (
             <button
               onClick={() => setIsExpanded(true)}
-              className="flex items-center gap-1 mt-2 md:mt-4 mx-auto text-[10px] md:text-sm text-accent hover:text-accent/80 transition-colors"
+              className="flex items-center gap-1 mt-2 md:mt-4 mx-auto text-xs md:text-sm text-accent hover:text-accent/80 transition-colors min-h-[44px]"
             >
               <ChevronDown className="h-3 w-3 md:h-4 md:w-4" />
               <span>הרחב ({remainingCount} נוספים)</span>
@@ -387,7 +390,7 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
           {isExpanded && (
             <button
               onClick={() => setIsExpanded(false)}
-              className="flex items-center gap-1 mt-2 md:mt-4 mx-auto text-[10px] md:text-sm text-muted-foreground hover:text-foreground transition-colors"
+              className="flex items-center gap-1 mt-2 md:mt-4 mx-auto text-xs md:text-sm text-muted-foreground hover:text-foreground transition-colors min-h-[44px]"
             >
               <ChevronDown className="h-3 w-3 md:h-4 md:w-4 rotate-180" />
               <span>צמצם</span>
@@ -404,20 +407,20 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
             <h3 className="font-bold text-sm md:text-lg">דוגמאות פסקי דין</h3>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-1.5 md:gap-3">
+          <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
             {psakDinExamples.map((psak) => (
               <button
                 key={psak.id}
                 onClick={() => handlePsakDinClick(psak.id)}
                 className={cn(
-                  "p-1.5 md:p-3 rounded-md md:rounded-lg border text-right transition-all",
+                  "p-2.5 md:p-3 rounded-md md:rounded-lg border text-right transition-all min-h-[48px]",
                   "bg-secondary/30 border-border hover:border-accent hover:shadow-sm",
                   "hover:bg-accent/10"
                 )}
               >
-                <h4 className="font-medium text-[10px] md:text-sm line-clamp-2 mb-0.5 md:mb-1">{psak.title}</h4>
-                <div className="flex items-center gap-1 md:gap-2 text-[8px] md:text-xs text-muted-foreground">
-                  <span className="truncate max-w-[60px] md:max-w-none">{psak.court}</span>
+                <h4 className="font-medium text-xs md:text-sm line-clamp-2 mb-0.5 md:mb-1">{psak.title}</h4>
+                <div className="flex items-center gap-1.5 md:gap-2 text-[10px] md:text-xs text-muted-foreground">
+                  <span className="truncate max-w-[100px] md:max-w-none">{psak.court}</span>
                   <span>•</span>
                   <span>{psak.year}</span>
                 </div>
@@ -427,7 +430,7 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
           
           <button
             onClick={() => setActiveTab("psak-din")}
-            className="flex items-center gap-1 mt-2 md:mt-4 mx-auto text-[10px] md:text-sm text-accent hover:text-accent/80 transition-colors"
+            className="flex items-center gap-1 mt-2 md:mt-4 mx-auto text-xs md:text-sm text-accent hover:text-accent/80 transition-colors min-h-[44px]"
           >
             <span>צפה בכל פסקי הדין</span>
             <ChevronLeft className="h-3 w-3 md:h-4 md:w-4 rtl-flip" />

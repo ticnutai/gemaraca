@@ -194,7 +194,7 @@ const SugyaDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto max-w-7xl px-2 sm:px-4 py-4 sm:py-8">
+      <div className="container mx-auto max-w-7xl px-3 sm:px-4 py-4 sm:py-8">
         {/* Header - Compact navigation */}
         <div className="flex items-center gap-2 mb-4">
           <Button 
@@ -247,7 +247,7 @@ const SugyaDetail = () => {
                   <BookOpen className="w-5 h-5 text-primary" />
                   לשון הגמרא
                 </h2>
-                <div className="prose prose-sm sm:prose-lg max-w-none text-foreground leading-loose whitespace-pre-line font-serif">
+                <div className="prose prose-sm max-w-none text-foreground leading-loose whitespace-pre-line font-serif">
                   {sugya.gemaraText}
                 </div>
               </Card>
@@ -463,7 +463,7 @@ const SugyaDetail = () => {
                   <FileText className="w-5 h-5 text-primary" />
                   הסבר וניתוח הסוגיה
                 </h2>
-                <div className="prose prose-sm sm:prose-lg max-w-none text-foreground leading-relaxed whitespace-pre-line">
+                <div className="prose prose-sm max-w-none text-foreground leading-relaxed whitespace-pre-line">
                   {sugya.fullText}
                 </div>
               </Card>
