@@ -11,6 +11,11 @@ const UploadPsakDinTab = lazy(() => import("@/components/UploadPsakDinTab"));
 const SmartIndexTab = lazy(() => import("@/components/SmartIndexTab"));
 const AdvancedIndexTab = lazy(() => import("@/components/AdvancedIndexTab"));
 const DownloadManagerTab = lazy(() => import("@/components/DownloadManagerTab"));
+const LearningHistoryTab = lazy(() => import("@/components/LearningHistoryTab"));
+const DafYomiTab = lazy(() => import("@/components/DafYomiTab"));
+const PsakDinCompareTab = lazy(() => import("@/components/PsakDinCompareTab"));
+const KnowledgeGraphTab = lazy(() => import("@/components/KnowledgeGraphTab"));
+const GlobalSearchTab = lazy(() => import("@/components/GlobalSearchTab"));
 
 const TabFallback = () => (
   <div className="p-3 md:p-6 space-y-4">
@@ -44,9 +49,14 @@ const Index = () => {
             {activeTab === "psak-din" && <PsakDinTab />}
             {activeTab === "smart-index" && <SmartIndexTab />}
             {activeTab === "search" && <SearchPsakDinTab />}
+            {activeTab === "global-search" && <GlobalSearchTab />}
             {activeTab === "upload" && <UploadPsakDinTab />}
             {activeTab === "download" && <DownloadManagerTab />}
             {activeTab === "advanced-index" && <AdvancedIndexTab />}
+            {activeTab === "learning-history" && <LearningHistoryTab />}
+            {activeTab === "daf-yomi" && <DafYomiTab />}
+            {activeTab === "compare" && <PsakDinCompareTab />}
+            {activeTab === "knowledge-graph" && <KnowledgeGraphTab />}
           </Suspense>
         </div>
       )}

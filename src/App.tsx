@@ -19,6 +19,8 @@ const Auth = lazy(() => import("./pages/Auth"));
 const SettingsButton = lazy(() => import("./components/SettingsButton").then(m => ({ default: m.SettingsButton })));
 const GlobalUploadProgress = lazy(() => import("./components/GlobalUploadProgress"));
 const GlobalDownloadProgress = lazy(() => import("./components/GlobalDownloadProgress"));
+const AiTutorChat = lazy(() => import("./components/AiTutorChat"));
+const OfflineIndicator = lazy(() => import("./components/OfflineIndicator"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -43,6 +45,8 @@ const App = () => (
             <SettingsButton />
             <GlobalUploadProgress />
             <GlobalDownloadProgress />
+            <AiTutorChat />
+            <OfflineIndicator />
             <Routes>
               <Route path="/auth" element={<Auth />} />
               <Route path="/" element={<AppLayout><Index /></AppLayout>} />

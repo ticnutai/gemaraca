@@ -1,0 +1,276 @@
+import { useState, useCallback, useEffect, useMemo } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Search, BookOpen, Scale, FileText, Loader2, X, SlidersHorizontal,
+} from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
+
+interface SearchResult {
+  id: string;
+  type: "gemara" | "psak" | "modern";
+  title: string;
+  snippet: string;
+  meta: string;
+  relevance?: number;
+}
+
+const HISTORY_KEY = "global-search-history";
+
+function getSearchHistory(): string[] {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+function addToHistory(query: string) {
+  try {
+    const list = getSearchHistory().filter((q) => q !== query);
+    list.unshift(query);
+    if (list.length > 20) list.length = 20;
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(list));
+  } catch {}
+}
+
+export default function GlobalSearchTab() {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [activeType, setActiveType] = useState("all");
+  const [history, setHistory] = useState<string[]>(getSearchHistory);
+  const navigate = useNavigate();
+
+  const search = useCallback(async (q: string) => {
+    if (q.length < 2) { setResults([]); return; }
+
+    setIsSearching(true);
+    addToHistory(q);
+    setHistory(getSearchHistory());
+
+    const allResults: SearchResult[] = [];
+
+    try {
+      // Search gemara pages
+      const { data: gemaraPages } = await supabase
+        .from("gemara_pages")
+        .select("sugya_id, title, daf_yomi, masechet, gemara_text")
+        .or(`title.ilike.%${q}%,gemara_text.ilike.%${q}%,daf_yomi.ilike.%${q}%`)
+        .limit(15);
+
+      if (gemaraPages) {
+        for (const p of gemaraPages) {
+          const text = p.gemara_text || "";
+          const idx = text.toLowerCase().indexOf(q.toLowerCase());
+          const snippet = idx >= 0 ? "..." + text.slice(Math.max(0, idx - 40), idx + 80) + "..." : "";
+          allResults.push({
+            id: p.sugya_id,
+            type: "gemara",
+            title: p.title || p.daf_yomi,
+            snippet: snippet || p.daf_yomi,
+            meta: `${p.masechet} • ${p.daf_yomi}`,
+          });
+        }
+      }
+
+      // Search psakei din
+      const { data: psakim } = await supabase
+        .from("psakei_din")
+        .select("id, title, summary, court, year")
+        .or(`title.ilike.%${q}%,summary.ilike.%${q}%,court.ilike.%${q}%`)
+        .order("year", { ascending: false })
+        .limit(15);
+
+      if (psakim) {
+        for (const p of psakim) {
+          allResults.push({
+            id: p.id,
+            type: "psak",
+            title: p.title,
+            snippet: p.summary?.slice(0, 120) + (p.summary?.length > 120 ? "..." : ""),
+            meta: `${p.court} • ${p.year}`,
+          });
+        }
+      }
+
+      // Search modern examples
+      const { data: examples } = await supabase
+        .from("modern_examples")
+        .select("id, sugya_id, masechet, daf_yomi, principle, practical_summary")
+        .or(`principle.ilike.%${q}%,practical_summary.ilike.%${q}%,masechet.ilike.%${q}%`)
+        .limit(10);
+
+      if (examples) {
+        for (const e of examples) {
+          allResults.push({
+            id: e.sugya_id || e.id,
+            type: "modern",
+            title: `המחשה: ${e.masechet} ${e.daf_yomi}`,
+            snippet: e.principle?.slice(0, 120) || e.practical_summary?.slice(0, 120) || "",
+            meta: `${e.masechet} • ${e.daf_yomi}`,
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Search error:", err);
+    } finally {
+      setResults(allResults);
+      setIsSearching(false);
+    }
+  }, []);
+
+  const filteredResults = useMemo(() => {
+    if (activeType === "all") return results;
+    return results.filter((r) => r.type === activeType);
+  }, [results, activeType]);
+
+  const counts = useMemo(() => ({
+    all: results.length,
+    gemara: results.filter((r) => r.type === "gemara").length,
+    psak: results.filter((r) => r.type === "psak").length,
+    modern: results.filter((r) => r.type === "modern").length,
+  }), [results]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    search(query);
+  };
+
+  const handleResultClick = (r: SearchResult) => {
+    if (r.type === "gemara" || r.type === "modern") {
+      navigate(`/sugya/${r.id}`);
+    }
+    // For psak - could open dialog, for now stay on page
+  };
+
+  const typeIcon = (type: string) => {
+    switch (type) {
+      case "gemara": return <BookOpen className="h-3.5 w-3.5 text-blue-500" />;
+      case "psak": return <Scale className="h-3.5 w-3.5 text-green-500" />;
+      case "modern": return <FileText className="h-3.5 w-3.5 text-purple-500" />;
+      default: return null;
+    }
+  };
+
+  const typeLabel = (type: string) => {
+    switch (type) {
+      case "gemara": return "גמרא";
+      case "psak": return "פסק דין";
+      case "modern": return "המחשה";
+      default: return type;
+    }
+  };
+
+  return (
+    <div className="p-3 md:p-6 space-y-4" dir="rtl">
+      <h2 className="text-lg md:text-xl font-bold flex items-center gap-2">
+        <Search className="h-5 w-5 text-primary" />
+        חיפוש גלובלי
+      </h2>
+      <p className="text-sm text-muted-foreground">חפש בגמרא, פסקי דין, והמחשות מודרניות במקום אחד</p>
+
+      {/* Search bar */}
+      <form onSubmit={handleSubmit}>
+        <div className="relative flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="הקלד מילת חיפוש..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="pr-9"
+            />
+            {query && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute left-1 top-0.5 h-8 w-8"
+                onClick={() => { setQuery(""); setResults([]); }}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
+          <Button type="submit" disabled={isSearching || query.length < 2}>
+            {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : "חפש"}
+          </Button>
+        </div>
+      </form>
+
+      {/* Search history */}
+      {query.length === 0 && history.length > 0 && results.length === 0 && (
+        <div className="space-y-2">
+          <div className="text-xs text-muted-foreground">חיפושים אחרונים:</div>
+          <div className="flex flex-wrap gap-1.5">
+            {history.slice(0, 10).map((h) => (
+              <Button key={h} variant="outline" size="sm" className="text-xs h-7" onClick={() => { setQuery(h); search(h); }}>
+                {h}
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Results */}
+      {results.length > 0 && (
+        <>
+          {/* Type filter tabs */}
+          <div className="flex gap-1.5 flex-wrap">
+            {(["all", "gemara", "psak", "modern"] as const).map((type) => (
+              <Button
+                key={type}
+                variant={activeType === type ? "default" : "outline"}
+                size="sm"
+                className="text-xs h-7 gap-1"
+                onClick={() => setActiveType(type)}
+              >
+                {type === "all" ? "הכל" : typeLabel(type)}
+                <Badge variant="secondary" className="text-[10px] h-4 px-1">
+                  {counts[type]}
+                </Badge>
+              </Button>
+            ))}
+          </div>
+
+          <ScrollArea className="max-h-[60vh]">
+            <div className="space-y-2">
+              {filteredResults.map((r) => (
+                <button
+                  key={`${r.type}-${r.id}`}
+                  onClick={() => handleResultClick(r)}
+                  className="w-full text-right p-3 rounded-lg border hover:bg-accent/30 transition-colors block"
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    {typeIcon(r.type)}
+                    <span className="font-medium text-sm">{r.title}</span>
+                    <Badge variant="outline" className="text-[10px]">{typeLabel(r.type)}</Badge>
+                  </div>
+                  {r.snippet && (
+                    <p className="text-xs text-muted-foreground line-clamp-2">{r.snippet}</p>
+                  )}
+                  <div className="text-[10px] text-muted-foreground mt-1">{r.meta}</div>
+                </button>
+              ))}
+            </div>
+          </ScrollArea>
+        </>
+      )}
+
+      {query.length >= 2 && !isSearching && results.length === 0 && (
+        <Card>
+          <CardContent className="p-8 text-center text-muted-foreground">
+            <Search className="h-10 w-10 mx-auto mb-3 opacity-30" />
+            <p className="text-sm">לא נמצאו תוצאות עבור "{query}"</p>
+            <p className="text-xs mt-1">נסה מילות חיפוש אחרות</p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}

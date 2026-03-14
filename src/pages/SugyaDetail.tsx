@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect, useState, lazy, Suspense } from "react";
+import { useEffect, useState, lazy, Suspense, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,11 +8,13 @@ import { ArrowRight, BookOpen, Scale, ExternalLink, Lightbulb, FileText, HelpCir
 import DafAmudNavigator from "@/components/DafAmudNavigator";
 import FAQSection from "@/components/FAQSection";
 import PsakDinSearchButton from "@/components/PsakDinSearchButton";
+import ShareExportButton from "@/components/ShareExportButton";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MASECHTOT } from "@/lib/masechtotData";
 import { getCachedPage, setCachedPage } from "@/lib/pageCache";
 import { toHebrewNumeral } from "@/lib/hebrewNumbers";
+import { recordPageVisit, updateVisitDuration } from "@/components/LearningHistoryTab";
 
 // Lazy-loaded heavy sub-panels
 const GemaraTextPanel = lazy(() => import("@/components/GemaraTextPanel"));
@@ -21,6 +23,7 @@ const LexiconSearch = lazy(() => import("@/components/LexiconSearch"));
 const RelatedPsakimSidebar = lazy(() => import("@/components/RelatedPsakimSidebar"));
 const LinkedPsakimSection = lazy(() => import("@/components/LinkedPsakimSection"));
 const ModernExamplesPanel = lazy(() => import("@/components/ModernExamplesPanel").then(m => ({ default: m.ModernExamplesPanel })));
+const PersonalNotes = lazy(() => import("@/components/PersonalNotes"));
 
 const PanelFallback = () => (
   <div className="space-y-3 p-4">
@@ -63,6 +66,27 @@ const SugyaDetail = () => {
   const [mainTab, setMainTab] = useState("gemara");
   
   const sugya = loadedPage;
+  const enterTimeRef = useRef(Date.now());
+
+  // Record learning history on mount/unmount
+  useEffect(() => {
+    enterTimeRef.current = Date.now();
+    return () => {
+      if (id) updateVisitDuration(id, Date.now() - enterTimeRef.current);
+    };
+  }, [id]);
+
+  // Record page visit when data loads
+  useEffect(() => {
+    if (loadedPage && id) {
+      recordPageVisit({
+        sugyaId: id,
+        title: loadedPage.title,
+        dafYomi: loadedPage.dafYomi,
+        masechet: loadedPage.masechet || "",
+      });
+    }
+  }, [loadedPage, id]);
 
   useEffect(() => {
     if (id) {
@@ -228,7 +252,7 @@ const SugyaDetail = () => {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto max-w-7xl px-3 sm:px-4 py-4 sm:py-8">
         {/* Header - Compact navigation */}
-        <div className="flex items-center gap-2 mb-4">
+        <div className="flex items-center justify-between gap-2 mb-4">
           <Button 
             variant="ghost" 
             size="sm"
@@ -238,6 +262,10 @@ const SugyaDetail = () => {
             <ArrowRight className="w-4 h-4 rotate-180" />
             חזרה
           </Button>
+          <ShareExportButton
+            title={sugya.title}
+            text={sugya.gemaraText || sugya.fullText || sugya.summary}
+          />
         </div>
 
         {/* Daf/Amud Navigator - Single source of truth for masechet name */}
@@ -503,6 +531,11 @@ const SugyaDetail = () => {
 
           {/* Tab 4: הסבר וניתוח - Explanation and Analysis */}
           <TabsContent value="analysis" className="mt-0 space-y-6">
+            {/* Personal Notes */}
+            <Suspense fallback={<PanelFallback />}>
+              <PersonalNotes sugyaId={id || ""} dafYomi={sugya.dafYomi} />
+            </Suspense>
+
             {/* Full Text Explanation */}
             {sugya.fullText && (
               <Card className="p-4 sm:p-6 bg-gradient-to-br from-card to-card/80">

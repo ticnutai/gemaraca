@@ -1,4 +1,4 @@
-import { Info, BookOpen, Scale, Search, Upload, Library, User, LogOut, LogIn, ArrowDownToLine, BookMarked } from "lucide-react";
+import { Info, BookOpen, Scale, Search, Upload, Library, User, LogOut, LogIn, ArrowDownToLine, BookMarked, History, CalendarDays, GitCompareArrows, Share2, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
@@ -22,10 +22,17 @@ const tabs = [
   { id: "psak-din", label: "פסקי דין", icon: Scale },
   { id: "smart-index", label: "אינדקס חכם", icon: Library },
   { id: "advanced-index", label: "אינדקס מתקדם", icon: BookMarked },
-  { id: "search", label: "חיפוש", icon: Search },
+  { id: "global-search", label: "חיפוש", icon: Search },
   { id: "upload", label: "העלאה", icon: Upload },
   { id: "download", label: "הורדה", icon: ArrowDownToLine },
+  { id: "learning-history", label: "היסטוריה", icon: History },
+  { id: "daf-yomi", label: "דף יומי", icon: CalendarDays },
+  { id: "compare", label: "השוואה", icon: GitCompareArrows },
+  { id: "knowledge-graph", label: "גרף ידע", icon: Share2 },
 ];
+
+const mainTabs = tabs.slice(0, 7);
+const moreTabs = tabs.slice(7);
 
 const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
   const { user, isAuthenticated, signOut } = useAuth();
@@ -49,7 +56,7 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
 
         {/* Center - Tabs */}
         <nav className="hidden md:flex items-center gap-1 bg-primary-foreground/10 rounded-full p-1">
-          {tabs.map((tab) => (
+          {mainTabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
@@ -64,6 +71,38 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
               <span>{tab.label}</span>
             </button>
           ))}
+          {moreTabs.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200",
+                    moreTabs.some(t => t.id === activeTab)
+                      ? "bg-accent text-accent-foreground shadow-md"
+                      : "text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10"
+                  )}
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                  <span>עוד</span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="text-right" dir="rtl">
+                {moreTabs.map((tab) => (
+                  <DropdownMenuItem
+                    key={tab.id}
+                    onClick={() => onTabChange(tab.id)}
+                    className={cn(
+                      "flex items-center gap-2 cursor-pointer",
+                      activeTab === tab.id && "bg-accent/20 font-bold"
+                    )}
+                  >
+                    <tab.icon className="h-4 w-4" />
+                    {tab.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </nav>
 
         {/* Left side - Actions */}
