@@ -299,7 +299,7 @@ const MasechetExplorerDialog = ({ open, onOpenChange }: MasechetExplorerDialogPr
           <ScrollArea className="h-[60vh] px-5 py-4">
             {/* ──── Step 1: Sedarim ──── */}
             {step === "sedarim" && (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3" dir="rtl">
                 {SEDARIM.map((seder) => {
                   const meta = SEDER_META[seder] || SEDER_META["זרעים"];
                   const Icon = meta.icon;
