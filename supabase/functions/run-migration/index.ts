@@ -180,7 +180,7 @@ async function executeMigration(client: any, body: any, userId: string) {
     return new Response(JSON.stringify({
       success: false,
       migrationId: migration.id,
-      error: execError.message,
+      error: (execError as Error).message,
       executionTime,
     }), {
       status: 200, // still 200 so client can read the error
