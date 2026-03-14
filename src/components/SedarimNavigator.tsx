@@ -1,15 +1,21 @@
-import { useState } from "react";
-import { BookOpen, ChevronLeft, ChevronDown, Scale, Download, Loader2, Check, X, MoreVertical, Trash2, RefreshCw } from "lucide-react";
+import { useState, lazy, Suspense } from "react";
+import { BookOpen, ChevronLeft, ChevronDown, Scale, Download, Loader2, Check, X, MoreVertical, Trash2, RefreshCw, LayoutGrid, List, Compass } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { SEDARIM, getMasechtotBySeder, Masechet } from "@/lib/masechtotData";
+import { SEDARIM, getMasechtotBySeder, MASECHTOT, Masechet } from "@/lib/masechtotData";
 import { toDafFormat, toHebrewNumeral } from "@/lib/hebrewNumbers";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "@/contexts/AppContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+
+const MasechetExplorerDialog = lazy(() => import("./MasechetExplorerDialog"));
+const GemaraPsakDinIndex = lazy(() => import("./GemaraPsakDinIndex"));
+
+type ViewMode = "grid" | "list" | "explorer";
 
 interface SedarimNavigatorProps {
   className?: string;
@@ -38,6 +44,8 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [managingMasechet, setManagingMasechet] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [explorerOpen, setExplorerOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const INITIAL_DAF_COUNT = 20;
@@ -266,11 +274,86 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
   const displayedDafim = isExpanded ? allDafim : allDafim.slice(0, INITIAL_DAF_COUNT);
   const remainingCount = allDafim.length - INITIAL_DAF_COUNT;
 
+  // Load psak counts per masechet for list view
+  const { data: psakCounts = {} } = useQuery({
+    queryKey: ['sedarim-psak-counts'],
+    queryFn: async () => {
+      const counts: Record<string, number> = {};
+      const [sugyaRes, patternRes] = await Promise.all([
+        supabase.from('sugya_psak_links').select('sugya_id'),
+        supabase.from('pattern_sugya_links').select('masechet'),
+      ]);
+
+      (sugyaRes.data || []).forEach((link: any) => {
+        const sid = (link.sugya_id || '').toLowerCase();
+        for (const m of MASECHTOT) {
+          if (sid.startsWith(m.sefariaName.toLowerCase() + '_')) {
+            counts[m.sefariaName] = (counts[m.sefariaName] || 0) + 1;
+            break;
+          }
+        }
+      });
+
+      (patternRes.data || []).forEach((link: any) => {
+        const m = MASECHTOT.find(ms => ms.hebrewName === link.masechet);
+        if (m) counts[m.sefariaName] = (counts[m.sefariaName] || 0) + 1;
+      });
+      return counts;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
   return (
     <div className={cn("space-y-3 md:space-y-6 overflow-x-hidden", className)}>
       {/* Spacing from header */}
       <div className="pt-2 md:pt-4" />
 
+      {/* View Mode Switcher */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5 bg-card border border-border rounded-lg p-1">
+          <button
+            onClick={() => setViewMode('grid')}
+            className={cn(
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
+              viewMode === 'grid' ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-muted text-muted-foreground'
+            )}
+          >
+            <LayoutGrid className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">רשת</span>
+          </button>
+          <button
+            onClick={() => setViewMode('list')}
+            className={cn(
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
+              viewMode === 'list' ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-muted text-muted-foreground'
+            )}
+          >
+            <List className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">רשימה</span>
+          </button>
+          <button
+            onClick={() => { setViewMode('explorer'); setExplorerOpen(true); }}
+            className={cn(
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
+              viewMode === 'explorer' ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-muted text-muted-foreground'
+            )}
+          >
+            <Compass className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">סייר</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Explorer Dialog — lazy loaded */}
+      {viewMode === 'explorer' && (
+        <Suspense fallback={null}>
+          <MasechetExplorerDialog open={explorerOpen} onOpenChange={(o) => { setExplorerOpen(o); if (!o) setViewMode('grid'); }} />
+        </Suspense>
+      )}
+
+      {/* ──── Grid View (original) ──── */}
+      {viewMode === 'grid' && (
+      <>
       {/* 6 Sedarim Cards - 3 columns on mobile for better fit */}
       <div className="grid grid-cols-3 md:grid-cols-6 gap-2 md:gap-3">
         {SEDARIM.map((seder) => (
@@ -530,6 +613,84 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
             <span>צפה בכל פסקי הדין</span>
             <ChevronLeft className="h-3 w-3 md:h-4 md:w-4 rtl-flip" />
           </button>
+        </div>
+      )}
+      </>
+      )}
+
+      {/* ──── List View ──── */}
+      {viewMode === 'list' && (
+        <div className="space-y-2">
+          {SEDARIM.map((seder) => (
+            <div key={seder} className="bg-card rounded-xl border border-border overflow-hidden">
+              <button
+                onClick={() => handleSederClick(seder)}
+                className={cn(
+                  "w-full flex items-center justify-between p-3 md:p-4 transition-all",
+                  selectedSeder === seder ? "bg-primary/10" : "hover:bg-muted/50"
+                )}
+              >
+                <div className="flex items-center gap-2">
+                  <ChevronDown className={cn(
+                    "h-4 w-4 transition-transform",
+                    selectedSeder === seder ? "rotate-180" : ""
+                  )} />
+                  <span className="text-xs text-muted-foreground">{getMasechtotBySeder(seder).length} מסכתות</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4 text-primary" />
+                  <h3 className="font-bold text-sm md:text-base">סדר {seder}</h3>
+                </div>
+              </button>
+
+              {selectedSeder === seder && (
+                <div className="border-t border-border divide-y divide-border/50">
+                  {getMasechtotBySeder(seder).map((masechet) => {
+                    const status = getLoadStatus(masechet);
+                    const pCount = psakCounts[masechet.sefariaName] || 0;
+
+                    return (
+                      <button
+                        key={masechet.englishName}
+                        onClick={() => {
+                          setSelectedMasechet(masechet.hebrewName);
+                          setActiveTab("gemara");
+                          navigate(`/sugya/${masechet.sefariaName.toLowerCase()}_2a`);
+                        }}
+                        className="w-full flex items-center justify-between p-3 md:p-4 hover:bg-accent/5 transition-all text-right"
+                      >
+                        <div className="flex items-center gap-2">
+                          {/* Psak din indicator */}
+                          {pCount > 0 && (
+                            <div className="relative">
+                              <Scale className={cn(
+                                "h-4 w-4",
+                                pCount >= 10 ? "text-primary" : "text-primary/60"
+                              )} />
+                              <span className="absolute -top-2 -left-2 bg-primary text-primary-foreground text-[9px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-0.5">
+                                {pCount}
+                              </span>
+                            </div>
+                          )}
+                          {/* Load status */}
+                          {status.loaded > 0 && (
+                            <Badge variant={status.percent === 100 ? "default" : "secondary"} className="text-[10px] h-5">
+                              {status.percent === 100 ? <Check className="h-3 w-3" /> : `${status.loaded}/${status.total}`}
+                            </Badge>
+                          )}
+                          <ChevronLeft className="h-4 w-4 text-muted-foreground/40" />
+                        </div>
+                        <div>
+                          <span className="font-medium text-sm">{masechet.hebrewName}</span>
+                          <span className="text-xs text-muted-foreground mr-2">({masechet.maxDaf - 1} דפים)</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
     </div>
