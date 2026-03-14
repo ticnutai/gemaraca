@@ -15,7 +15,7 @@ export interface ConsoleEntry {
 }
 
 interface DevConsoleMonitorProps {
-  enabled: boolean;
+  enabled?: boolean;
 }
 
 // Persistent storage key
@@ -63,7 +63,7 @@ const DevConsoleMonitor = ({ enabled }: DevConsoleMonitorProps) => {
   const addEntry = useCallback((entry: Omit<ConsoleEntry, "id" | "count">) => {
     setLogs(prev => {
       // Deduplicate same message within last 2s
-      const lastSimilar = prev.findLast(e => e.message === entry.message && (entry.timestamp - e.timestamp) < 2000);
+      const lastSimilar = [...prev].reverse().find(e => e.message === entry.message && (entry.timestamp - e.timestamp) < 2000);
       let updated: ConsoleEntry[];
       if (lastSimilar) {
         updated = prev.map(e => e === lastSimilar ? { ...e, count: e.count + 1, timestamp: entry.timestamp } : e);

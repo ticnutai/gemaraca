@@ -227,7 +227,7 @@ const PsakDinTab = () => {
     setSelectedForAnalysis(new Set());
     
     // Reload link counts, page data and refresh the list to update status badges
-    await loadLinkCounts();
+    // Link counts are automatically refreshed via React Query
     await loadTotalUnlinkedCount();
     await loadPsakim(currentPage); // Reload the current page to refresh badges
     

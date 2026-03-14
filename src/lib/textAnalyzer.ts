@@ -348,7 +348,7 @@ export function analyzeText(text: string): { sources: DetectedSource[], topics: 
       };
 
       // Generate sugya_id
-      source.sugyaId = generateSugyaIdFromSource(source) || undefined;
+      source.sugyaId = generateSugyaId(source) || undefined;
       
       sources.push(source);
     }
@@ -392,7 +392,7 @@ export function analyzeText(text: string): { sources: DetectedSource[], topics: 
         confidence: dafNumber ? (amud ? 'high' : 'medium') : 'low'
       };
 
-      source.sugyaId = generateSugyaIdFromSource(source) || undefined;
+      source.sugyaId = generateSugyaId(source) || undefined;
       sources.push(source);
     }
   }

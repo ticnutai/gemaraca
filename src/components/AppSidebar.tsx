@@ -78,18 +78,16 @@ const AppSidebar = ({
   const [isHovered, setIsHovered] = useState(false);
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Handle hover zone for opening sidebar when unpinned — desktop only
+  // Auto-hide: when unpinned, detect mouse at right edge to open sidebar
   useEffect(() => {
     if (isPinned || isMobile) return;
 
     const handleMouseMove = (e: MouseEvent) => {
       const windowWidth = window.innerWidth;
-      const hoverZone = 30; // pixels from right edge
+      const hoverZone = 30;
       
-      // Check if mouse is in the right edge zone
       if (windowWidth - e.clientX <= hoverZone) {
         if (!isHovered && !sidebarOpen) {
-          // Clear any pending close timeout
           if (closeTimeoutRef.current) {
             clearTimeout(closeTimeoutRef.current);
             closeTimeoutRef.current = null;
@@ -102,28 +100,25 @@ const AppSidebar = ({
 
     document.addEventListener('mousemove', handleMouseMove, { passive: true });
     return () => document.removeEventListener('mousemove', handleMouseMove);
-  }, [isPinned, isHovered, sidebarOpen, setOpen]);
+  }, [isPinned, isHovered, sidebarOpen, setOpen, isMobile]);
 
-  // Handle closing sidebar after leaving hover
+  // Close sidebar after mouse leaves (with delay)
   const handleMouseLeave = () => {
-    if (isPinned) return;
+    if (isPinned || isMobile) return;
     
-    // Close after 2 seconds delay
     closeTimeoutRef.current = setTimeout(() => {
       setIsHovered(false);
       setOpen(false);
-    }, 2000);
+    }, 1500);
   };
 
   const handleMouseEnter = () => {
-    // Cancel close timeout if user returns to sidebar
     if (closeTimeoutRef.current) {
       clearTimeout(closeTimeoutRef.current);
       closeTimeoutRef.current = null;
     }
   };
 
-  // Cleanup timeouts
   useEffect(() => {
     return () => {
       if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
@@ -145,17 +140,16 @@ const AppSidebar = ({
       onPinToggle();
     }
     if (!isPinned) {
+      // Becoming pinned — open sidebar
       setOpen(true);
     }
   };
 
-  // קיבוץ מסכתות לפי סדר — memoized
   const groupedMasechtot = useMemo(() => SEDARIM.map(seder => ({
     seder,
     masechtot: MASECHTOT.filter(m => m.seder === seder)
   })), []);
 
-  // Close sidebar on mobile after item click, or when unpinned on desktop
   const closeSidebarOnMobile = () => {
     if (isMobile || !isPinned) {
       setOpen(false);
@@ -163,15 +157,13 @@ const AppSidebar = ({
     }
   };
 
-  // When unpinned and not hovered, don't render the sidebar content
-  if (!isPinned && !sidebarOpen && !isHovered) {
-    return null;
-  }
+  // Determine if sidebar is visible (for reflow purposes)
+  const sidebarVisible = isPinned || sidebarOpen || isHovered;
 
   return (
     <>
-      {/* Overlay backdrop — mobile always, desktop when unpinned & open */}
-      {((isMobile && sidebarOpen) || (!isMobile && !isPinned && sidebarOpen)) && (
+      {/* Mobile overlay only */}
+      {isMobile && sidebarOpen && (
         <div 
           className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px]"
           onClick={() => {
@@ -183,16 +175,19 @@ const AppSidebar = ({
       <Sidebar 
         side="right" 
         className={cn(
-          "border-l border-border/50 transition-all duration-300 bg-sidebar",
+          "border-l border-border/50 bg-sidebar",
+          // Transition for smooth open/close
+          "transition-all duration-300 ease-in-out",
           isMobile
             ? "fixed right-0 top-0 h-full z-50 w-[85vw] max-w-[320px] shadow-2xl"
-            : isPinned 
-              ? "fixed right-0 top-0 h-full z-40" 
-              : "fixed right-0 top-0 h-full z-50 shadow-2xl",
-          !isMobile && !isPinned && !sidebarOpen && "translate-x-full opacity-0 pointer-events-none"
+            : "fixed right-0 top-0 h-full z-40",
+          // When not visible on desktop, slide off screen
+          !isMobile && !sidebarVisible && "translate-x-full",
+          // Shadow when floating (unpinned & visible)
+          !isMobile && !isPinned && sidebarVisible && "shadow-2xl"
         )}
         collapsible="none"
-        variant={isPinned && !isMobile ? "sidebar" : "floating"}
+        variant="sidebar"
         onMouseEnter={isMobile ? undefined : handleMouseEnter}
         onMouseLeave={isMobile ? undefined : handleMouseLeave}
       >
@@ -207,7 +202,7 @@ const AppSidebar = ({
             size="icon"
             onClick={handlePinToggle}
             className={cn("h-8 w-8", isMobile && "hidden")}
-            title={isPinned ? "בטל נעיצה" : "נעץ סיידבר"}
+            title={isPinned ? "אוטו-הייד" : "נעץ סיידבר"}
           >
             {isPinned ? (
               <Pin className="h-4 w-4 text-accent" />
@@ -219,7 +214,6 @@ const AppSidebar = ({
       </SidebarHeader>
       
       <SidebarContent className="px-2 overflow-y-auto">
-        {/* תפריט ניווט */}
         <SidebarGroup>
           <SidebarGroupLabel className="text-muted-foreground text-xs mb-2 px-2">
             תפריט
@@ -251,7 +245,6 @@ const AppSidebar = ({
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* רשימת מסכתות מתקפלת */}
         <SidebarGroup className="mt-4">
           <SidebarGroupLabel className="text-muted-foreground text-xs mb-2 px-2">
             מסכתות הגמרא
@@ -260,7 +253,6 @@ const AppSidebar = ({
             <div className="space-y-1">
               {groupedMasechtot.map((group) => (
                 <div key={group.seder} className="rounded-lg overflow-hidden">
-                  {/* כותרת סדר */}
                   <button
                     type="button"
                     onClick={() => toggleSeder(group.seder)}
@@ -283,7 +275,6 @@ const AppSidebar = ({
                     </div>
                   </button>
 
-                  {/* רשימת מסכתות */}
                   {expandedSedarim.has(group.seder) && (
                     <div className="bg-muted/30 rounded-b-lg border-x border-b border-border/30">
                       {group.masechtot.map((masechet, index) => (
