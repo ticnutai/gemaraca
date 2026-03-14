@@ -68,7 +68,7 @@ h1{text-align:center;border-bottom:2px solid #333;padding-bottom:.5rem}
           שיתוף
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" dir="rtl">
+      <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={copyText}>
           <Copy className="h-4 w-4 ml-2" />
           העתק טקסט
