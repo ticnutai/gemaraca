@@ -67,7 +67,7 @@ const MasechetExplorerDialog = ({ open, onOpenChange }: MasechetExplorerDialogPr
 
   const [step, setStep] = useState<Step>("sedarim");
   const [selectedSeder, setSelectedSeder] = useState<string | null>(null);
-  const [selectedMasechet, setSelectedMasechetLocal] = useState<Masechet | null>(null);
+  const [selectedMasechetLocal, setSelectedMasechetLocal] = useState<Masechet | null>(null);
   const [selectedDaf, setSelectedDaf] = useState<number | null>(null);
   const [dafPsakim, setDafPsakim] = useState<DafPsak[]>([]);
   const [loadingPsakim, setLoadingPsakim] = useState(false);

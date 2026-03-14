@@ -103,11 +103,11 @@ const SugyaDetail = () => {
           title: data.title,
           dafYomi: data.daf_yomi,
           summary: `דף ${data.daf_yomi}`,
-          tags: data.tags || ["גמרא", hebrewMasechetName],
+          tags: (data as any).tags || ["גמרא", hebrewMasechetName],
           masechet: masechetName,
-          gemaraText: data.gemara_text || "",
-          fullText: data.full_text || "",
-          cases: data.cases || []
+          gemaraText: (data as any).gemara_text || "",
+          fullText: (data as any).full_text || "",
+          cases: (data as any).cases || []
         };
         
         // Save to cache
