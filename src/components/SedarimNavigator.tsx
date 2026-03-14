@@ -1,5 +1,5 @@
 import { useState, lazy, Suspense } from "react";
-import { BookOpen, ChevronLeft, ChevronDown, Scale, Download, Loader2, Check, X, MoreVertical, Trash2, RefreshCw, LayoutGrid, List, Compass } from "lucide-react";
+import { BookOpen, ChevronLeft, ChevronDown, Scale, Download, Loader2, Check, X, MoreVertical, Trash2, RefreshCw, LayoutGrid, List, Compass, GitBranch } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SEDARIM, getMasechtotBySeder, MASECHTOT, Masechet } from "@/lib/masechtotData";
 import { toDafFormat, toHebrewNumeral } from "@/lib/hebrewNumbers";
@@ -14,8 +14,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const MasechetExplorerDialog = lazy(() => import("./MasechetExplorerDialog"));
 const GemaraPsakDinIndex = lazy(() => import("./GemaraPsakDinIndex"));
+const TalmudTreeView = lazy(() => import("./TalmudTreeView"));
 
-type ViewMode = "grid" | "list" | "explorer";
+type ViewMode = "grid" | "list" | "tree" | "explorer";
 
 interface SedarimNavigatorProps {
   className?: string;
@@ -332,6 +333,16 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
             <span className="hidden sm:inline">רשימה</span>
           </button>
           <button
+            onClick={() => setViewMode('tree')}
+            className={cn(
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
+              viewMode === 'tree' ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-muted text-muted-foreground'
+            )}
+          >
+            <GitBranch className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">עץ</span>
+          </button>
+          <button
             onClick={() => { setViewMode('explorer'); setExplorerOpen(true); }}
             className={cn(
               'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
@@ -616,6 +627,13 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
         </div>
       )}
       </>
+      )}
+
+      {/* ──── Tree View ──── */}
+      {viewMode === 'tree' && (
+        <Suspense fallback={<div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>}>
+          <TalmudTreeView psakCounts={psakCounts} loadedPages={loadedPagesMap} />
+        </Suspense>
       )}
 
       {/* ──── List View ──── */}
