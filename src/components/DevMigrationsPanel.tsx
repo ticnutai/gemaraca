@@ -34,8 +34,11 @@ import {
   Copy,
   Database,
   Activity,
+  GripVertical,
+  X,
 } from "lucide-react";
 import { lazy, Suspense } from "react";
+import { useFloatingPanel, ResizeHandles } from "@/hooks/useFloatingPanel";
 
 const MonitoringTab = lazy(() => import("@/components/MonitoringTab"));
 import { cn } from "@/lib/utils";
@@ -66,6 +69,13 @@ interface SqlAnalysis {
 export default function DevMigrationsPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { session } = useAuth();
   const [activeTab, setActiveTab] = useState("editor");
+
+  const { geo, onDragStart: onPanelDragStart, onResizeStart } = useFloatingPanel("migrations", {
+    x: typeof window !== "undefined" ? Math.max(40, (window.innerWidth - 900) / 2) : 100,
+    y: typeof window !== "undefined" ? Math.max(40, (window.innerHeight - 600) / 2) : 80,
+    width: 900,
+    height: 600,
+  });
   const [sqlContent, setSqlContent] = useState("");
   const [migrationName, setMigrationName] = useState("");
   const [description, setDescription] = useState("");
@@ -235,17 +245,33 @@ export default function DevMigrationsPanel({ open, onClose }: { open: boolean; o
     }
   };
 
-  return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col" dir="rtl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Database className="h-5 w-5 text-primary" />
-            מערכת מיגרציות - פיתוח
-          </DialogTitle>
-        </DialogHeader>
+  if (!open) return null;
 
-        <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); if (v === 'history') loadHistory(); }} className="flex-1 overflow-hidden flex flex-col">
+  return (
+    <>
+      <div
+        className="fixed z-[9998] flex flex-col rounded-lg border border-blue-700 bg-gray-950/95 text-white shadow-2xl backdrop-blur-sm select-none"
+        style={{ left: geo.x, top: geo.y, width: geo.width, height: geo.height }}
+        dir="rtl"
+      >
+        <ResizeHandles onResizeStart={onResizeStart} />
+
+        {/* Drag header */}
+        <div
+          className="flex items-center justify-between px-3 py-2 border-b border-blue-800 bg-blue-900/40 rounded-t-lg cursor-grab shrink-0"
+          onMouseDown={onPanelDragStart}
+        >
+          <div className="flex items-center gap-2">
+            <GripVertical className="h-4 w-4 text-blue-400" />
+            <Database className="h-5 w-5 text-blue-400" />
+            <span className="text-sm font-bold text-blue-200">מערכת מיגרציות - פיתוח</span>
+          </div>
+          <Button variant="ghost" size="icon" className="h-6 w-6 text-blue-400 hover:text-white" onClick={onClose}>
+            <X className="h-3 w-3" />
+          </Button>
+        </div>
+
+        <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); if (v === 'history') loadHistory(); }} className="flex-1 overflow-hidden flex flex-col px-3 pt-2">
           <TabsList className="grid grid-cols-4 w-full">
             <TabsTrigger value="editor" className="gap-1">
               <FileCode className="h-4 w-4" />
@@ -266,7 +292,7 @@ export default function DevMigrationsPanel({ open, onClose }: { open: boolean; o
           </TabsList>
 
           {/* SQL Editor Tab */}
-          <TabsContent value="editor" className="flex-1 overflow-auto space-y-3 mt-2">
+          <TabsContent value="editor" className="flex-1 overflow-y-auto overflow-x-hidden space-y-3 mt-2 px-3">
             <div className="grid grid-cols-2 gap-2">
               <Input
                 placeholder="שם המיגרציה *"
@@ -408,7 +434,7 @@ export default function DevMigrationsPanel({ open, onClose }: { open: boolean; o
           </TabsContent>
 
           {/* HTTP Import Tab */}
-          <TabsContent value="http" className="flex-1 overflow-auto space-y-3 mt-2">
+          <TabsContent value="http" className="flex-1 overflow-y-auto overflow-x-hidden space-y-3 mt-2 px-3">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm flex items-center gap-2">
@@ -488,14 +514,14 @@ export default function DevMigrationsPanel({ open, onClose }: { open: boolean; o
           </TabsContent>
 
           {/* Monitoring Tab */}
-          <TabsContent value="monitoring" className="flex-1 overflow-auto mt-2">
+          <TabsContent value="monitoring" className="flex-1 overflow-y-auto overflow-x-hidden mt-2 px-3">
             <Suspense fallback={<div className="flex items-center justify-center h-32"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
               <MonitoringTab />
             </Suspense>
           </TabsContent>
 
           {/* History Tab */}
-          <TabsContent value="history" className="flex-1 overflow-hidden mt-2">
+          <TabsContent value="history" className="flex-1 overflow-y-auto overflow-x-hidden mt-2 px-3">
             <ScrollArea className="h-[400px]">
               {isLoadingHistory ? (
                 <div className="flex items-center justify-center h-32">
@@ -577,22 +603,23 @@ export default function DevMigrationsPanel({ open, onClose }: { open: boolean; o
           </TabsContent>
         </Tabs>
 
-        {/* View migration dialog */}
-        {viewMigration && (
-          <Dialog open={!!viewMigration} onOpenChange={() => setViewMigration(null)}>
-            <DialogContent className="max-w-2xl" dir="rtl">
-              <DialogHeader>
-                <DialogTitle>{viewMigration.name}</DialogTitle>
-              </DialogHeader>
-              <ScrollArea className="max-h-[400px]">
-                <pre className="font-mono text-xs bg-muted/50 p-3 rounded whitespace-pre-wrap" dir="ltr">
-                  {viewMigration.sql_content}
-                </pre>
-              </ScrollArea>
-            </DialogContent>
-          </Dialog>
-        )}
-      </DialogContent>
-    </Dialog>
+      </div>
+
+      {/* View migration dialog (keep as modal) */}
+      {viewMigration && (
+        <Dialog open={!!viewMigration} onOpenChange={() => setViewMigration(null)}>
+          <DialogContent className="max-w-2xl" dir="rtl">
+            <DialogHeader>
+              <DialogTitle>{viewMigration.name}</DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="max-h-[400px]">
+              <pre className="font-mono text-xs bg-muted/50 p-3 rounded whitespace-pre-wrap" dir="ltr">
+                {viewMigration.sql_content}
+              </pre>
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
   );
 }

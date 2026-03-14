@@ -29,7 +29,7 @@ const Index = () => {
   const showNavigator = !isMobile || activeTab === "gemara";
 
   return (
-    <div className="p-2 md:p-6 space-y-3 md:space-y-4 max-w-full">
+    <div className="p-2 md:p-6 space-y-3 md:space-y-4 max-w-full" data-active-tab={activeTab}>
       {/* Sedarim Navigator - lazy loaded, hidden on mobile when non-gemara tab active */}
       {showNavigator && (
         <Suspense fallback={<Skeleton className="h-32 w-full rounded-xl" />}>

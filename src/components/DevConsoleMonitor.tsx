@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { X, Copy, Trash2, AlertTriangle, AlertCircle, Info, Bug, ChevronDown, ChevronUp, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useFloatingPanel, ResizeHandles } from "@/hooks/useFloatingPanel";
 
 export interface ConsoleEntry {
   id: number;
@@ -46,10 +47,15 @@ const DevConsoleMonitor = ({ enabled }: DevConsoleMonitorProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const logsRef = useRef<ConsoleEntry[]>(logs);
 
-  // Dragging state
-  const [position, setPosition] = useState({ x: 16, y: window.innerHeight - 80 });
-  const isDragging = useRef(false);
-  const dragOffset = useRef({ x: 0, y: 0 });
+  // FAB dragging state
+  const [fabPos, setFabPos] = useState({ x: 16, y: window.innerHeight - 80 });
+  const isFabDragging = useRef(false);
+  const fabDragOffset = useRef({ x: 0, y: 0 });
+
+  // Floating panel
+  const { geo, onDragStart: onPanelDragStart, onResizeStart } = useFloatingPanel("console", {
+    x: 16, y: Math.max(100, window.innerHeight - 450), width: 600, height: 400,
+  });
 
   // Keep ref in sync
   useEffect(() => { logsRef.current = logs; }, [logs]);
@@ -160,26 +166,26 @@ const DevConsoleMonitor = ({ enabled }: DevConsoleMonitorProps) => {
     return () => window.removeEventListener("keydown", handler);
   }, [isOpen]);
 
-  // Drag handlers
-  const handleDragStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-    isDragging.current = true;
+  // FAB drag handlers
+  const handleFabDragStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    isFabDragging.current = true;
     const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
     const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
-    dragOffset.current = { x: clientX - position.x, y: clientY - position.y };
+    fabDragOffset.current = { x: clientX - fabPos.x, y: clientY - fabPos.y };
     e.preventDefault();
-  }, [position]);
+  }, [fabPos]);
 
   useEffect(() => {
     const handleMove = (e: MouseEvent | TouchEvent) => {
-      if (!isDragging.current) return;
+      if (!isFabDragging.current) return;
       const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
       const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
-      setPosition({
-        x: Math.max(0, Math.min(window.innerWidth - 56, clientX - dragOffset.current.x)),
-        y: Math.max(0, Math.min(window.innerHeight - 56, clientY - dragOffset.current.y)),
+      setFabPos({
+        x: Math.max(0, Math.min(window.innerWidth - 56, clientX - fabDragOffset.current.x)),
+        y: Math.max(0, Math.min(window.innerHeight - 56, clientY - fabDragOffset.current.y)),
       });
     };
-    const handleUp = () => { isDragging.current = false; };
+    const handleUp = () => { isFabDragging.current = false; };
 
     window.addEventListener("mousemove", handleMove);
     window.addEventListener("mouseup", handleUp);
@@ -248,15 +254,15 @@ const DevConsoleMonitor = ({ enabled }: DevConsoleMonitorProps) => {
 
   return (
     <>
-      {/* Floating draggable button */}
+      {/* Floating draggable FAB button */}
       <div
         className="fixed z-[9999] select-none"
-        style={{ left: position.x, top: position.y }}
+        style={{ left: fabPos.x, top: fabPos.y }}
       >
         <div
-          onMouseDown={handleDragStart}
-          onTouchStart={handleDragStart}
-          onClick={() => { if (!isDragging.current) setIsOpen(prev => !prev); }}
+          onMouseDown={handleFabDragStart}
+          onTouchStart={handleFabDragStart}
+          onClick={() => { if (!isFabDragging.current) setIsOpen(prev => !prev); }}
           className={cn(
             "w-12 h-12 rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing shadow-lg transition-colors",
             errorCount > 0 ? "bg-red-600 text-white animate-pulse" : "bg-slate-700 text-slate-200"
@@ -272,16 +278,23 @@ const DevConsoleMonitor = ({ enabled }: DevConsoleMonitorProps) => {
         </div>
       </div>
 
-      {/* Dialog panel */}
+      {/* Floating resizable panel */}
       {isOpen && (
-        <div className="fixed inset-0 z-[9998] pointer-events-none">
-          <div
-            className="absolute bottom-0 left-0 right-0 max-h-[70vh] bg-slate-900 text-slate-100 border-t border-slate-700 shadow-2xl pointer-events-auto flex flex-col"
-            dir="rtl"
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between px-3 py-2 border-b border-slate-700 bg-slate-800 shrink-0">
+        <div
+          className="fixed z-[9998] bg-slate-900 text-slate-100 border border-slate-700 rounded-lg shadow-2xl flex flex-col select-none"
+          style={{ left: geo.x, top: geo.y, width: geo.width, height: geo.height }}
+          dir="rtl"
+        >
+          <ResizeHandles onResizeStart={onResizeStart} />
+
+            {/* Drag header */}
+            <div
+              className="flex items-center justify-between px-3 py-2 border-b border-slate-700 bg-slate-800 shrink-0 cursor-grab active:cursor-grabbing rounded-t-lg"
+              onMouseDown={onPanelDragStart}
+              onTouchStart={onPanelDragStart}
+            >
               <div className="flex items-center gap-2">
+                <GripVertical className="h-3.5 w-3.5 text-slate-500" />
                 <Bug className="h-4 w-4 text-red-400" />
                 <span className="font-bold text-sm">Console Monitor</span>
                 <span className="text-xs text-slate-400">({logs.length} רשומות)</span>
@@ -319,7 +332,7 @@ const DevConsoleMonitor = ({ enabled }: DevConsoleMonitorProps) => {
             </div>
 
             {/* Logs list */}
-            <div ref={scrollRef} className="flex-1 overflow-y-auto min-h-0 p-2 space-y-1">
+            <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 p-2 space-y-1">
               {filteredLogs.length === 0 ? (
                 <div className="text-center text-slate-500 py-8 text-sm">
                   {logs.length === 0 ? "אין רשומות עדיין — השגיאות יישמרו כאן" : "אין תוצאות עם הסינון הנוכחי"}
@@ -359,7 +372,6 @@ const DevConsoleMonitor = ({ enabled }: DevConsoleMonitorProps) => {
                 ))
               )}
             </div>
-          </div>
         </div>
       )}
     </>
