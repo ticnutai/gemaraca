@@ -327,8 +327,8 @@ export function SettingsButton() {
 
       {/* Floating Dev Tools */}
       <Suspense fallback={null}>
-        {consoleMonitorEnabled && <DevConsoleMonitor enabled={true} />}
-        {perfMonitorEnabled && <DevPerformanceMonitor enabled={true} />}
+        {consoleMonitorEnabled && <DevConsoleMonitor />}
+        {perfMonitorEnabled && <DevPerformanceMonitor />}
       </Suspense>
     </div>
   );
