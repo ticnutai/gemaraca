@@ -669,6 +669,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
             </div>
             <ScrollArea className="h-full border border-border rounded-lg">
               <div 
+                ref={contentRef}
                 className={`p-4 space-y-4 ${isEditing ? '' : textClasses}`} 
                 dir="rtl"
                 style={{ fontSize: isEditing ? undefined : `${textSettings.fontSize}px` }}
