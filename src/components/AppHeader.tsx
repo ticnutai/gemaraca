@@ -66,7 +66,7 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
         </div>
 
         {/* Center - Tabs */}
-        <nav className="hidden md:flex flex-1 items-center gap-1 bg-primary-foreground/10 rounded-full p-1 mx-2 min-w-0 overflow-x-auto scrollbar-hide">
+        <nav className="hidden md:flex flex-1 items-center gap-1 mx-2 min-w-0 overflow-x-auto scrollbar-hide">
           {mainTabs.map((tab) => (
             <button
               key={tab.id}

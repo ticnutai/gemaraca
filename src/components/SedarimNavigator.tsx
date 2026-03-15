@@ -325,7 +325,7 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
                 : "bg-card border-border hover:border-accent/50"
             )}
           >
-            <BookOpen className="h-4 w-4 md:h-6 md:w-6 mx-auto mb-0.5 md:mb-1" />
+            <BookOpen className="h-4 w-4 md:h-6 md:w-6 mx-auto mb-0.5 md:mb-1 text-foreground" />
             <span className="font-bold text-xs md:text-base block leading-tight">{seder}</span>
             <span className="text-[10px] md:text-xs opacity-70 hidden xs:inline">{getMasechetCount(seder)} מסכתות</span>
           </button>
