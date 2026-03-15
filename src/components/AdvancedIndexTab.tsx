@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { BookOpen, Search, List, ChevronsUpDown, TableIcon, LayoutGrid, TreePine, Bot, Regex } from 'lucide-react';
+import { BookOpen, Search, List, ChevronsUpDown, TableIcon, LayoutGrid, TreePine, Bot, Regex, GitBranch } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
