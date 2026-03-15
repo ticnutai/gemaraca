@@ -42,6 +42,11 @@ interface ShasDownloadStore {
 // Internal abort controller
 let _abortController: AbortController | null = null;
 
+// Maximum retries per batch before skipping to next masechet
+const MAX_BATCH_RETRIES = 3;
+// If a masechet accumulates this many consecutive empty-text batches, skip it
+const MAX_EMPTY_BATCHES = 3;
+
 export const useShasDownloadStore = create<ShasDownloadStore>()(
   persist(
     (set, get) => ({
@@ -181,6 +186,8 @@ export const useShasDownloadStore = create<ShasDownloadStore>()(
 
         let currentDaf = masechetState.currentDaf || 2;
         const maxDaf = masechetState.maxDaf;
+        let batchRetries = 0;
+        let consecutiveEmptyBatches = 0;
 
         try {
           while (currentDaf <= maxDaf) {
@@ -197,25 +204,58 @@ export const useShasDownloadStore = create<ShasDownloadStore>()(
             });
 
             if (error) {
-              console.error(`Download error for ${masechet}:`, error);
-              // Mark error but continue trying
+              batchRetries++;
+              console.error(`Download error for ${masechet} (attempt ${batchRetries}/${MAX_BATCH_RETRIES}):`, error);
               set({
                 masechtot: get().masechtot.map((m) =>
                   m.masechet === masechet
-                    ? { ...m, errors: [...m.errors, error.message].slice(-20) }
+                    ? { ...m, errors: [...m.errors, `${error.message} (ניסיון ${batchRetries})`].slice(-20) }
                     : m
                 ),
               });
-              // Retry after delay
+
+              if (batchRetries >= MAX_BATCH_RETRIES) {
+                console.warn(`Max retries reached for ${masechet}, skipping to next masechet`);
+                set({
+                  masechtot: get().masechtot.map((m) =>
+                    m.masechet === masechet
+                      ? { ...m, status: 'error', errors: [...m.errors, `דילוג - ${MAX_BATCH_RETRIES} ניסיונות נכשלו`].slice(-20) }
+                      : m
+                  ),
+                });
+                break;
+              }
+
               await new Promise((r) => setTimeout(r, 2000));
               continue;
+            }
+
+            // Reset retry counter on success
+            batchRetries = 0;
+
+            // Track consecutive batches where the server reports all pages had no text
+            if (data?.allFailed) {
+              consecutiveEmptyBatches++;
+              if (consecutiveEmptyBatches >= MAX_EMPTY_BATCHES) {
+                console.warn(`${masechet}: ${consecutiveEmptyBatches} consecutive empty batches, marking as completed (no text available)`);
+                set({
+                  masechtot: get().masechtot.map((m) =>
+                    m.masechet === masechet
+                      ? { ...m, status: 'completed', errors: [...m.errors, 'מסכת ללא טקסט זמין ב-API'].slice(-20) }
+                      : m
+                  ),
+                });
+                break;
+              }
+            } else {
+              consecutiveEmptyBatches = 0;
             }
 
             // Update local state
             set({
               masechtot: get().masechtot.map((m) =>
                 m.masechet === masechet
-                  ? { ...m, currentDaf: data.nextDaf || maxDaf }
+                  ? { ...m, currentDaf: data.nextDaf || maxDaf, loadedPages: data.totalLoaded ?? m.loadedPages }
                   : m
               ),
             });
@@ -224,13 +264,16 @@ export const useShasDownloadStore = create<ShasDownloadStore>()(
             currentDaf = data.nextDaf;
           }
 
-          // Mark completed
+          // Mark completed (if not already marked as error/completed above)
           if (!_abortController?.signal.aborted) {
-            set({
-              masechtot: get().masechtot.map((m) =>
-                m.masechet === masechet ? { ...m, status: 'completed' } : m
-              ),
-            });
+            const currentStatus = get().masechtot.find((m) => m.masechet === masechet)?.status;
+            if (currentStatus === 'downloading') {
+              set({
+                masechtot: get().masechtot.map((m) =>
+                  m.masechet === masechet ? { ...m, status: 'completed' } : m
+                ),
+              });
+            }
           }
         } catch (e) {
           console.error(`Fatal error downloading ${masechet}:`, e);

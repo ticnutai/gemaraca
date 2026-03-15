@@ -10,6 +10,44 @@ const corsHeaders = {
 
 const BATCH_SIZE = 15;
 const DELAY_MS = 300;
+const FETCH_TIMEOUT_MS = 15000;
+
+// Shekalim is Yerushalmi — Sefaria uses "Jerusalem_Talmud_Shekalim" with a different chapter/halakha format.
+// Mapping from Vilna daf numbers to Yerushalmi chapter references.
+const SHEKALIM_DAF_MAP: Record<string, string> = {};
+// Build Shekalim mapping: daf 2-22, amudim a/b → Yerushalmi chapter.halakha
+// Shekalim has 8 chapters. Approximate mapping based on Vilna Shas printing:
+// Ch1: 2a-5a, Ch2: 5a-7a, Ch3: 7a-9b, Ch4: 9b-12a, Ch5: 12a-14b, Ch6: 14b-17a, Ch7: 17a-19b, Ch8: 19b-22a
+const _buildShekalimMap = () => {
+  const chapters = [
+    { ch: 1, fromDaf: 2, fromAmud: 'a', toDaf: 5, toAmud: 'a' },
+    { ch: 2, fromDaf: 5, fromAmud: 'a', toDaf: 7, toAmud: 'a' },
+    { ch: 3, fromDaf: 7, fromAmud: 'a', toDaf: 9, toAmud: 'b' },
+    { ch: 4, fromDaf: 9, fromAmud: 'b', toDaf: 12, toAmud: 'a' },
+    { ch: 5, fromDaf: 12, fromAmud: 'a', toDaf: 14, toAmud: 'b' },
+    { ch: 6, fromDaf: 14, fromAmud: 'b', toDaf: 17, toAmud: 'a' },
+    { ch: 7, fromDaf: 17, fromAmud: 'a', toDaf: 19, toAmud: 'b' },
+    { ch: 8, fromDaf: 19, fromAmud: 'b', toDaf: 22, toAmud: 'a' },
+  ];
+  let halakhaCounts: Record<number, number> = {};
+  for (let daf = 2; daf <= 22; daf++) {
+    for (const amud of ['a', 'b']) {
+      const key = `${daf}${amud}`;
+      const chapter = chapters.find(c => {
+        const fromVal = c.fromDaf * 2 + (c.fromAmud === 'b' ? 1 : 0);
+        const toVal = c.toDaf * 2 + (c.toAmud === 'b' ? 1 : 0);
+        const curVal = daf * 2 + (amud === 'b' ? 1 : 0);
+        return curVal >= fromVal && curVal <= toVal;
+      });
+      if (chapter) {
+        if (!halakhaCounts[chapter.ch]) halakhaCounts[chapter.ch] = 1;
+        SHEKALIM_DAF_MAP[key] = `Jerusalem_Talmud_Shekalim.${chapter.ch}.${halakhaCounts[chapter.ch]}`;
+        halakhaCounts[chapter.ch]++;
+      }
+    }
+  }
+};
+_buildShekalimMap();
 
 const toHebrewNumeral = (num: number): string => {
   const ones = ['', 'א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט'];
@@ -130,11 +168,21 @@ serve(async (req) => {
     let loaded = 0;
     let skipped = 0;
     let errors: string[] = [];
+    let pagesAttempted = 0;
+    let pagesWithText = 0;
 
     for (let daf = fromDaf; daf <= toDaf; daf++) {
       for (const amud of ['a', 'b'] as const) {
+        pagesAttempted++;
         const sugyaId = `${sefariaName.toLowerCase()}_${daf}${amud}`;
-        const sefariaRef = `${sefariaName}.${daf}${amud}`;
+        const dafAmudKey = `${daf}${amud}`;
+        
+        // For Shekalim, try the Yerushalmi reference format
+        const isYerushalmi = sefariaName === 'Shekalim';
+        const sefariaRef = isYerushalmi && SHEKALIM_DAF_MAP[dafAmudKey]
+          ? SHEKALIM_DAF_MAP[dafAmudKey]
+          : `${sefariaName}.${dafAmudKey}`;
+        
         const amudLabel = amud === 'a' ? 'ע״א' : 'ע״ב';
         const dafYomi = `${hebrewName} ${toHebrewNumeral(daf)} ${amudLabel}`;
 
@@ -145,17 +193,55 @@ serve(async (req) => {
           .eq('sugya_id', sugyaId)
           .maybeSingle();
 
-        if (existing?.text_he) { skipped++; continue; }
+        if (existing?.text_he) { skipped++; pagesWithText++; continue; }
 
         try {
           await sleep(DELAY_MS);
-          const resp = await fetch(
-            `https://www.sefaria.org/api/texts/${sefariaRef}?commentary=0&context=1`
-          );
-          if (!resp.ok) { errors.push(`${sefariaRef}: HTTP ${resp.status}`); continue; }
+          
+          // Fetch with timeout to prevent hanging
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+          
+          let resp: Response;
+          let data: any;
+          
+          try {
+            resp = await fetch(
+              `https://www.sefaria.org/api/texts/${sefariaRef}?commentary=0&context=1`,
+              { signal: controller.signal }
+            );
+            clearTimeout(timeoutId);
+          } catch (fetchErr) {
+            clearTimeout(timeoutId);
+            // If Yerushalmi ref failed, try standard ref as fallback
+            if (isYerushalmi) {
+              try {
+                const fallbackResp = await fetch(
+                  `https://www.sefaria.org/api/texts/Shekalim.${dafAmudKey}?commentary=0&context=1`,
+                  { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) }
+                );
+                if (fallbackResp.ok) {
+                  resp = fallbackResp;
+                } else {
+                  errors.push(`${sefariaRef}: timeout/network error`);
+                  continue;
+                }
+              } catch {
+                errors.push(`${sefariaRef}: timeout/network error`);
+                continue;
+              }
+            } else {
+              errors.push(`${sefariaRef}: timeout/network error`);
+              continue;
+            }
+          }
+          
+          if (!resp!.ok) { errors.push(`${sefariaRef}: HTTP ${resp!.status}`); continue; }
 
-          const data = await resp.json();
+          data = await resp!.json();
           if (!data.he || data.he.length === 0) { errors.push(`${sefariaRef}: אין טקסט`); continue; }
+          
+          pagesWithText++;
 
           const row = {
             daf_number: daf,
@@ -214,6 +300,17 @@ serve(async (req) => {
 
     const hasMore = toDaf < maxDaf;
     const nextDaf = hasMore ? toDaf + 1 : null;
+    // allFailed = true when we attempted pages but NONE had text (skip/existing don't count as failure)
+    const newPagesAttempted = pagesAttempted - skipped;
+    const allFailed = newPagesAttempted > 0 && pagesWithText === 0;
+
+    // Get total loaded count from DB for the response
+    const { data: finalProgress } = await supabaseClient
+      .from('shas_download_progress')
+      .select('loaded_pages')
+      .eq('masechet', sefariaName)
+      .maybeSingle();
+    const totalLoaded = finalProgress?.loaded_pages || 0;
 
     // Update final status for this batch
     if (!hasMore) {
@@ -234,6 +331,8 @@ serve(async (req) => {
         hebrewName,
         fromDaf, toDaf, maxDaf,
         hasMore, nextDaf,
+        allFailed,
+        totalLoaded,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
