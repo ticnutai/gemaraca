@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import {
   Scale,
   BookOpen,
@@ -16,11 +18,21 @@ import {
   Brain,
   FileSearch,
   Eye,
+  Star,
+  Globe,
+  FileText,
+  X,
+  RotateCcw,
+  Settings2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 const PsakDinViewDialog = lazy(() => import("@/components/PsakDinViewDialog"));
 const GemaraTextPanel = lazy(() => import("@/components/GemaraTextPanel"));
+
+const PSAK_VIEWER_DEFAULT_KEY = 'psak-din-default-viewer';
+type ViewerType = 'regular' | 'embedded-pdf';
 
 interface PsakeiDinDafPanelProps {
   tractate: string;       // Hebrew name e.g. "ברכות"
@@ -43,6 +55,11 @@ export default function PsakeiDinDafPanel({
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [selectedPsak, setSelectedPsak] = useState<DafPsak | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [viewerSelectOpen, setViewerSelectOpen] = useState(false);
+  const [embeddedPdfOpen, setEmbeddedPdfOpen] = useState(false);
+  const [defaultViewer, setDefaultViewer] = useState<ViewerType | null>(
+    () => localStorage.getItem(PSAK_VIEWER_DEFAULT_KEY) as ViewerType | null
+  );
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   const toggleExpand = (id: string) => {
@@ -56,7 +73,36 @@ export default function PsakeiDinDafPanel({
 
   const handleOpenPsak = (psak: DafPsak) => {
     setSelectedPsak(psak);
-    setDialogOpen(true);
+    const saved = localStorage.getItem(PSAK_VIEWER_DEFAULT_KEY) as ViewerType | null;
+    if (saved === 'regular') {
+      setDialogOpen(true);
+    } else if (saved === 'embedded-pdf') {
+      setEmbeddedPdfOpen(true);
+    } else {
+      setViewerSelectOpen(true);
+    }
+  };
+
+  const openViewer = (type: ViewerType) => {
+    setViewerSelectOpen(false);
+    if (type === 'regular') {
+      setDialogOpen(true);
+    } else {
+      setEmbeddedPdfOpen(true);
+    }
+  };
+
+  const setAsDefault = (type: ViewerType) => {
+    localStorage.setItem(PSAK_VIEWER_DEFAULT_KEY, type);
+    setDefaultViewer(type);
+    toast.success(type === 'regular' ? 'צפיין רגיל נקבע כברירת מחדל' : 'PDF מוטמע נקבע כברירת מחדל');
+    openViewer(type);
+  };
+
+  const clearDefault = () => {
+    localStorage.removeItem(PSAK_VIEWER_DEFAULT_KEY);
+    setDefaultViewer(null);
+    toast.info('ברירת מחדל אופסה — תתבקש לבחור בכל פעם');
   };
 
   const handleSelectForSplit = (psak: DafPsak) => {
@@ -98,6 +144,24 @@ export default function PsakeiDinDafPanel({
           <h3 className="text-lg font-bold">
             פסקי דין מהאינדקס ({psakim.length})
           </h3>
+          {defaultViewer && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-xs gap-1 text-muted-foreground"
+                    onClick={clearDefault}
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    {defaultViewer === 'regular' ? 'צפיין רגיל' : 'PDF מוטמע'}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>לחץ לניקוי ברירת מחדל</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
 
         <div className="flex items-center gap-1">
@@ -331,6 +395,178 @@ export default function PsakeiDinDafPanel({
           onOpenChange={setDialogOpen}
         />
       </Suspense>
+
+      {/* Viewer Selection Dialog */}
+      <Dialog open={viewerSelectOpen} onOpenChange={setViewerSelectOpen}>
+        <DialogContent className="max-w-md" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="text-center text-lg">בחר צפיין לפסק הדין</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-4 mt-2">
+            {/* Regular Viewer */}
+            <div className="relative group">
+              <button
+                onClick={() => openViewer('regular')}
+                className={cn(
+                  "w-full flex flex-col items-center gap-3 p-5 rounded-xl border-2 transition-all hover:shadow-md hover:border-primary/50",
+                  defaultViewer === 'regular' ? "border-primary bg-primary/5" : "border-border"
+                )}
+              >
+                <FileText className="w-10 h-10 text-primary" />
+                <span className="font-semibold text-sm">צפיין רגיל</span>
+                <span className="text-[11px] text-muted-foreground leading-snug">
+                  תצוגה עם עריכה, חיפוש ועיצוב טקסט
+                </span>
+              </button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setAsDefault('regular'); }}
+                      className={cn(
+                        "absolute top-2 left-2 p-1 rounded-full transition-colors",
+                        defaultViewer === 'regular'
+                          ? "text-amber-500 hover:text-amber-600"
+                          : "text-muted-foreground/40 hover:text-amber-500"
+                      )}
+                    >
+                      <Star className={cn("w-4 h-4", defaultViewer === 'regular' && "fill-current")} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    {defaultViewer === 'regular' ? 'ברירת מחדל נוכחית' : 'קבע כברירת מחדל'}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              {defaultViewer === 'regular' && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); clearDefault(); }}
+                        className="absolute top-2 right-2 p-1 rounded-full text-muted-foreground/40 hover:text-red-500 transition-colors"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">נקה ברירת מחדל</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </div>
+
+            {/* Embedded PDF Viewer */}
+            <div className="relative group">
+              <button
+                onClick={() => openViewer('embedded-pdf')}
+                className={cn(
+                  "w-full flex flex-col items-center gap-3 p-5 rounded-xl border-2 transition-all hover:shadow-md hover:border-primary/50",
+                  defaultViewer === 'embedded-pdf' ? "border-primary bg-primary/5" : "border-border"
+                )}
+              >
+                <Globe className="w-10 h-10 text-blue-600" />
+                <span className="font-semibold text-sm">PDF מוטמע</span>
+                <span className="text-[11px] text-muted-foreground leading-snug">
+                  צפייה ישירה בקובץ המקורי מהאתר
+                </span>
+              </button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setAsDefault('embedded-pdf'); }}
+                      className={cn(
+                        "absolute top-2 left-2 p-1 rounded-full transition-colors",
+                        defaultViewer === 'embedded-pdf'
+                          ? "text-amber-500 hover:text-amber-600"
+                          : "text-muted-foreground/40 hover:text-amber-500"
+                      )}
+                    >
+                      <Star className={cn("w-4 h-4", defaultViewer === 'embedded-pdf' && "fill-current")} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    {defaultViewer === 'embedded-pdf' ? 'ברירת מחדל נוכחית' : 'קבע כברירת מחדל'}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              {defaultViewer === 'embedded-pdf' && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); clearDefault(); }}
+                        className="absolute top-2 right-2 p-1 rounded-full text-muted-foreground/40 hover:text-red-500 transition-colors"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">נקה ברירת מחדל</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Embedded PDF Viewer Dialog */}
+      <Dialog open={embeddedPdfOpen} onOpenChange={setEmbeddedPdfOpen}>
+        <DialogContent className="max-w-[95vw] w-[95vw] h-[90vh] flex flex-col p-0 gap-0" dir="rtl">
+          <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/30 shrink-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <Globe className="w-5 h-5 text-blue-600 shrink-0" />
+              <h3 className="font-bold text-sm truncate">{selectedPsak?.title}</h3>
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              {defaultViewer === 'embedded-pdf' && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-7 px-2 gap-1 text-xs" onClick={clearDefault}>
+                        <RotateCcw className="w-3 h-3" />
+                        נקה ברירת מחדל
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>נקה ברירת מחדל כדי לבחור צפיין בכל פעם</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              {selectedPsak?.source_url && (
+                <Button variant="ghost" size="sm" className="h-7 px-2" asChild>
+                  <a href={selectedPsak.source_url} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => setEmbeddedPdfOpen(false)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+          <div className="flex-1 min-h-0">
+            {selectedPsak?.source_url ? (
+              <iframe
+                src={selectedPsak.source_url}
+                className="w-full h-full border-0"
+                title={selectedPsak.title}
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                <Globe className="w-16 h-16 mb-4 opacity-30" />
+                <p className="font-medium">אין כתובת מקור לפסק דין זה</p>
+                <Button variant="outline" size="sm" className="mt-4 gap-1.5" onClick={() => {
+                  setEmbeddedPdfOpen(false);
+                  setDialogOpen(true);
+                }}>
+                  <FileText className="w-3.5 h-3.5" />
+                  פתח בצפיין הרגיל
+                </Button>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
