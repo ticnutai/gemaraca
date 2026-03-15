@@ -69,7 +69,8 @@ const GemaraPsakDinIndex = () => {
   const [selectedDafInfo, setSelectedDafInfo] = useState<{ masechet: string; daf: number } | null>(null);
   const [dialogPsak, setDialogPsak] = useState<any | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<"tree" | "stats">("tree");
+  const [viewMode, setViewMode] = useState<"tree" | "stats" | "table" | "cards">("tree");
+  const [psakimView, setPsakimView] = useState<"list" | "table" | "compact">("list");
   const [prefDialogOpen, setPrefDialogOpen] = useState(false);
   const [pendingPsak, setPendingPsak] = useState<any | null>(null);
 
