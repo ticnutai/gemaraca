@@ -45,7 +45,10 @@ serve(async (req) => {
     const body = await req.json();
     console.log('Request body:', JSON.stringify(body));
     
-    const { dafNumber, sugya_id, title, masechet } = body;
+    const { dafNumber, sugya_id, title, masechet, amud: rawAmud } = body;
+    
+    // Validate amud — only allow 'a' or 'b', default to 'a'
+    const amud = rawAmud === 'b' ? 'b' : 'a';
     
     // ברירת מחדל - בבא בתרא (לתאימות אחורה)
     const masechetName = masechet || "בבא בתרא";
@@ -92,8 +95,9 @@ serve(async (req) => {
       return result + '׳';
     };
 
-    const dafYomi = `${masechetName} ${toHebrewNumeral(dafNumber)} ע״א`;
-    const sefariaRef = `${sefariaName}.${dafNumber}a`;
+    const amudLabel = amud === 'a' ? 'ע״א' : 'ע״ב';
+    const dafYomi = `${masechetName} ${toHebrewNumeral(dafNumber)} ${amudLabel}`;
+    const sefariaRef = `${sefariaName}.${dafNumber}${amud}`;
     
     console.log('Generated dafYomi:', dafYomi);
     console.log('Generated sefariaRef:', sefariaRef);
@@ -119,12 +123,12 @@ serve(async (req) => {
       throw new Error('No text found in Sefaria for this daf');
     }
 
-    // Check if page already exists
+    // Check if page already exists (use sugya_id to distinguish amud a from amud b)
     const { data: existingPage } = await supabaseClient
       .from('gemara_pages')
       .select('*')
       .eq('masechet', sefariaName)
-      .eq('daf_number', dafNumber)
+      .eq('sugya_id', sugya_id)
       .maybeSingle();
 
     if (existingPage) {

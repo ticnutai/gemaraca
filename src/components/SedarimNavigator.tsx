@@ -33,7 +33,7 @@ interface PsakDinExample {
 }
 
 interface LoadedPagesMap {
-  [masechetName: string]: number[];
+  [masechetName: string]: string[];
 }
 
 const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
@@ -85,17 +85,21 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
       const map: LoadedPagesMap = {};
       const { data: pagesData } = await supabase
         .from('gemara_pages')
-        .select('masechet, daf_number')
-        .limit(5000);
+        .select('masechet, daf_number, sugya_id');
       if (pagesData) {
         pagesData.forEach(page => {
           if (!map[page.masechet]) map[page.masechet] = [];
-          map[page.masechet].push(page.daf_number);
+          // Extract amud from sugya_id (format: "berakhot_2a") or default to 'a'
+          const amudMatch = (page.sugya_id || '').match(/(\d+)([ab])$/);
+          const amudKey = amudMatch
+            ? `${amudMatch[1]}${amudMatch[2]}`
+            : `${page.daf_number}a`;
+          map[page.masechet].push(amudKey);
         });
       }
       return map;
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000,
   });
 
   // Download masechet function
@@ -103,12 +107,17 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
     // Check both sefariaName and hebrewName for loaded pages
     const loadedBySefaria = loadedPagesMap[masechet.sefariaName] || [];
     const loadedByHebrew = loadedPagesMap[masechet.hebrewName] || [];
-    const loadedPages = [...new Set([...loadedBySefaria, ...loadedByHebrew])];
+    const loadedPages = new Set([...loadedBySefaria, ...loadedByHebrew]);
     
-    const allDafim = Array.from({ length: masechet.maxDaf - 1 }, (_, i) => i + 2);
-    const dafimToLoad = allDafim.filter(daf => !loadedPages.includes(daf));
+    // Build all amud pages for this masechet
+    const allAmudim: { daf: number; amud: 'a' | 'b' }[] = [];
+    for (let daf = 2; daf <= masechet.maxDaf; daf++) {
+      allAmudim.push({ daf, amud: 'a' });
+      allAmudim.push({ daf, amud: 'b' });
+    }
+    const amudimToLoad = allAmudim.filter(p => !loadedPages.has(`${p.daf}${p.amud}`));
 
-    if (dafimToLoad.length === 0) {
+    if (amudimToLoad.length === 0) {
       toast({
         title: "כל הדפים כבר נטענו",
         description: `מסכת ${masechet.hebrewName} טעונה במלואה`,
@@ -121,7 +130,7 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
 
     toast({
       title: "מתחיל הורדה",
-      description: `מוריד ${dafimToLoad.length} דפים ממסכת ${masechet.hebrewName}`,
+      description: `מוריד ${amudimToLoad.length} עמודים ממסכת ${masechet.hebrewName}`,
     });
 
     const BATCH_SIZE = 5;
@@ -130,23 +139,25 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
     let failCount = 0;
     let cancelled = false;
 
-    for (let i = 0; i < dafimToLoad.length; i += BATCH_SIZE) {
+    for (let i = 0; i < amudimToLoad.length; i += BATCH_SIZE) {
       if (cancelled) break;
 
-      const batch = dafimToLoad.slice(i, i + BATCH_SIZE);
+      const batch = amudimToLoad.slice(i, i + BATCH_SIZE);
       
       const results = await Promise.allSettled(
-        batch.map(async (dafNumber) => {
+        batch.map(async ({ daf: dafNumber, amud }) => {
           const hebrewNumber = toHebrewNumeral(dafNumber);
-          const sugya_id = `${masechet.sefariaName.toLowerCase()}_${dafNumber}a`;
-          const title = `${masechet.hebrewName} דף ${hebrewNumber}`;
+          const sugya_id = `${masechet.sefariaName.toLowerCase()}_${dafNumber}${amud}`;
+          const amudLabel = amud === 'a' ? 'ע״א' : 'ע״ב';
+          const title = `${masechet.hebrewName} דף ${hebrewNumber} ${amudLabel}`;
 
           const { data, error } = await supabase.functions.invoke('load-daf', {
             body: { 
               dafNumber, 
               sugya_id, 
               title,
-              masechet: masechet.hebrewName
+              masechet: masechet.hebrewName,
+              amud,
             }
           });
 
@@ -164,34 +175,36 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
       });
 
       const totalProcessed = i + batch.length;
-      const progress = (totalProcessed / dafimToLoad.length) * 100;
+      const progress = (totalProcessed / amudimToLoad.length) * 100;
       setDownloadProgress(progress);
 
-      if (i + BATCH_SIZE < dafimToLoad.length) {
+      if (i + BATCH_SIZE < amudimToLoad.length) {
         await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_BATCHES));
       }
     }
 
-    // Refresh loaded pages cache
+    // Refresh loaded pages cache — invalidate + refetch to ensure UI updates immediately
     await queryClient.invalidateQueries({ queryKey: ['sedarim-loaded-pages'] });
+    await queryClient.refetchQueries({ queryKey: ['sedarim-loaded-pages'] });
 
     setDownloading(null);
     setDownloadProgress(0);
 
     toast({
       title: "ההורדה הושלמה",
-      description: `נטענו ${successCount} דפים${failCount > 0 ? `, ${failCount} נכשלו` : ''}`,
+      description: `נטענו ${successCount} עמודים${failCount > 0 ? `, ${failCount} נכשלו` : ''}`,
       variant: failCount > 0 ? "destructive" : "default",
     });
   };
 
   const getLoadStatus = (masechet: Masechet) => {
-    // Check both sefariaName (used by edge function) and hebrewName for loaded pages
-    const loadedBySefaria = loadedPagesMap[masechet.sefariaName]?.length || 0;
-    const loadedByHebrew = loadedPagesMap[masechet.hebrewName]?.length || 0;
-    const loaded = Math.max(loadedBySefaria, loadedByHebrew);
-    const total = masechet.maxDaf - 1;
-    return { loaded, total, percent: Math.round((loaded / total) * 100) };
+    // Merge pages stored under both sefariaName and hebrewName using a Set to avoid double-counting
+    const loadedBySefaria = loadedPagesMap[masechet.sefariaName] || [];
+    const loadedByHebrew = loadedPagesMap[masechet.hebrewName] || [];
+    const allLoaded = new Set([...loadedBySefaria, ...loadedByHebrew]);
+    const loaded = allLoaded.size;
+    const total = (masechet.maxDaf - 1) * 2; // Both amud a and amud b
+    return { loaded, total, percent: total > 0 ? Math.round((loaded / total) * 100) : 0 };
   };
 
   // Delete all downloaded pages for a masechet
@@ -563,19 +576,32 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
             isExpanded && "max-h-[50vh] overflow-y-auto"
           )}>
             {displayedDafim.map((daf) => (
-              <button
-                key={daf}
-                onClick={() => handleDafClick(selectedMasechetLocal, daf, 'a')}
-                className={cn(
-                  "px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm rounded-md md:rounded-lg transition-all",
-                  "min-w-[40px] min-h-[36px] md:min-w-[52px] font-medium",
-                  "bg-accent text-accent-foreground",
-                  "hover:brightness-110 hover:shadow-md",
-                  "active:scale-95"
-                )}
-              >
-                {toDafFormat(daf, 'a').replace(" ע\"א", "").replace("׳", "'")}
-              </button>
+              <div key={daf} className="flex gap-0.5">
+                <button
+                  onClick={() => handleDafClick(selectedMasechetLocal, daf, 'a')}
+                  className={cn(
+                    "px-1.5 py-1.5 md:px-2 md:py-2 text-xs md:text-sm rounded-r-md md:rounded-r-lg transition-all",
+                    "min-w-[32px] min-h-[36px] md:min-w-[40px] font-medium",
+                    "bg-accent text-accent-foreground",
+                    "hover:brightness-110 hover:shadow-md",
+                    "active:scale-95"
+                  )}
+                >
+                  {toDafFormat(daf, 'a').replace(" ע\"א", "").replace("׳", "'")} ע״א
+                </button>
+                <button
+                  onClick={() => handleDafClick(selectedMasechetLocal, daf, 'b')}
+                  className={cn(
+                    "px-1.5 py-1.5 md:px-2 md:py-2 text-xs md:text-sm rounded-l-md md:rounded-l-lg transition-all",
+                    "min-w-[32px] min-h-[36px] md:min-w-[40px] font-medium",
+                    "bg-accent/80 text-accent-foreground",
+                    "hover:brightness-110 hover:shadow-md",
+                    "active:scale-95"
+                  )}
+                >
+                  ע״ב
+                </button>
+              </div>
             ))}
           </div>
 

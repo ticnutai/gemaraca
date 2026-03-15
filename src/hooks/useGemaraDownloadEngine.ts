@@ -10,26 +10,28 @@ const BATCH_SIZE = 5;
 const DELAY_BETWEEN_BATCHES = 800;
 const RETRY_DELAYS = [1500, 4000];
 
-/** Build a daf key like "Berakhot:2" */
-const dafKey = (sefariaName: string, daf: number) => `${sefariaName}:${daf}`;
+/** Build a daf key like "Berakhot:2a" */
+const dafKey = (sefariaName: string, daf: number, amud: 'a' | 'b') => `${sefariaName}:${daf}${amud}`;
 
-/** Generate all daf keys for a list of masechtot */
+/** Generate all daf keys for a list of masechtot (both amud a and b) */
 function allDafKeysForMasechtot(masechtot: string[]): string[] {
   const keys: string[] = [];
   for (const sName of masechtot) {
     const m = MASECHTOT.find((x) => x.sefariaName === sName);
     if (!m) continue;
     for (let daf = 2; daf <= m.maxDaf; daf++) {
-      keys.push(dafKey(sName, daf));
+      keys.push(dafKey(sName, daf, 'a'));
+      keys.push(dafKey(sName, daf, 'b'));
     }
   }
   return keys;
 }
 
-async function loadSingleDaf(masechet: Masechet, dafNumber: number, signal?: AbortSignal): Promise<void> {
+async function loadSingleDaf(masechet: Masechet, dafNumber: number, amud: 'a' | 'b', signal?: AbortSignal): Promise<void> {
   const hebrewNumber = toHebrewNumeral(dafNumber);
-  const sugya_id = `${masechet.sefariaName.toLowerCase()}_${dafNumber}a`;
-  const title = `${masechet.hebrewName} דף ${hebrewNumber}`;
+  const sugya_id = `${masechet.sefariaName.toLowerCase()}_${dafNumber}${amud}`;
+  const amudLabel = amud === 'a' ? 'ע״א' : 'ע״ב';
+  const title = `${masechet.hebrewName} דף ${hebrewNumber} ${amudLabel}`;
 
   const { error } = await supabase.functions.invoke('load-daf', {
     body: {
@@ -37,6 +39,7 @@ async function loadSingleDaf(masechet: Masechet, dafNumber: number, signal?: Abo
       sugya_id,
       title,
       masechet: masechet.hebrewName,
+      amud,
     },
   });
 
@@ -44,10 +47,10 @@ async function loadSingleDaf(masechet: Masechet, dafNumber: number, signal?: Abo
   if (error) throw error;
 }
 
-async function loadDafWithRetry(masechet: Masechet, dafNumber: number, signal?: AbortSignal): Promise<void> {
+async function loadDafWithRetry(masechet: Masechet, dafNumber: number, amud: 'a' | 'b', signal?: AbortSignal): Promise<void> {
   for (let attempt = 0; ; attempt++) {
     try {
-      await loadSingleDaf(masechet, dafNumber, signal);
+      await loadSingleDaf(masechet, dafNumber, amud, signal);
       return;
     } catch (err: any) {
       if (err?.name === 'AbortError') throw err;
@@ -66,13 +69,13 @@ export function buildMasechetJob(masechet: Masechet): Omit<GemaraDownloadJob, 's
     scope: 'masechet',
     label: `מסכת ${masechet.hebrewName}`,
     masechtot: [masechet.sefariaName],
-    totalDafs: masechet.maxDaf - 1,
+    totalDafs: (masechet.maxDaf - 1) * 2,
   };
 }
 
 export function buildSederJob(seder: string) {
   const masechtot = getMasechtotBySeder(seder);
-  const totalDafs = masechtot.reduce((sum, m) => sum + (m.maxDaf - 1), 0);
+  const totalDafs = masechtot.reduce((sum, m) => sum + (m.maxDaf - 1) * 2, 0);
   return {
     id: `seder:${seder}`,
     scope: 'seder' as const,
@@ -83,7 +86,7 @@ export function buildSederJob(seder: string) {
 }
 
 export function buildShasJob() {
-  const totalDafs = MASECHTOT.reduce((sum, m) => sum + (m.maxDaf - 1), 0);
+  const totalDafs = MASECHTOT.reduce((sum, m) => sum + (m.maxDaf - 1) * 2, 0);
   return {
     id: 'shas:all',
     scope: 'shas' as const,
@@ -116,9 +119,16 @@ export function useGemaraDownloadEngine() {
 
         const allDafs = Array.from({ length: masechet.maxDaf - 1 }, (_, i) => i + 2);
 
-        // Filter out already-completed dafs (resume support)
+        // Build list of all amud pages (a and b) for this masechet
+        const allPages: { daf: number; amud: 'a' | 'b' }[] = [];
+        for (const d of allDafs) {
+          allPages.push({ daf: d, amud: 'a' });
+          allPages.push({ daf: d, amud: 'b' });
+        }
+
+        // Filter out already-completed pages (resume support)
         const completedSet = new Set(useGemaraDownloadStore.getState().jobs[job.id]?.completedDafs || []);
-        const pending = allDafs.filter((d) => !completedSet.has(dafKey(sefariaName, d)));
+        const pending = allPages.filter((p) => !completedSet.has(dafKey(sefariaName, p.daf, p.amud)));
 
         for (let i = 0; i < pending.length; i += BATCH_SIZE) {
           // Check if paused or aborted
@@ -128,14 +138,14 @@ export function useGemaraDownloadEngine() {
           }
 
           const batch = pending.slice(i, i + BATCH_SIZE);
-          setCurrentProgress(job.id, masechet.hebrewName, batch[0]);
+          setCurrentProgress(job.id, masechet.hebrewName, batch[0].daf);
 
           const results = await Promise.allSettled(
-            batch.map((daf) => loadDafWithRetry(masechet, daf, abort.signal))
+            batch.map((p) => loadDafWithRetry(masechet, p.daf, p.amud, abort.signal))
           );
 
           for (let j = 0; j < results.length; j++) {
-            const key = dafKey(sefariaName, batch[j]);
+            const key = dafKey(sefariaName, batch[j].daf, batch[j].amud);
             if (results[j].status === 'fulfilled') {
               markDafCompleted(job.id, key);
             } else {
