@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { BookOpen, Scale, Search, Upload, Pin, PinOff, ChevronDown, ChevronLeft, ArrowDownToLine, BookMarked, FileText } from "lucide-react";
+import { BookOpen, Scale, Search, Upload, Pin, PinOff, ChevronDown, ChevronLeft, ArrowDownToLine, BookMarked, FileText, Database } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -62,6 +62,12 @@ const menuItems = [
     title: "אינדקס מתקדם",
     icon: BookMarked,
     description: "אינדקס תלמודי מתקדם",
+  },
+  {
+    id: "bulk-shas",
+    title: "הורדת ש\"ס",
+    icon: Database,
+    description: "הורדת כל הש\"ס לענן",
   },
   {
     id: "pdf-viewer",

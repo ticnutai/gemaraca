@@ -55,6 +55,14 @@ export const MASECHTOT_MAP: Record<string, string> = Object.fromEntries(
   MASECHTOT.map(m => [m.name, m.sefaria])
 );
 
+// Alias for edge functions that need { hebrewName, sefariaName, maxDaf }
+export const MASECHTOT_LIST = MASECHTOT.map(m => ({
+  hebrewName: m.name,
+  sefariaName: m.sefaria,
+  englishName: m.english,
+  maxDaf: m.maxDaf,
+}));
+
 export const ABBREVIATIONS: Record<string, string> = {
   'ב"ק': "בבא קמא", 'בב"ק': "בבא קמא", "ב״ק": "בבא קמא",
   'ב"מ': "בבא מציעא", 'בב"מ': "בבא מציעא", "ב״מ": "בבא מציעא",

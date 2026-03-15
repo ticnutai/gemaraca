@@ -18,6 +18,7 @@ const PsakDinCompareTab = lazy(() => import("@/components/PsakDinCompareTab"));
 const KnowledgeGraphTab = lazy(() => import("@/components/KnowledgeGraphTab"));
 const GlobalSearchTab = lazy(() => import("@/components/GlobalSearchTab"));
 const PdfViewerTab = lazy(() => import("@/components/PdfViewerTab"));
+const BulkShasDownload = lazy(() => import("@/components/BulkShasDownload"));
 
 const TabFallback = () => (
   <div className="p-3 md:p-6 space-y-4">
@@ -63,6 +64,7 @@ const Index = () => {
               {activeTab === "compare" && <PsakDinCompareTab />}
               {activeTab === "knowledge-graph" && <KnowledgeGraphTab />}
               {activeTab === "pdf-viewer" && <PdfViewerTab />}
+              {activeTab === "bulk-shas" && <BulkShasDownload />}
             </Suspense>
           </SectionErrorBoundary>
         </div>

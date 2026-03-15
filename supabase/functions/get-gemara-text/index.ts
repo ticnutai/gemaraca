@@ -72,8 +72,7 @@ serve(async (req) => {
 
     // ─── 3. Save to database for future requests ───
     if (data.he && data.he.length > 0) {
-      // Try update first (fast path — row already exists)
-      const { data: updated, error: updateError } = await supabaseClient
+      const { error: upsertError } = await supabaseClient
         .from('gemara_pages')
         .update({
           text_he: data.he,
@@ -83,42 +82,10 @@ serve(async (req) => {
           categories: data.categories || null,
           section_ref: data.sectionRef || null,
         })
-        .eq('sefaria_ref', ref)
-        .select('id');
+        .eq('sefaria_ref', ref);
       
-      if (updateError) {
-        console.log('Update failed:', updateError.message);
-      } else if (!updated || updated.length === 0) {
-        // Row doesn't exist — insert new row
-        console.log('Row not found, inserting new row for:', ref);
-        // Parse ref to extract masechet, daf, amud (e.g. "Berakhot.2a")
-        const parts = ref.match(/^(.+)\.(\d+)([ab])$/);
-        if (parts) {
-          const [, masechet, dafStr, amud] = parts;
-          const dafNumber = parseInt(dafStr, 10);
-          const amudLabel = amud === 'a' ? 'ע״א' : 'ע״ב';
-          const { error: insertError } = await supabaseClient
-            .from('gemara_pages')
-            .insert({
-              daf_number: dafNumber,
-              sugya_id: `${masechet.toLowerCase()}_${dafNumber}${amud}`,
-              title: `${data.heRef || ref}`,
-              daf_yomi: data.heRef || ref,
-              sefaria_ref: ref,
-              masechet: masechet,
-              text_he: data.he,
-              text_en: data.text || null,
-              he_ref: data.heRef || null,
-              book: data.book || null,
-              categories: data.categories || null,
-              section_ref: data.sectionRef || null,
-            });
-          if (insertError) {
-            console.log('Insert failed:', insertError.message);
-          } else {
-            console.log('Inserted new row for:', ref);
-          }
-        }
+      if (upsertError) {
+        console.log('Could not cache text (page row may not exist):', upsertError.message);
       } else {
         console.log('Cached Sefaria response to DB for:', ref);
       }
