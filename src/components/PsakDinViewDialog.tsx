@@ -117,8 +117,10 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
   const [caseSensitive, setCaseSensitive] = useState(false);
   const [wholeWord, setWholeWord] = useState(false);
   const [currentMatch, setCurrentMatch] = useState(0);
+  const [lineJumpInput, setLineJumpInput] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const infoScrollAreaRef = useRef<HTMLDivElement>(null);
 
   const [textSettings, setTextSettings] = useState<TextSettings>(() => {
     const saved = localStorage.getItem(VIEWER_TEXT_SETTINGS_KEY);
@@ -298,6 +300,28 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
   };
 
   const textClasses = `${textSettings.fontFamily} ${getTextAlignClass()} ${textSettings.isBold ? 'font-bold' : ''} ${textSettings.isItalic ? 'italic' : ''} ${textSettings.textColor} ${textSettings.bgColor}`;
+
+  const jumpToLine = useCallback(() => {
+    if (!fullText?.trim()) {
+      toast.info("אין טקסט מלא לקפיצה לשורה");
+      return;
+    }
+
+    const lineNumber = Number(lineJumpInput);
+    const lines = fullText.split("\n");
+    if (!Number.isInteger(lineNumber) || lineNumber < 1 || lineNumber > lines.length) {
+      toast.error(`מספר שורה לא תקין (1-${lines.length})`);
+      return;
+    }
+
+    const viewport = infoScrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement | null;
+    if (!viewport) return;
+
+    const ratio = lines.length <= 1 ? 0 : (lineNumber - 1) / (lines.length - 1);
+    const maxScrollTop = Math.max(0, viewport.scrollHeight - viewport.clientHeight);
+    viewport.scrollTo({ top: Math.round(maxScrollTop * ratio), behavior: 'smooth' });
+    toast.success(`מעבר לשורה ${lineNumber}`);
+  }, [fullText, lineJumpInput]);
 
   // Search logic
   const getSearchableText = useCallback(() => {
@@ -623,6 +647,26 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
       >
         <ListOrdered className="h-3 w-3" />
       </Button>
+
+      {/* Jump to line */}
+      <div className="flex items-center gap-1 border-r pr-2 mr-1">
+        <Input
+          value={lineJumpInput}
+          onChange={(e) => setLineJumpInput(e.target.value.replace(/[^0-9]/g, ''))}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              jumpToLine();
+            }
+          }}
+          placeholder="שורה"
+          className="h-7 w-16 text-xs"
+          dir="ltr"
+        />
+        <Button variant="outline" size="sm" className="h-7 text-xs px-2" onClick={jumpToLine}>
+          מעבר
+        </Button>
+      </div>
     </div>
   );
 
@@ -751,7 +795,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
                 )}
               </div>
             </div>
-            <ScrollArea className="h-full border border-border rounded-lg">
+            <ScrollArea ref={infoScrollAreaRef} className="h-full border border-border rounded-lg">
               <div 
                 ref={contentRef}
                 className={`p-4 space-y-4 ${isEditing ? '' : textClasses}`} 
