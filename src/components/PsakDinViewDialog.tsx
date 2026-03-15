@@ -149,25 +149,12 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
     }
   }, [open, psak]);
 
-  // Guard against null psak — dialog may render before data is loaded
-  if (!psak) {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-md">
-          <div className="flex items-center justify-center py-12 text-muted-foreground">
-            טוען פסק דין...
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
-  const fullText = psak.full_text || psak.fullText;
-  const sourceUrl = psak.source_url || psak.sourceUrl;
-  const caseNumber = psak.case_number || psak.caseNumber;
+  const fullText = psak?.full_text || psak?.fullText;
+  const sourceUrl = psak?.source_url || psak?.sourceUrl;
+  const caseNumber = psak?.case_number || psak?.caseNumber;
 
   const handleSave = async () => {
-    if (!psak.id) {
+    if (!psak?.id) {
       toast.error("לא ניתן לשמור - חסר מזהה");
       return;
     }
@@ -190,7 +177,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
           full_text: editFullText.trim() || null,
           tags: tagsArray,
         })
-        .eq("id", psak.id);
+        .eq("id", psak!.id);
 
       if (error) throw error;
 
@@ -208,13 +195,13 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
   const handleCancelEdit = () => {
     setIsEditing(false);
     // Reset to original values
-    setEditTitle(psak.title || "");
-    setEditCourt(psak.court || "");
-    setEditYear(psak.year || "");
-    setEditCaseNumber(psak.case_number || psak.caseNumber || "");
-    setEditSummary(psak.summary || "");
-    setEditFullText(psak.full_text || psak.fullText || "");
-    setEditTags((psak.tags || []).join(", "));
+    setEditTitle(psak?.title || "");
+    setEditCourt(psak?.court || "");
+    setEditYear(psak?.year || "");
+    setEditCaseNumber(psak?.case_number || psak?.caseNumber || "");
+    setEditSummary(psak?.summary || "");
+    setEditFullText(psak?.full_text || psak?.fullText || "");
+    setEditTags((psak?.tags || []).join(", "));
   };
 
   // Determine file type from URL
@@ -352,6 +339,19 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
       return text;
     }
   }, [searchQuery, caseSensitive, wholeWord, currentMatch]);
+
+  // Guard against null psak — MUST be after all hooks to avoid "Rendered more hooks" error
+  if (!psak) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-md">
+          <div className="flex items-center justify-center py-12 text-muted-foreground">
+            טוען פסק דין...
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   const renderSearchBar = () => {
     if (!showSearch) return null;
