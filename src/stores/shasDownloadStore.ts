@@ -141,7 +141,7 @@ export const useShasDownloadStore = create<ShasDownloadStore>()(
         if (_abortController?.signal.aborted) return;
 
         const { concurrency, activeDownloads, masechtot } = state;
-        const activeCount = activeDownloads.size;
+        const activeCount = activeDownloads.length;
         const slotsAvailable = concurrency - activeCount;
 
         if (slotsAvailable <= 0) return;
