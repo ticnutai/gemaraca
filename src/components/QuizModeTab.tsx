@@ -168,7 +168,7 @@ export default function QuizModeTab() {
                 <label className="text-xs font-medium mb-1 block">דף</label>
                 <input
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  placeholder="למשל: ב עמוד א"
+                  placeholder="למשל: ב׳ ע״א"
                   value={daf}
                   onChange={e => setDaf(e.target.value)}
                 />

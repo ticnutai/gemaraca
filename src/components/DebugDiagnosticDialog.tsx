@@ -218,7 +218,7 @@ export default function DebugDiagnosticDialog() {
       updateCheck('sample_extract', { status: 'running' });
       const t = Date.now();
       try {
-        const testText = 'על פי הגמרא בבבא קמא דף ב עמוד א וכן בסנהדרין דף לז עמוד ב';
+        const testText = 'על פי הגמרא בבבא קמא דף ב׳ ע״א וכן בסנהדרין דף ל״ז ע״ב';
         const { data, error: fnError } = await supabase.functions.invoke('extract-references', {
           body: { text: testText, documentId: 'debug-test', useAI: false },
         });

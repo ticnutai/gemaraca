@@ -151,7 +151,7 @@ export default function WeeklyPlannerTab() {
               </SelectContent>
             </Select>
             <Input
-              placeholder="דף (למשל ב עמוד א)"
+              placeholder="דף (למשל ב׳ ע״א)"
               value={newItem.daf}
               onChange={e => setNewItem(p => ({ ...p, daf: e.target.value }))}
               className="text-sm"

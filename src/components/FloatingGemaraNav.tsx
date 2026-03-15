@@ -221,14 +221,14 @@ const FloatingGemaraNav = ({ className }: FloatingGemaraNavProps) => {
                         onClick={() => handleAmudSelect('a')}
                         className="h-20 text-2xl font-bold hover:bg-primary hover:text-primary-foreground transition-colors"
                       >
-                        עמוד א׳
+                        ע״א
                       </Button>
                       <Button
                         variant="outline"
                         onClick={() => handleAmudSelect('b')}
                         className="h-20 text-2xl font-bold hover:bg-primary hover:text-primary-foreground transition-colors"
                       >
-                        עמוד ב׳
+                        ע״ב
                       </Button>
                     </div>
                   </div>

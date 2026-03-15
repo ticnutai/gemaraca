@@ -66,7 +66,7 @@ export default function RefCorrectionDialog({ open, onOpenChange, data, onSave }
               id="corrected"
               value={corrected}
               onChange={(e) => setCorrected(e.target.value)}
-              placeholder="למשל: בבא בתרא ב עמוד א"
+              placeholder="למשל: בבא בתרא ב׳ ע״א"
               className="text-right"
               autoFocus
             />
