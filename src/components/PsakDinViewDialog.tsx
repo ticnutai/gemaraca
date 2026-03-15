@@ -1295,6 +1295,30 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
                     <Download className="w-3.5 h-3.5" />
                     ייצוא PDF
                   </Button>
+
+                  {/* Save buttons separator */}
+                  <div className="w-px h-6 bg-border mx-1" />
+
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="gap-1 bg-gradient-to-l from-[#0B1F5B] to-[#1a3580] text-white"
+                    onClick={handleSaveBeautified}
+                    disabled={isSavingBeautified || !psak?.id}
+                  >
+                    {isSavingBeautified ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                    שמור
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1 border-[#D4AF37]/50 text-[#0B1F5B]"
+                    onClick={handleCopyAndSaveBeautified}
+                    disabled={isSavingBeautified}
+                  >
+                    {isSavingBeautified ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Copy className="w-3.5 h-3.5" />}
+                    העתק ושמור
+                  </Button>
                 </div>
                 {/* Rendered HTML */}
                 <div className="flex-1 border border-border rounded-lg overflow-hidden bg-white">
