@@ -122,9 +122,11 @@ export default memo(function RefCard({ data, onValidate, onClickRef, onCorrect, 
             {data.source === 'regex' ? 'ביטוי רגולרי' : 'בינה מלאכותית'}
           </Badge>
           {data.psakei_din && (
-            <span className="flex items-center gap-1 text-xs text-muted-foreground max-w-[150px] truncate" title={data.psakei_din.title}>
+            <span className="flex items-center gap-1 text-xs text-muted-foreground max-w-[200px]" title={data.psakei_din.title}>
               <FileText className="w-3 h-3 shrink-0" />
-              {data.psakei_din.title}
+              <span className="truncate">{data.psakei_din.title}</span>
+              <PsakPreviewPopover psakDinId={data.psak_din_id} psakTitle={data.psakei_din.title} mode="summary" />
+              <PsakPreviewPopover psakDinId={data.psak_din_id} psakTitle={data.psakei_din.title} mode="facts" />
             </span>
           )}
           {isApproved && (
