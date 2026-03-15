@@ -360,7 +360,7 @@ export default function PsakeiDinDafPanel({
                   <Tag className="w-3 h-3" />{filterTag || "תגיות"}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" dir="rtl" className="max-h-60 overflow-y-auto">
+              <DropdownMenuContent align="end" className="max-h-60 overflow-y-auto">
                 <DropdownMenuItem onClick={() => setFilterTag(null)} className="gap-2"><X className="w-3 h-3" /> הכול</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 {allTags.map(t => <DropdownMenuItem key={t} onClick={() => setFilterTag(t)}>{t}</DropdownMenuItem>)}
