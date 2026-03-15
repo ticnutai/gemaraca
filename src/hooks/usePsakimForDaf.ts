@@ -36,7 +36,7 @@ export function usePsakimForDaf(tractate: string, daf: string) {
       const { data, error } = await supabase
         .from('talmud_references')
         .select(`
-          id, normalized, corrected_normalized, raw_reference,
+          id, normalized, raw_reference,
           source, confidence, confidence_score, context_snippet, validation_status,
           psakei_din(id, title, court, year, summary, full_text, source_url, case_number, tags)
         `)
