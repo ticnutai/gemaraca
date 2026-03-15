@@ -2,6 +2,20 @@ import { MASECHTOT } from '@/lib/masechtotData';
 
 export type ValidationStatus = 'correct' | 'incorrect' | 'pending' | 'ignored';
 
+export interface ConfidenceFactors {
+  base_specificity: number;
+  frequency_boost: number;
+  context_type: string;
+  context_boost: number;
+  source_agreement: boolean;
+  agreement_boost: number;
+  proximity_boost: number;
+  daf_range_valid: boolean;
+  range_boost: number;
+  total: number;
+  capped: number;
+}
+
 export interface TalmudReference {
   id: string;
   psak_din_id: string;
@@ -11,6 +25,8 @@ export interface TalmudReference {
   raw_reference: string;
   normalized: string;
   confidence: string;
+  confidence_score: number | null;
+  confidence_factors: ConfidenceFactors | null;
   source: string;
   context_snippet: string | null;
   validation_status: ValidationStatus;

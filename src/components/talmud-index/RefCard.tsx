@@ -1,8 +1,9 @@
 import { memo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Check, X, RotateCcw, FileText, EyeOff, Minus, Plus, AlignJustify } from 'lucide-react';
-import { TalmudRefWithPsak, highlightRawInContext, extractContextLines, escapeHtml, ValidationStatus } from './types';
+import { TalmudRefWithPsak, highlightRawInContext, extractContextLines, escapeHtml, ValidationStatus, ConfidenceFactors } from './types';
 
 interface Props {
   data: TalmudRefWithPsak;
@@ -10,6 +11,70 @@ interface Props {
   onClickRef: (ref: TalmudRefWithPsak) => void;
   highlightColor?: string;
   highlightBg?: string;
+}
+
+const CONTEXT_LABELS: Record<string, string> = {
+  gemara_direct: 'גמרא ישירה',
+  mefaresh: 'מפרש',
+  direct_quote: 'ציטוט ישיר',
+  ai_detected: 'זוהה ע"י AI',
+  none: '—',
+};
+
+function ScoreBadge({ score, confidence, factors }: { score: number | null; confidence: string; factors: ConfidenceFactors | null }) {
+  const displayScore = score ?? (confidence === 'high' ? 75 : confidence === 'medium' ? 55 : 35);
+  const colorClass = displayScore >= 80
+    ? 'border-green-500/50 text-green-700 dark:text-green-400'
+    : displayScore >= 55
+      ? 'border-yellow-500/50 text-yellow-700 dark:text-yellow-400'
+      : displayScore >= 30
+        ? 'border-orange-500/50 text-orange-700 dark:text-orange-400'
+        : 'border-red-500/50 text-red-700 dark:text-red-400';
+
+  const label = displayScore >= 80 ? 'גבוה' : displayScore >= 55 ? 'בינוני' : displayScore >= 30 ? 'נמוך' : 'נמוך מאוד';
+
+  if (!factors) {
+    return (
+      <Badge variant="outline" className={`text-[10px] ${colorClass}`}>
+        {label}
+      </Badge>
+    );
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Badge variant="outline" className={`text-[10px] cursor-help ${colorClass}`}>
+          {label} ({displayScore})
+        </Badge>
+      </TooltipTrigger>
+      <TooltipContent side="top" align="start" className="max-w-[280px] p-3 text-right" dir="rtl">
+        <div className="text-xs font-bold mb-1.5">פירוט ציון ביטחון: {displayScore}/100</div>
+        <div className="space-y-0.5 text-[11px]">
+          <div className="flex justify-between"><span>ספציפיות הפניה</span><span className="font-mono">+{factors.base_specificity}</span></div>
+          {factors.frequency_boost > 0 && (
+            <div className="flex justify-between text-blue-600 dark:text-blue-400"><span>תדירות באותו מסמך</span><span className="font-mono">+{factors.frequency_boost}</span></div>
+          )}
+          {factors.context_boost > 0 && (
+            <div className="flex justify-between text-purple-600 dark:text-purple-400"><span>הקשר: {CONTEXT_LABELS[factors.context_type] || factors.context_type}</span><span className="font-mono">+{factors.context_boost}</span></div>
+          )}
+          {factors.source_agreement && (
+            <div className="flex justify-between text-emerald-600 dark:text-emerald-400"><span>הסכמת regex+AI</span><span className="font-mono">+{factors.agreement_boost}</span></div>
+          )}
+          {factors.proximity_boost > 0 && (
+            <div className="flex justify-between text-cyan-600 dark:text-cyan-400"><span>קרבה להפניות דומות</span><span className="font-mono">+{factors.proximity_boost}</span></div>
+          )}
+          <div className={`flex justify-between ${factors.range_boost < 0 ? 'text-red-600 dark:text-red-400' : ''}`}>
+            <span>טווח דפים {factors.daf_range_valid ? '✓' : '✗'}</span>
+            <span className="font-mono">{factors.range_boost > 0 ? '+' : ''}{factors.range_boost}</span>
+          </div>
+          <div className="border-t pt-1 mt-1 flex justify-between font-bold">
+            <span>סה"כ</span><span className="font-mono">{displayScore}</span>
+          </div>
+        </div>
+      </TooltipContent>
+    </Tooltip>
+  );
 }
 
 export default memo(function RefCard({ data, onValidate, onClickRef, highlightColor, highlightBg }: Props) {
@@ -47,16 +112,7 @@ export default memo(function RefCard({ data, onValidate, onClickRef, highlightCo
       <div className="flex items-center gap-3 mb-1">
         <span className="text-lg font-bold text-primary">{data.normalized}</span>
         <div className="flex items-center gap-2 mr-auto">
-          <Badge
-            variant="outline"
-            className={`text-[10px] ${
-              data.confidence === 'high' ? 'border-green-500/50 text-green-700 dark:text-green-400' :
-              data.confidence === 'medium' ? 'border-yellow-500/50 text-yellow-700 dark:text-yellow-400' :
-              'border-red-500/50 text-red-700 dark:text-red-400'
-            }`}
-          >
-            {data.confidence === 'high' ? 'גבוה' : data.confidence === 'medium' ? 'בינוני' : 'נמוך'}
-          </Badge>
+          <ScoreBadge score={data.confidence_score} confidence={data.confidence} factors={data.confidence_factors} />
           <Badge variant="secondary" className="text-[10px]">
             {data.source === 'regex' ? 'ביטוי רגולרי' : 'בינה מלאכותית'}
           </Badge>

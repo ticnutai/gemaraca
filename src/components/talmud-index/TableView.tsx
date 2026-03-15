@@ -43,16 +43,22 @@ const TableRowItem = memo(function TableRowItem({ data, onValidate, onClickRef, 
         {data.psakei_din?.title}
       </TableCell>
       <TableCell>
-        <Badge
-          variant="outline"
-          className={`text-[10px] ${
-            data.confidence === 'high' ? 'border-green-500/50 text-green-700' :
-            data.confidence === 'medium' ? 'border-yellow-500/50 text-yellow-700' :
-            'border-red-500/50 text-red-700'
-          }`}
-        >
-          {data.confidence === 'high' ? 'גבוה' : data.confidence === 'medium' ? 'בינוני' : 'נמוך'}
-        </Badge>
+        {(() => {
+          const score = data.confidence_score ?? (data.confidence === 'high' ? 75 : data.confidence === 'medium' ? 55 : 35);
+          const colorClass = score >= 80
+            ? 'border-green-500/50 text-green-700'
+            : score >= 55
+              ? 'border-yellow-500/50 text-yellow-700'
+              : score >= 30
+                ? 'border-orange-500/50 text-orange-700'
+                : 'border-red-500/50 text-red-700';
+          const label = score >= 80 ? 'גבוה' : score >= 55 ? 'בינוני' : score >= 30 ? 'נמוך' : 'נמוך מאוד';
+          return (
+            <Badge variant="outline" className={`text-[10px] ${colorClass}`} title={`ציון: ${score}/100`}>
+              {label} ({score})
+            </Badge>
+          );
+        })()}
       </TableCell>
       <TableCell>
         {data.validation_status === 'correct' && <Badge className="text-[10px] bg-green-600 text-white border-0">מאושר</Badge>}

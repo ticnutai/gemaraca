@@ -81,7 +81,7 @@ export function useExtractReferences() {
         .delete()
         .eq('psak_din_id', psakDinId);
 
-      const rows = references.map((ref: Record<string, string>) => ({
+      const rows = references.map((ref: Record<string, unknown>) => ({
         psak_din_id: psakDinId,
         tractate: ref.tractate,
         daf: ref.daf,
@@ -89,6 +89,8 @@ export function useExtractReferences() {
         raw_reference: ref.raw,
         normalized: ref.normalized,
         confidence: ref.confidence,
+        confidence_score: ref.confidence_score ?? null,
+        confidence_factors: ref.confidence_factors ?? null,
         source: ref.source,
         context_snippet: ref.context_snippet || null,
         user_id: user?.id || null,
@@ -134,7 +136,7 @@ export function useBatchExtractReferences() {
             .delete()
             .eq('psak_din_id', psak.id);
 
-          const rows = references.map((ref: Record<string, string>) => ({
+          const rows = references.map((ref: Record<string, unknown>) => ({
             psak_din_id: psak.id,
             tractate: ref.tractate,
             daf: ref.daf,
@@ -142,6 +144,8 @@ export function useBatchExtractReferences() {
             raw_reference: ref.raw,
             normalized: ref.normalized,
             confidence: ref.confidence,
+            confidence_score: ref.confidence_score ?? null,
+            confidence_factors: ref.confidence_factors ?? null,
             source: ref.source,
             context_snippet: ref.context_snippet || null,
             user_id: user?.id || null,
