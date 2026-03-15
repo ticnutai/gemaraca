@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -6,7 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Calendar, Building2, FileText, ExternalLink, Download, Eye, FileIcon, 
   Maximize2, Minimize2, AlignRight, AlignCenter, AlignLeft, AlignJustify,
-  Type, Bold, Italic, Highlighter, AArrowUp, AArrowDown, Palette, Edit, Save, X
+  Type, Bold, Italic, Highlighter, AArrowUp, AArrowDown, Palette, Edit, Save, X,
+  Search, ChevronUp, ChevronDown, CaseSensitive, WholeWord
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -103,6 +104,16 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
   const [activeTab, setActiveTab] = useState("preview");
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Search state
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [caseSensitive, setCaseSensitive] = useState(false);
+  const [wholeWord, setWholeWord] = useState(false);
+  const [currentMatch, setCurrentMatch] = useState(0);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+
   const [textSettings, setTextSettings] = useState<TextSettings>(() => {
     const saved = localStorage.getItem(VIEWER_TEXT_SETTINGS_KEY);
     return saved ? JSON.parse(saved) : defaultTextSettings;
@@ -138,7 +149,6 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
     }
   }, [open, psak]);
 
-  if (!psak) return null;
 
   const fullText = psak.full_text || psak.fullText;
   const sourceUrl = psak.source_url || psak.sourceUrl;
@@ -233,6 +243,153 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
   };
 
   const textClasses = `${textSettings.fontFamily} ${getTextAlignClass()} ${textSettings.isBold ? 'font-bold' : ''} ${textSettings.isItalic ? 'italic' : ''} ${textSettings.textColor} ${textSettings.bgColor}`;
+
+  // Search logic
+  const getSearchableText = useCallback(() => {
+    if (!psak) return "";
+    const ft = psak.full_text || psak.fullText || "";
+    return `${psak.summary || ""}\n${psak.connection || ""}\n${ft}`;
+  }, [psak]);
+
+  const searchMatches = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const text = getSearchableText();
+    if (!text) return [];
+    let query = searchQuery;
+    let flags = 'g';
+    if (!caseSensitive) flags += 'i';
+    if (wholeWord) query = `\\b${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`;
+    else query = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    try {
+      const regex = new RegExp(query, flags);
+      const matches: { index: number; length: number }[] = [];
+      let match;
+      while ((match = regex.exec(text)) !== null) {
+        matches.push({ index: match.index, length: match[0].length });
+        if (matches.length > 500) break;
+      }
+      return matches;
+    } catch {
+      return [];
+    }
+  }, [searchQuery, caseSensitive, wholeWord, getSearchableText]);
+
+  const totalMatches = searchMatches.length;
+
+  useEffect(() => {
+    if (totalMatches > 0 && currentMatch >= totalMatches) setCurrentMatch(0);
+  }, [totalMatches, currentMatch]);
+
+  useEffect(() => {
+    if (showSearch && searchInputRef.current) searchInputRef.current.focus();
+  }, [showSearch]);
+
+  useEffect(() => {
+    if (!open) { setShowSearch(false); setSearchQuery(""); setCurrentMatch(0); }
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') { e.preventDefault(); setShowSearch(true); }
+      if (e.key === 'Escape' && showSearch) { setShowSearch(false); setSearchQuery(""); }
+      if (e.key === 'Enter' && showSearch && totalMatches > 0) {
+        e.preventDefault();
+        setCurrentMatch(prev => e.shiftKey ? (prev - 1 + totalMatches) % totalMatches : (prev + 1) % totalMatches);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [open, showSearch, totalMatches]);
+
+  useEffect(() => {
+    if (!contentRef.current || totalMatches === 0) return;
+    const marks = contentRef.current.querySelectorAll('mark[data-current="true"]');
+    if (marks.length > 0) marks[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [currentMatch, totalMatches, searchQuery]);
+
+  const highlightText = useCallback((text: string): React.ReactNode => {
+    if (!searchQuery.trim()) return text;
+    let query = searchQuery;
+    let flags = 'g';
+    if (!caseSensitive) flags += 'i';
+    if (wholeWord) query = `\\b${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`;
+    else query = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    try {
+      const regex = new RegExp(`(${query})`, flags);
+      const parts = text.split(regex);
+      let matchIdx = 0;
+      return parts.map((part, i) => {
+        const testRegex = new RegExp(query, flags.replace('g', ''));
+        if (testRegex.test(part)) {
+          const isCurrent = matchIdx === currentMatch;
+          matchIdx++;
+          return (
+            <mark
+              key={i}
+              data-current={isCurrent ? "true" : "false"}
+              className={`rounded px-0.5 transition-colors ${isCurrent ? 'bg-orange-400 text-orange-950 ring-2 ring-orange-500' : 'bg-yellow-200 text-yellow-900 dark:bg-yellow-700 dark:text-yellow-100'}`}
+            >
+              {part}
+            </mark>
+          );
+        }
+        return <span key={i}>{part}</span>;
+      });
+    } catch {
+      return text;
+    }
+  }, [searchQuery, caseSensitive, wholeWord, currentMatch]);
+
+  const renderSearchBar = () => {
+    if (!showSearch) return null;
+    return (
+      <div className="flex items-center gap-2 p-2 bg-muted/80 backdrop-blur rounded-lg border border-border mb-2 animate-in slide-in-from-top-2 duration-200" dir="rtl">
+        <div className="relative flex-1">
+          <Search className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            ref={searchInputRef}
+            value={searchQuery}
+            onChange={(e) => { setSearchQuery(e.target.value); setCurrentMatch(0); }}
+            placeholder="חיפוש בטקסט..."
+            className="pr-8 h-8 text-sm"
+          />
+        </div>
+        {totalMatches > 0 && (
+          <span className="text-xs text-muted-foreground whitespace-nowrap min-w-[60px] text-center">
+            {currentMatch + 1} / {totalMatches}
+          </span>
+        )}
+        {searchQuery && totalMatches === 0 && (
+          <span className="text-xs text-destructive whitespace-nowrap">לא נמצא</span>
+        )}
+        <div className="flex items-center gap-0.5">
+          <Button variant={caseSensitive ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7"
+            onClick={() => { setCaseSensitive(!caseSensitive); setCurrentMatch(0); }} title="רגיש לאותיות גדולות/קטנות">
+            <CaseSensitive className="h-3.5 w-3.5" />
+          </Button>
+          <Button variant={wholeWord ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7"
+            onClick={() => { setWholeWord(!wholeWord); setCurrentMatch(0); }} title="מילה שלמה בלבד">
+            <WholeWord className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+        <div className="flex items-center gap-0.5">
+          <Button variant="ghost" size="icon" className="h-7 w-7" disabled={totalMatches === 0} title="התאמה קודמת"
+            onClick={() => setCurrentMatch(prev => (prev - 1 + Math.max(totalMatches, 1)) % Math.max(totalMatches, 1))}>
+            <ChevronUp className="h-3.5 w-3.5" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7" disabled={totalMatches === 0} title="התאמה הבאה"
+            onClick={() => setCurrentMatch(prev => (prev + 1) % Math.max(totalMatches, 1))}>
+            <ChevronDown className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setShowSearch(false); setSearchQuery(""); }}>
+          <X className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+    );
+  };
+
 
   const renderTextToolbar = () => (
     <div className="flex items-center gap-1 flex-wrap p-2 bg-muted/50 rounded-lg border mb-2">
@@ -390,6 +547,8 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
     </div>
   );
 
+  if (!psak) return null;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
@@ -404,14 +563,23 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
             <DialogTitle className="text-xl font-bold text-foreground text-right flex-1">
               {psak.title}
             </DialogTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsFullscreen(!isFullscreen)}
-              className="mr-2"
-            >
-              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowSearch(!showSearch)}
+                title="חיפוש (Ctrl+F)"
+              >
+                <Search className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsFullscreen(!isFullscreen)}
+              >
+                {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              </Button>
+            </div>
           </div>
           <div className="flex flex-wrap gap-2 text-sm text-muted-foreground mt-2">
             {psak.court && (
@@ -459,6 +627,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
           </TabsList>
 
           <TabsContent value="info" className="flex-1 min-h-0 mt-4">
+            {renderSearchBar()}
             <div className="flex items-center justify-between mb-2">
               {!isEditing ? renderTextToolbar() : <div />}
               <div className="flex gap-2">
@@ -500,6 +669,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
             </div>
             <ScrollArea className="h-full border border-border rounded-lg">
               <div 
+                ref={contentRef}
                 className={`p-4 space-y-4 ${isEditing ? '' : textClasses}`} 
                 dir="rtl"
                 style={{ fontSize: isEditing ? undefined : `${textSettings.fontSize}px` }}
@@ -577,26 +747,26 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
                 ) : (
                   <>
                     {/* View Mode */}
-                    <div>
-                      <h3 className="font-semibold mb-2">תקציר</h3>
-                      <p className="leading-relaxed">{psak.summary}</p>
-                    </div>
+                     <div>
+                       <h3 className="font-semibold mb-2">תקציר</h3>
+                       <p className="leading-relaxed">{highlightText(psak.summary)}</p>
+                     </div>
 
-                    {psak.connection && (
-                      <div className="p-3 rounded-lg border">
-                        <h3 className="font-semibold mb-2">קשר לסוגיה</h3>
-                        <p className="opacity-80">{psak.connection}</p>
-                      </div>
-                    )}
+                     {psak.connection && (
+                       <div className="p-3 rounded-lg border">
+                         <h3 className="font-semibold mb-2">קשר לסוגיה</h3>
+                         <p className="opacity-80">{highlightText(psak.connection)}</p>
+                       </div>
+                     )}
 
-                    {fullText && (
-                      <div>
-                        <h3 className="font-semibold mb-2">טקסט מלא</h3>
-                        <div className="p-4 rounded-lg border whitespace-pre-wrap leading-relaxed">
-                          {fullText}
-                        </div>
-                      </div>
-                    )}
+                     {fullText && (
+                       <div>
+                         <h3 className="font-semibold mb-2">טקסט מלא</h3>
+                         <div className="p-4 rounded-lg border whitespace-pre-wrap leading-relaxed">
+                           {highlightText(fullText)}
+                         </div>
+                       </div>
+                     )}
 
                     {psak.tags && psak.tags.length > 0 && (
                       <div>
