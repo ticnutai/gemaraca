@@ -232,7 +232,7 @@ const AppSidebar = ({
       {/* Mobile overlay */}
       {isMobile && sidebarOpen && (
         <div 
-          className="fixed inset-0 top-[60px] z-40 bg-black/40 backdrop-blur-[2px] transition-opacity duration-300"
+          className="fixed inset-0 top-[56px] z-40 bg-black/40 backdrop-blur-[2px] transition-opacity duration-300"
           onClick={() => {
             setOpen(false);
             setIsHovered(false);
@@ -247,14 +247,13 @@ const AppSidebar = ({
           "transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
           isMobile
             ? cn(
-                "fixed !top-[60px] z-50 w-[80vw] max-w-[300px] shadow-2xl",
-                "!rounded-l-2xl !rounded-r-none",
-                "!h-[calc(100vh-60px)]",
+                "fixed !top-[56px] z-50 w-[80vw] max-w-[300px] shadow-2xl",
+                "!h-[calc(100vh-56px)] !rounded-tl-2xl !rounded-bl-none !rounded-r-none",
                 sidebarOpen ? "right-0" : "-right-[82vw]"
               )
             : cn(
                 "fixed right-0 z-40",
-                "!top-[72px] !h-[calc(100vh-72px-0.5rem)] !mt-0 !mr-2 !mb-2",
+                "!top-[64px] !h-[calc(100vh-64px-0.5rem)] !mr-2 !mb-2",
                 "!rounded-2xl"
               ),
           !isMobile && !sidebarVisible && "translate-x-full",

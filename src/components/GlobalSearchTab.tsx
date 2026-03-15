@@ -6,18 +6,26 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Search, BookOpen, Scale, FileText, Loader2, X, SlidersHorizontal, Clock, Sparkles,
+  Search, BookOpen, Scale, FileText, Loader2, X, SlidersHorizontal, Clock, Sparkles, StickyNote,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 
 interface SearchResult {
   id: string;
-  type: "gemara" | "psak" | "modern";
+  type: "gemara" | "psak" | "modern" | "notes";
   title: string;
   snippet: string;
   meta: string;
   relevance?: number;
+}
+
+interface UserNoteSearchItem {
+  id: string;
+  sugyaId: string;
+  dafYomi: string;
+  content: string;
+  updatedAt: number;
 }
 
 const HISTORY_KEY = "global-search-history";
@@ -36,6 +44,16 @@ function addToHistory(query: string) {
     if (list.length > 20) list.length = 20;
     localStorage.setItem(HISTORY_KEY, JSON.stringify(list));
   } catch {}
+}
+
+function getAllPersonalNotes(): UserNoteSearchItem[] {
+  try {
+    const raw = localStorage.getItem("user-notes");
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }
 
 export default function GlobalSearchTab() {
@@ -168,6 +186,26 @@ export default function GlobalSearchTab() {
           });
         }
       }
+
+      // Search personal notes (localStorage)
+      const notes = getAllPersonalNotes();
+      const qLower = q.toLowerCase();
+      const matchedNotes = notes
+        .filter((n) =>
+          (n.content || "").toLowerCase().includes(qLower) ||
+          (n.dafYomi || "").toLowerCase().includes(qLower)
+        )
+        .slice(0, 20);
+
+      for (const n of matchedNotes) {
+        allResults.push({
+          id: n.sugyaId,
+          type: "notes",
+          title: `הערה אישית • ${n.dafYomi || "ללא דף"}`,
+          snippet: (n.content || "").slice(0, 140) + ((n.content || "").length > 140 ? "..." : ""),
+          meta: `עודכן: ${new Date(n.updatedAt || Date.now()).toLocaleDateString("he-IL")}`,
+        });
+      }
     } catch (err) {
       console.error("Search error:", err);
     } finally {
@@ -186,6 +224,7 @@ export default function GlobalSearchTab() {
     gemara: results.filter((r) => r.type === "gemara").length,
     psak: results.filter((r) => r.type === "psak").length,
     modern: results.filter((r) => r.type === "modern").length,
+    notes: results.filter((r) => r.type === "notes").length,
   }), [results]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -194,7 +233,7 @@ export default function GlobalSearchTab() {
   };
 
   const handleResultClick = (r: SearchResult) => {
-    if (r.type === "gemara" || r.type === "modern") {
+    if (r.type === "gemara" || r.type === "modern" || r.type === "notes") {
       navigate(`/sugya/${r.id}`);
     }
     // For psak - could open dialog, for now stay on page
@@ -205,6 +244,7 @@ export default function GlobalSearchTab() {
       case "gemara": return <BookOpen className="h-3.5 w-3.5 text-blue-500" />;
       case "psak": return <Scale className="h-3.5 w-3.5 text-green-500" />;
       case "modern": return <FileText className="h-3.5 w-3.5 text-purple-500" />;
+      case "notes": return <StickyNote className="h-3.5 w-3.5 text-amber-500" />;
       default: return null;
     }
   };
@@ -214,6 +254,7 @@ export default function GlobalSearchTab() {
       case "gemara": return "גמרא";
       case "psak": return "פסק דין";
       case "modern": return "המחשה";
+      case "notes": return "הערה אישית";
       default: return type;
     }
   };
@@ -224,7 +265,7 @@ export default function GlobalSearchTab() {
         <Search className="h-5 w-5 text-primary" />
         חיפוש גלובלי
       </h2>
-      <p className="text-sm text-muted-foreground">חפש בגמרא, פסקי דין, והמחשות מודרניות במקום אחד</p>
+      <p className="text-sm text-muted-foreground">חפש בגמרא, פסקי דין, המחשות מודרניות והערות אישיות במקום אחד</p>
 
       {/* Search bar */}
       <form onSubmit={handleSubmit}>
@@ -295,7 +336,7 @@ export default function GlobalSearchTab() {
         <>
           {/* Type filter tabs */}
           <div className="flex gap-1.5 flex-wrap">
-            {(["all", "gemara", "psak", "modern"] as const).map((type) => (
+            {(["all", "gemara", "psak", "modern", "notes"] as const).map((type) => (
               <Button
                 key={type}
                 variant={activeType === type ? "default" : "outline"}
