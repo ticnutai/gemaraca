@@ -321,6 +321,54 @@ export type Database = {
         }
         Relationships: []
       }
+      shas_download_progress: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          current_daf: number
+          errors: Json
+          hebrew_name: string
+          id: string
+          loaded_pages: number
+          masechet: string
+          max_daf: number
+          started_at: string | null
+          status: string
+          total_pages: number
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          current_daf?: number
+          errors?: Json
+          hebrew_name: string
+          id?: string
+          loaded_pages?: number
+          masechet: string
+          max_daf: number
+          started_at?: string | null
+          status?: string
+          total_pages?: number
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          current_daf?: number
+          errors?: Json
+          hebrew_name?: string
+          id?: string
+          loaded_pages?: number
+          masechet?: string
+          max_daf?: number
+          started_at?: string | null
+          status?: string
+          total_pages?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       smart_index_results: {
         Row: {
           analysis_method: string
