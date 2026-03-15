@@ -24,6 +24,7 @@ export const themes: { id: Theme; name: string; description: string }[] = [
   { id: "classic", name: "קלאסי", description: "קרם וזהב - יוקרתי ונקי" },
   { id: "midnight", name: "חצות", description: "כהה עם נגיעות זהב" },
   { id: "royal", name: "מלכותי", description: "כחול עמוק וכסף" },
+  { id: "navy-gold", name: "נייבי זהב", description: "לבן, כחול נייבי חזק ומסגרות זהב" },
   { id: "custom", name: "מותאם אישית", description: "בחר צבעים משלך" },
 ];
 
