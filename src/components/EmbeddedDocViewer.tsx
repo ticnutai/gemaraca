@@ -308,7 +308,7 @@ export default function EmbeddedDocViewer({ url, title, onClose, onSwitchToRegul
                 <MonitorSmartphone className="w-3.5 h-3.5" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="center" dir="rtl">
+            <DropdownMenuContent align="center">
               <DropdownMenuLabel className="text-[10px]">תצוגת מכשיר</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {DEVICE_PRESETS.map(({ key, label, icon: DIcon }) => (
