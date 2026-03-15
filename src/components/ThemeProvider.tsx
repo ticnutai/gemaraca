@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 
-export type Theme = "classic" | "midnight" | "royal" | "custom";
+export type Theme = "classic" | "midnight" | "royal" | "navy-gold" | "custom";
 
 export interface CustomColors {
   background: string;
