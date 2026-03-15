@@ -4,7 +4,8 @@ interface SwipeOptions {
   onSwipeLeft?: () => void;
   onSwipeRight?: () => void;
   threshold?: number;
-  edgeZone?: number; // only trigger from screen edge (px)
+  edgeZoneLeft?: number;  // only trigger swipe-left from right edge
+  edgeZoneRight?: number; // only trigger swipe-right from left edge
 }
 
 export function useSwipeGesture({
