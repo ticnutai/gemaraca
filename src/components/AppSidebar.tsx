@@ -243,14 +243,19 @@ const AppSidebar = ({
         side="right" 
         className={cn(
           "border border-border/50 !bg-sidebar",
-          "!rounded-2xl overflow-hidden !h-[calc(100%-1rem)]",
+          "overflow-hidden",
           "transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
           isMobile
             ? cn(
-                "fixed top-0 z-50 w-[80vw] max-w-[300px] shadow-2xl !mt-2 !mr-2 !mb-2 !rounded-l-2xl !rounded-r-none",
+                "fixed !top-[56px] z-50 w-[80vw] max-w-[300px] shadow-2xl",
+                "!h-[calc(100vh-56px)] !rounded-tl-2xl !rounded-bl-none !rounded-r-none",
                 sidebarOpen ? "right-0" : "-right-[82vw]"
               )
-            : "fixed right-0 top-0 z-40",
+            : cn(
+                "fixed right-0 z-40",
+                "!top-[64px] !h-[calc(100vh-64px-0.5rem)] !mr-2 !mb-2",
+                "!rounded-2xl"
+              ),
           !isMobile && !sidebarVisible && "translate-x-full",
           !isMobile && !isPinned && sidebarVisible && "shadow-2xl"
         )}
