@@ -747,26 +747,26 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
                 ) : (
                   <>
                     {/* View Mode */}
-                    <div>
-                      <h3 className="font-semibold mb-2">תקציר</h3>
-                      <p className="leading-relaxed">{psak.summary}</p>
-                    </div>
+                     <div>
+                       <h3 className="font-semibold mb-2">תקציר</h3>
+                       <p className="leading-relaxed">{highlightText(psak.summary)}</p>
+                     </div>
 
-                    {psak.connection && (
-                      <div className="p-3 rounded-lg border">
-                        <h3 className="font-semibold mb-2">קשר לסוגיה</h3>
-                        <p className="opacity-80">{psak.connection}</p>
-                      </div>
-                    )}
+                     {psak.connection && (
+                       <div className="p-3 rounded-lg border">
+                         <h3 className="font-semibold mb-2">קשר לסוגיה</h3>
+                         <p className="opacity-80">{highlightText(psak.connection)}</p>
+                       </div>
+                     )}
 
-                    {fullText && (
-                      <div>
-                        <h3 className="font-semibold mb-2">טקסט מלא</h3>
-                        <div className="p-4 rounded-lg border whitespace-pre-wrap leading-relaxed">
-                          {fullText}
-                        </div>
-                      </div>
-                    )}
+                     {fullText && (
+                       <div>
+                         <h3 className="font-semibold mb-2">טקסט מלא</h3>
+                         <div className="p-4 rounded-lg border whitespace-pre-wrap leading-relaxed">
+                           {highlightText(fullText)}
+                         </div>
+                       </div>
+                     )}
 
                     {psak.tags && psak.tags.length > 0 && (
                       <div>
