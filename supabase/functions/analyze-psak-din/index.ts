@@ -139,7 +139,7 @@ ${textToAnalyze.substring(0, 10000)}
       "masechetEnglish": "Bava Metzia",
       "daf": 30,
       "amud": "א",
-      "reference": "בבא מציעא ל עמוד א",
+      "reference": "בבא מציעא ל׳ ע״א",
       "explanation": "הסבר קצר מדוע מקור זה רלוונטי לפסק"
     }
   ]

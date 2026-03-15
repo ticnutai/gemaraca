@@ -506,7 +506,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
       <div className="space-y-3">
         <div className="text-center text-muted-foreground text-sm flex items-center justify-center gap-2">
           <BookOpen className="h-4 w-4" />
-          <span>דף {daf} עמוד {amud === 'a' ? 'א' : 'ב'} - תצוגת ספריא</span>
+          <span>דף {daf} {amud === 'a' ? 'ע״א' : 'ע״ב'} - תצוגת ספריא</span>
         </div>
         
         <div 
@@ -546,7 +546,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
         <div className="flex items-center justify-between">
           <div className="text-muted-foreground text-sm flex items-center gap-2">
             <Image className="h-4 w-4" />
-            <span>דף {daf} עמוד {amud === 'a' ? 'א' : 'ב'} - תמונה סרוקה</span>
+            <span>דף {daf} {amud === 'a' ? 'ע״א' : 'ע״ב'} - תמונה סרוקה</span>
           </div>
           
           <div className="flex items-center gap-1">
@@ -611,7 +611,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
       <div className="space-y-3">
         <div className="text-center text-muted-foreground text-sm flex items-center justify-center gap-2">
           <ExternalLink className="h-4 w-4" />
-          <span>דף {daf} עמוד {amud === 'a' ? 'א' : 'ב'} - אתר E-Daf</span>
+          <span>דף {daf} {amud === 'a' ? 'ע״א' : 'ע״ב'} - אתר E-Daf</span>
         </div>
         
         <div 

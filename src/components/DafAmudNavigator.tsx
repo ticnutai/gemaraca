@@ -110,7 +110,7 @@ const DafAmudNavigator = ({
   }
 
   const hebrewDaf = toHebrewNumeral(currentDaf);
-  const amudLabel = currentAmud === 'a' ? 'א' : 'ב';
+  const amudLabel = currentAmud === 'a' ? 'ע״א' : 'ע״ב';
 
   return (
     <div className={`bg-card border border-border rounded-xl shadow-sm ${className}`} dir="rtl">
@@ -165,7 +165,7 @@ const DafAmudNavigator = ({
           </Button>
           
           <span className="font-bold text-foreground text-sm md:text-base px-2">
-            עמוד {amudLabel}
+            {amudLabel}
           </span>
           
           <Button
