@@ -139,9 +139,9 @@ const Sidebar = React.forwardRef<
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
 
   if (collapsible === "none") {
-    return (
+      return (
       <div
-        className={cn("flex h-full w-[--sidebar-width] flex-col bg-sidebar text-sidebar-foreground", className)}
+        className={cn("flex w-[--sidebar-width] flex-col bg-sidebar text-sidebar-foreground", className)}
         ref={ref}
         {...props}
       >
