@@ -59,7 +59,7 @@ serve(async (req) => {
         "Authorization": `Bearer ${LOVABLE_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "openai/gpt-5-mini",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: `עצב את פסק הדין הבא ל-HTML מקצועי ויפה:\n\n${rawContent}` },
