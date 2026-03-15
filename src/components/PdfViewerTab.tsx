@@ -504,7 +504,7 @@ const PdfViewerTab = () => {
                       );
                     })}
                     <Badge
-                      variant="ghost"
+                      variant="secondary"
                       className="cursor-pointer text-[10px] text-destructive hover:bg-destructive/10"
                       onClick={() => { setRecentUrls([]); toast("ההיסטוריה נוקתה"); }}
                     >
