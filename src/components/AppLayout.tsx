@@ -91,15 +91,16 @@ const AppLayoutInner = ({ children }: AppLayoutProps) => {
           </main>
         </div>
 
-      {/* Sidebar */}
-      <AppSidebar 
-        activeTab={activeTab} 
-        onTabChange={handleTabChange}
-        onMasechetSelect={handleMasechetSelect}
-        isPinned={sidebarIsPinned}
-        onPinToggle={handlePinToggle}
-        isMobile={isMobile}
-      />
+        {/* Sidebar */}
+        <AppSidebar 
+          activeTab={activeTab} 
+          onTabChange={handleTabChange}
+          onMasechetSelect={handleMasechetSelect}
+          isPinned={sidebarIsPinned}
+          onPinToggle={handlePinToggle}
+          isMobile={isMobile}
+        />
+      </div>
 
       {/* Floating Navigation Button */}
       <Suspense fallback={null}>
