@@ -41,7 +41,7 @@ const AppLayoutInner = ({ children }: AppLayoutProps) => {
       if (isMobile && sidebarOpen) setOpen(false);
     },
     threshold: 50,
-    edgeZone: isMobile ? 40 : undefined,
+    edgeZoneLeft: isMobile ? 50 : undefined,
   });
 
   const handleTabChange = (tab: string) => {
