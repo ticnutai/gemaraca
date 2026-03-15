@@ -155,6 +155,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
   // Beautify state
   const [beautifiedHtml, setBeautifiedHtml] = useState<string | null>(null);
   const [isBeautifying, setIsBeautifying] = useState(false);
+  const [isSavingBeautified, setIsSavingBeautified] = useState(false);
   const beautifyIframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
