@@ -19,6 +19,7 @@ const themeColors: Record<Exclude<Theme, "custom">, { bg: string; accent: string
   classic: { bg: "bg-amber-50", accent: "bg-amber-500", text: "text-slate-800" },
   midnight: { bg: "bg-slate-900", accent: "bg-amber-500", text: "text-amber-100" },
   royal: { bg: "bg-blue-950", accent: "bg-slate-300", text: "text-slate-100" },
+  "navy-gold": { bg: "bg-white", accent: "bg-amber-500", text: "text-blue-950" },
 };
 
 const presetColors = [
