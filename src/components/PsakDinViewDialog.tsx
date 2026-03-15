@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -6,7 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Calendar, Building2, FileText, ExternalLink, Download, Eye, FileIcon, 
   Maximize2, Minimize2, AlignRight, AlignCenter, AlignLeft, AlignJustify,
-  Type, Bold, Italic, Highlighter, AArrowUp, AArrowDown, Palette, Edit, Save, X
+  Type, Bold, Italic, Highlighter, AArrowUp, AArrowDown, Palette, Edit, Save, X,
+  Search, ChevronUp, ChevronDown, CaseSensitive, WholeWord
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
