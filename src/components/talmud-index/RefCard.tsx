@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Check, X, RotateCcw, FileText, EyeOff, Minus, Plus, AlignJustify, Pencil } from 'lucide-react';
 import { TalmudRefWithPsak, highlightRawInContext, extractContextLines, escapeHtml, ValidationStatus, ConfidenceFactors } from './types';
+import PsakPreviewPopover from '../PsakPreviewPopover';
 
 interface Props {
   data: TalmudRefWithPsak;
