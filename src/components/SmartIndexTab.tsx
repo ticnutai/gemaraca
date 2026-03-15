@@ -21,7 +21,7 @@ import {
   Loader2, Library, Tag, BarChart3, Zap, Link2, 
   ExternalLink, Save, Database, RefreshCw, CheckCircle2,
   ArrowUpDown, ArrowUp, ArrowDown, Calendar, Filter, SlidersHorizontal,
-  ScrollText, BookOpenCheck
+  ScrollText, BookOpenCheck, TableIcon, LayoutGrid, List
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
