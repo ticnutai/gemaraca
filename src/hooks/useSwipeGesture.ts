@@ -12,7 +12,8 @@ export function useSwipeGesture({
   onSwipeLeft,
   onSwipeRight,
   threshold = 60,
-  edgeZone,
+  edgeZoneLeft,
+  edgeZoneRight,
 }: SwipeOptions) {
   const touchStart = useRef<{ x: number; y: number; time: number } | null>(null);
 
