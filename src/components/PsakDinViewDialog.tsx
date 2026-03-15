@@ -149,6 +149,18 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
     }
   }, [open, psak]);
 
+  // Guard against null psak — dialog may render before data is loaded
+  if (!psak) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-md">
+          <div className="flex items-center justify-center py-12 text-muted-foreground">
+            טוען פסק דין...
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   const fullText = psak.full_text || psak.fullText;
   const sourceUrl = psak.source_url || psak.sourceUrl;
