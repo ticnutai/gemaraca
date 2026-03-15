@@ -192,6 +192,7 @@ const AppSidebar = ({
         variant="sidebar"
         style={{ 
           backgroundColor: 'hsl(var(--sidebar-background, var(--background)))',
+          height: 'auto',
         }}
         onMouseEnter={isMobile ? undefined : handleMouseEnter}
         onMouseLeave={isMobile ? undefined : handleMouseLeave}
