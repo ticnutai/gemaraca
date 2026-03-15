@@ -180,7 +180,7 @@ All colors MUST be HSL.
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 43 85% 50%;
     --sidebar-accent-foreground: 220 60% 12%;
-    --sidebar-border: 43 70% 55%;
+    --sidebar-border: 43 75% 50%;
     --sidebar-ring: 43 85% 50%;
   }
 }
