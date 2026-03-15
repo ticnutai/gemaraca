@@ -132,7 +132,9 @@ export default function IndexTableView({ filtered, onValidate, onClickRef, highl
     const ia = TRACTATES.indexOf(a.tractate);
     const ib = TRACTATES.indexOf(b.tractate);
     if (ia !== ib) return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
-    return Number(a.daf) - Number(b.daf);
+    const dafDiff = Number(a.daf) - Number(b.daf);
+    if (dafDiff !== 0) return dafDiff;
+    return (a.amud ?? '').localeCompare(b.amud ?? '');
   }), [filtered]);
 
   const totalPages = Math.ceil(sorted.length / PAGE_SIZE);

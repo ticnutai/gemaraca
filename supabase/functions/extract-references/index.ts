@@ -47,13 +47,29 @@ function extractWithRegex(text: string): Reference[] {
   const tractatePattern = escapedNames.join("|");
 
   const patterns = [
-    new RegExp(`(?:מסכת|מס['׳"])\\s*(${tractatePattern})\\s+דף\\s+([א-תך-ץ]+['׳"]?|\\d+)\\s+עמוד\\s+([אב])`, "g"),
-    new RegExp(`(${tractatePattern})\\s+דף\\s+([א-תך-ץ]+['׳"]?|\\d+)\\s+ע[""״]([אב])`, "g"),
-    new RegExp(`(${tractatePattern})\\s+דף\\s+([א-תך-ץ]+['׳"]?|\\d+)\\s+עמוד\\s+([אב])`, "g"),
-    new RegExp(`(${tractatePattern})\\s+דף\\s+([א-תך-ץ]+['׳"]?|\\d+)(?!\\s*(?:עמוד|ע[""״]))`, "g"),
+    // מסכת/מס' X דף Y עמוד א/ב
+    new RegExp(`(?:מסכת|מס['׳"])\\s*(${tractatePattern})\\s+דף\\s+([א-תך-ץ]+['׳"]?|\\d+)\\s+עמוד\\s+([אב])['׳]?`, "g"),
+    // X דף Y ע"א / ע"ב (double-quote, smart-quote, gershayim, geresh variants)
+    new RegExp(`(${tractatePattern})\\s+דף\\s+([א-תך-ץ]+['׳"]?|\\d+)\\s+ע[""״'׳]([אב])`, "g"),
+    // X דף Y עמוד א/ב
+    new RegExp(`(${tractatePattern})\\s+דף\\s+([א-תך-ץ]+['׳"]?|\\d+)\\s+עמוד\\s+([אב])['׳]?`, "g"),
+    // X דף Y עמ' א/ב (abbreviated עמוד)
+    new RegExp(`(${tractatePattern})\\s+דף\\s+([א-תך-ץ]+['׳"]?|\\d+)\\s+עמ['׳]\\s*([אב])['׳]?`, "g"),
+    // X דף Y צד א/ב ("side" notation)
+    new RegExp(`(${tractatePattern})\\s+דף\\s+([א-תך-ץ]+['׳"]?|\\d+)\\s+צד\\s+([אב])['׳]?`, "g"),
+    // X דף Y (no amud) — negative lookahead excludes all amud indicators
+    new RegExp(`(${tractatePattern})\\s+דף\\s+([א-תך-ץ]+['׳"]?|\\d+)(?!\\s*(?:עמוד|עמ['׳]|ע[""״'׳]|צד))`, "g"),
+    // X Y. / Y: (dot=amud a, colon=amud b)
     new RegExp(`(${tractatePattern})\\s+([א-תך-ץ]+['׳"]?|\\d+)\\s*([.:])`, "g"),
-    new RegExp(`(${tractatePattern})\\s+([א-תך-ץ]+['׳"]?|\\d+)\\s+ע[""״]([אב])`, "g"),
+    // X Y ע"א/ע"ב (without דף)
+    new RegExp(`(${tractatePattern})\\s+([א-תך-ץ]+['׳"]?|\\d+)\\s+ע[""״'׳]([אב])`, "g"),
+    // X Y עמ' א/ב (without דף, abbreviated)
+    new RegExp(`(${tractatePattern})\\s+([א-תך-ץ]+['׳"]?|\\d+)\\s+עמ['׳]\\s*([אב])['׳]?`, "g"),
+    // X Y צד א/ב (without דף)
+    new RegExp(`(${tractatePattern})\\s+([א-תך-ץ]+['׳"]?|\\d+)\\s+צד\\s+([אב])['׳]?`, "g"),
+    // X Y, א/ב
     new RegExp(`(${tractatePattern})\\s+([א-תך-ץ]+['׳"]?|\\d+)\\s*,\\s*([אב])`, "g"),
+    // X Y א/ב (direct letter, no Hebrew letter after)
     new RegExp(`(${tractatePattern})\\s+([א-תך-ץ]+['׳"]?|\\d+)\\s+([אב])(?![א-ת])`, "g"),
   ];
 

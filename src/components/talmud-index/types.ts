@@ -101,3 +101,34 @@ export function toHebrewAmud(amud: string | null): string {
   if (amud === 'b' || amud === '2' || amud === 'ב') return 'ב׳';
   return amud;
 }
+
+export interface DafAmudGroup {
+  daf: string;
+  amud: string; // 'a' | 'b' | '_none'
+  amudLabel: string;
+  refs: TalmudRefWithPsak[];
+}
+
+/** Group refs by daf then by amud, sorted. Returns flat list of groups. */
+export function groupByDafAmud(refs: TalmudRefWithPsak[]): DafAmudGroup[] {
+  const byDaf: Record<string, Record<string, TalmudRefWithPsak[]>> = {};
+  for (const ref of refs) {
+    const d = ref.daf ?? '0';
+    const a = ref.amud || '_none';
+    if (!byDaf[d]) byDaf[d] = {};
+    if (!byDaf[d][a]) byDaf[d][a] = [];
+    byDaf[d][a].push(ref);
+  }
+  const result: DafAmudGroup[] = [];
+  const sortedDafs = Object.keys(byDaf).sort((a, b) => Number(a) - Number(b));
+  const amudOrder = ['a', 'b', '_none'];
+  for (const daf of sortedDafs) {
+    for (const amud of amudOrder) {
+      if (byDaf[daf][amud]) {
+        const amudLabel = amud === 'a' ? 'ע״א' : amud === 'b' ? 'ע״ב' : '';
+        result.push({ daf, amud, amudLabel, refs: byDaf[daf][amud] });
+      }
+    }
+  }
+  return result;
+}

@@ -4,7 +4,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import RefCard from './RefCard';
-import { TalmudRefWithPsak, TRACTATES, toHebrewDaf, ValidationStatus } from './types';
+import { TalmudRefWithPsak, TRACTATES, toHebrewDaf, toHebrewAmud, ValidationStatus } from './types';
 
 interface Props {
   grouped: Record<string, TalmudRefWithPsak[]>;
@@ -14,9 +14,23 @@ interface Props {
   highlightBg?: string;
 }
 
+/** Group refs by amud: a, b, unknown */
+function groupByAmud(refs: TalmudRefWithPsak[]) {
+  const groups: Record<string, TalmudRefWithPsak[]> = {};
+  for (const r of refs) {
+    const key = r.amud || '_none';
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(r);
+  }
+  // Sort: a first, then b, then unknown
+  const order = ['a', 'b', '_none'];
+  return order.filter(k => groups[k]).map(k => ({ amud: k, refs: groups[k] }));
+}
+
 export default function TreeViewIndex({ grouped, onValidate, onClickRef, highlightColor, highlightBg }: Props) {
   const [openTractates, setOpenTractates] = useState<Record<string, boolean>>({});
   const [openDafs, setOpenDafs] = useState<Record<string, boolean>>({});
+  const [openAmuds, setOpenAmuds] = useState<Record<string, boolean>>({});
 
   const sortedTractates = Object.keys(grouped).sort((a, b) => {
     const ia = TRACTATES.indexOf(a);
@@ -56,6 +70,8 @@ export default function TreeViewIndex({ grouped, onValidate, onClickRef, highlig
                     const dafRefs = byDaf[daf];
                     const dafKey = `${tractate}-${daf}`;
                     const isDafOpen = openDafs[dafKey] ?? false;
+                    const amudGroups = groupByAmud(dafRefs);
+                    const hasMultipleAmudim = amudGroups.length > 1 || (amudGroups.length === 1 && amudGroups[0].amud !== '_none');
 
                     return (
                       <Collapsible
@@ -69,12 +85,40 @@ export default function TreeViewIndex({ grouped, onValidate, onClickRef, highlig
                           <Badge variant="outline" className="text-[10px] ml-auto">{dafRefs.length}</Badge>
                         </CollapsibleTrigger>
                         <CollapsibleContent>
-                          <div className="mr-5 space-y-2 py-1 border-r border-border/30 pr-3">
-                            {dafRefs
-                              .sort((a, b) => (a.amud ?? '').localeCompare(b.amud ?? ''))
-                              .map(ref => (
+                          <div className="mr-5 space-y-1 py-1 border-r border-border/30 pr-3">
+                            {hasMultipleAmudim ? (
+                              amudGroups.map(({ amud, refs: amudRefs }) => {
+                                const amudKey = `${dafKey}-${amud}`;
+                                const isAmudOpen = openAmuds[amudKey] ?? false;
+                                const amudLabel = amud === 'a' ? 'ע״א' : amud === 'b' ? 'ע״ב' : 'לא צוין';
+
+                                return (
+                                  <Collapsible
+                                    key={amudKey}
+                                    open={isAmudOpen}
+                                    onOpenChange={(v) => setOpenAmuds(prev => ({ ...prev, [amudKey]: v }))}
+                                  >
+                                    <CollapsibleTrigger className="flex items-center gap-2 w-full px-2 py-1 rounded hover:bg-muted/20 transition-colors text-right text-sm">
+                                      <span className="font-medium text-accent-foreground">{amudLabel}</span>
+                                      <ChevronDown className={`w-3 h-3 shrink-0 transition-transform ${isAmudOpen ? '' : 'rotate-90'}`} />
+                                      <Badge variant="outline" className="text-[9px] ml-auto">{amudRefs.length}</Badge>
+                                    </CollapsibleTrigger>
+                                    <CollapsibleContent>
+                                      <div className="mr-4 space-y-2 py-1 border-r border-border/20 pr-3">
+                                        {amudRefs.map(ref => (
+                                          <RefCard key={ref.id} data={ref} onValidate={onValidate} onClickRef={onClickRef} highlightColor={highlightColor} highlightBg={highlightBg} />
+                                        ))}
+                                      </div>
+                                    </CollapsibleContent>
+                                  </Collapsible>
+                                );
+                              })
+                            ) : (
+                              // Only one group without amud, show refs directly
+                              amudGroups[0]?.refs.map(ref => (
                                 <RefCard key={ref.id} data={ref} onValidate={onValidate} onClickRef={onClickRef} highlightColor={highlightColor} highlightBg={highlightBg} />
-                              ))}
+                              ))
+                            )}
                           </div>
                         </CollapsibleContent>
                       </Collapsible>
