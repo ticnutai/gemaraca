@@ -316,6 +316,7 @@ export default function AdvancedIndexTab() {
       ) : (
         <>
           {viewMode === 'tree' && <TreeViewIndex grouped={grouped} onValidate={handleValidate} onClickRef={(ref) => openPsakDialog(ref)} highlightColor={activeColor.value} highlightBg={activeColor.bg} />}
+          {viewMode === 'genealogy' && <GenealogyTreeView grouped={grouped} onValidate={handleValidate} onClickRef={(ref) => openPsakDialog(ref)} highlightColor={activeColor.value} highlightBg={activeColor.bg} />}
           {viewMode === 'list' && <ListView grouped={grouped} onValidate={handleValidate} onClickRef={(ref) => openPsakDialog(ref)} highlightColor={activeColor.value} highlightBg={activeColor.bg} />}
           {viewMode === 'accordion' && <AccordionView grouped={grouped} onValidate={handleValidate} onClickRef={(ref) => openPsakDialog(ref)} highlightColor={activeColor.value} highlightBg={activeColor.bg} />}
           {viewMode === 'table' && <IndexTableView filtered={filtered} onValidate={handleValidate} onClickRef={(ref) => openPsakDialog(ref)} highlightColor={activeColor.value} highlightBg={activeColor.bg} />}

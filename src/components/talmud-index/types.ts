@@ -18,7 +18,7 @@ export interface TalmudReference {
   user_id: string | null;
 }
 
-export type ViewMode = 'list' | 'accordion' | 'table' | 'cards' | 'tree';
+export type ViewMode = 'list' | 'accordion' | 'table' | 'cards' | 'tree' | 'genealogy';
 
 export interface TalmudRefWithPsak extends TalmudReference {
   psakei_din: { title: string; court: string } | null;
