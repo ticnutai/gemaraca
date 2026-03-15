@@ -338,7 +338,7 @@ export default function PsakeiDinDafPanel({
                 {sortDir === "desc" ? <ArrowDown className="w-2.5 h-2.5" /> : <ArrowUp className="w-2.5 h-2.5" />}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" dir="rtl">
+            <DropdownMenuContent align="end">
               <DropdownMenuLabel>מיון לפי</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {SORT_OPTIONS.map(({ key, label, icon: SIcon }) => (
