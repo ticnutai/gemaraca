@@ -57,6 +57,7 @@ interface Statistics {
 }
 
 const GemaraPsakDinIndex = () => {
+  const navigate = useNavigate();
   const [indexData, setIndexData] = useState<IndexEntry[]>([]);
   const [allLinks, setAllLinks] = useState<PsakLink[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,6 +70,8 @@ const GemaraPsakDinIndex = () => {
   const [dialogPsak, setDialogPsak] = useState<any | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"tree" | "stats">("tree");
+  const [prefDialogOpen, setPrefDialogOpen] = useState(false);
+  const [pendingPsak, setPendingPsak] = useState<any | null>(null);
 
   const statistics = useMemo<Statistics>(() => {
     const tagCounts = new Map<string, number>();
