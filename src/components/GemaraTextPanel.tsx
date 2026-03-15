@@ -168,10 +168,9 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
       // 2. Try direct DB lookup (skips edge function entirely)
       const { data: dbPage } = await supabase
         .from('gemara_pages')
-        .select('text_he, text_en, sefaria_ref, he_ref, book, categories, section_ref')
+        .select('sefaria_ref')
         .eq('sefaria_ref', ref)
-        .not('text_he', 'is', null)
-        .maybeSingle();
+        .maybeSingle() as { data: any };
 
       if (dbPage?.text_he) {
         console.log('Serving from DB for ref:', ref);
