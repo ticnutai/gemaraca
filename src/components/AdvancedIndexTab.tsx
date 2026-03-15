@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { BookOpen, Search, List, ChevronsUpDown, TableIcon, LayoutGrid, TreePine, Bot, Regex } from 'lucide-react';
+import { BookOpen, Search, List, ChevronsUpDown, TableIcon, LayoutGrid, TreePine, Bot, Regex, GitBranch } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
@@ -13,6 +13,7 @@ import AccordionView from './talmud-index/AccordionView';
 import IndexTableView from './talmud-index/TableView';
 import CardsView from './talmud-index/CardsView';
 import TreeViewIndex from './talmud-index/TreeViewIndex';
+import GenealogyTreeView from './talmud-index/GenealogyTreeView';
 import PsakDinViewDialog from './PsakDinViewDialog';
 import IndexingControlPanel from './IndexingControlPanel';
 import DebugDiagnosticDialog from './DebugDiagnosticDialog';
@@ -141,6 +142,7 @@ export default function AdvancedIndexTab() {
 
   const VIEW_OPTIONS: { value: ViewMode; icon: React.ReactNode; label: string }[] = [
     { value: 'tree', icon: <TreePine className="w-4 h-4" />, label: 'עץ' },
+    { value: 'genealogy', icon: <GitBranch className="w-4 h-4" />, label: 'עץ ענפים' },
     { value: 'list', icon: <List className="w-4 h-4" />, label: 'רשימה' },
     { value: 'accordion', icon: <ChevronsUpDown className="w-4 h-4" />, label: 'אקורדיון' },
     { value: 'table', icon: <TableIcon className="w-4 h-4" />, label: 'טבלה' },
@@ -314,6 +316,7 @@ export default function AdvancedIndexTab() {
       ) : (
         <>
           {viewMode === 'tree' && <TreeViewIndex grouped={grouped} onValidate={handleValidate} onClickRef={(ref) => openPsakDialog(ref)} highlightColor={activeColor.value} highlightBg={activeColor.bg} />}
+          {viewMode === 'genealogy' && <GenealogyTreeView grouped={grouped} onValidate={handleValidate} onClickRef={(ref) => openPsakDialog(ref)} highlightColor={activeColor.value} highlightBg={activeColor.bg} />}
           {viewMode === 'list' && <ListView grouped={grouped} onValidate={handleValidate} onClickRef={(ref) => openPsakDialog(ref)} highlightColor={activeColor.value} highlightBg={activeColor.bg} />}
           {viewMode === 'accordion' && <AccordionView grouped={grouped} onValidate={handleValidate} onClickRef={(ref) => openPsakDialog(ref)} highlightColor={activeColor.value} highlightBg={activeColor.bg} />}
           {viewMode === 'table' && <IndexTableView filtered={filtered} onValidate={handleValidate} onClickRef={(ref) => openPsakDialog(ref)} highlightColor={activeColor.value} highlightBg={activeColor.bg} />}

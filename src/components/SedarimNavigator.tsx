@@ -85,7 +85,8 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
       const map: LoadedPagesMap = {};
       const { data: pagesData } = await supabase
         .from('gemara_pages')
-        .select('masechet, daf_number');
+        .select('masechet, daf_number')
+        .limit(5000);
       if (pagesData) {
         pagesData.forEach(page => {
           if (!map[page.masechet]) map[page.masechet] = [];
@@ -94,7 +95,7 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
       }
       return map;
     },
-    staleTime: 30 * 1000,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Download masechet function
@@ -171,9 +172,8 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
       }
     }
 
-    // Refresh loaded pages cache — invalidate + refetch to ensure UI updates immediately
+    // Refresh loaded pages cache
     await queryClient.invalidateQueries({ queryKey: ['sedarim-loaded-pages'] });
-    await queryClient.refetchQueries({ queryKey: ['sedarim-loaded-pages'] });
 
     setDownloading(null);
     setDownloadProgress(0);
@@ -186,13 +186,12 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
   };
 
   const getLoadStatus = (masechet: Masechet) => {
-    // Merge pages stored under both sefariaName and hebrewName using a Set to avoid double-counting
-    const loadedBySefaria = loadedPagesMap[masechet.sefariaName] || [];
-    const loadedByHebrew = loadedPagesMap[masechet.hebrewName] || [];
-    const allLoaded = new Set([...loadedBySefaria, ...loadedByHebrew]);
-    const loaded = allLoaded.size;
+    // Check both sefariaName (used by edge function) and hebrewName for loaded pages
+    const loadedBySefaria = loadedPagesMap[masechet.sefariaName]?.length || 0;
+    const loadedByHebrew = loadedPagesMap[masechet.hebrewName]?.length || 0;
+    const loaded = Math.max(loadedBySefaria, loadedByHebrew);
     const total = masechet.maxDaf - 1;
-    return { loaded, total, percent: total > 0 ? Math.round((loaded / total) * 100) : 0 };
+    return { loaded, total, percent: Math.round((loaded / total) * 100) };
   };
 
   // Delete all downloaded pages for a masechet
