@@ -15,7 +15,8 @@ import { MASECHTOT, SEDARIM, Masechet } from "@/lib/masechtotData";
 import { toHebrewNumeral } from "@/lib/hebrewNumbers";
 import { 
   Search, BookOpen, Scale, ChevronRight, TrendingUp, 
-  Database, Tag, Filter, BarChart3, Sparkles, Building2, Calendar
+  Database, Tag, Filter, BarChart3, Sparkles, Building2, Calendar,
+  List, LayoutGrid, TableIcon
 } from "lucide-react";
 import PsakDinViewDialog from "./PsakDinViewDialog";
 import ViewerPreferenceDialog, { getViewerPreference, type ViewerMode } from "./ViewerPreferenceDialog";
@@ -69,7 +70,8 @@ const GemaraPsakDinIndex = () => {
   const [selectedDafInfo, setSelectedDafInfo] = useState<{ masechet: string; daf: number } | null>(null);
   const [dialogPsak, setDialogPsak] = useState<any | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<"tree" | "stats">("tree");
+  const [viewMode, setViewMode] = useState<"tree" | "stats" | "table" | "cards">("tree");
+  const [psakimView, setPsakimView] = useState<"list" | "table" | "compact">("list");
   const [prefDialogOpen, setPrefDialogOpen] = useState(false);
   const [pendingPsak, setPendingPsak] = useState<any | null>(null);
 
@@ -605,28 +607,25 @@ return (
             ))}
           </SelectContent>
         </Select>
-        <div className="flex gap-1">
-          <Button 
-            variant={viewMode === "tree" ? "default" : "outline"} 
-            size="icon"
-            onClick={() => setViewMode("tree")}
-          >
-            <BookOpen className="w-4 h-4" />
+        <div className="flex gap-1 bg-muted rounded-lg p-0.5">
+          <Button variant={viewMode === "tree" ? "default" : "ghost"} size="sm" className="h-7 px-2 gap-1 text-xs" onClick={() => setViewMode("tree")} title="עץ">
+            <BookOpen className="w-4 h-4" /><span className="hidden sm:inline">עץ</span>
           </Button>
-          <Button 
-            variant={viewMode === "stats" ? "default" : "outline"} 
-            size="icon"
-            onClick={() => setViewMode("stats")}
-          >
-            <BarChart3 className="w-4 h-4" />
+          <Button variant={viewMode === "table" ? "default" : "ghost"} size="sm" className="h-7 px-2 gap-1 text-xs" onClick={() => setViewMode("table")} title="טבלה">
+            <TableIcon className="w-4 h-4" /><span className="hidden sm:inline">טבלה</span>
+          </Button>
+          <Button variant={viewMode === "cards" ? "default" : "ghost"} size="sm" className="h-7 px-2 gap-1 text-xs" onClick={() => setViewMode("cards")} title="כרטיסיות">
+            <LayoutGrid className="w-4 h-4" /><span className="hidden sm:inline">כרטיסיות</span>
+          </Button>
+          <Button variant={viewMode === "stats" ? "default" : "ghost"} size="sm" className="h-7 px-2 gap-1 text-xs" onClick={() => setViewMode("stats")} title="סטטיסטיקות">
+            <BarChart3 className="w-4 h-4" /><span className="hidden sm:inline">סטטיסטיקות</span>
           </Button>
         </div>
       </div>
 
-      {viewMode === "stats" ? (
+      {viewMode === "stats" && (
         /* תצוגת סטטיסטיקות */
         <div className="grid md:grid-cols-2 gap-6">
-          {/* מסכתות מובילות */}
           <Card className="border-border">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
@@ -636,23 +635,18 @@ return (
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {filteredIndex.slice(0, 8).map((entry, idx) => (
+                {filteredIndex.slice(0, 8).map((entry) => (
                   <div key={entry.masechet.englishName} className="space-y-1">
                     <div className="flex items-center justify-between text-sm">
                       <span className="font-medium">{entry.masechet.hebrewName}</span>
                       <span className="text-muted-foreground">{entry.totalPsakim} פסקים</span>
                     </div>
-                    <Progress 
-                      value={(entry.totalPsakim / (filteredIndex[0]?.totalPsakim || 1)) * 100} 
-                      className="h-2"
-                    />
+                    <Progress value={(entry.totalPsakim / (filteredIndex[0]?.totalPsakim || 1)) * 100} className="h-2" />
                   </div>
                 ))}
               </div>
             </CardContent>
           </Card>
-
-          {/* בתי דין מובילים */}
           <Card className="border-border">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
@@ -662,23 +656,120 @@ return (
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {statistics.topCourts.map((court, idx) => (
+                {statistics.topCourts.map((court) => (
                   <div key={court.court} className="space-y-1">
                     <div className="flex items-center justify-between text-sm">
                       <span className="font-medium truncate max-w-[200px]">{court.court}</span>
                       <span className="text-muted-foreground">{court.count}</span>
                     </div>
-                    <Progress 
-                      value={(court.count / (statistics.topCourts[0]?.count || 1)) * 100} 
-                      className="h-2"
-                    />
+                    <Progress value={(court.count / (statistics.topCourts[0]?.count || 1)) * 100} className="h-2" />
                   </div>
                 ))}
               </div>
             </CardContent>
           </Card>
         </div>
-      ) : (
+      )}
+
+      {viewMode === "table" && (
+        /* תצוגת טבלה */
+        <Card className="border-border">
+          <CardContent className="p-0">
+            <ScrollArea className="h-[600px]">
+              <table className="w-full text-sm" dir="rtl">
+                <thead className="bg-muted/50 sticky top-0 z-10">
+                  <tr>
+                    <th className="text-right p-3 font-semibold">מסכת</th>
+                    <th className="text-right p-3 font-semibold">דפים מקושרים</th>
+                    <th className="text-right p-3 font-semibold">סה"כ פסקים</th>
+                    <th className="text-right p-3 font-semibold">כיסוי</th>
+                    <th className="text-right p-3 font-semibold">סדר</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredIndex.map((entry) => (
+                    <tr 
+                      key={entry.masechet.englishName} 
+                      className="border-b border-border/50 hover:bg-muted/30 cursor-pointer transition-colors"
+                      onClick={() => {
+                        setExpandedMasechet(entry.masechet.englishName);
+                        if (entry.dafim.length > 0) {
+                          loadDafPsakim(entry.dafim[0].sugya_id, entry.masechet.hebrewName, entry.dafim[0].dafNumber);
+                        }
+                      }}
+                    >
+                      <td className="p-3 font-medium text-foreground">{entry.masechet.hebrewName}</td>
+                      <td className="p-3">
+                        <div className="flex flex-wrap gap-1">
+                          {entry.dafim.slice(0, 10).map(d => (
+                            <Badge key={d.dafNumber} variant="secondary" className="text-[10px]">
+                              {toHebrewNumeral(d.dafNumber)}
+                            </Badge>
+                          ))}
+                          {entry.dafim.length > 10 && (
+                            <Badge variant="outline" className="text-[10px]">+{entry.dafim.length - 10}</Badge>
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        <Badge>{entry.totalPsakim}</Badge>
+                      </td>
+                      <td className="p-3">
+                        <div className="flex items-center gap-2">
+                          <Progress value={getCoveragePercent(entry)} className="h-2 w-20" />
+                          <span className="text-xs text-muted-foreground">{getCoveragePercent(entry)}%</span>
+                        </div>
+                      </td>
+                      <td className="p-3 text-muted-foreground">{entry.masechet.seder}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      )}
+
+      {viewMode === "cards" && (
+        /* תצוגת כרטיסיות */
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredIndex.map((entry) => (
+            <Card 
+              key={entry.masechet.englishName}
+              className="border-border hover:border-primary/30 transition-colors cursor-pointer"
+              onClick={() => {
+                setExpandedMasechet(entry.masechet.englishName);
+                setViewMode("tree");
+              }}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <Badge variant="secondary">{entry.totalPsakim} פסקים</Badge>
+                  <h3 className="text-lg font-bold text-foreground">{entry.masechet.hebrewName}</h3>
+                </div>
+                <div className="flex items-center justify-between text-sm text-muted-foreground mb-3">
+                  <span>{entry.dafim.length} דפים</span>
+                  <span>סדר {entry.masechet.seder}</span>
+                </div>
+                <Progress value={getCoveragePercent(entry)} className="h-2 mb-2" />
+                <p className="text-xs text-muted-foreground text-left">{getCoveragePercent(entry)}% כיסוי</p>
+                <div className="flex flex-wrap gap-1 mt-3">
+                  {entry.dafim.slice(0, 8).map(d => (
+                    <Badge key={d.dafNumber} variant="outline" className="text-[10px]">
+                      {toHebrewNumeral(d.dafNumber)}
+                    </Badge>
+                  ))}
+                  {entry.dafim.length > 8 && (
+                    <Badge variant="outline" className="text-[10px]">+{entry.dafim.length - 8}</Badge>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {viewMode === "tree" && (
         /* תצוגת עץ */
         <div className="grid md:grid-cols-2 gap-6">
           {/* עץ המסכתות */}
@@ -758,19 +849,32 @@ return (
           {/* רשימת פסקי דין לדף נבחר */}
           <Card className="border border-border">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Scale className="w-5 h-5" />
-                {selectedDafInfo 
-                  ? `פסקי דין - ${selectedDafInfo.masechet} דף ${toHebrewNumeral(selectedDafInfo.daf)}`
-                  : 'בחר דף לצפייה בפסקי דין'
-                }
-                {selectedTag !== "all" && (
-                  <Badge variant="outline" className="mr-2">
-                    <Filter className="w-3 h-3 ml-1" />
-                    {selectedTag}
-                  </Badge>
-                )}
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <div className="flex gap-1">
+                  <Button variant={psakimView === "list" ? "default" : "ghost"} size="sm" className="h-6 px-2 text-[11px]" onClick={() => setPsakimView("list")} title="רשימה">
+                    <List className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button variant={psakimView === "table" ? "default" : "ghost"} size="sm" className="h-6 px-2 text-[11px]" onClick={() => setPsakimView("table")} title="טבלה">
+                    <TableIcon className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button variant={psakimView === "compact" ? "default" : "ghost"} size="sm" className="h-6 px-2 text-[11px]" onClick={() => setPsakimView("compact")} title="קומפקטי">
+                    <LayoutGrid className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Scale className="w-5 h-5" />
+                  {selectedDafInfo 
+                    ? `פסקי דין - ${selectedDafInfo.masechet} דף ${toHebrewNumeral(selectedDafInfo.daf)}`
+                    : 'בחר דף לצפייה בפסקי דין'
+                  }
+                  {selectedTag !== "all" && (
+                    <Badge variant="outline" className="mr-2">
+                      <Filter className="w-3 h-3 ml-1" />
+                      {selectedTag}
+                    </Badge>
+                  )}
+                </CardTitle>
+              </div>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[500px]">
@@ -786,7 +890,54 @@ return (
                       : 'אין פסקי דין לדף זה'
                     }
                   </div>
+                ) : psakimView === "table" ? (
+                  /* תצוגת טבלה לפסקים */
+                  <table className="w-full text-sm" dir="rtl">
+                    <thead className="bg-muted/50 sticky top-0">
+                      <tr>
+                        <th className="text-right p-2 font-semibold">כותרת</th>
+                        <th className="text-right p-2 font-semibold">בית דין</th>
+                        <th className="text-right p-2 font-semibold">שנה</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedDafPsakim.map((link) => (
+                        <tr 
+                          key={link.id}
+                          className="border-b border-border/50 hover:bg-muted/30 cursor-pointer transition-colors"
+                          onClick={() => handlePsakClick(link.psakei_din)}
+                        >
+                          <td className="p-2">
+                            <div className="flex items-center gap-1.5">
+                              <FileTypeBadge url={link.psakei_din?.source_url} />
+                              <span className="font-medium line-clamp-1">{link.psakei_din?.title}</span>
+                            </div>
+                          </td>
+                          <td className="p-2 text-muted-foreground">{link.psakei_din?.court}</td>
+                          <td className="p-2 text-muted-foreground">{link.psakei_din?.year}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : psakimView === "compact" ? (
+                  /* תצוגה קומפקטית */
+                  <div className="grid grid-cols-2 gap-2">
+                    {selectedDafPsakim.map((link) => (
+                      <div
+                        key={link.id}
+                        className="p-3 rounded-lg border border-border/50 hover:bg-accent/50 cursor-pointer transition-colors text-right"
+                        onClick={() => handlePsakClick(link.psakei_din)}
+                      >
+                        <div className="flex items-center gap-1 mb-1">
+                          <FileTypeBadge url={link.psakei_din?.source_url} />
+                          <span className="font-medium text-sm line-clamp-1">{link.psakei_din?.title}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{link.psakei_din?.court} • {link.psakei_din?.year}</p>
+                      </div>
+                    ))}
+                  </div>
                 ) : (
+                  /* תצוגת רשימה רגילה */
                   <div className="space-y-3">
                     {selectedDafPsakim.map((link) => (
                       <Card 
