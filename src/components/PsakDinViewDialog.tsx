@@ -245,7 +245,153 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
 
   const textClasses = `${textSettings.fontFamily} ${getTextAlignClass()} ${textSettings.isBold ? 'font-bold' : ''} ${textSettings.isItalic ? 'italic' : ''} ${textSettings.textColor} ${textSettings.bgColor}`;
 
-  const renderTextToolbar = () => (
+  // Search logic
+  const getSearchableText = useCallback(() => {
+    if (!psak) return "";
+    const ft = psak.full_text || psak.fullText || "";
+    return `${psak.summary || ""}\n${psak.connection || ""}\n${ft}`;
+  }, [psak]);
+
+  const searchMatches = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const text = getSearchableText();
+    if (!text) return [];
+    let query = searchQuery;
+    let flags = 'g';
+    if (!caseSensitive) flags += 'i';
+    if (wholeWord) query = `\\b${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`;
+    else query = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    try {
+      const regex = new RegExp(query, flags);
+      const matches: { index: number; length: number }[] = [];
+      let match;
+      while ((match = regex.exec(text)) !== null) {
+        matches.push({ index: match.index, length: match[0].length });
+        if (matches.length > 500) break;
+      }
+      return matches;
+    } catch {
+      return [];
+    }
+  }, [searchQuery, caseSensitive, wholeWord, getSearchableText]);
+
+  const totalMatches = searchMatches.length;
+
+  useEffect(() => {
+    if (totalMatches > 0 && currentMatch >= totalMatches) setCurrentMatch(0);
+  }, [totalMatches, currentMatch]);
+
+  useEffect(() => {
+    if (showSearch && searchInputRef.current) searchInputRef.current.focus();
+  }, [showSearch]);
+
+  useEffect(() => {
+    if (!open) { setShowSearch(false); setSearchQuery(""); setCurrentMatch(0); }
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') { e.preventDefault(); setShowSearch(true); }
+      if (e.key === 'Escape' && showSearch) { setShowSearch(false); setSearchQuery(""); }
+      if (e.key === 'Enter' && showSearch && totalMatches > 0) {
+        e.preventDefault();
+        setCurrentMatch(prev => e.shiftKey ? (prev - 1 + totalMatches) % totalMatches : (prev + 1) % totalMatches);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [open, showSearch, totalMatches]);
+
+  useEffect(() => {
+    if (!contentRef.current || totalMatches === 0) return;
+    const marks = contentRef.current.querySelectorAll('mark[data-current="true"]');
+    if (marks.length > 0) marks[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [currentMatch, totalMatches, searchQuery]);
+
+  const highlightText = useCallback((text: string): React.ReactNode => {
+    if (!searchQuery.trim()) return text;
+    let query = searchQuery;
+    let flags = 'g';
+    if (!caseSensitive) flags += 'i';
+    if (wholeWord) query = `\\b${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`;
+    else query = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    try {
+      const regex = new RegExp(`(${query})`, flags);
+      const parts = text.split(regex);
+      let matchIdx = 0;
+      return parts.map((part, i) => {
+        const testRegex = new RegExp(query, flags.replace('g', ''));
+        if (testRegex.test(part)) {
+          const isCurrent = matchIdx === currentMatch;
+          matchIdx++;
+          return (
+            <mark
+              key={i}
+              data-current={isCurrent ? "true" : "false"}
+              className={`rounded px-0.5 transition-colors ${isCurrent ? 'bg-orange-400 text-orange-950 ring-2 ring-orange-500' : 'bg-yellow-200 text-yellow-900 dark:bg-yellow-700 dark:text-yellow-100'}`}
+            >
+              {part}
+            </mark>
+          );
+        }
+        return <span key={i}>{part}</span>;
+      });
+    } catch {
+      return text;
+    }
+  }, [searchQuery, caseSensitive, wholeWord, currentMatch]);
+
+  const renderSearchBar = () => {
+    if (!showSearch) return null;
+    return (
+      <div className="flex items-center gap-2 p-2 bg-muted/80 backdrop-blur rounded-lg border border-border mb-2 animate-in slide-in-from-top-2 duration-200" dir="rtl">
+        <div className="relative flex-1">
+          <Search className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            ref={searchInputRef}
+            value={searchQuery}
+            onChange={(e) => { setSearchQuery(e.target.value); setCurrentMatch(0); }}
+            placeholder="חיפוש בטקסט..."
+            className="pr-8 h-8 text-sm"
+          />
+        </div>
+        {totalMatches > 0 && (
+          <span className="text-xs text-muted-foreground whitespace-nowrap min-w-[60px] text-center">
+            {currentMatch + 1} / {totalMatches}
+          </span>
+        )}
+        {searchQuery && totalMatches === 0 && (
+          <span className="text-xs text-destructive whitespace-nowrap">לא נמצא</span>
+        )}
+        <div className="flex items-center gap-0.5">
+          <Button variant={caseSensitive ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7"
+            onClick={() => { setCaseSensitive(!caseSensitive); setCurrentMatch(0); }} title="רגיש לאותיות גדולות/קטנות">
+            <CaseSensitive className="h-3.5 w-3.5" />
+          </Button>
+          <Button variant={wholeWord ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7"
+            onClick={() => { setWholeWord(!wholeWord); setCurrentMatch(0); }} title="מילה שלמה בלבד">
+            <WholeWord className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+        <div className="flex items-center gap-0.5">
+          <Button variant="ghost" size="icon" className="h-7 w-7" disabled={totalMatches === 0} title="התאמה קודמת"
+            onClick={() => setCurrentMatch(prev => (prev - 1 + Math.max(totalMatches, 1)) % Math.max(totalMatches, 1))}>
+            <ChevronUp className="h-3.5 w-3.5" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7" disabled={totalMatches === 0} title="התאמה הבאה"
+            onClick={() => setCurrentMatch(prev => (prev + 1) % Math.max(totalMatches, 1))}>
+            <ChevronDown className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setShowSearch(false); setSearchQuery(""); }}>
+          <X className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+    );
+  };
+
+
     <div className="flex items-center gap-1 flex-wrap p-2 bg-muted/50 rounded-lg border mb-2">
       {/* Font Size Controls */}
       <div className="flex items-center gap-1 border-l pl-2 ml-1">
