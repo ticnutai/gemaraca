@@ -155,7 +155,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(THEME_STORAGE_KEY, theme);
     
     // Remove all theme classes
-    document.documentElement.classList.remove("theme-classic", "theme-midnight", "theme-royal", "theme-custom");
+    document.documentElement.classList.remove("theme-classic", "theme-midnight", "theme-royal", "theme-navy-gold", "theme-custom");
     
     if (theme === "custom") {
       clearCustomColors();
