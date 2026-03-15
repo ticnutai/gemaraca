@@ -49,6 +49,7 @@ import {
   Loader2,
   Monitor,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -60,7 +61,7 @@ const PSAK_VIEWER_DEFAULT_KEY = 'psak-din-default-viewer';
 const PSAK_VIEW_MODE_KEY = 'psak-din-view-mode';
 const LAZY_BATCH = 12;
 
-type ViewerType = 'regular' | 'embedded-pdf' | 'google-viewer' | 'embedpdf';
+type ViewerType = 'regular' | 'embedded-pdf' | 'google-viewer' | 'embedpdf' | 'embedpdf-page';
 type ViewMode = "list" | "grid" | "compact" | "table" | "magazine" | "timeline" | "kanban" | "split";
 type SortField = "title" | "year" | "court" | "references" | "relevance";
 type SortDir = "asc" | "desc";
@@ -194,30 +195,45 @@ export default function PsakeiDinDafPanel({
     setExpandedIds(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   }, []);
 
+  const navigate = useNavigate();
+
   const handleOpenPsak = useCallback((psak: DafPsak) => {
     setSelectedPsak(psak);
     const saved = localStorage.getItem(PSAK_VIEWER_DEFAULT_KEY) as ViewerType | null;
-    if (saved === 'regular') setDialogOpen(true);
-    else if (saved === 'embedded-pdf' || saved === 'google-viewer' || saved === 'embedpdf') setEmbeddedPdfOpen(true);
-    else setViewerSelectOpen(true);
-  }, []);
+    if (saved === 'embedpdf-page' && psak.source_url) {
+      navigate(`/embedpdf-viewer?url=${encodeURIComponent(psak.source_url)}`);
+    } else if (saved === 'regular') {
+      setDialogOpen(true);
+    } else if (saved === 'embedded-pdf' || saved === 'google-viewer' || saved === 'embedpdf') {
+      setEmbeddedPdfOpen(true);
+    } else {
+      setViewerSelectOpen(true);
+    }
+  }, [navigate]);
 
   const openViewer = useCallback((type: ViewerType) => {
     setViewerSelectOpen(false);
-    if (type === 'regular') setDialogOpen(true); else setEmbeddedPdfOpen(true);
-  }, []);
+    if (type === 'embedpdf-page' && selectedPsak?.source_url) {
+      navigate(`/embedpdf-viewer?url=${encodeURIComponent(selectedPsak.source_url)}`);
+    } else if (type === 'regular') {
+      setDialogOpen(true);
+    } else {
+      setEmbeddedPdfOpen(true);
+    }
+  }, [navigate, selectedPsak]);
 
   const VIEWER_LABELS: Record<ViewerType, string> = {
     'regular': 'צפיין רגיל',
     'embedded-pdf': 'PDF מוטמע',
     'google-viewer': 'Google Docs Viewer',
     'embedpdf': 'EmbedPDF (pdfium)',
+    'embedpdf-page': 'EmbedPDF (דף מלא)',
   };
 
   const setAsDefault = useCallback((type: ViewerType) => {
     localStorage.setItem(PSAK_VIEWER_DEFAULT_KEY, type);
     setDefaultViewer(type);
-    toast.success(`${type === 'regular' ? 'צפיין רגיל' : type === 'embedded-pdf' ? 'PDF מוטמע' : type === 'embedpdf' ? 'EmbedPDF (pdfium)' : 'Google Docs'} נקבע כברירת מחדל`);
+    toast.success(`${type === 'regular' ? 'צפיין רגיל' : type === 'embedded-pdf' ? 'PDF מוטמע' : type === 'embedpdf' ? 'EmbedPDF (pdfium)' : type === 'embedpdf-page' ? 'EmbedPDF (דף מלא)' : 'Google Docs'} נקבע כברירת מחדל`);
     openViewer(type);
   }, [openViewer]);
 
@@ -590,10 +606,11 @@ export default function PsakeiDinDafPanel({
       <Dialog open={viewerSelectOpen} onOpenChange={setViewerSelectOpen}>
         <DialogContent className="max-w-xl" dir="rtl">
           <DialogHeader><DialogTitle className="text-center text-lg">בחר צפיין לפסק הדין</DialogTitle></DialogHeader>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-2">
             <ViewerOption type="regular" icon={FileText} iconColor="text-primary" label="צפיין רגיל" desc="תצוגה עם עריכה, חיפוש ועיצוב טקסט" defaultViewer={defaultViewer} onOpen={openViewer} onSetDefault={setAsDefault} onClearDefault={clearDefault} />
             <ViewerOption type="embedded-pdf" icon={Monitor} iconColor="text-blue-600" label="PDF מוטמע" desc="מנוע PDF מובנה בדפדפן — מהיר ואמין" defaultViewer={defaultViewer} onOpen={openViewer} onSetDefault={setAsDefault} onClearDefault={clearDefault} />
             <ViewerOption type="embedpdf" icon={FileText} iconColor="text-purple-600" label="EmbedPDF (pdfium)" desc="מנוע pdfium מתקדם — רינדור מקורי, זום, חיפוש, הדפסה" defaultViewer={defaultViewer} onOpen={openViewer} onSetDefault={setAsDefault} onClearDefault={clearDefault} />
+            <ViewerOption type="embedpdf-page" icon={BookOpen} iconColor="text-amber-600" label="EmbedPDF (דף מלא)" desc="צפיין מלא עם הערות, סימניות, ערכת נושא, ייצוא ועוד" defaultViewer={defaultViewer} onOpen={openViewer} onSetDefault={setAsDefault} onClearDefault={clearDefault} />
             <ViewerOption type="google-viewer" icon={Globe} iconColor="text-green-600" label="Google Docs Viewer" desc="צפייה דרך Google — תמיכה רחבה בפורמטים" defaultViewer={defaultViewer} onOpen={openViewer} onSetDefault={setAsDefault} onClearDefault={clearDefault} />
           </div>
         </DialogContent>

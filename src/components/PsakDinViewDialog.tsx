@@ -24,6 +24,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -100,6 +101,7 @@ interface PsakDinViewDialogProps {
 }
 
 const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDialogProps) => {
+  const navigate = useNavigate();
   const [isFullscreen, setIsFullscreen] = useState(true);
   const [activeTab, setActiveTab] = useState("preview");
   const [isEditing, setIsEditing] = useState(false);
@@ -846,9 +848,21 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
         </Tabs>
 
         {/* Actions */}
-        <div className="flex-shrink-0 pt-4 border-t border-border flex gap-2 justify-end">
+        <div className="flex-shrink-0 pt-4 border-t border-border flex gap-2 justify-end flex-wrap">
           {sourceUrl && (
             <>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 bg-[#D4AF37]/10 border-[#D4AF37]/40 text-[#0B1F5B] hover:bg-[#D4AF37]/20"
+                onClick={() => {
+                  onOpenChange(false);
+                  navigate(`/embedpdf-viewer?url=${encodeURIComponent(sourceUrl)}`);
+                }}
+              >
+                <FileText className="w-4 h-4" />
+                פתח ב-EmbedPDF
+              </Button>
               <Button
                 variant="outline"
                 size="sm"

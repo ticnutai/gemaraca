@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { FileText, Bookmark, Download, Search, Trash2, Plus, ExternalLink, BookOpen, Palette } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -124,10 +125,12 @@ function downloadBlob(content: string, filename: string, mime: string) {
 // ─── Component ───────────────────────────────────────────────
 
 export default function EmbedPdfViewerPage() {
+  const [searchParams] = useSearchParams();
+
   // PDF selection
   const [selectedPdfId, setSelectedPdfId] = useState<string | null>(null);
   const [comparePdfId, setComparePdfId] = useState<string | null>(null);
-  const [manualUrl, setManualUrl] = useState("");
+  const [manualUrl, setManualUrl] = useState(() => searchParams.get("url") || "");
   const [compareManualUrl, setCompareManualUrl] = useState("");
 
   // Add book form

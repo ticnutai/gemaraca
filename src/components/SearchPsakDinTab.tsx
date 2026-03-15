@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import PsakDinViewDialog from "./PsakDinViewDialog";
 
 const SearchPsakDinTab = () => {
+  const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -239,20 +241,27 @@ const SearchPsakDinTab = () => {
                     </div>
                   )}
                   {psak.sourceUrl && (
-                    <span
+                    <div
                       onClick={(e) => e.stopPropagation()}
-                      className="inline-flex items-center gap-2 text-primary hover:underline text-sm"
+                      className="flex items-center gap-3 flex-wrap"
                     >
                       <a
                         href={psak.sourceUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2"
+                        className="inline-flex items-center gap-2 text-primary hover:underline text-sm"
                       >
                         <ExternalLink className="w-4 h-4" />
                         לפסק הדין המלא
                       </a>
-                    </span>
+                      <button
+                        onClick={() => navigate(`/embedpdf-viewer?url=${encodeURIComponent(psak.sourceUrl)}`)}
+                        className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-md bg-[#D4AF37]/10 border border-[#D4AF37]/40 text-[#0B1F5B] hover:bg-[#D4AF37]/20 transition-colors"
+                      >
+                        <FileText className="w-3 h-3" />
+                        EmbedPDF
+                      </button>
+                    </div>
                   )}
                 </CardContent>
               </Card>
