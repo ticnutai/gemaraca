@@ -7,6 +7,7 @@ import { useAppContext } from "@/contexts/AppContext";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useGemaraDownloadEngine } from "@/hooks/useGemaraDownloadEngine";
+import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 
 const FloatingGemaraNav = lazy(() => import("./FloatingGemaraNav"));
 const GemaraDownloadFloat = lazy(() => import("./GemaraDownloadFloat"));
