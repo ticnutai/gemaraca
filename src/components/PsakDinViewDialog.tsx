@@ -392,6 +392,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
   };
 
 
+  const renderTextToolbar = () => (
     <div className="flex items-center gap-1 flex-wrap p-2 bg-muted/50 rounded-lg border mb-2">
       {/* Font Size Controls */}
       <div className="flex items-center gap-1 border-l pl-2 ml-1">
