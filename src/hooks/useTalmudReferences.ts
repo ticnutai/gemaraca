@@ -45,7 +45,7 @@ export function useAllReferencesGrouped() {
           .range(offset, offset + PAGE_SIZE - 1);
         if (error) throw error;
         if (!data || data.length === 0) { done = true; break; }
-        all = all.concat(data as typeof all);
+        all = all.concat(data as unknown as typeof all);
         if (data.length < PAGE_SIZE) { done = true; }
         offset += PAGE_SIZE;
       }
