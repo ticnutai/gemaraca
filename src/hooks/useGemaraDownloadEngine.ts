@@ -143,6 +143,11 @@ export function useGemaraDownloadEngine() {
             }
           }
 
+          // Invalidate cache periodically so UI shows progressive updates
+          if ((i / BATCH_SIZE) % 3 === 2) {
+            queryClient.invalidateQueries({ queryKey: ['sedarim-loaded-pages'] });
+          }
+
           // Small delay between batches to avoid overwhelming the API
           if (i + BATCH_SIZE < pending.length) {
             await new Promise((r) => setTimeout(r, DELAY_BETWEEN_BATCHES));
@@ -157,8 +162,9 @@ export function useGemaraDownloadEngine() {
       completeJob(job.id);
       toast({ title: 'הורדה הושלמה', description: job.label });
 
-      // Refresh loaded pages cache
+      // Refresh loaded pages cache — invalidate + refetch to ensure UI updates immediately
       await queryClient.invalidateQueries({ queryKey: ['sedarim-loaded-pages'] });
+      await queryClient.refetchQueries({ queryKey: ['sedarim-loaded-pages'] });
     } catch (err: any) {
       if (err?.name === 'AbortError') return;
       const msg = err?.message || 'שגיאה לא ידועה';
