@@ -60,7 +60,7 @@ async function loadDafWithRetry(masechet: Masechet, dafNumber: number, signal?: 
 
 // ─── Helpers to enqueue jobs ────────────────────────────
 
-export function buildMasechetJob(masechet: Masechet): Parameters<typeof useGemaraDownloadStore.getState>['0'] extends never ? never : Omit<GemaraDownloadJob, 'status' | 'completedDafs' | 'failedDafs' | 'createdAt'> {
+export function buildMasechetJob(masechet: Masechet): Omit<GemaraDownloadJob, 'status' | 'completedDafs' | 'failedDafs' | 'createdAt'> {
   return {
     id: `masechet:${masechet.sefariaName}`,
     scope: 'masechet',
