@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 
-export type Theme = "classic" | "midnight" | "royal" | "custom";
+export type Theme = "classic" | "midnight" | "royal" | "navy-gold" | "custom";
 
 export interface CustomColors {
   background: string;
@@ -24,6 +24,7 @@ export const themes: { id: Theme; name: string; description: string }[] = [
   { id: "classic", name: "קלאסי", description: "קרם וזהב - יוקרתי ונקי" },
   { id: "midnight", name: "חצות", description: "כהה עם נגיעות זהב" },
   { id: "royal", name: "מלכותי", description: "כחול עמוק וכסף" },
+  { id: "navy-gold", name: "נייבי זהב", description: "לבן, כחול נייבי חזק ומסגרות זהב" },
   { id: "custom", name: "מותאם אישית", description: "בחר צבעים משלך" },
 ];
 
@@ -154,7 +155,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(THEME_STORAGE_KEY, theme);
     
     // Remove all theme classes
-    document.documentElement.classList.remove("theme-classic", "theme-midnight", "theme-royal", "theme-custom");
+    document.documentElement.classList.remove("theme-classic", "theme-midnight", "theme-royal", "theme-navy-gold", "theme-custom");
     
     if (theme === "custom") {
       clearCustomColors();

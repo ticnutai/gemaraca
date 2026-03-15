@@ -138,6 +138,51 @@ All colors MUST be HSL.
     --sidebar-border: 225 20% 25%;
     --sidebar-ring: 210 15% 75%;
   }
+
+  /* Theme: Navy Gold - נייבי זהב (לבן, כחול נייבי וזהב) */
+  .theme-navy-gold {
+    --background: 0 0% 100%;
+    --foreground: 220 60% 15%;
+
+    --card: 0 0% 99%;
+    --card-foreground: 220 60% 15%;
+
+    --popover: 0 0% 99%;
+    --popover-foreground: 220 60% 15%;
+
+    --primary: 220 60% 15%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 20% 94%;
+    --secondary-foreground: 220 60% 15%;
+
+    --muted: 220 15% 95%;
+    --muted-foreground: 220 30% 40%;
+
+    --accent: 43 85% 50%;
+    --accent-foreground: 220 60% 12%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 43 70% 55%;
+    --input: 220 15% 95%;
+    --ring: 43 85% 50%;
+
+    --radius: 0.5rem;
+
+    --shadow-card: 0 1px 3px 0 hsl(220 60% 15% / 0.06);
+    --shadow-hover: 0 4px 12px -2px hsl(43 85% 50% / 0.2);
+
+    --sidebar-background: 0 0% 99%;
+    --sidebar-foreground: 220 60% 15%;
+    --sidebar-primary: 220 60% 15%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 43 85% 50%;
+    --sidebar-accent-foreground: 220 60% 12%;
+    --sidebar-border: 43 70% 55%;
+    --sidebar-ring: 43 85% 50%;
+  }
 }
 
 @layer base {
