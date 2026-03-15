@@ -1,6 +1,13 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
-import { FileText, Bookmark, Download, Search, Trash2, Plus, ExternalLink, BookOpen, Palette, Maximize2, Minimize2, RefreshCw } from "lucide-react";
+import {
+  FileText, Bookmark, Download, Search, Trash2, Plus, ExternalLink, BookOpen,
+  Palette, Maximize2, Minimize2, RefreshCw, Bold, Italic, Underline, AlignRight,
+  AlignCenter, AlignLeft, AlignJustify, Type, AArrowUp, AArrowDown, Highlighter,
+  Copy, MessageSquarePlus, Hash, ZoomIn, ZoomOut, ChevronUp, ChevronDown,
+  RotateCcw, Printer, StickyNote, Scissors, ClipboardPaste, Sparkles, Eye,
+  ListOrdered, WrapText, PilcrowSquare
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { usePDFAnnotations, type PDFAnnotation } from "@/hooks/usePDFAnnotations";
 import { useUserBooks, type UserBook } from "@/hooks/useUserBooks";
@@ -26,6 +34,155 @@ const ANNOTATION_COLORS = [
   { label: "סגול", value: "#CE93D8" },
   { label: "ורוד", value: "#F48FB1" },
 ];
+
+const HIGHLIGHT_COLORS = [
+  { label: "צהוב", value: "#FFEB3B", bg: "bg-yellow-200" },
+  { label: "ירוק", value: "#81C784", bg: "bg-green-200" },
+  { label: "כחול", value: "#93C5FD", bg: "bg-blue-200" },
+  { label: "כתום", value: "#FDBA74", bg: "bg-orange-200" },
+  { label: "סגול", value: "#D8B4FE", bg: "bg-purple-200" },
+  { label: "ורוד", value: "#F9A8D4", bg: "bg-pink-200" },
+  { label: "אדום", value: "#FCA5A5", bg: "bg-red-200" },
+];
+
+const FONTS = [
+  { value: "font-sans", label: "אריאל" },
+  { value: "font-serif", label: "טיימס" },
+  { value: "font-mono", label: "מונו" },
+  { value: "font-david", label: "דוד" },
+  { value: "font-frank", label: "פרנק רוהל" },
+  { value: "font-rubik", label: "רוביק" },
+];
+
+interface TextFormat {
+  fontSize: number;
+  fontFamily: string;
+  textAlign: "right" | "center" | "left" | "justify";
+  isBold: boolean;
+  isItalic: boolean;
+  isUnderline: boolean;
+  lineHeight: number;
+  highlightColor: string | null;
+  showLineNumbers: boolean;
+  wordWrap: boolean;
+}
+
+const DEFAULT_FORMAT: TextFormat = {
+  fontSize: 16,
+  fontFamily: "font-serif",
+  textAlign: "right",
+  isBold: false,
+  isItalic: false,
+  isUnderline: false,
+  lineHeight: 1.8,
+  highlightColor: null,
+  showLineNumbers: false,
+  wordWrap: true,
+};
+
+interface TextHighlight {
+  id: string;
+  text: string;
+  color: string;
+  note?: string;
+  startOffset: number;
+  endOffset: number;
+}
+
+// ─── Selection Popup Component ───────────────────────────────
+
+function SelectionPopup({
+  position,
+  selectedText,
+  onHighlight,
+  onAnnotate,
+  onCopy,
+  onSearch,
+  onClose,
+}: {
+  position: { x: number; y: number };
+  selectedText: string;
+  onHighlight: (color: string) => void;
+  onAnnotate: () => void;
+  onCopy: () => void;
+  onSearch: () => void;
+  onClose: () => void;
+}) {
+  const [showColors, setShowColors] = useState(false);
+
+  return (
+    <div
+      className="fixed z-50 animate-in fade-in slide-in-from-bottom-2 duration-200"
+      style={{ left: position.x, top: position.y, transform: "translate(-50%, -100%)" }}
+    >
+      <div className="bg-[#0B1F5B] rounded-xl shadow-2xl border-2 border-[#D4AF37] p-1.5 flex items-center gap-0.5">
+        {/* Copy */}
+        <button
+          onClick={onCopy}
+          className="p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+          title="העתק"
+        >
+          <Copy className="h-4 w-4" />
+        </button>
+        <div className="w-px h-5 bg-white/20" />
+
+        {/* Highlight */}
+        <div className="relative">
+          <button
+            onClick={() => setShowColors(!showColors)}
+            className="p-1.5 rounded-lg text-[#D4AF37] hover:text-[#D4AF37] hover:bg-white/10 transition-colors"
+            title="הדגש"
+          >
+            <Highlighter className="h-4 w-4" />
+          </button>
+          {showColors && (
+            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1.5 bg-white rounded-lg shadow-xl border-2 border-[#D4AF37] p-2 flex gap-1.5 z-50">
+              {HIGHLIGHT_COLORS.map((c) => (
+                <button
+                  key={c.value}
+                  onClick={() => { onHighlight(c.value); setShowColors(false); }}
+                  className="w-6 h-6 rounded-full border-2 border-white shadow-sm hover:scale-125 transition-transform"
+                  style={{ backgroundColor: c.value }}
+                  title={c.label}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="w-px h-5 bg-white/20" />
+
+        {/* Annotate */}
+        <button
+          onClick={onAnnotate}
+          className="p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+          title="הוסף הערה"
+        >
+          <MessageSquarePlus className="h-4 w-4" />
+        </button>
+        <div className="w-px h-5 bg-white/20" />
+
+        {/* Search */}
+        <button
+          onClick={onSearch}
+          className="p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+          title="חפש"
+        >
+          <Search className="h-4 w-4" />
+        </button>
+        <div className="w-px h-5 bg-white/20" />
+
+        {/* Word count for selection */}
+        <span className="px-2 text-[10px] text-white/50 whitespace-nowrap">
+          {selectedText.split(/\s+/).filter(Boolean).length} מילים
+        </span>
+      </div>
+      {/* Arrow pointing down */}
+      <div className="flex justify-center">
+        <div className="w-3 h-3 bg-[#0B1F5B] rotate-45 -mt-1.5 border-r-2 border-b-2 border-[#D4AF37]" />
+      </div>
+    </div>
+  );
+}
 
 // ─── Design: White + Navy + Gold ─────────────────────────────
 
@@ -76,6 +233,27 @@ export default function EmbedPdfViewerPage() {
   const [noteText, setNoteText] = useState("");
   const [annotationColor, setAnnotationColor] = useState("#FFEB3B");
   const [annotationSearch, setAnnotationSearch] = useState("");
+
+  // ── Text Formatting ──
+  const [textFormat, setTextFormat] = useState<TextFormat>(DEFAULT_FORMAT);
+  const updateFormat = useCallback((patch: Partial<TextFormat>) => {
+    setTextFormat(prev => ({ ...prev, ...patch }));
+  }, []);
+
+  // ── Selection Popup ──
+  const [selectionPopup, setSelectionPopup] = useState<{
+    x: number; y: number; text: string;
+  } | null>(null);
+  const textViewerRef = useRef<HTMLDivElement>(null);
+
+  // ── In-text highlights ──
+  const [textHighlights, setTextHighlights] = useState<TextHighlight[]>([]);
+
+  // ── Search in text ──
+  const [textSearch, setTextSearch] = useState("");
+  const [textSearchResults, setTextSearchResults] = useState<number[]>([]);
+  const [currentSearchIdx, setCurrentSearchIdx] = useState(0);
+  const [showTextSearch, setShowTextSearch] = useState(false);
 
   // Persist viewMode
   useEffect(() => {
@@ -185,6 +363,159 @@ export default function EmbedPdfViewerPage() {
       });
     return () => { cancelled = true; };
   }, [leftSourceUrl, leftContentType]);
+
+  // ── Text Selection Handler ──
+  const handleTextSelection = useCallback(() => {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed || !selection.toString().trim()) {
+      // Delay to allow click handlers to fire before hiding
+      setTimeout(() => setSelectionPopup(null), 200);
+      return;
+    }
+    const text = selection.toString().trim();
+    if (text.length < 2) return;
+    const range = selection.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    setSelectionPopup({
+      x: rect.left + rect.width / 2,
+      y: rect.top - 12,
+      text,
+    });
+  }, []);
+
+  // ── Selection popup actions ──
+  const handlePopupHighlight = useCallback((color: string) => {
+    if (!selectionPopup) return;
+    const newHL: TextHighlight = {
+      id: crypto.randomUUID(),
+      text: selectionPopup.text,
+      color,
+      startOffset: 0,
+      endOffset: 0,
+    };
+    setTextHighlights(prev => [...prev, newHL]);
+    setSelectionPopup(null);
+    window.getSelection()?.removeAllRanges();
+    toast.success("טקסט הודגש");
+  }, [selectionPopup]);
+
+  const handlePopupAnnotate = useCallback(() => {
+    if (!selectionPopup) return;
+    setHighlightText(selectionPopup.text);
+    setSelectionPopup(null);
+    window.getSelection()?.removeAllRanges();
+    toast.info("הטקסט הועתק לשדה ההערות — כתוב הערה ושמור");
+  }, [selectionPopup]);
+
+  const handlePopupCopy = useCallback(() => {
+    if (!selectionPopup) return;
+    navigator.clipboard.writeText(selectionPopup.text);
+    setSelectionPopup(null);
+    window.getSelection()?.removeAllRanges();
+    toast.success("הועתק ללוח");
+  }, [selectionPopup]);
+
+  const handlePopupSearch = useCallback(() => {
+    if (!selectionPopup) return;
+    setTextSearch(selectionPopup.text.slice(0, 50));
+    setShowTextSearch(true);
+    setSelectionPopup(null);
+    window.getSelection()?.removeAllRanges();
+  }, [selectionPopup]);
+
+  // ── Search in text logic ──
+  useEffect(() => {
+    if (!textSearch.trim() || !fetchedText) {
+      setTextSearchResults([]);
+      setCurrentSearchIdx(0);
+      return;
+    }
+    const q = textSearch.toLowerCase();
+    const indices: number[] = [];
+    let pos = fetchedText.toLowerCase().indexOf(q);
+    while (pos !== -1) {
+      indices.push(pos);
+      pos = fetchedText.toLowerCase().indexOf(q, pos + 1);
+    }
+    setTextSearchResults(indices);
+    setCurrentSearchIdx(0);
+  }, [textSearch, fetchedText]);
+
+  // ── Text stats ──
+  const textStats = useMemo(() => {
+    if (!fetchedText) return { words: 0, chars: 0, lines: 0, paragraphs: 0 };
+    const words = fetchedText.split(/\s+/).filter(Boolean).length;
+    const chars = fetchedText.length;
+    const lines = fetchedText.split("\n").length;
+    const paragraphs = fetchedText.split(/\n\s*\n/).filter(s => s.trim()).length;
+    return { words, chars, lines, paragraphs };
+  }, [fetchedText]);
+
+  // ── Render text with highlights and search marks ──
+  const renderedText = useMemo(() => {
+    if (!fetchedText) return null;
+    // Build a list of marked ranges
+    const marks: { start: number; end: number; type: "highlight" | "search" | "searchActive"; color?: string }[] = [];
+
+    // Add highlights
+    textHighlights.forEach(hl => {
+      let pos = fetchedText.indexOf(hl.text);
+      while (pos !== -1) {
+        marks.push({ start: pos, end: pos + hl.text.length, type: "highlight", color: hl.color });
+        pos = fetchedText.indexOf(hl.text, pos + 1);
+      }
+    });
+
+    // Add search results
+    if (textSearch.trim() && textSearchResults.length > 0) {
+      textSearchResults.forEach((pos, idx) => {
+        marks.push({
+          start: pos,
+          end: pos + textSearch.length,
+          type: idx === currentSearchIdx ? "searchActive" : "search",
+        });
+      });
+    }
+
+    if (marks.length === 0) return fetchedText;
+
+    // Sort marks by start position
+    marks.sort((a, b) => a.start - b.start);
+
+    // Build JSX fragments
+    const fragments: React.ReactNode[] = [];
+    let lastEnd = 0;
+    marks.forEach((mark, i) => {
+      if (mark.start > lastEnd) {
+        fragments.push(fetchedText.slice(lastEnd, mark.start));
+      }
+      const text = fetchedText.slice(mark.start, mark.end);
+      if (mark.type === "searchActive") {
+        fragments.push(
+          <mark key={`s-${i}`} className="bg-[#D4AF37] text-[#0B1F5B] rounded px-0.5 ring-2 ring-[#D4AF37]" id="active-search-result">
+            {text}
+          </mark>
+        );
+      } else if (mark.type === "search") {
+        fragments.push(
+          <mark key={`s-${i}`} className="bg-[#D4AF37]/30 text-[#0B1F5B] rounded px-0.5">
+            {text}
+          </mark>
+        );
+      } else {
+        fragments.push(
+          <mark key={`h-${i}`} style={{ backgroundColor: mark.color + "66" }} className="rounded px-0.5">
+            {text}
+          </mark>
+        );
+      }
+      lastEnd = mark.end;
+    });
+    if (lastEnd < fetchedText.length) {
+      fragments.push(fetchedText.slice(lastEnd));
+    }
+    return fragments;
+  }, [fetchedText, textHighlights, textSearch, textSearchResults, currentSearchIdx]);
 
   // ── Filtered annotations ──
   const filteredAnnotations = useMemo(() => {
@@ -453,6 +784,206 @@ export default function EmbedPdfViewerPage() {
                     </button>
                   </div>
                 </div>
+                {/* ═══ TEXT FORMATTING TOOLBAR ═══ */}
+                {leftContentType === 'text' && fetchedText !== null && (
+                  <div className="border-b-2 border-[#D4AF37]/20 bg-white/80 backdrop-blur-sm">
+                    {/* Main toolbar row */}
+                    <div className="px-2 py-1.5 flex items-center gap-1 flex-wrap">
+                      {/* Font selector */}
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button size="sm" variant="outline" className="h-7 text-xs border-[#D4AF37]/40 text-[#0B1F5B] gap-1">
+                            <Type className="h-3 w-3" />
+                            {FONTS.find(f => f.value === textFormat.fontFamily)?.label || "גופן"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-36 p-1" align="start">
+                          {FONTS.map(f => (
+                            <button
+                              key={f.value}
+                              className={`w-full text-right px-2 py-1.5 text-xs rounded hover:bg-[#D4AF37]/10 ${textFormat.fontFamily === f.value ? "bg-[#D4AF37]/20 font-bold" : ""}`}
+                              onClick={() => updateFormat({ fontFamily: f.value })}
+                            >
+                              {f.label}
+                            </button>
+                          ))}
+                        </PopoverContent>
+                      </Popover>
+
+                      <div className="w-px h-5 bg-[#D4AF37]/20" />
+
+                      {/* Font size controls */}
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => updateFormat({ fontSize: Math.max(10, textFormat.fontSize - 1) })} title="הקטן גופן">
+                        <AArrowDown className="h-3.5 w-3.5 text-[#0B1F5B]" />
+                      </Button>
+                      <span className="text-xs font-mono min-w-[2rem] text-center text-[#0B1F5B]">{textFormat.fontSize}</span>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => updateFormat({ fontSize: Math.min(36, textFormat.fontSize + 1) })} title="הגדל גופן">
+                        <AArrowUp className="h-3.5 w-3.5 text-[#0B1F5B]" />
+                      </Button>
+
+                      <div className="w-px h-5 bg-[#D4AF37]/20" />
+
+                      {/* Bold / Italic / Underline */}
+                      <Button size="icon" variant="ghost" className={`h-7 w-7 ${textFormat.isBold ? "bg-[#D4AF37]/20" : ""}`} onClick={() => updateFormat({ isBold: !textFormat.isBold })} title="מודגש">
+                        <Bold className="h-3.5 w-3.5 text-[#0B1F5B]" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className={`h-7 w-7 ${textFormat.isItalic ? "bg-[#D4AF37]/20" : ""}`} onClick={() => updateFormat({ isItalic: !textFormat.isItalic })} title="נטוי">
+                        <Italic className="h-3.5 w-3.5 text-[#0B1F5B]" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className={`h-7 w-7 ${textFormat.isUnderline ? "bg-[#D4AF37]/20" : ""}`} onClick={() => updateFormat({ isUnderline: !textFormat.isUnderline })} title="קו תחתון">
+                        <Underline className="h-3.5 w-3.5 text-[#0B1F5B]" />
+                      </Button>
+
+                      <div className="w-px h-5 bg-[#D4AF37]/20" />
+
+                      {/* Text alignment */}
+                      <Button size="icon" variant="ghost" className={`h-7 w-7 ${textFormat.textAlign === "right" ? "bg-[#D4AF37]/20" : ""}`} onClick={() => updateFormat({ textAlign: "right" })} title="ימין">
+                        <AlignRight className="h-3.5 w-3.5 text-[#0B1F5B]" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className={`h-7 w-7 ${textFormat.textAlign === "center" ? "bg-[#D4AF37]/20" : ""}`} onClick={() => updateFormat({ textAlign: "center" })} title="מרכז">
+                        <AlignCenter className="h-3.5 w-3.5 text-[#0B1F5B]" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className={`h-7 w-7 ${textFormat.textAlign === "left" ? "bg-[#D4AF37]/20" : ""}`} onClick={() => updateFormat({ textAlign: "left" })} title="שמאל">
+                        <AlignLeft className="h-3.5 w-3.5 text-[#0B1F5B]" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className={`h-7 w-7 ${textFormat.textAlign === "justify" ? "bg-[#D4AF37]/20" : ""}`} onClick={() => updateFormat({ textAlign: "justify" })} title="מיושר">
+                        <AlignJustify className="h-3.5 w-3.5 text-[#0B1F5B]" />
+                      </Button>
+
+                      <div className="w-px h-5 bg-[#D4AF37]/20" />
+
+                      {/* Line height */}
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button size="sm" variant="ghost" className="h-7 text-xs gap-1" title="מרווח שורות">
+                            <PilcrowSquare className="h-3.5 w-3.5 text-[#0B1F5B]" />
+                            <span className="text-[10px] text-[#0B1F5B]/60">{textFormat.lineHeight}</span>
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-28 p-1" align="start">
+                          {[1.2, 1.5, 1.8, 2.0, 2.5, 3.0].map(lh => (
+                            <button
+                              key={lh}
+                              className={`w-full text-right px-2 py-1 text-xs rounded hover:bg-[#D4AF37]/10 ${textFormat.lineHeight === lh ? "bg-[#D4AF37]/20 font-bold" : ""}`}
+                              onClick={() => updateFormat({ lineHeight: lh })}
+                            >
+                              {lh}
+                            </button>
+                          ))}
+                        </PopoverContent>
+                      </Popover>
+
+                      <div className="w-px h-5 bg-[#D4AF37]/20" />
+
+                      {/* Zoom */}
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => updateFormat({ fontSize: Math.max(10, textFormat.fontSize - 2) })} title="הקטן">
+                        <ZoomOut className="h-3.5 w-3.5 text-[#0B1F5B]" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => updateFormat({ fontSize: Math.min(36, textFormat.fontSize + 2) })} title="הגדל">
+                        <ZoomIn className="h-3.5 w-3.5 text-[#0B1F5B]" />
+                      </Button>
+
+                      <div className="w-px h-5 bg-[#D4AF37]/20" />
+
+                      {/* Line numbers toggle */}
+                      <Button size="icon" variant="ghost" className={`h-7 w-7 ${textFormat.showLineNumbers ? "bg-[#D4AF37]/20" : ""}`} onClick={() => updateFormat({ showLineNumbers: !textFormat.showLineNumbers })} title="מספרי שורות">
+                        <ListOrdered className="h-3.5 w-3.5 text-[#0B1F5B]" />
+                      </Button>
+
+                      {/* Word wrap toggle */}
+                      <Button size="icon" variant="ghost" className={`h-7 w-7 ${textFormat.wordWrap ? "bg-[#D4AF37]/20" : ""}`} onClick={() => updateFormat({ wordWrap: !textFormat.wordWrap })} title="גלישת שורות">
+                        <WrapText className="h-3.5 w-3.5 text-[#0B1F5B]" />
+                      </Button>
+
+                      <div className="w-px h-5 bg-[#D4AF37]/20" />
+
+                      {/* Search toggle */}
+                      <Button size="icon" variant="ghost" className={`h-7 w-7 ${showTextSearch ? "bg-[#D4AF37]/20" : ""}`} onClick={() => setShowTextSearch(v => !v)} title="חיפוש בטקסט">
+                        <Search className="h-3.5 w-3.5 text-[#0B1F5B]" />
+                      </Button>
+
+                      {/* Copy all */}
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { navigator.clipboard.writeText(fetchedText); toast.success("כל הטקסט הועתק"); }} title="העתק הכל">
+                        <Copy className="h-3.5 w-3.5 text-[#0B1F5B]" />
+                      </Button>
+
+                      {/* Print */}
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
+                        const win = window.open("", "_blank");
+                        if (win) {
+                          win.document.write(`<html dir="rtl"><head><title>הדפסה</title><style>body{font-family:serif;font-size:${textFormat.fontSize}px;line-height:${textFormat.lineHeight};text-align:${textFormat.textAlign};padding:40px;white-space:pre-wrap;}</style></head><body>${fetchedText.replace(/</g,"&lt;").replace(/>/g,"&gt;")}</body></html>`);
+                          win.document.close();
+                          win.print();
+                        }
+                      }} title="הדפסה">
+                        <Printer className="h-3.5 w-3.5 text-[#0B1F5B]" />
+                      </Button>
+
+                      {/* Reset format */}
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setTextFormat(DEFAULT_FORMAT)} title="אפס עיצוב">
+                        <RotateCcw className="h-3.5 w-3.5 text-[#0B1F5B]" />
+                      </Button>
+
+                      {/* Spacer + word count */}
+                      <div className="flex-1" />
+                      <span className="text-[10px] text-[#0B1F5B]/40">
+                        {textStats.words} מילים · {textStats.lines} שורות · {textStats.chars} תווים
+                      </span>
+                    </div>
+
+                    {/* Search bar */}
+                    {showTextSearch && (
+                      <div className="px-2 pb-1.5 flex items-center gap-1.5">
+                        <Search className="h-3.5 w-3.5 text-[#D4AF37]" />
+                        <Input
+                          placeholder="חפש בטקסט..."
+                          value={textSearch}
+                          onChange={(e) => setTextSearch(e.target.value)}
+                          className="h-7 text-xs flex-1 border-[#D4AF37]/30 focus-visible:ring-[#D4AF37]"
+                          autoFocus
+                        />
+                        {textSearchResults.length > 0 && (
+                          <>
+                            <span className="text-[10px] text-[#0B1F5B]/60 whitespace-nowrap">
+                              {currentSearchIdx + 1}/{textSearchResults.length}
+                            </span>
+                            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setCurrentSearchIdx(i => (i - 1 + textSearchResults.length) % textSearchResults.length)}>
+                              <ChevronUp className="h-3 w-3" />
+                            </Button>
+                            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setCurrentSearchIdx(i => (i + 1) % textSearchResults.length)}>
+                              <ChevronDown className="h-3 w-3" />
+                            </Button>
+                          </>
+                        )}
+                        {textSearch && textSearchResults.length === 0 && (
+                          <span className="text-[10px] text-red-500">לא נמצא</span>
+                        )}
+                        <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => { setShowTextSearch(false); setTextSearch(""); }}>
+                          <Trash2 className="h-3 w-3 text-[#0B1F5B]/40" />
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Highlights list */}
+                    {textHighlights.length > 0 && (
+                      <div className="px-2 pb-1.5 flex items-center gap-1 flex-wrap">
+                        <Highlighter className="h-3 w-3 text-[#D4AF37]" />
+                        {textHighlights.map((hl) => (
+                          <Badge
+                            key={hl.id}
+                            variant="secondary"
+                            className="text-[10px] cursor-pointer hover:opacity-70 gap-1"
+                            style={{ backgroundColor: hl.color + "44" }}
+                            onClick={() => setTextHighlights(prev => prev.filter(h => h.id !== hl.id))}
+                          >
+                            "{hl.text.slice(0, 15)}{hl.text.length > 15 ? "..." : ""}" ×
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Document Viewer — smart strategy per file type */}
                 <div className="flex-1 relative bg-[#f8f8f6]">
                   {/* TEXT files — rendered directly */}
@@ -493,9 +1024,34 @@ export default function EmbedPdfViewerPage() {
                       )}
                       {fetchedText !== null && (
                         <ScrollArea className="absolute inset-0">
-                          <pre className="p-4 text-sm text-[#0B1F5B] whitespace-pre-wrap font-mono leading-relaxed" dir="rtl">
-                            {fetchedText}
-                          </pre>
+                          <div
+                            ref={textViewerRef}
+                            onMouseUp={handleTextSelection}
+                            className={`p-4 text-[#0B1F5B] ${textFormat.fontFamily} select-text`}
+                            dir="rtl"
+                            style={{
+                              fontSize: `${textFormat.fontSize}px`,
+                              lineHeight: textFormat.lineHeight,
+                              textAlign: textFormat.textAlign,
+                              fontWeight: textFormat.isBold ? "bold" : "normal",
+                              fontStyle: textFormat.isItalic ? "italic" : "normal",
+                              textDecoration: textFormat.isUnderline ? "underline" : "none",
+                              whiteSpace: textFormat.wordWrap ? "pre-wrap" : "pre",
+                            }}
+                          >
+                            {textFormat.showLineNumbers ? (
+                              <div className="flex">
+                                <div className="pr-3 pl-3 border-l-2 border-[#D4AF37]/20 text-[#0B1F5B]/25 text-right select-none" style={{ fontSize: `${Math.max(10, textFormat.fontSize - 2)}px`, minWidth: "3rem" }}>
+                                  {fetchedText.split("\n").map((_, i) => (
+                                    <div key={i}>{i + 1}</div>
+                                  ))}
+                                </div>
+                                <div className="flex-1 pr-3">{renderedText}</div>
+                              </div>
+                            ) : (
+                              renderedText
+                            )}
+                          </div>
                         </ScrollArea>
                       )}
                     </>
@@ -775,6 +1331,19 @@ export default function EmbedPdfViewerPage() {
         </aside>
         )}
       </div>
+
+      {/* ═══ SELECTION POPUP ═══ */}
+      {selectionPopup && (
+        <SelectionPopup
+          position={{ x: selectionPopup.x, y: selectionPopup.y }}
+          selectedText={selectionPopup.text}
+          onHighlight={handlePopupHighlight}
+          onAnnotate={handlePopupAnnotate}
+          onCopy={handlePopupCopy}
+          onSearch={handlePopupSearch}
+          onClose={() => setSelectionPopup(null)}
+        />
+      )}
     </div>
   );
 }

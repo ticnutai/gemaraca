@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { BookOpen, Scale, Search, Upload, Pin, PinOff, ChevronDown, ChevronLeft, ArrowDownToLine, BookMarked, FileText, Database, FileType } from "lucide-react";
+import { BookOpen, Scale, Search, Upload, Pin, PinOff, ChevronDown, ChevronLeft, ArrowDownToLine, BookMarked, FileText, Database, FileType, Calendar, BookA, Map, Layers, GraduationCap, BarChart3, Compass } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -80,6 +80,54 @@ const menuItems = [
     title: "צפיין EmbedPDF",
     icon: FileType,
     description: "צפיין PDF מתקדם עם אנוטציות",
+  },
+  {
+    id: "weekly-planner",
+    title: "לוח שבועי",
+    icon: Calendar,
+    description: "תכנון לימוד שבועי עם יעדים",
+    badge: "חדש",
+  },
+  {
+    id: "glossary",
+    title: "מילון מונחים",
+    icon: BookA,
+    description: "מילון מונחים ארמיים ומשפטיים",
+    badge: "חדש",
+  },
+  {
+    id: "shas-heatmap",
+    title: "מפת חום הש\"ס",
+    icon: Map,
+    description: "ויזואליזציה של מה שלמדת",
+    badge: "חדש",
+  },
+  {
+    id: "flashcards",
+    title: "כרטיסיות חזרה",
+    icon: Layers,
+    description: "חזרה מרווחת עם כרטיסיות",
+    badge: "חדש",
+  },
+  {
+    id: "quiz",
+    title: "מצב מבחן",
+    icon: GraduationCap,
+    description: "שאלות AI אוטומטיות",
+    badge: "חדש",
+  },
+  {
+    id: "stats",
+    title: "סטטיסטיקות",
+    icon: BarChart3,
+    description: "דשבורד וגרפים של הלמידה",
+    badge: "חדש",
+  },
+  {
+    id: "recommendations",
+    title: "המלצות למידה",
+    icon: Compass,
+    description: "מה ללמוד הלאה - AI",
     badge: "חדש",
   },
 ];

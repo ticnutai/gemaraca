@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "@/contexts/AppContext";
 import FileTypeBadge from "./FileTypeBadge";
+import SummaryToggle from "./SummaryToggle";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -552,7 +553,7 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
                   "hover:bg-accent/10"
                 )}
               >
-                <h4 className="font-medium text-xs md:text-sm line-clamp-2 mb-0.5 md:mb-1 flex items-center gap-1 justify-end"><FileTypeBadge url={psak.source_url} />{psak.title}</h4>
+                <h4 className="font-medium text-xs md:text-sm line-clamp-2 mb-0.5 md:mb-1 flex items-center gap-1 justify-end"><SummaryToggle summary={psak.summary} compact /><FileTypeBadge url={psak.source_url} />{psak.title}</h4>
                 <div className="flex items-center gap-1.5 md:gap-2 text-[10px] md:text-xs text-muted-foreground">
                   <span className="truncate max-w-[100px] md:max-w-none">{psak.court}</span>
                   <span>•</span>

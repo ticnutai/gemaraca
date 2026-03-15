@@ -8,7 +8,7 @@ import {
   Calendar, Building2, FileText, ExternalLink, Download, Eye, FileIcon, 
   Maximize2, Minimize2, AlignRight, AlignCenter, AlignLeft, AlignJustify,
   Type, Bold, Italic, Highlighter, AArrowUp, AArrowDown, Palette, Edit, Save, X,
-  Search, ChevronUp, ChevronDown, CaseSensitive, WholeWord
+  Search, ChevronUp, ChevronDown, CaseSensitive, WholeWord, Sparkles, Loader2, Printer
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -131,6 +131,11 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
   const [editFullText, setEditFullText] = useState("");
   const [editTags, setEditTags] = useState("");
 
+  // Beautify state
+  const [beautifiedHtml, setBeautifiedHtml] = useState<string | null>(null);
+  const [isBeautifying, setIsBeautifying] = useState(false);
+  const beautifyIframeRef = useRef<HTMLIFrameElement>(null);
+
   useEffect(() => {
     localStorage.setItem(VIEWER_TEXT_SETTINGS_KEY, JSON.stringify(textSettings));
   }, [textSettings]);
@@ -141,6 +146,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
       const sourceUrl = psak.source_url || psak.sourceUrl;
       setActiveTab(sourceUrl ? "preview" : "info");
       setIsEditing(false);
+      setBeautifiedHtml(null);
       // Initialize edit fields
       setEditTitle(psak.title || "");
       setEditCourt(psak.court || "");
@@ -206,6 +212,40 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
     setEditFullText(psak?.full_text || psak?.fullText || "");
     setEditTags((psak?.tags || []).join(", "));
   };
+
+  // ── Beautify psak din ──
+  const handleBeautify = useCallback(async () => {
+    if (!psak) return;
+    setIsBeautifying(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("beautify-psak-din", {
+        body: {
+          title: psak.title,
+          court: psak.court,
+          year: psak.year,
+          caseNumber: psak.case_number || psak.caseNumber,
+          summary: psak.summary,
+          fullText: psak.full_text || psak.fullText,
+          tags: psak.tags,
+        },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || "שגיאה בעיצוב");
+      setBeautifiedHtml(data.html);
+      setActiveTab("beautified");
+      toast.success("פסק הדין עוצב בהצלחה!");
+    } catch (err: any) {
+      console.error("Beautify error:", err);
+      toast.error(err.message || "שגיאה בעיצוב פסק הדין");
+    } finally {
+      setIsBeautifying(false);
+    }
+  }, [psak]);
+
+  const handlePrintBeautified = useCallback(() => {
+    if (!beautifyIframeRef.current?.contentWindow) return;
+    beautifyIframeRef.current.contentWindow.print();
+  }, []);
 
   // Determine file type from URL
   const getFileType = (url: string | undefined): string => {
@@ -631,7 +671,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
-          <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
+          <TabsList className="grid w-full grid-cols-3 flex-shrink-0">
             <TabsTrigger value="preview" className="gap-2" disabled={!sourceUrl}>
               <Eye className="w-4 h-4" />
               צפייה בקובץ
@@ -639,6 +679,10 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
             <TabsTrigger value="info" className="gap-2">
               <FileText className="w-4 h-4" />
               מידע
+            </TabsTrigger>
+            <TabsTrigger value="beautified" className="gap-2">
+              <Sparkles className="w-4 h-4" />
+              מעוצב
             </TabsTrigger>
           </TabsList>
 
@@ -847,10 +891,155 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
               </div>
             )}
           </TabsContent>
+
+          {/* ═══ BEAUTIFIED TAB ═══ */}
+          <TabsContent value="beautified" className="flex-1 min-h-0 mt-4">
+            {!beautifiedHtml ? (
+              <div className="flex flex-col items-center justify-center h-full p-12 text-center space-y-6">
+                <div className="relative">
+                  <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-[#D4AF37]/20 to-[#0B1F5B]/10 flex items-center justify-center">
+                    <Sparkles className="w-12 h-12 text-[#D4AF37]" />
+                  </div>
+                </div>
+                <div className="space-y-2 max-w-md">
+                  <h3 className="text-lg font-bold text-foreground">עיצוב פסק דין מקצועי</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    לחץ על הכפתור כדי להפוך את פסק הדין למסמך HTML מעוצב ומקצועי
+                    עם חלוקה לסעיפים, כותרות, צבעים ועיצוב משפטי יפה.
+                  </p>
+                </div>
+                <Button
+                  size="lg"
+                  className="gap-2 bg-gradient-to-l from-[#0B1F5B] to-[#1a3580] text-white border-2 border-[#D4AF37] hover:opacity-90 px-8"
+                  onClick={handleBeautify}
+                  disabled={isBeautifying}
+                >
+                  {isBeautifying ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      מעצב את פסק הדין...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-5 h-5" />
+                      עצב פסק דין ✨
+                    </>
+                  )}
+                </Button>
+              </div>
+            ) : (
+              <div className="h-full flex flex-col">
+                {/* Toolbar */}
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1"
+                    onClick={handleBeautify}
+                    disabled={isBeautifying}
+                  >
+                    {isBeautifying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                    עצב מחדש
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1"
+                    onClick={handlePrintBeautified}
+                  >
+                    <Printer className="w-3.5 h-3.5" />
+                    הדפס
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1"
+                    onClick={() => {
+                      const blob = new Blob([beautifiedHtml], { type: "text/html;charset=utf-8" });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = `${psak.title || "psak-din"}-מעוצב.html`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                      toast.success("הקובץ הורד בהצלחה");
+                    }}
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    הורד HTML
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1"
+                    onClick={() => {
+                      const win = window.open("", "_blank");
+                      if (win) {
+                        win.document.write(beautifiedHtml);
+                        win.document.close();
+                      }
+                    }}
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    פתח בחלון חדש
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1"
+                    onClick={() => {
+                      // PDF export via print dialog
+                      const iframe = document.createElement("iframe");
+                      iframe.style.position = "fixed";
+                      iframe.style.left = "-9999px";
+                      iframe.style.width = "210mm";
+                      iframe.style.height = "297mm";
+                      document.body.appendChild(iframe);
+                      const doc = iframe.contentDocument || iframe.contentWindow?.document;
+                      if (doc) {
+                        doc.open();
+                        doc.write(beautifiedHtml);
+                        doc.close();
+                        setTimeout(() => {
+                          iframe.contentWindow?.print();
+                          setTimeout(() => document.body.removeChild(iframe), 2000);
+                        }, 500);
+                      }
+                      toast.success("חלון הדפסה נפתח — בחר 'שמור כ-PDF'");
+                    }}
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    ייצוא PDF
+                  </Button>
+                </div>
+                {/* Rendered HTML */}
+                <div className="flex-1 border border-border rounded-lg overflow-hidden bg-white">
+                  <iframe
+                    ref={beautifyIframeRef}
+                    srcDoc={beautifiedHtml}
+                    className="w-full h-full min-h-[500px]"
+                    title="פסק דין מעוצב"
+                    sandbox="allow-same-origin allow-popups"
+                  />
+                </div>
+              </div>
+            )}
+          </TabsContent>
         </Tabs>
 
         {/* Actions */}
         <div className="flex-shrink-0 pt-4 border-t border-border flex gap-2 justify-end flex-wrap">
+          {/* Beautify button — always visible */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 bg-gradient-to-l from-[#D4AF37]/10 to-[#D4AF37]/5 border-[#D4AF37]/50 text-[#0B1F5B] hover:bg-[#D4AF37]/20"
+            onClick={handleBeautify}
+            disabled={isBeautifying}
+          >
+            {isBeautifying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 text-[#D4AF37]" />}
+            {isBeautifying ? "מעצב..." : "עצב פסק דין"}
+          </Button>
           {sourceUrl && (
             <>
               <Button

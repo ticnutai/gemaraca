@@ -25,6 +25,11 @@ const LinkedPsakimSection = lazy(() => import("@/components/LinkedPsakimSection"
 const ModernExamplesPanel = lazy(() => import("@/components/ModernExamplesPanel").then(m => ({ default: m.ModernExamplesPanel })));
 const PersonalNotes = lazy(() => import("@/components/PersonalNotes"));
 const PsakeiDinDafPanel = lazy(() => import("@/components/PsakeiDinDafPanel"));
+const SugyaSummary = lazy(() => import("@/components/SugyaSummary"));
+const AskAboutDaf = lazy(() => import("@/components/AskAboutDaf"));
+const CollaborativeNotes = lazy(() => import("@/components/CollaborativeNotes"));
+const ShareSugyaDialog = lazy(() => import("@/components/ShareSugyaDialog"));
+const ExportPdfButton = lazy(() => import("@/components/ExportPdfButton"));
 
 const PanelFallback = () => (
   <div className="space-y-3 p-4">
@@ -65,6 +70,7 @@ const SugyaDetail = () => {
   const [loadedPage, setLoadedPage] = useState<any>(null);
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [mainTab, setMainTab] = useState("gemara");
+  const [selectedGemaraText, setSelectedGemaraText] = useState("");
   
   const sugya = loadedPage;
   const enterTimeRef = useRef(Date.now());
@@ -267,6 +273,18 @@ const SugyaDetail = () => {
             title={sugya.title}
             text={sugya.gemaraText || sugya.fullText || sugya.summary}
           />
+          <Suspense fallback={null}>
+            <ShareSugyaDialog
+              sugyaId={id || ""}
+              masechet={sugya.masechet}
+              daf={sugya.dafYomi}
+              title={sugya.title}
+              selectedText={selectedGemaraText}
+            />
+          </Suspense>
+          <Suspense fallback={null}>
+            <ExportPdfButton title={sugya.title} htmlContent={sugya.gemaraText || sugya.fullText} />
+          </Suspense>
         </div>
 
         {/* Daf/Amud Navigator - Single source of truth for masechet name */}
@@ -280,7 +298,7 @@ const SugyaDetail = () => {
 
         {/* Main Tabs - 4 Primary Tabs */}
         <Tabs value={mainTab} onValueChange={setMainTab} className="w-full" dir="rtl">
-          <TabsList className="grid w-full grid-cols-4 mb-6 h-auto">
+          <TabsList className="grid w-full grid-cols-5 mb-6 h-auto">
             <TabsTrigger value="gemara" className="flex items-center gap-1.5 py-2.5 text-xs sm:text-sm">
               <BookOpen className="w-4 h-4 hidden sm:block" />
               גמרא
@@ -296,6 +314,10 @@ const SugyaDetail = () => {
             <TabsTrigger value="analysis" className="flex items-center gap-1.5 py-2.5 text-xs sm:text-sm">
               <HelpCircle className="w-4 h-4 hidden sm:block" />
               הסבר
+            </TabsTrigger>
+            <TabsTrigger value="ai-tools" className="flex items-center gap-1.5 py-2.5 text-xs sm:text-sm">
+              <Lightbulb className="w-4 h-4 hidden sm:block" />
+              AI כלים
             </TabsTrigger>
           </TabsList>
 
@@ -587,6 +609,39 @@ const SugyaDetail = () => {
                 <FAQSection items={faqItems} />
               </div>
             )}
+          </TabsContent>
+
+          {/* Tab 5: AI כלים - AI Tools */}
+          <TabsContent value="ai-tools" className="mt-0 space-y-6">
+            {/* Sugya Summary */}
+            <Suspense fallback={<PanelFallback />}>
+              <SugyaSummary
+                sugyaId={id || ""}
+                masechet={sugya.masechet}
+                daf={sugya.dafYomi}
+                title={sugya.title}
+                textHe={sugya.gemaraText || sugya.fullText}
+              />
+            </Suspense>
+
+            {/* Ask About Daf */}
+            <Suspense fallback={<PanelFallback />}>
+              <AskAboutDaf
+                masechet={sugya.masechet}
+                daf={sugya.dafYomi}
+                fullPageText={sugya.gemaraText || sugya.fullText}
+                selectedText={selectedGemaraText}
+              />
+            </Suspense>
+
+            {/* Collaborative Notes */}
+            <Suspense fallback={<PanelFallback />}>
+              <CollaborativeNotes
+                sugyaId={id || ""}
+                masechet={sugya.masechet}
+                daf={sugya.dafYomi}
+              />
+            </Suspense>
           </TabsContent>
         </Tabs>
       </div>

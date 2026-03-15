@@ -9,6 +9,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import FileTypeBadge from "./FileTypeBadge";
+import SummaryToggle from "./SummaryToggle";
 import { MASECHTOT, SEDARIM, Masechet } from "@/lib/masechtotData";
 import { toHebrewNumeral } from "@/lib/hebrewNumbers";
 import { 
@@ -762,6 +763,7 @@ return (
                           <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0 mt-1" />
                           <div className="flex-1 text-right">
                             <h4 className="font-medium text-foreground line-clamp-1 flex items-center gap-1.5 justify-end">
+                              <SummaryToggle summary={link.psakei_din?.summary} compact />
                               <FileTypeBadge url={link.psakei_din?.source_url} />
                               {link.psakei_din?.title}
                             </h4>

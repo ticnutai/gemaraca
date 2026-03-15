@@ -12,6 +12,7 @@ import PsakDinViewDialog from "./PsakDinViewDialog";
 import PsakDinEditDialog from "./PsakDinEditDialog";
 import PsakDinActions from "./PsakDinActions";
 import FileTypeBadge from "./FileTypeBadge";
+import SummaryToggle from "./SummaryToggle";
 
 interface LinkedPsakimSectionProps {
   sugyaId: string;
@@ -311,6 +312,7 @@ const LinkedPsakimSection = ({ sugyaId, masechet, dafNumber }: LinkedPsakimSecti
                     {/* Left side: Content */}
                     <div className="flex-1 text-right">
                       <div className="font-medium line-clamp-1 group-hover:text-primary transition-colors text-right flex items-center gap-1.5 justify-end">
+                        <SummaryToggle summary={psak.summary} compact />
                         <FileTypeBadge url={psak.source_url} />
                         {psak.title}
                       </div>

@@ -1,0 +1,50 @@
+import { useState } from "react";
+import { FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
+interface SummaryToggleProps {
+  summary?: string | null;
+  compact?: boolean;
+}
+
+export default function SummaryToggle({ summary, compact }: SummaryToggleProps) {
+  if (!summary) return null;
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className={compact ? "h-6 w-6 p-0" : "h-7 w-7 p-0"}
+          onClick={(e) => e.stopPropagation()}
+          title="תקציר המקרה"
+        >
+          <FileText className={`${compact ? "w-3 h-3" : "w-3.5 h-3.5"} text-amber-600`} />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-80 text-right"
+        dir="rtl"
+        side="left"
+        align="start"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="space-y-2">
+          <h4 className="font-semibold text-sm flex items-center gap-1.5 text-foreground">
+            <FileText className="w-4 h-4 text-amber-600" />
+            תקציר המקרה
+          </h4>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            {summary}
+          </p>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}

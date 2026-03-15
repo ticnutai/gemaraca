@@ -19,6 +19,13 @@ const KnowledgeGraphTab = lazy(() => import("@/components/KnowledgeGraphTab"));
 const GlobalSearchTab = lazy(() => import("@/components/GlobalSearchTab"));
 const PdfViewerTab = lazy(() => import("@/components/PdfViewerTab"));
 const BulkShasDownload = lazy(() => import("@/components/BulkShasDownload"));
+const WeeklyPlannerTab = lazy(() => import("@/components/WeeklyPlannerTab"));
+const GlossaryTab = lazy(() => import("@/components/GlossaryTab"));
+const ShasHeatmapTab = lazy(() => import("@/components/ShasHeatmapTab"));
+const FlashcardsTab = lazy(() => import("@/components/FlashcardsTab"));
+const QuizModeTab = lazy(() => import("@/components/QuizModeTab"));
+const StatsDashboardTab = lazy(() => import("@/components/StatsDashboardTab"));
+const LearningRecommendations = lazy(() => import("@/components/LearningRecommendations"));
 
 const TabFallback = () => (
   <div className="p-3 md:p-6 space-y-4">
@@ -65,6 +72,13 @@ const Index = () => {
               {activeTab === "knowledge-graph" && <KnowledgeGraphTab />}
               {activeTab === "pdf-viewer" && <PdfViewerTab />}
               {activeTab === "bulk-shas" && <BulkShasDownload />}
+              {activeTab === "weekly-planner" && <WeeklyPlannerTab />}
+              {activeTab === "glossary" && <GlossaryTab />}
+              {activeTab === "shas-heatmap" && <ShasHeatmapTab />}
+              {activeTab === "flashcards" && <FlashcardsTab />}
+              {activeTab === "quiz" && <QuizModeTab />}
+              {activeTab === "stats" && <StatsDashboardTab />}
+              {activeTab === "recommendations" && <LearningRecommendations />}
             </Suspense>
           </SectionErrorBoundary>
         </div>

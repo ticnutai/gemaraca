@@ -10,6 +10,7 @@ import { Search, Calendar, Building2, FileText, ExternalLink, Loader2 } from "lu
 import { useToast } from "@/hooks/use-toast";
 import PsakDinViewDialog from "./PsakDinViewDialog";
 import FileTypeBadge from "./FileTypeBadge";
+import SummaryToggle from "./SummaryToggle";
 
 const SearchPsakDinTab = () => {
   const navigate = useNavigate();
@@ -191,6 +192,7 @@ const SearchPsakDinTab = () => {
               >
                 <CardHeader>
                   <CardTitle className="text-lg font-semibold text-foreground flex items-center gap-2 justify-end">
+                    <SummaryToggle summary={psak.summary} />
                     <FileTypeBadge url={psak.sourceUrl} size="sm" />
                     {psak.title}
                   </CardTitle>

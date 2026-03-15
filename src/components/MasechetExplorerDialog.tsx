@@ -23,6 +23,7 @@ import { useAppContext } from "@/contexts/AppContext";
 import { useQuery } from "@tanstack/react-query";
 import PsakDinViewDialog from "./PsakDinViewDialog";
 import FileTypeBadge from "./FileTypeBadge";
+import SummaryToggle from "./SummaryToggle";
 import { useGemaraDownloadStore } from "@/stores/gemaraDownloadStore";
 import { buildMasechetJob, buildSederJob, buildShasJob } from "@/hooks/useGemaraDownloadEngine";
 import { useToast } from "@/hooks/use-toast";
@@ -582,7 +583,7 @@ const MasechetExplorerDialog = ({ open, onOpenChange }: MasechetExplorerDialogPr
                       >
                         <div className="flex items-start gap-3">
                           <div className="flex-1">
-                            <h4 className="font-bold text-sm line-clamp-2 flex items-center gap-1 justify-end"><FileTypeBadge url={psak.source_url} />{psak.title}</h4>
+                            <h4 className="font-bold text-sm line-clamp-2 flex items-center gap-1 justify-end"><SummaryToggle summary={psak.summary} compact /><FileTypeBadge url={psak.source_url} />{psak.title}</h4>
                             <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
                               <span className="flex items-center gap-1">
                                 <Building2 className="h-3 w-3" />
