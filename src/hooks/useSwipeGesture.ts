@@ -20,16 +20,9 @@ export function useSwipeGesture({
   const handleTouchStart = useCallback(
     (e: TouchEvent) => {
       const touch = e.touches[0];
-      // If edgeZone is set, only start tracking from screen edges
-      if (edgeZone) {
-        const screenW = window.innerWidth;
-        const fromRight = screenW - touch.clientX;
-        const fromLeft = touch.clientX;
-        if (fromRight > edgeZone && fromLeft > edgeZone) return;
-      }
       touchStart.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
     },
-    [edgeZone]
+    []
   );
 
   const handleTouchEnd = useCallback(
