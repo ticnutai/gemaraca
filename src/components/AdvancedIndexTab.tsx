@@ -13,6 +13,7 @@ import AccordionView from './talmud-index/AccordionView';
 import IndexTableView from './talmud-index/TableView';
 import CardsView from './talmud-index/CardsView';
 import TreeViewIndex from './talmud-index/TreeViewIndex';
+import GenealogyTreeView from './talmud-index/GenealogyTreeView';
 import PsakDinViewDialog from './PsakDinViewDialog';
 import IndexingControlPanel from './IndexingControlPanel';
 import DebugDiagnosticDialog from './DebugDiagnosticDialog';
