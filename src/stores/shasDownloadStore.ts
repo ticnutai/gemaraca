@@ -24,7 +24,7 @@ interface ShasDownloadStore {
   isPaused: boolean;
   concurrency: number;
   masechtot: MasechetDownloadState[];
-  activeDownloads: Set<string>;
+  activeDownloads: string[];
   lastUpdated: number;
 
   // Actions
