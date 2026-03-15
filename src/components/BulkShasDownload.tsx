@@ -87,7 +87,7 @@ const BulkShasDownload = () => {
             {isRunning && (
               <Badge variant="secondary" className="mr-auto animate-pulse">
                 <Loader2 className="h-3 w-3 animate-spin ml-1" />
-                {isPaused ? 'מושהה' : `מוריד (${activeDownloads.size} במקביל)`}
+                {isPaused ? 'מושהה' : `מוריד (${activeDownloads.length} במקביל)`}
               </Badge>
             )}
           </CardTitle>
