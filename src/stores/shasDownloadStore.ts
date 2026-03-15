@@ -132,7 +132,7 @@ export const useShasDownloadStore = create<ShasDownloadStore>()(
           m.status === 'downloading' ? { ...m, status: 'paused' as const } : m
         );
         
-        set({ isRunning: false, isPaused: false, masechtot, activeDownloads: new Set() });
+        set({ isRunning: false, isPaused: false, masechtot, activeDownloads: [] });
       },
 
       _processQueue: () => {
