@@ -170,8 +170,7 @@ export const useShasDownloadStore = create<ShasDownloadStore>()(
         if (!masechetState) return;
 
         // Mark as active
-        const newActive = new Set(state.activeDownloads);
-        newActive.add(masechet);
+        const newActive = [...state.activeDownloads, masechet];
         
         set({
           activeDownloads: newActive,
