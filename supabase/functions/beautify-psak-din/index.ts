@@ -52,7 +52,7 @@ serve(async (req) => {
 הפלט חייב להיות HTML תקני בלבד, ללא markdown, ללא \`\`\`html\`\`\`, רק קוד HTML נקי.
 ה-HTML צריך להיות self-contained עם כל ה-CSS inline או ב-style tag בתוך ה-HTML.`;
 
-    const response = await fetch("https://api.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
