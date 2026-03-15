@@ -64,6 +64,7 @@ const Index = () => {
               {activeTab === "compare" && <PsakDinCompareTab />}
               {activeTab === "knowledge-graph" && <KnowledgeGraphTab />}
               {activeTab === "pdf-viewer" && <PdfViewerTab />}
+              {activeTab === "bulk-shas" && <BulkShasDownload />}
             </Suspense>
           </SectionErrorBoundary>
         </div>
