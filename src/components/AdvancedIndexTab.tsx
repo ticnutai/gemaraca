@@ -1,15 +1,13 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { useAllReferencesGrouped, useValidateReference, useCorrectReference } from '@/hooks/useTalmudReferences';
-import { useFilterWorker } from '@/hooks/useFilterWorker';
+import { useAllReferencesGrouped, useValidateReference } from '@/hooks/useTalmudReferences';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { BookOpen, Search, List, ChevronsUpDown, TableIcon, LayoutGrid, TreePine, Bot, Regex, GitBranch, CheckCircle2, Filter } from 'lucide-react';
+import { BookOpen, Search, List, ChevronsUpDown, TableIcon, LayoutGrid, TreePine, Bot, Regex, GitBranch } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
-import RefCorrectionDialog from './RefCorrectionDialog';
 import ListView from './talmud-index/ListView';
 import AccordionView from './talmud-index/AccordionView';
 import IndexTableView from './talmud-index/TableView';
@@ -24,17 +22,13 @@ import { TalmudRefWithPsak, TRACTATES, ValidationStatus, ViewMode, HIGHLIGHT_COL
 export default function AdvancedIndexTab() {
   const { data: refs, isLoading } = useAllReferencesGrouped();
   const validateRef = useValidateReference();
-  const correctRef = useCorrectReference();
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterTractate, setFilterTractate] = useState('all');
   const [hideResolved, setHideResolved] = useState(true);
-  const [filterApproved, setFilterApproved] = useState(false);
-  const [filterSource, setFilterSource] = useState<'all' | 'regex' | 'ai' | 'both'>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('tree');
   const [selectedRef, setSelectedRef] = useState<TalmudRefWithPsak | null>(null);
   const [highlightIdx, setHighlightIdx] = useState(0);
-  const [correctionRef, setCorrectionRef] = useState<TalmudRefWithPsak | null>(null);
   const activeColor = HIGHLIGHT_COLORS[highlightIdx];
 
   // Debounce search input by 300ms
@@ -44,16 +38,40 @@ export default function AdvancedIndexTab() {
     return () => clearTimeout(searchTimer.current);
   }, [search]);
 
-  // Offload heavy filtering/grouping/stats to Web Worker
-  const { filtered, grouped, stats } = useFilterWorker(
-    refs as TalmudRefWithPsak[] | undefined,
-    hideResolved,
-    filterTractate,
-    debouncedSearch,
-    filterApproved,
-    filterSource,
-  );
-  const { uniqueTractates, resolvedCount, pendingCount, regexCount, aiCount, psakCount, approvedCount } = stats;
+  // Memoized filtering — only recalculates when deps actually change
+  const filtered = useMemo(() => {
+    return refs?.filter(r => {
+      if (hideResolved && (r.validation_status === 'incorrect' || r.validation_status === 'ignored' || r.validation_status === 'correct')) return false;
+      if (filterTractate !== 'all' && r.tractate !== filterTractate) return false;
+      if (debouncedSearch && !r.normalized.includes(debouncedSearch) && !r.raw_reference.includes(debouncedSearch) && !r.psakei_din?.title?.includes(debouncedSearch)) return false;
+      return true;
+    }) ?? [];
+  }, [refs, hideResolved, filterTractate, debouncedSearch]);
+
+  // Memoized grouping
+  const grouped = useMemo(() => {
+    return filtered.reduce<Record<string, TalmudRefWithPsak[]>>((acc, ref) => {
+      if (!acc[ref.tractate]) acc[ref.tractate] = [];
+      acc[ref.tractate].push(ref);
+      return acc;
+    }, {});
+  }, [filtered]);
+
+  // Memoized stats — avoids re-scanning 13k items on every render
+  const { uniqueTractates, resolvedCount, pendingCount, regexCount, aiCount, psakCount } = useMemo(() => {
+    const tractateSet = new Set<string>();
+    const psakSet = new Set<string>();
+    let resolved = 0, pending = 0, regex = 0, ai = 0;
+    for (const r of refs ?? []) {
+      tractateSet.add(r.tractate);
+      psakSet.add(r.psak_din_id);
+      const s = r.validation_status;
+      if (s === 'incorrect' || s === 'ignored' || s === 'correct') resolved++;
+      else pending++;
+      if (r.source === 'regex') regex++; else ai++;
+    }
+    return { uniqueTractates: [...tractateSet], resolvedCount: resolved, pendingCount: pending, regexCount: regex, aiCount: ai, psakCount: psakSet.size };
+  }, [refs]);
 
   const handleValidate = useCallback((id: string, status: ValidationStatus, explicitAutoDismiss?: string[]) => {
     if (explicitAutoDismiss) {
@@ -95,14 +113,6 @@ export default function AdvancedIndexTab() {
   const handleClickRef = (ref: TalmudRefWithPsak) => {
     setSelectedRef(ref);
   };
-
-  const handleCorrect = useCallback((ref: TalmudRefWithPsak) => {
-    setCorrectionRef(ref);
-  }, []);
-
-  const handleSaveCorrection = useCallback((id: string, correctedNormalized: string) => {
-    correctRef.mutate({ id, correctedNormalized });
-  }, [correctRef]);
 
   // Load selected psak for dialog
   const [selectedPsak, setSelectedPsak] = useState<Database['public']['Tables']['psakei_din']['Row'] | null>(null);
@@ -238,31 +248,6 @@ export default function AdvancedIndexTab() {
           <Checkbox checked={hideResolved} onCheckedChange={(v) => setHideResolved(!!v)} />
           הצג רק ממתינים {pendingCount > 0 && `(${pendingCount})`}
         </label>
-        <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
-          <Checkbox checked={filterApproved} onCheckedChange={(v) => { setFilterApproved(!!v); if (v) setHideResolved(false); }} />
-          <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
-          מאושרים בלבד {approvedCount > 0 && `(${approvedCount})`}
-        </label>
-        <Select value={filterSource} onValueChange={(v) => setFilterSource(v as typeof filterSource)}>
-          <SelectTrigger className="w-44">
-            <div className="flex items-center gap-1.5">
-              <Filter className="w-3.5 h-3.5" />
-              <SelectValue placeholder="שיטת זיהוי" />
-            </div>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">כל השיטות</SelectItem>
-            <SelectItem value="ai">
-              <span className="flex items-center gap-1"><Bot className="w-3 h-3" /> AI בלבד ({aiCount})</span>
-            </SelectItem>
-            <SelectItem value="regex">
-              <span className="flex items-center gap-1"><Regex className="w-3 h-3" /> Regex בלבד ({regexCount})</span>
-            </SelectItem>
-            <SelectItem value="both">
-              <span className="flex items-center gap-1">שניהם (AI + Regex)</span>
-            </SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
       {/* View mode toggle + stats */}
@@ -330,12 +315,12 @@ export default function AdvancedIndexTab() {
         </div>
       ) : (
         <>
-          {viewMode === 'tree' && <TreeViewIndex grouped={grouped} onValidate={handleValidate} onClickRef={(ref) => openPsakDialog(ref)} onCorrect={handleCorrect} highlightColor={activeColor.value} highlightBg={activeColor.bg} />}
-          {viewMode === 'genealogy' && <GenealogyTreeView grouped={grouped} onValidate={handleValidate} onClickRef={(ref) => openPsakDialog(ref)} onCorrect={handleCorrect} highlightColor={activeColor.value} highlightBg={activeColor.bg} />}
-          {viewMode === 'list' && <ListView grouped={grouped} onValidate={handleValidate} onClickRef={(ref) => openPsakDialog(ref)} onCorrect={handleCorrect} highlightColor={activeColor.value} highlightBg={activeColor.bg} />}
-          {viewMode === 'accordion' && <AccordionView grouped={grouped} onValidate={handleValidate} onClickRef={(ref) => openPsakDialog(ref)} onCorrect={handleCorrect} highlightColor={activeColor.value} highlightBg={activeColor.bg} />}
-          {viewMode === 'table' && <IndexTableView filtered={filtered} onValidate={handleValidate} onClickRef={(ref) => openPsakDialog(ref)} onCorrect={handleCorrect} highlightColor={activeColor.value} highlightBg={activeColor.bg} />}
-          {viewMode === 'cards' && <CardsView grouped={grouped} onValidate={handleValidate} onClickRef={(ref) => openPsakDialog(ref)} onCorrect={handleCorrect} highlightColor={activeColor.value} highlightBg={activeColor.bg} />}
+          {viewMode === 'tree' && <TreeViewIndex grouped={grouped} onValidate={handleValidate} onClickRef={(ref) => openPsakDialog(ref)} highlightColor={activeColor.value} highlightBg={activeColor.bg} />}
+          {viewMode === 'genealogy' && <GenealogyTreeView grouped={grouped} onValidate={handleValidate} onClickRef={(ref) => openPsakDialog(ref)} highlightColor={activeColor.value} highlightBg={activeColor.bg} />}
+          {viewMode === 'list' && <ListView grouped={grouped} onValidate={handleValidate} onClickRef={(ref) => openPsakDialog(ref)} highlightColor={activeColor.value} highlightBg={activeColor.bg} />}
+          {viewMode === 'accordion' && <AccordionView grouped={grouped} onValidate={handleValidate} onClickRef={(ref) => openPsakDialog(ref)} highlightColor={activeColor.value} highlightBg={activeColor.bg} />}
+          {viewMode === 'table' && <IndexTableView filtered={filtered} onValidate={handleValidate} onClickRef={(ref) => openPsakDialog(ref)} highlightColor={activeColor.value} highlightBg={activeColor.bg} />}
+          {viewMode === 'cards' && <CardsView grouped={grouped} onValidate={handleValidate} onClickRef={(ref) => openPsakDialog(ref)} highlightColor={activeColor.value} highlightBg={activeColor.bg} />}
         </>
       )}
 
@@ -348,16 +333,6 @@ export default function AdvancedIndexTab() {
             if (!open) setSelectedPsak(null);
           }}
           psak={selectedPsak}
-        />
-      )}
-
-      {/* Correction Dialog */}
-      {correctionRef && (
-        <RefCorrectionDialog
-          open={!!correctionRef}
-          onOpenChange={(open) => { if (!open) setCorrectionRef(null); }}
-          data={correctionRef}
-          onSave={handleSaveCorrection}
         />
       )}
     </div>

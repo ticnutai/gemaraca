@@ -1,4 +1,4 @@
-import { useState, useMemo, memo } from 'react';
+import { useState, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
@@ -9,7 +9,6 @@ interface Props {
   grouped: Record<string, TalmudRefWithPsak[]>;
   onValidate: (id: string, status: ValidationStatus, autoDismissIds?: string[]) => void;
   onClickRef: (ref: TalmudRefWithPsak) => void;
-  onCorrect?: (ref: TalmudRefWithPsak) => void;
   highlightColor?: string;
   highlightBg?: string;
 }
@@ -93,7 +92,7 @@ function BranchConnector({ count, color }: { count: number; color: string }) {
   );
 }
 
-export default memo(function GenealogyTreeView({ grouped, onValidate, onClickRef, onCorrect, highlightColor, highlightBg }: Props) {
+export default function GenealogyTreeView({ grouped, onValidate, onClickRef, highlightColor, highlightBg }: Props) {
   const [expandedTractate, setExpandedTractate] = useState<string | null>(null);
   const [expandedDaf, setExpandedDaf] = useState<string | null>(null);
   const [expandedAmud, setExpandedAmud] = useState<string | null>(null);
@@ -265,7 +264,6 @@ export default memo(function GenealogyTreeView({ grouped, onValidate, onClickRef
                                                     data={ref}
                                                     onValidate={onValidate}
                                                     onClickRef={onClickRef}
-                                                    onCorrect={onCorrect}
                                                     highlightColor={highlightColor}
                                                     highlightBg={highlightBg}
                                                   />
@@ -299,7 +297,6 @@ export default memo(function GenealogyTreeView({ grouped, onValidate, onClickRef
                                         data={ref}
                                         onValidate={onValidate}
                                         onClickRef={onClickRef}
-                                        onCorrect={onCorrect}
                                         highlightColor={highlightColor}
                                         highlightBg={highlightBg}
                                       />
@@ -321,4 +318,4 @@ export default memo(function GenealogyTreeView({ grouped, onValidate, onClickRef
       </div>
     </ScrollArea>
   );
-});
+}

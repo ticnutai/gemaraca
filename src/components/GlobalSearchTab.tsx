@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Search, BookOpen, Scale, FileText, Loader2, X, SlidersHorizontal, Clock, Sparkles,
+  Search, BookOpen, Scale, FileText, Loader2, X, SlidersHorizontal,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -44,61 +44,7 @@ export default function GlobalSearchTab() {
   const [isSearching, setIsSearching] = useState(false);
   const [activeType, setActiveType] = useState("all");
   const [history, setHistory] = useState<string[]>(getSearchHistory);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const suggestTimer = useRef<ReturnType<typeof setTimeout>>();
-  const inputWrapperRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
-
-  // Close suggestions on outside click
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (inputWrapperRef.current && !inputWrapperRef.current.contains(e.target as Node)) {
-        setShowSuggestions(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  // Debounced autocomplete
-  const fetchSuggestions = useCallback(async (q: string) => {
-    if (q.length < 2) { setSuggestions([]); return; }
-    const historyMatches = getSearchHistory().filter((h) => h.includes(q)).slice(0, 3);
-    try {
-      const { data: titles } = await supabase
-        .from("psakei_din")
-        .select("title")
-        .ilike("title", `%${q}%`)
-        .limit(4);
-      const { data: masechets } = await supabase
-        .from("gemara_pages")
-        .select("title")
-        .ilike("title", `%${q}%`)
-        .limit(4);
-      const dbSuggestions = [
-        ...(titles?.map((t) => t.title) || []),
-        ...(masechets?.map((m) => m.title) || []),
-      ];
-      const combined = [...new Set([...historyMatches, ...dbSuggestions])].slice(0, 8);
-      setSuggestions(combined);
-      setShowSuggestions(combined.length > 0);
-    } catch {
-      setSuggestions(historyMatches);
-      setShowSuggestions(historyMatches.length > 0);
-    }
-  }, []);
-
-  const onQueryChange = useCallback((val: string) => {
-    setQuery(val);
-    clearTimeout(suggestTimer.current);
-    if (val.length >= 2) {
-      suggestTimer.current = setTimeout(() => fetchSuggestions(val), 250);
-    } else {
-      setSuggestions([]);
-      setShowSuggestions(false);
-    }
-  }, [fetchSuggestions]);
 
   const search = useCallback(async (q: string) => {
     if (q.length < 2) { setResults([]); return; }
@@ -129,12 +75,11 @@ export default function GlobalSearchTab() {
         }
       }
 
-      // Search psakei din - use full-text search for speed
-      const ftsQuery = q.split(/\s+/).filter(Boolean).join(' & ');
+      // Search psakei din
       const { data: psakim } = await supabase
         .from("psakei_din")
         .select("id, title, summary, court, year")
-        .or(`search_vector.fts.${ftsQuery},title.ilike.%${q}%`)
+        .or(`title.ilike.%${q}%,summary.ilike.%${q}%,court.ilike.%${q}%`)
         .order("year", { ascending: false })
         .limit(15);
 
@@ -229,15 +174,13 @@ export default function GlobalSearchTab() {
       {/* Search bar */}
       <form onSubmit={handleSubmit}>
         <div className="relative flex gap-2">
-          <div className="relative flex-1" ref={inputWrapperRef}>
+          <div className="relative flex-1">
             <Search className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="הקלד מילת חיפוש..."
               value={query}
-              onChange={(e) => onQueryChange(e.target.value)}
-              onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true); }}
+              onChange={(e) => setQuery(e.target.value)}
               className="pr-9"
-              autoComplete="off"
             />
             {query && (
               <Button
@@ -245,29 +188,10 @@ export default function GlobalSearchTab() {
                 variant="ghost"
                 size="icon"
                 className="absolute left-1 top-0.5 h-8 w-8"
-                onClick={() => { setQuery(""); setResults([]); setSuggestions([]); setShowSuggestions(false); }}
+                onClick={() => { setQuery(""); setResults([]); }}
               >
                 <X className="h-3 w-3" />
               </Button>
-            )}
-            {/* Autocomplete dropdown */}
-            {showSuggestions && suggestions.length > 0 && (
-              <div className="absolute z-50 top-full mt-1 w-full rounded-md border bg-popover shadow-md overflow-hidden">
-                {suggestions.map((s, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    className="w-full text-right px-3 py-2 text-sm hover:bg-accent flex items-center gap-2"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => { setQuery(s); setShowSuggestions(false); search(s); }}
-                  >
-                    {getSearchHistory().includes(s)
-                      ? <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
-                      : <Sparkles className="h-3 w-3 text-blue-400 shrink-0" />}
-                    <span className="truncate">{s}</span>
-                  </button>
-                ))}
-              </div>
             )}
           </div>
           <Button type="submit" disabled={isSearching || query.length < 2}>

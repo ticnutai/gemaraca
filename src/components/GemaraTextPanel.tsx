@@ -136,8 +136,6 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
 
   useEffect(() => {
     loadGemaraText();
-    // Prefetch next daf in background for instant navigation
-    prefetchNextDaf();
   }, [dafYomi]);
 
   useEffect(() => {
@@ -155,7 +153,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   const loadGemaraText = async () => {
     const ref = convertDafYomiToSefariaRef(dafYomi);
     
-    // 1. Check IndexedDB cache first (instant)
+    // Check cache first
     const cached = getCachedGemaraText(ref);
     if (cached) {
       console.log('Using cached Gemara text for ref:', ref);
@@ -165,33 +163,8 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
 
     setIsLoading(true);
     try {
-      // 2. Try direct DB lookup (skips edge function entirely)
-      const { data: dbPage } = await supabase
-        .from('gemara_pages')
-        .select('text_he, text_en, sefaria_ref, he_ref, book, categories, section_ref')
-        .eq('sefaria_ref', ref)
-        .not('text_he', 'is', null)
-        .maybeSingle();
-
-      if (dbPage?.text_he) {
-        console.log('Serving from DB for ref:', ref);
-        const textData = {
-          ref: dbPage.sefaria_ref,
-          heRef: dbPage.he_ref,
-          text: dbPage.text_en || [],
-          he: dbPage.text_he,
-          commentary: [],
-          book: dbPage.book,
-          categories: dbPage.categories || [],
-          sectionRef: dbPage.section_ref,
-        };
-        setCachedGemaraText(ref, textData);
-        setGemaraText(textData);
-        return;
-      }
-
-      // 3. Fallback to edge function (which calls Sefaria and caches to DB)
-      console.log('Loading Gemara text from edge function for ref:', ref);
+      console.log('Loading Gemara text for ref:', ref);
+      
       const { data, error } = await supabase.functions.invoke('get-gemara-text', {
         body: { ref }
       });
@@ -199,7 +172,8 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
       if (error) throw error;
 
       if (data?.success) {
-        console.log('Gemara text loaded successfully from:', data.source || 'sefaria');
+        console.log('Gemara text loaded successfully');
+        // Save to cache
         setCachedGemaraText(ref, data.data);
         setGemaraText(data.data);
       } else {
@@ -214,54 +188,6 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
       });
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  /** Prefetch the next daf in background so navigation feels instant */
-  const prefetchNextDaf = async () => {
-    try {
-      const info = getDafInfo(dafYomi);
-      let nextDaf: number, nextAmud: 'a' | 'b';
-      if (info.amud === 'a') {
-        nextDaf = info.daf;
-        nextAmud = 'b';
-      } else {
-        nextDaf = info.daf + 1;
-        nextAmud = 'a';
-      }
-      const nextRef = `${masechet}.${nextDaf}${nextAmud}`;
-      // Only prefetch if not already cached
-      if (!getCachedGemaraText(nextRef)) {
-        // Try DB first
-        const { data: dbPage } = await supabase
-          .from('gemara_pages')
-          .select('text_he, text_en, sefaria_ref, he_ref, book, categories, section_ref')
-          .eq('sefaria_ref', nextRef)
-          .not('text_he', 'is', null)
-          .maybeSingle();
-
-        if (dbPage?.text_he) {
-          setCachedGemaraText(nextRef, {
-            ref: dbPage.sefaria_ref,
-            heRef: dbPage.he_ref,
-            text: dbPage.text_en || [],
-            he: dbPage.text_he,
-            commentary: [],
-            book: dbPage.book,
-            categories: dbPage.categories || [],
-            sectionRef: dbPage.section_ref,
-          });
-        } else {
-          const { data } = await supabase.functions.invoke('get-gemara-text', {
-            body: { ref: nextRef },
-          });
-          if (data?.success) {
-            setCachedGemaraText(nextRef, data.data);
-          }
-        }
-      }
-    } catch {
-      // Silent fail — prefetch is best-effort
     }
   };
 

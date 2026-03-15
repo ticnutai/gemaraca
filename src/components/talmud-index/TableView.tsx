@@ -1,26 +1,26 @@
-import { useState, useMemo, memo, useRef } from 'react';
-import { useVirtualizer } from '@tanstack/react-virtual';
+import { useState, useMemo, memo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card';
-import { Check, X, EyeOff, Pencil } from 'lucide-react';
+import { Check, X, EyeOff, ChevronRight, ChevronLeft } from 'lucide-react';
 import { TalmudRefWithPsak, TRACTATES, toHebrewDaf, toHebrewAmud, highlightRawInContext, extractContextLines, escapeHtml, ValidationStatus } from './types';
+
+const PAGE_SIZE = 100;
 
 interface Props {
   filtered: TalmudRefWithPsak[];
   onValidate: (id: string, status: ValidationStatus, autoDismissIds?: string[]) => void;
   onClickRef: (ref: TalmudRefWithPsak) => void;
-  onCorrect?: (ref: TalmudRefWithPsak) => void;
   highlightColor?: string;
   highlightBg?: string;
 }
 
-const TableRowItem = memo(function TableRowItem({ data, onValidate, onClickRef, onCorrect, highlightColor, highlightBg }: {
+const TableRowItem = memo(function TableRowItem({ data, onValidate, onClickRef, highlightColor, highlightBg }: {
   data: TalmudRefWithPsak;
   onValidate: Props['onValidate'];
   onClickRef: Props['onClickRef'];
-  onCorrect?: Props['onCorrect'];
   highlightColor?: string;
   highlightBg?: string;
 }) {
@@ -31,7 +31,7 @@ const TableRowItem = memo(function TableRowItem({ data, onValidate, onClickRef, 
       className={`cursor-pointer ${data.validation_status === 'incorrect' ? 'opacity-50' : ''}`}
       onClick={() => onClickRef(data)}
     >
-      <TableCell className="font-bold text-primary">{data.corrected_normalized || data.normalized}</TableCell>
+      <TableCell className="font-bold text-primary">{data.normalized}</TableCell>
       <TableCell>{data.tractate}</TableCell>
       <TableCell>{toHebrewDaf(data.daf)}{data.amud ? ` ${toHebrewAmud(data.amud)}` : ''}</TableCell>
       <TableCell>
@@ -68,48 +68,27 @@ const TableRowItem = memo(function TableRowItem({ data, onValidate, onClickRef, 
       </TableCell>
       <TableCell onClick={e => e.stopPropagation()}>
         <div className="flex gap-1">
-          {data.validation_status === 'correct' ? (
-            /* Approved: show only edit button */
-            <Button
-              size="sm" variant="ghost" className="h-6 w-6 p-0"
-              onClick={() => onCorrect?.(data)}
-              title="ערוך הקשר"
-            >
-              <Pencil className="w-3 h-3 text-blue-600" />
-            </Button>
-          ) : (
-            /* Non-approved: show all action buttons */
-            <>
-              <Button
-                size="sm" variant="ghost" className="h-6 w-6 p-0"
-                onClick={() => onValidate(data.id, data.validation_status === 'correct' ? 'pending' : 'correct')}
-                title="נכון"
-              >
-                <Check className="w-3 h-3 text-green-600" />
-              </Button>
-              <Button
-                size="sm" variant="ghost" className="h-6 w-6 p-0"
-                onClick={() => onValidate(data.id, data.validation_status === 'incorrect' ? 'pending' : 'incorrect')}
-                title="שגוי"
-              >
-                <X className="w-3 h-3 text-red-600" />
-              </Button>
-              <Button
-                size="sm" variant="ghost" className="h-6 w-6 p-0"
-                onClick={() => onValidate(data.id, data.validation_status === 'ignored' ? 'pending' : 'ignored')}
-                title="התעלם"
-              >
-                <EyeOff className="w-3 h-3 text-muted-foreground" />
-              </Button>
-              <Button
-                size="sm" variant="ghost" className="h-6 w-6 p-0"
-                onClick={() => onCorrect?.(data)}
-                title="תקן"
-              >
-                <Pencil className="w-3 h-3 text-blue-600" />
-              </Button>
-            </>
-          )}
+          <Button
+            size="sm" variant="ghost" className="h-6 w-6 p-0"
+            onClick={() => onValidate(data.id, data.validation_status === 'correct' ? 'pending' : 'correct')}
+            title="נכון"
+          >
+            <Check className="w-3 h-3 text-green-600" />
+          </Button>
+          <Button
+            size="sm" variant="ghost" className="h-6 w-6 p-0"
+            onClick={() => onValidate(data.id, data.validation_status === 'incorrect' ? 'pending' : 'incorrect')}
+            title="שגוי"
+          >
+            <X className="w-3 h-3 text-red-600" />
+          </Button>
+          <Button
+            size="sm" variant="ghost" className="h-6 w-6 p-0"
+            onClick={() => onValidate(data.id, data.validation_status === 'ignored' ? 'pending' : 'ignored')}
+            title="התעלם"
+          >
+            <EyeOff className="w-3 h-3 text-muted-foreground" />
+          </Button>
         </div>
       </TableCell>
       <TableCell className="max-w-[200px]">
@@ -152,8 +131,8 @@ const TableRowItem = memo(function TableRowItem({ data, onValidate, onClickRef, 
   );
 });
 
-export default function IndexTableView({ filtered, onValidate, onClickRef, onCorrect, highlightColor, highlightBg }: Props) {
-  const parentRef = useRef<HTMLDivElement>(null);
+export default function IndexTableView({ filtered, onValidate, onClickRef, highlightColor, highlightBg }: Props) {
+  const [page, setPage] = useState(0);
 
   const sorted = useMemo(() => [...filtered].sort((a, b) => {
     const ia = TRACTATES.indexOf(a.tractate);
@@ -164,20 +143,41 @@ export default function IndexTableView({ filtered, onValidate, onClickRef, onCor
     return (a.amud ?? '').localeCompare(b.amud ?? '');
   }), [filtered]);
 
-  const virtualizer = useVirtualizer({
-    count: sorted.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 48,
-    overscan: 20,
-  });
+  const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
+  const currentPage = Math.min(page, totalPages - 1);
+  const pageItems = sorted.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
 
   return (
     <div className="space-y-2">
-      <div className="text-sm text-muted-foreground">
-        מציג {sorted.length} הפניות
-      </div>
+      {/* Pagination controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <span>
+            מציג {currentPage * PAGE_SIZE + 1}–{Math.min((currentPage + 1) * PAGE_SIZE, sorted.length)} מתוך {sorted.length}
+          </span>
+          <div className="flex items-center gap-1">
+            <Button
+              size="sm" variant="outline" className="h-7 w-7 p-0"
+              disabled={currentPage === 0}
+              onClick={() => setPage(p => p - 1)}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+            <span className="px-2 text-xs font-medium">
+              עמוד {currentPage + 1} / {totalPages}
+            </span>
+            <Button
+              size="sm" variant="outline" className="h-7 w-7 p-0"
+              disabled={currentPage >= totalPages - 1}
+              onClick={() => setPage(p => p + 1)}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
-      <div ref={parentRef} className="h-[calc(100vh-380px)] overflow-auto" dir="rtl">
+      <ScrollArea className="h-[calc(100vh-380px)]" dir="rtl">
         <Table className="text-right">
           <TableHeader>
             <TableRow>
@@ -193,32 +193,19 @@ export default function IndexTableView({ filtered, onValidate, onClickRef, onCor
             </TableRow>
           </TableHeader>
           <TableBody>
-            {/* Spacer for virtual scroll offset */}
-            {virtualizer.getVirtualItems().length > 0 && (
-              <tr style={{ height: virtualizer.getVirtualItems()[0]?.start ?? 0 }}>
-                <td colSpan={9} />
-              </tr>
-            )}
-            {virtualizer.getVirtualItems().map(virtualRow => (
+            {pageItems.map(item => (
               <TableRowItem
-                key={sorted[virtualRow.index].id}
-                data={sorted[virtualRow.index]}
+                key={item.id}
+                data={item}
                 onValidate={onValidate}
                 onClickRef={onClickRef}
-                onCorrect={onCorrect}
                 highlightColor={highlightColor}
                 highlightBg={highlightBg}
               />
             ))}
-            {/* Bottom spacer */}
-            {virtualizer.getVirtualItems().length > 0 && (
-              <tr style={{ height: virtualizer.getTotalSize() - (virtualizer.getVirtualItems().at(-1)?.end ?? 0) }}>
-                <td colSpan={9} />
-              </tr>
-            )}
           </TableBody>
         </Table>
-      </div>
+      </ScrollArea>
     </div>
   );
 }

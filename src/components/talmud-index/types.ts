@@ -24,7 +24,6 @@ export interface TalmudReference {
   amud: string | null;
   raw_reference: string;
   normalized: string;
-  corrected_normalized: string | null;
   confidence: string;
   confidence_score: number | null;
   confidence_factors: ConfidenceFactors | null;
@@ -45,7 +44,6 @@ export interface RefItemProps {
   data: TalmudRefWithPsak;
   onValidate: (id: string, status: ValidationStatus, autoDismissIds?: string[]) => void;
   onClickRef: (ref: TalmudRefWithPsak) => void;
-  onCorrect?: (ref: TalmudRefWithPsak) => void;
 }
 
 export const TRACTATES = MASECHTOT.map(m => m.hebrewName);

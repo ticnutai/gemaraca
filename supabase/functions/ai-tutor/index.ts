@@ -37,7 +37,7 @@ serve(async (req) => {
       );
     }
 
-    const { question, context, history, stream: wantStream } = await req.json();
+    const { question, context, history } = await req.json();
 
     if (!question || typeof question !== "string" || question.length > 2000) {
       return new Response(
@@ -75,8 +75,6 @@ serve(async (req) => {
       { role: "user", content: question },
     ];
 
-    const useStream = wantStream === true;
-
     const response = await fetch("https://api.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -88,7 +86,6 @@ serve(async (req) => {
         messages,
         temperature: 0.7,
         max_tokens: 1200,
-        stream: useStream,
       }),
     });
 
@@ -96,18 +93,6 @@ serve(async (req) => {
       const errText = await response.text();
       console.error("AI API error:", response.status, errText);
       throw new Error(`AI service error: ${response.status}`);
-    }
-
-    if (useStream && response.body) {
-      // Stream SSE chunks directly to the client
-      return new Response(response.body, {
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive',
-        },
-      });
     }
 
     const result = await response.json();

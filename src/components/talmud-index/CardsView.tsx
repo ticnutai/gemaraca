@@ -1,4 +1,3 @@
-import { memo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,12 +8,11 @@ interface Props {
   grouped: Record<string, TalmudRefWithPsak[]>;
   onValidate: (id: string, status: ValidationStatus, autoDismissIds?: string[]) => void;
   onClickRef: (ref: TalmudRefWithPsak) => void;
-  onCorrect?: (ref: TalmudRefWithPsak) => void;
   highlightColor?: string;
   highlightBg?: string;
 }
 
-export default memo(function CardsView({ grouped, onValidate, onClickRef, onCorrect, highlightColor, highlightBg }: Props) {
+export default function CardsView({ grouped, onValidate, onClickRef, highlightColor, highlightBg }: Props) {
   const sortedTractates = Object.keys(grouped).sort((a, b) => {
     const ia = TRACTATES.indexOf(a);
     const ib = TRACTATES.indexOf(b);
@@ -67,7 +65,7 @@ export default memo(function CardsView({ grouped, onValidate, onClickRef, onCorr
                               </div>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 {group.refs.map(ref => (
-                                  <RefCard key={ref.id} data={ref} onValidate={onValidate} onClickRef={onClickRef} onCorrect={onCorrect} highlightColor={highlightColor} highlightBg={highlightBg} />
+                                  <RefCard key={ref.id} data={ref} onValidate={onValidate} onClickRef={onClickRef} highlightColor={highlightColor} highlightBg={highlightBg} />
                                 ))}
                               </div>
                             </div>
@@ -76,7 +74,7 @@ export default memo(function CardsView({ grouped, onValidate, onClickRef, onCorr
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           {amudGroups[0].refs.map(ref => (
-                            <RefCard key={ref.id} data={ref} onValidate={onValidate} onClickRef={onClickRef} onCorrect={onCorrect} highlightColor={highlightColor} highlightBg={highlightBg} />
+                            <RefCard key={ref.id} data={ref} onValidate={onValidate} onClickRef={onClickRef} highlightColor={highlightColor} highlightBg={highlightBg} />
                           ))}
                         </div>
                       )}
@@ -90,4 +88,4 @@ export default memo(function CardsView({ grouped, onValidate, onClickRef, onCorr
       })}
     </Tabs>
   );
-});
+}

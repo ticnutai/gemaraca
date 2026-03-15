@@ -2,7 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown } from 'lucide-react';
-import { useState, memo } from 'react';
+import { useState } from 'react';
 import RefCard from './RefCard';
 import { TalmudRefWithPsak, TRACTATES, toHebrewDaf, toHebrewAmud, ValidationStatus } from './types';
 
@@ -10,7 +10,6 @@ interface Props {
   grouped: Record<string, TalmudRefWithPsak[]>;
   onValidate: (id: string, status: ValidationStatus, autoDismissIds?: string[]) => void;
   onClickRef: (ref: TalmudRefWithPsak) => void;
-  onCorrect?: (ref: TalmudRefWithPsak) => void;
   highlightColor?: string;
   highlightBg?: string;
 }
@@ -28,7 +27,7 @@ function groupByAmud(refs: TalmudRefWithPsak[]) {
   return order.filter(k => groups[k]).map(k => ({ amud: k, refs: groups[k] }));
 }
 
-export default memo(function TreeViewIndex({ grouped, onValidate, onClickRef, onCorrect, highlightColor, highlightBg }: Props) {
+export default function TreeViewIndex({ grouped, onValidate, onClickRef, highlightColor, highlightBg }: Props) {
   const [openTractates, setOpenTractates] = useState<Record<string, boolean>>({});
   const [openDafs, setOpenDafs] = useState<Record<string, boolean>>({});
   const [openAmuds, setOpenAmuds] = useState<Record<string, boolean>>({});
@@ -107,7 +106,7 @@ export default memo(function TreeViewIndex({ grouped, onValidate, onClickRef, on
                                     <CollapsibleContent>
                                       <div className="mr-4 space-y-2 py-1 border-r border-border/20 pr-3">
                                         {amudRefs.map(ref => (
-                                          <RefCard key={ref.id} data={ref} onValidate={onValidate} onClickRef={onClickRef} onCorrect={onCorrect} highlightColor={highlightColor} highlightBg={highlightBg} />
+                                          <RefCard key={ref.id} data={ref} onValidate={onValidate} onClickRef={onClickRef} highlightColor={highlightColor} highlightBg={highlightBg} />
                                         ))}
                                       </div>
                                     </CollapsibleContent>
@@ -117,7 +116,7 @@ export default memo(function TreeViewIndex({ grouped, onValidate, onClickRef, on
                             ) : (
                               // Only one group without amud, show refs directly
                               amudGroups[0]?.refs.map(ref => (
-                                <RefCard key={ref.id} data={ref} onValidate={onValidate} onClickRef={onClickRef} onCorrect={onCorrect} highlightColor={highlightColor} highlightBg={highlightBg} />
+                                <RefCard key={ref.id} data={ref} onValidate={onValidate} onClickRef={onClickRef} highlightColor={highlightColor} highlightBg={highlightBg} />
                               ))
                             )}
                           </div>
@@ -133,4 +132,4 @@ export default memo(function TreeViewIndex({ grouped, onValidate, onClickRef, on
       </div>
     </ScrollArea>
   );
-});
+}
