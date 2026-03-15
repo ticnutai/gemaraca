@@ -229,10 +229,10 @@ const AppSidebar = ({
 
   return (
     <>
-      {/* Mobile overlay only */}
+      {/* Mobile overlay */}
       {isMobile && sidebarOpen && (
         <div 
-          className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px]"
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px] transition-opacity duration-300"
           onClick={() => {
             setOpen(false);
             setIsHovered(false);
@@ -243,16 +243,15 @@ const AppSidebar = ({
         side="right" 
         className={cn(
           "border border-border/50 !bg-sidebar",
-          // Rounded corners + clip content to respect border-radius
-          "!rounded-2xl overflow-hidden m-2 !h-[calc(100%-1rem)]",
-          // Transition for smooth open/close
-          "transition-all duration-300 ease-in-out",
+          "!rounded-2xl overflow-hidden !h-[calc(100%-1rem)]",
+          "transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
           isMobile
-            ? "fixed right-0 top-0 z-50 w-[85vw] max-w-[320px] shadow-2xl !mt-2 !mr-2 !mb-2"
+            ? cn(
+                "fixed top-0 z-50 w-[80vw] max-w-[300px] shadow-2xl !mt-2 !mr-2 !mb-2 !rounded-l-2xl !rounded-r-none",
+                sidebarOpen ? "right-0" : "-right-[82vw]"
+              )
             : "fixed right-0 top-0 z-40",
-          // When not visible on desktop, slide off screen
           !isMobile && !sidebarVisible && "translate-x-full",
-          // Shadow when floating (unpinned & visible)
           !isMobile && !isPinned && sidebarVisible && "shadow-2xl"
         )}
         collapsible="none"
