@@ -98,8 +98,7 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
       const map: LoadedPagesMap = {};
       const { data: pagesData } = await supabase
         .from('gemara_pages')
-        .select('masechet, daf_number, sugya_id');
-      if (pagesData) {
+        .select('masechet, daf_number, sugya_id');      if (pagesData) {
         pagesData.forEach(page => {
           if (!map[page.masechet]) map[page.masechet] = [];
           // Extract amud from sugya_id (format: "berakhot_2a") or default to 'a'

@@ -65,26 +65,83 @@ export default function AiTutorChat() {
     setIsLoading(true);
 
     try {
-      // Get current page context from the DOM
       const activeTab = document.querySelector("[data-active-tab]")?.getAttribute("data-active-tab") || "";
       const pageTitle = document.querySelector("h1")?.textContent || "";
 
-      const { data, error } = await supabase.functions.invoke("ai-tutor", {
-        body: {
+      const session = (await supabase.auth.getSession()).data.session;
+      const token = session?.access_token;
+      const supabaseUrl = (supabase as any).supabaseUrl ?? (supabase as any).rest?.url?.replace("/rest/v1", "") ?? "";
+      const anonKey = (supabase as any).supabaseKey ?? (supabase as any).rest?.headers?.apikey ?? "";
+
+      const res = await fetch(`${supabaseUrl}/functions/v1/ai-tutor`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+          "apikey": anonKey,
+        },
+        body: JSON.stringify({
           question: text,
           context: { activeTab, pageTitle },
           history: messages.slice(-6).map((m) => ({ role: m.role, content: m.content })),
-        },
+          stream: true,
+        }),
       });
 
-      if (error) throw error;
+      if (!res.ok) throw new Error(`שגיאת שרת: ${res.status}`);
 
-      const assistantMsg: ChatMessage = {
-        role: "assistant",
-        content: data?.answer || "מצטער, לא הצלחתי לעבד את השאלה.",
-        timestamp: Date.now(),
-      };
-      setMessages((prev) => [...prev, assistantMsg]);
+      const contentType = res.headers.get("content-type") || "";
+
+      if (contentType.includes("text/event-stream") && res.body) {
+        // Streaming response - read SSE chunks
+        const placeholder: ChatMessage = { role: "assistant", content: "", timestamp: Date.now() };
+        setMessages((prev) => [...prev, placeholder]);
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let accumulated = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split("\n");
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
+            const payload = line.slice(6).trim();
+            if (payload === "[DONE]") break;
+            try {
+              const parsed = JSON.parse(payload);
+              const delta = parsed.choices?.[0]?.delta?.content;
+              if (delta) {
+                accumulated += delta;
+                const current = accumulated;
+                setMessages((prev) => {
+                  const copy = [...prev];
+                  copy[copy.length - 1] = { ...copy[copy.length - 1], content: current };
+                  return copy;
+                });
+              }
+            } catch { /* skip malformed chunks */ }
+          }
+        }
+        if (!accumulated) {
+          setMessages((prev) => {
+            const copy = [...prev];
+            copy[copy.length - 1] = { ...copy[copy.length - 1], content: "לא התקבלה תשובה." };
+            return copy;
+          });
+        }
+      } else {
+        // Fallback: regular JSON response
+        const data = await res.json();
+        const assistantMsg: ChatMessage = {
+          role: "assistant",
+          content: data?.answer || "מצטער, לא הצלחתי לעבד את השאלה.",
+          timestamp: Date.now(),
+        };
+        setMessages((prev) => [...prev, assistantMsg]);
+      }
     } catch (err: any) {
       setMessages((prev) => [
         ...prev,

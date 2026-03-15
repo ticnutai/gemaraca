@@ -132,7 +132,39 @@ serve(async (req) => {
       .maybeSingle();
 
     if (existingPage) {
-      console.log('Page already exists:', existingPage.id);
+      // If page exists but has no text, update it with the text content
+      if (!existingPage.text_he) {
+        console.log('Page exists without text, updating with content...');
+        const { data: updated, error: updateError } = await supabaseClient
+          .from('gemara_pages')
+          .update({
+            text_he: sefariaData.he,
+            text_en: sefariaData.text || null,
+            he_ref: sefariaData.heRef || null,
+            book: sefariaData.book || null,
+            categories: sefariaData.categories || null,
+            section_ref: sefariaData.sectionRef || null,
+          })
+          .eq('id', existingPage.id)
+          .select()
+          .single();
+        
+        if (updateError) {
+          console.error('Error updating existing page with text:', updateError);
+        } else {
+          console.log('Updated existing page with text content:', updated.id);
+          return new Response(
+            JSON.stringify({
+              success: true,
+              data: updated,
+              message: `דף ${dafYomi} עודכן עם תוכן טקסט`
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      }
+
+      console.log('Page already exists with text:', existingPage.id);
       return new Response(
         JSON.stringify({
           success: true,
@@ -143,8 +175,8 @@ serve(async (req) => {
       );
     }
 
-    console.log('Inserting into database...');
-    // Insert into database
+    console.log('Inserting into database with text content...');
+    // Insert into database — now includes full text content
     const { data, error } = await supabaseClient
       .from('gemara_pages')
       .insert({
@@ -153,7 +185,13 @@ serve(async (req) => {
         title: title,
         daf_yomi: dafYomi,
         sefaria_ref: sefariaRef,
-        masechet: sefariaName
+        masechet: sefariaName,
+        text_he: sefariaData.he,
+        text_en: sefariaData.text || null,
+        he_ref: sefariaData.heRef || null,
+        book: sefariaData.book || null,
+        categories: sefariaData.categories || null,
+        section_ref: sefariaData.sectionRef || null,
       })
       .select()
       .single();
