@@ -375,7 +375,7 @@ export default function PsakeiDinDafPanel({
                   <Building2 className="w-3 h-3" />{filterCourt || "בית דין"}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" dir="rtl" className="max-h-60 overflow-y-auto">
+              <DropdownMenuContent align="end" className="max-h-60 overflow-y-auto">
                 <DropdownMenuItem onClick={() => setFilterCourt(null)} className="gap-2"><X className="w-3 h-3" /> הכול</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 {allCourts.map(c => <DropdownMenuItem key={c} onClick={() => setFilterCourt(c)}>{c}</DropdownMenuItem>)}

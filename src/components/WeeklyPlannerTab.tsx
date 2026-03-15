@@ -147,7 +147,7 @@ export default function WeeklyPlannerTab() {
             <Select value={newItem.masechet} onValueChange={v => setNewItem(p => ({ ...p, masechet: v }))}>
               <SelectTrigger><SelectValue placeholder="מסכת" /></SelectTrigger>
               <SelectContent>
-                {MASECHTOT.map(m => <SelectItem key={m.id} value={m.hebrewName}>{m.hebrewName}</SelectItem>)}
+                {MASECHTOT.map(m => <SelectItem key={m.hebrewName} value={m.hebrewName}>{m.hebrewName}</SelectItem>)}
               </SelectContent>
             </Select>
             <Input

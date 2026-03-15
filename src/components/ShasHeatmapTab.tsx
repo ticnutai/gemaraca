@@ -125,23 +125,24 @@ export default function ShasHeatmapTab() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {masechtot.map(m => {
+                  const dafCount = m.maxDaf - 1;
                   const visited = visitMap[m.hebrewName]?.size || 0;
-                  const pct = m.dafCount > 0 ? Math.round((visited / m.dafCount) * 100) : 0;
+                  const pct = dafCount > 0 ? Math.round((visited / dafCount) * 100) : 0;
 
                   return (
-                    <div key={m.id} className="space-y-1">
+                    <div key={m.hebrewName} className="space-y-1">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <BookOpen className="h-3.5 w-3.5 text-muted-foreground" />
                           <span className="text-sm font-medium">{m.hebrewName}</span>
-                          <span className="text-xs text-muted-foreground">({m.dafCount} דפים)</span>
+                          <span className="text-xs text-muted-foreground">({dafCount} דפים)</span>
                         </div>
                         <Badge variant={pct === 100 ? "default" : "secondary"} className="text-xs">
-                          {visited}/{m.dafCount} ({pct}%)
+                          {visited}/{dafCount} ({pct}%)
                         </Badge>
                       </div>
                       <div className="flex flex-wrap gap-0.5">
-                        {Array.from({ length: m.dafCount }, (_, i) => i + 2).map(dafNum => (
+                        {Array.from({ length: dafCount }, (_, i) => i + 2).map(dafNum => (
                           <Tooltip key={dafNum}>
                             <TooltipTrigger asChild>
                               <div className={`w-4 h-4 rounded-sm border text-[7px] flex items-center justify-center cursor-default transition-all hover:scale-150 hover:z-10 ${getColor(m.hebrewName, dafNum)}`}>
