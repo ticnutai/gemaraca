@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { FileText, Bookmark, Download, Search, Trash2, Plus, ExternalLink, BookOpen, Palette, Maximize2, Minimize2 } from "lucide-react";
+import { FileText, Bookmark, Download, Search, Trash2, Plus, ExternalLink, BookOpen, Palette, Maximize2, Minimize2, RefreshCw } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -108,6 +108,83 @@ export default function EmbedPdfViewerPage() {
   // Source URLs
   const leftSourceUrl = manualUrl.trim() || selectedPdf?.file_url || "";
   const rightSourceUrl = compareManualUrl.trim() || comparePdf?.file_url || "";
+
+  // Smart viewer strategy: detect if URL is a direct file (PDF/TXT/DOCX) or an HTML page
+  type ContentViewType = 'pdf' | 'text' | 'docx' | 'image' | 'html-page';
+
+  const detectContentType = useCallback((url: string): ContentViewType => {
+    if (!url) return 'html-page';
+    const lower = url.toLowerCase();
+    if (/\.(pdf)(\?|#|$)/.test(lower)) return 'pdf';
+    if (/\.(txt|text|log|csv|md)(\?|#|$)/.test(lower)) return 'text';
+    if (/\.(docx?|rtf|odt|xls|xlsx|ppt|pptx)(\?|#|$)/.test(lower)) return 'docx';
+    if (/\.(png|jpg|jpeg|gif|svg|webp|bmp)(\?|#|$)/.test(lower)) return 'image';
+    return 'html-page';
+  }, []);
+
+  const getViewerUrl = useCallback((url: string, type: ContentViewType): string => {
+    if (!url) return "";
+    switch (type) {
+      case 'pdf':
+      case 'image':
+        return url;
+      case 'text':
+      case 'html-page':
+        // Text: fetched via JS. HTML pages: show open-in-new-tab UI
+        return "";
+      case 'docx':
+        // Use Google Docs Viewer for office documents
+        return `https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`;
+    }
+  }, []);
+
+  const leftContentType = detectContentType(leftSourceUrl);
+  const rightContentType = detectContentType(rightSourceUrl);
+  const leftViewerUrl = getViewerUrl(leftSourceUrl, leftContentType);
+  const rightViewerUrl = getViewerUrl(rightSourceUrl, rightContentType);
+
+  // Iframe loading state
+  const [iframeLoaded, setIframeLoaded] = useState(false);
+  const [iframeError, setIframeError] = useState(false);
+
+  // Text content state (for .txt files fetched via JS)
+  const [fetchedText, setFetchedText] = useState<string | null>(null);
+  const [fetchingText, setFetchingText] = useState(false);
+  const [fetchTextError, setFetchTextError] = useState<string | null>(null);
+
+  // Reset loading state when URL changes
+  useEffect(() => {
+    setIframeLoaded(false);
+    setIframeError(false);
+    setFetchedText(null);
+    setFetchTextError(null);
+  }, [leftSourceUrl]);
+
+  // Fetch text content for .txt files
+  useEffect(() => {
+    if (leftContentType !== 'text' || !leftSourceUrl) return;
+    let cancelled = false;
+    setFetchingText(true);
+    setFetchTextError(null);
+    fetch(leftSourceUrl)
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.text();
+      })
+      .then(text => {
+        if (!cancelled) {
+          setFetchedText(text);
+          setFetchingText(false);
+        }
+      })
+      .catch(err => {
+        if (!cancelled) {
+          setFetchTextError(err.message);
+          setFetchingText(false);
+        }
+      });
+    return () => { cancelled = true; };
+  }, [leftSourceUrl, leftContentType]);
 
   // ── Filtered annotations ──
   const filteredAnnotations = useMemo(() => {
@@ -376,14 +453,135 @@ export default function EmbedPdfViewerPage() {
                     </button>
                   </div>
                 </div>
-                {/* Document Viewer — iframe for universal file support */}
+                {/* Document Viewer — smart strategy per file type */}
                 <div className="flex-1 relative bg-[#f8f8f6]">
-                  <iframe
-                    src={leftSourceUrl}
-                    className="absolute inset-0 w-full h-full border-0"
-                    title="PDF Viewer"
-                    sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-                  />
+                  {/* TEXT files — rendered directly */}
+                  {leftContentType === 'text' && (
+                    <>
+                      {fetchingText && (
+                        <div className="absolute inset-0 flex items-center justify-center z-10">
+                          <div className="text-center space-y-2">
+                            <div className="w-8 h-8 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin mx-auto" />
+                            <p className="text-xs text-[#0B1F5B]/50">טוען מסמך טקסט...</p>
+                          </div>
+                        </div>
+                      )}
+                      {fetchTextError && (
+                        <div className="absolute inset-0 flex items-center justify-center z-10 bg-white">
+                          <div className="text-center space-y-3 p-6">
+                            <FileText className="h-12 w-12 mx-auto text-[#D4AF37]/40" />
+                            <p className="text-sm text-[#0B1F5B]/70">שגיאה בטעינת הטקסט: {fetchTextError}</p>
+                            <div className="flex gap-2 justify-center flex-wrap">
+                              <Button size="sm" variant="outline" className="border-[#D4AF37] text-[#0B1F5B]" onClick={() => {
+                                setFetchTextError(null);
+                                setFetchedText(null);
+                                // Re-trigger fetch by resetting URL
+                                const url = leftSourceUrl;
+                                setManualUrl("");
+                                setTimeout(() => setManualUrl(url), 50);
+                              }}>
+                                <RefreshCw className="h-3.5 w-3.5 ml-1" /> נסה שוב
+                              </Button>
+                              <a href={leftSourceUrl} target="_blank" rel="noopener noreferrer">
+                                <Button size="sm" className="bg-[#0B1F5B] text-white border-2 border-[#D4AF37]">
+                                  <ExternalLink className="h-3.5 w-3.5 ml-1" /> פתח בחלון חדש
+                                </Button>
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {fetchedText !== null && (
+                        <ScrollArea className="absolute inset-0">
+                          <pre className="p-4 text-sm text-[#0B1F5B] whitespace-pre-wrap font-mono leading-relaxed" dir="rtl">
+                            {fetchedText}
+                          </pre>
+                        </ScrollArea>
+                      )}
+                    </>
+                  )}
+
+                  {/* IMAGE files — rendered with img tag */}
+                  {leftContentType === 'image' && (
+                    <div className="absolute inset-0 flex items-center justify-center overflow-auto p-4">
+                      <img
+                        src={leftSourceUrl}
+                        alt="מסמך"
+                        className="max-w-full max-h-full object-contain"
+                        onLoad={() => setIframeLoaded(true)}
+                        onError={() => setIframeError(true)}
+                      />
+                    </div>
+                  )}
+
+                  {/* HTML-PAGE — external sites that block iframe embedding */}
+                  {leftContentType === 'html-page' && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white">
+                      <div className="text-center space-y-4 p-8 max-w-md">
+                        <ExternalLink className="h-16 w-16 mx-auto text-[#D4AF37]" />
+                        <h3 className="text-lg font-semibold text-[#0B1F5B]">דף אינטרנט חיצוני</h3>
+                        <p className="text-sm text-[#0B1F5B]/60">
+                          דף זה מגיע מאתר חיצוני ולא ניתן להציגו במסגרת. לחץ לפתיחה בחלון חדש.
+                        </p>
+                        <a href={leftSourceUrl} target="_blank" rel="noopener noreferrer">
+                          <Button size="lg" className="bg-[#0B1F5B] text-white border-2 border-[#D4AF37] hover:bg-[#0B1F5B]/90 text-base px-8">
+                            <ExternalLink className="h-5 w-5 ml-2" /> פתח בחלון חדש
+                          </Button>
+                        </a>
+                        <p className="text-xs text-[#0B1F5B]/40 break-all" dir="ltr">{leftSourceUrl}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* PDF / DOCX files — rendered in iframe */}
+                  {(leftContentType === 'pdf' || leftContentType === 'docx') && (
+                    <>
+                      {!iframeLoaded && !iframeError && (
+                        <div className="absolute inset-0 flex items-center justify-center z-10">
+                          <div className="text-center space-y-2">
+                            <div className="w-8 h-8 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin mx-auto" />
+                            <p className="text-xs text-[#0B1F5B]/50">טוען מסמך...</p>
+                          </div>
+                        </div>
+                      )}
+                      {iframeError && (
+                        <div className="absolute inset-0 flex items-center justify-center z-10 bg-white">
+                          <div className="text-center space-y-3 p-6">
+                            <FileText className="h-12 w-12 mx-auto text-[#D4AF37]/40" />
+                            <p className="text-sm text-[#0B1F5B]/70">לא ניתן לטעון את המסמך במסגרת</p>
+                            <div className="flex gap-2 justify-center flex-wrap">
+                              <Button size="sm" variant="outline" className="border-[#D4AF37] text-[#0B1F5B]" onClick={() => { setIframeError(false); setIframeLoaded(false); }}>
+                                <RefreshCw className="h-3.5 w-3.5 ml-1" /> נסה שוב
+                              </Button>
+                              {leftContentType !== 'docx' && (
+                                <Button size="sm" variant="outline" className="border-[#D4AF37] text-[#0B1F5B]" onClick={() => {
+                                  setIframeError(false);
+                                  setIframeLoaded(false);
+                                  setManualUrl(`https://docs.google.com/gview?url=${encodeURIComponent(leftSourceUrl)}&embedded=true`);
+                                }}>
+                                  נסה דרך Google Viewer
+                                </Button>
+                              )}
+                              <a href={leftSourceUrl} target="_blank" rel="noopener noreferrer">
+                                <Button size="sm" className="bg-[#0B1F5B] text-white border-2 border-[#D4AF37]">
+                                  <ExternalLink className="h-3.5 w-3.5 ml-1" /> פתח בחלון חדש
+                                </Button>
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      <iframe
+                        key={leftViewerUrl}
+                        src={leftViewerUrl}
+                        className="absolute inset-0 w-full h-full border-0"
+                        title="PDF Viewer"
+                        allow="fullscreen"
+                        onLoad={() => setIframeLoaded(true)}
+                        onError={() => setIframeError(true)}
+                      />
+                    </>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -406,10 +604,10 @@ export default function EmbedPdfViewerPage() {
                 </div>
                 <div className="flex-1 relative bg-[#f8f8f6]">
                   <iframe
-                    src={rightSourceUrl}
+                    src={rightViewerUrl}
                     className="absolute inset-0 w-full h-full border-0"
                     title="PDF Viewer (compare)"
-                    sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                    allow="fullscreen"
                   />
                 </div>
               </CardContent>
