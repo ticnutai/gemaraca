@@ -232,7 +232,7 @@ const AppSidebar = ({
       {/* Mobile overlay */}
       {isMobile && sidebarOpen && (
         <div 
-          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px] transition-opacity duration-300"
+          className="fixed inset-0 top-[56px] z-40 bg-black/40 backdrop-blur-[2px] transition-opacity duration-300"
           onClick={() => {
             setOpen(false);
             setIsHovered(false);
