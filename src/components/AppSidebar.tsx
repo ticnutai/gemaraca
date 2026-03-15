@@ -317,7 +317,7 @@ const AppSidebar = ({
                     )} />
                     <span className="font-medium text-sm">{item.title}</span>
                     {"badge" in item && item.badge && (
-                      <span className="text-[10px] bg-amber-400/20 text-amber-600 dark:text-amber-300 border border-amber-400/40 px-1.5 py-0.5 rounded-full font-medium">{item.badge}</span>
+                      <span className="text-[10px] bg-accent/20 text-accent-foreground border border-accent/40 px-1.5 py-0.5 rounded-full font-medium">{item.badge}</span>
                     )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
