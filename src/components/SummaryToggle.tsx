@@ -37,7 +37,7 @@ export default function SummaryToggle({ summary, compact }: SummaryToggleProps) 
       >
         <div className="space-y-2">
           <h4 className="font-semibold text-sm flex items-center gap-1.5 text-foreground">
-            <FileText className="w-4 h-4 text-amber-600" />
+            <FileText className="w-4 h-4 text-foreground" />
             תקציר המקרה
           </h4>
           <p className="text-sm leading-relaxed text-muted-foreground">
