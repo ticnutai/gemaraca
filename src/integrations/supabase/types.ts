@@ -392,6 +392,8 @@ export type Database = {
         Row: {
           amud: string | null
           confidence: string
+          confidence_factors: Json | null
+          confidence_score: number | null
           context_snippet: string | null
           created_at: string
           daf: string
@@ -407,6 +409,8 @@ export type Database = {
         Insert: {
           amud?: string | null
           confidence?: string
+          confidence_factors?: Json | null
+          confidence_score?: number | null
           context_snippet?: string | null
           created_at?: string
           daf: string
@@ -422,6 +426,8 @@ export type Database = {
         Update: {
           amud?: string | null
           confidence?: string
+          confidence_factors?: Json | null
+          confidence_score?: number | null
           context_snippet?: string | null
           created_at?: string
           daf?: string
