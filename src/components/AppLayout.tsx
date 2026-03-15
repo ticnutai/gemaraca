@@ -26,11 +26,23 @@ const AppLayoutInner = ({ children }: AppLayoutProps) => {
     isPinned, 
     setIsPinned 
   } = useAppContext();
-  const { open: sidebarOpen } = useSidebar();
+  const { open: sidebarOpen, setOpen } = useSidebar();
   const isMobile = useIsMobile();
 
   // Start the background download engine (processes queued jobs)
   useGemaraDownloadEngine();
+
+  // Swipe gestures: swipe from right edge → open sidebar, swipe right → close
+  useSwipeGesture({
+    onSwipeLeft: () => {
+      if (isMobile && !sidebarOpen) setOpen(true);
+    },
+    onSwipeRight: () => {
+      if (isMobile && sidebarOpen) setOpen(false);
+    },
+    threshold: 50,
+    edgeZone: isMobile ? 40 : undefined,
+  });
 
   const handleTabChange = (tab: string) => {
     if (tab === "embedpdf-viewer") {
