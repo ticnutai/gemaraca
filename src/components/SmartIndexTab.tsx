@@ -982,8 +982,21 @@ const SmartIndexTab = () => {
                     )}
                   </div>
 
-                  <div className="text-sm text-muted-foreground">
-                    {filteredResults.length} תוצאות
+                  <div className="flex items-center gap-3">
+                    <div className="text-sm text-muted-foreground">
+                      {filteredResults.length} תוצאות
+                    </div>
+                    <div className="flex gap-0.5 bg-background rounded-md p-0.5 border border-border/50">
+                      <Button variant={smartViewMode === "cards" ? "default" : "ghost"} size="sm" className="h-6 px-2 text-[11px]" onClick={() => setSmartViewMode("cards")} title="כרטיסיות">
+                        <LayoutGrid className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button variant={smartViewMode === "table" ? "default" : "ghost"} size="sm" className="h-6 px-2 text-[11px]" onClick={() => setSmartViewMode("table")} title="טבלה">
+                        <TableIcon className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button variant={smartViewMode === "compact" ? "default" : "ghost"} size="sm" className="h-6 px-2 text-[11px]" onClick={() => setSmartViewMode("compact")} title="רשימה">
+                        <List className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </CardContent>
