@@ -9,7 +9,7 @@ import {
   Maximize2, Minimize2, AlignRight, AlignCenter, AlignLeft, AlignJustify,
   Type, Bold, Italic, Underline, Highlighter, AArrowUp, AArrowDown, Palette, Edit, Save, X,
   Search, ChevronUp, ChevronDown, CaseSensitive, WholeWord, Sparkles, Loader2, Printer,
-  ScrollText, BookOpen, ListOrdered
+  ScrollText, BookOpen, ListOrdered, Copy
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
