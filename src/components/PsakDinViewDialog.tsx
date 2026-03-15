@@ -547,6 +547,8 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
     </div>
   );
 
+  if (!psak) return null;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
