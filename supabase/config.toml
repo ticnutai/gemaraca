@@ -41,3 +41,18 @@ verify_jwt = false
 
 [functions.bulk-load-shas]
 verify_jwt = false
+
+[functions.ask-about-daf]
+verify_jwt = false
+
+[functions.beautify-psak-din]
+verify_jwt = false
+
+[functions.generate-quiz]
+verify_jwt = false
+
+[functions.learning-recommendations]
+verify_jwt = false
+
+[functions.summarize-sugya]
+verify_jwt = false
