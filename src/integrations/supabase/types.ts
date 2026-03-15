@@ -96,35 +96,53 @@ export type Database = {
       }
       gemara_pages: {
         Row: {
+          book: string | null
+          categories: Json | null
           created_at: string
           daf_number: number
           daf_yomi: string
+          he_ref: string | null
           id: string
           masechet: string
+          section_ref: string | null
           sefaria_ref: string
           sugya_id: string
+          text_en: Json | null
+          text_he: Json | null
           title: string
           updated_at: string
         }
         Insert: {
+          book?: string | null
+          categories?: Json | null
           created_at?: string
           daf_number: number
           daf_yomi: string
+          he_ref?: string | null
           id?: string
           masechet?: string
+          section_ref?: string | null
           sefaria_ref: string
           sugya_id: string
+          text_en?: Json | null
+          text_he?: Json | null
           title: string
           updated_at?: string
         }
         Update: {
+          book?: string | null
+          categories?: Json | null
           created_at?: string
           daf_number?: number
           daf_yomi?: string
+          he_ref?: string | null
           id?: string
           masechet?: string
+          section_ref?: string | null
           sefaria_ref?: string
           sugya_id?: string
+          text_en?: Json | null
+          text_he?: Json | null
           title?: string
           updated_at?: string
         }
