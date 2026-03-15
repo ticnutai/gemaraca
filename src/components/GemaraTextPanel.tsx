@@ -172,21 +172,9 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
         .eq('sefaria_ref', ref)
         .maybeSingle() as { data: any };
 
-      if (dbPage?.text_he) {
-        console.log('Serving from DB for ref:', ref);
-        const textData = {
-          ref: dbPage.sefaria_ref,
-          heRef: dbPage.he_ref,
-          text: dbPage.text_en || [],
-          he: dbPage.text_he,
-          commentary: [],
-          book: dbPage.book,
-          categories: dbPage.categories || [],
-          sectionRef: dbPage.section_ref,
-        };
-        setCachedGemaraText(ref, textData);
-        setGemaraText(textData);
-        return;
+      if (dbPage?.sefaria_ref) {
+        // Page exists in DB but we need full text from edge function
+        console.log('Found page in DB, loading full text for ref:', ref);
       }
 
       // 3. Fallback to edge function (which calls Sefaria and caches to DB)
