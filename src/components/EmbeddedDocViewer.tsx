@@ -59,16 +59,19 @@ interface EmbeddedDocViewerProps {
   title: string;
   onClose: () => void;
   onSwitchToRegular?: () => void;
+  initialStrategy?: Strategy;
 }
 
-export default function EmbeddedDocViewer({ url, title, onClose, onSwitchToRegular }: EmbeddedDocViewerProps) {
+export type { Strategy };
+
+export default function EmbeddedDocViewer({ url, title, onClose, onSwitchToRegular, initialStrategy = "google-viewer" }: EmbeddedDocViewerProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [zoom, setZoom] = useState(100);
   const [rotation, setRotation] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [strategy, setStrategy] = useState<Strategy>("google-viewer");
+  const [strategy, setStrategy] = useState<Strategy>(initialStrategy);
   const [loadState, setLoadState] = useState<"loading" | "loaded" | "error">("loading");
   const [loadProgress, setLoadProgress] = useState(0);
   const [retryCount, setRetryCount] = useState(0);

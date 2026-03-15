@@ -47,6 +47,7 @@ import {
   Hash,
   Sparkles,
   Loader2,
+  Monitor,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -59,7 +60,7 @@ const PSAK_VIEWER_DEFAULT_KEY = 'psak-din-default-viewer';
 const PSAK_VIEW_MODE_KEY = 'psak-din-view-mode';
 const LAZY_BATCH = 12;
 
-type ViewerType = 'regular' | 'embedded-pdf';
+type ViewerType = 'regular' | 'embedded-pdf' | 'google-viewer';
 type ViewMode = "list" | "grid" | "compact" | "table" | "magazine" | "timeline" | "kanban" | "split";
 type SortField = "title" | "year" | "court" | "references" | "relevance";
 type SortDir = "asc" | "desc";
@@ -197,7 +198,7 @@ export default function PsakeiDinDafPanel({
     setSelectedPsak(psak);
     const saved = localStorage.getItem(PSAK_VIEWER_DEFAULT_KEY) as ViewerType | null;
     if (saved === 'regular') setDialogOpen(true);
-    else if (saved === 'embedded-pdf') setEmbeddedPdfOpen(true);
+    else if (saved === 'embedded-pdf' || saved === 'google-viewer') setEmbeddedPdfOpen(true);
     else setViewerSelectOpen(true);
   }, []);
 
@@ -206,10 +207,16 @@ export default function PsakeiDinDafPanel({
     if (type === 'regular') setDialogOpen(true); else setEmbeddedPdfOpen(true);
   }, []);
 
+  const VIEWER_LABELS: Record<ViewerType, string> = {
+    'regular': 'צפיין רגיל',
+    'embedded-pdf': 'PDF מוטמע',
+    'google-viewer': 'Google Docs Viewer',
+  };
+
   const setAsDefault = useCallback((type: ViewerType) => {
     localStorage.setItem(PSAK_VIEWER_DEFAULT_KEY, type);
     setDefaultViewer(type);
-    toast.success(type === 'regular' ? 'צפיין רגיל נקבע כברירת מחדל' : 'PDF מוטמע נקבע כברירת מחדל');
+    toast.success(`${type === 'regular' ? 'צפיין רגיל' : type === 'embedded-pdf' ? 'PDF מוטמע' : 'Google Docs'} נקבע כברירת מחדל`);
     openViewer(type);
   }, [openViewer]);
 
@@ -272,7 +279,7 @@ export default function PsakeiDinDafPanel({
             {defaultViewer && (
               <TooltipProvider><Tooltip><TooltipTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] gap-1 text-muted-foreground" onClick={clearDefault}>
-                  <RotateCcw className="w-2.5 h-2.5" />{defaultViewer === 'regular' ? 'צפיין רגיל' : 'PDF'}
+                  <RotateCcw className="w-2.5 h-2.5" />{defaultViewer === 'regular' ? 'צפיין רגיל' : defaultViewer === 'google-viewer' ? 'Google' : 'PDF'}
                 </Button>
               </TooltipTrigger><TooltipContent>לחץ לניקוי ברירת מחדל</TooltipContent></Tooltip></TooltipProvider>
             )}
@@ -580,11 +587,12 @@ export default function PsakeiDinDafPanel({
       </Suspense>
 
       <Dialog open={viewerSelectOpen} onOpenChange={setViewerSelectOpen}>
-        <DialogContent className="max-w-md" dir="rtl">
+        <DialogContent className="max-w-xl" dir="rtl">
           <DialogHeader><DialogTitle className="text-center text-lg">בחר צפיין לפסק הדין</DialogTitle></DialogHeader>
-          <div className="grid grid-cols-2 gap-4 mt-2">
+          <div className="grid grid-cols-3 gap-3 mt-2">
             <ViewerOption type="regular" icon={FileText} iconColor="text-primary" label="צפיין רגיל" desc="תצוגה עם עריכה, חיפוש ועיצוב טקסט" defaultViewer={defaultViewer} onOpen={openViewer} onSetDefault={setAsDefault} onClearDefault={clearDefault} />
-            <ViewerOption type="embedded-pdf" icon={Globe} iconColor="text-blue-600" label="PDF מוטמע" desc="צפייה ישירה בקובץ המקורי מהאתר" defaultViewer={defaultViewer} onOpen={openViewer} onSetDefault={setAsDefault} onClearDefault={clearDefault} />
+            <ViewerOption type="embedded-pdf" icon={Monitor} iconColor="text-blue-600" label="PDF מוטמע" desc="מנוע PDF מובנה בדפדפן — מהיר ואמין" defaultViewer={defaultViewer} onOpen={openViewer} onSetDefault={setAsDefault} onClearDefault={clearDefault} />
+            <ViewerOption type="google-viewer" icon={Globe} iconColor="text-green-600" label="Google Docs Viewer" desc="צפייה דרך Google — תמיכה רחבה בפורמטים" defaultViewer={defaultViewer} onOpen={openViewer} onSetDefault={setAsDefault} onClearDefault={clearDefault} />
           </div>
         </DialogContent>
       </Dialog>
@@ -603,6 +611,7 @@ export default function PsakeiDinDafPanel({
                 title={selectedPsak.title}
                 onClose={() => setEmbeddedPdfOpen(false)}
                 onSwitchToRegular={() => { setEmbeddedPdfOpen(false); setDialogOpen(true); }}
+                initialStrategy={defaultViewer === 'google-viewer' ? 'google-viewer' : defaultViewer === 'embedded-pdf' ? 'direct' : 'google-viewer'}
               />
             </Suspense>
           ) : (
