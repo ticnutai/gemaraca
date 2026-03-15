@@ -159,29 +159,29 @@ All colors MUST be HSL.
     --muted: 220 12% 96%;
     --muted-foreground: 220 40% 35%;
 
-    --accent: 43 90% 52%;
+    --accent: 40 72% 42%;
     --accent-foreground: 220 70% 10%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 43 65% 58%;
+    --border: 40 55% 48%;
     --input: 220 12% 95%;
-    --ring: 43 90% 52%;
+    --ring: 40 72% 42%;
 
     --radius: 0.5rem;
 
     --shadow-card: 0 1px 3px 0 hsl(220 70% 12% / 0.06);
-    --shadow-hover: 0 4px 12px -2px hsl(43 90% 52% / 0.2);
+    --shadow-hover: 0 4px 12px -2px hsl(40 72% 42% / 0.2);
 
     --sidebar-background: 0 0% 99%;
     --sidebar-foreground: 220 70% 12%;
     --sidebar-primary: 220 70% 12%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 43 90% 52%;
+    --sidebar-accent: 40 72% 42%;
     --sidebar-accent-foreground: 220 70% 10%;
-    --sidebar-border: 43 65% 58%;
-    --sidebar-ring: 43 90% 52%;
+    --sidebar-border: 40 55% 48%;
+    --sidebar-ring: 40 72% 42%;
   }
 }
 
