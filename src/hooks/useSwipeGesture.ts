@@ -36,8 +36,15 @@ export function useSwipeGesture({
       // Must be mostly horizontal and fast enough
       if (Math.abs(dx) > threshold && Math.abs(dy) < Math.abs(dx) * 0.7 && elapsed < 500) {
         if (dx < 0) {
+          // Swipe left: check if started from right edge
+          const startX = touchStart.current.x;
+          if (edgeZoneLeft && (window.innerWidth - startX) > edgeZoneLeft) {
+            touchStart.current = null;
+            return;
+          }
           onSwipeLeft?.();
         } else {
+          // Swipe right: no edge restriction needed (close sidebar from anywhere)
           onSwipeRight?.();
         }
       }
