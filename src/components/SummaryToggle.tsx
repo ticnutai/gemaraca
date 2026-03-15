@@ -25,7 +25,7 @@ export default function SummaryToggle({ summary, compact }: SummaryToggleProps) 
           onClick={(e) => e.stopPropagation()}
           title="תקציר המקרה"
         >
-          <FileText className={`${compact ? "w-3 h-3" : "w-3.5 h-3.5"} text-amber-600`} />
+          <FileText className={`${compact ? "w-3 h-3" : "w-3.5 h-3.5"} text-foreground`} />
         </Button>
       </PopoverTrigger>
       <PopoverContent
