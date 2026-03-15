@@ -47,7 +47,7 @@ const BulkShasDownload = () => {
 
   // Auto-resume if store says we were running
   useEffect(() => {
-    if (isRunning && !isPaused && activeDownloads.size === 0 && masechtot.some(m => m.status === 'pending' || m.status === 'downloading')) {
+    if (isRunning && !isPaused && activeDownloads.length === 0 && masechtot.some(m => m.status === 'pending' || m.status === 'downloading')) {
       // We were running but page was reloaded — resume
       const timer = setTimeout(() => {
         store._processQueue();
