@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Calendar, Building2, FileText, ExternalLink, Download, Eye, FileIcon, 
   Maximize2, Minimize2, AlignRight, AlignCenter, AlignLeft, AlignJustify,
-  Type, Bold, Italic, Highlighter, AArrowUp, AArrowDown, Palette, Edit, Save, X,
+  Type, Bold, Italic, Underline, Highlighter, AArrowUp, AArrowDown, Palette, Edit, Save, X,
   Search, ChevronUp, ChevronDown, CaseSensitive, WholeWord, Sparkles, Loader2, Printer,
   ScrollText, BookOpen, ListOrdered
 } from "lucide-react";
@@ -82,6 +82,19 @@ const defaultTextSettings: TextSettings = {
   showLineNumbers: true,
 };
 
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+const plainTextToHtml = (value: string) => {
+  if (!value) return "";
+  return escapeHtml(value).replace(/\n/g, "<br>");
+};
+
 interface PsakDinViewDialogProps {
   psak: {
     id?: string;
@@ -121,6 +134,9 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
   const searchInputRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const infoScrollAreaRef = useRef<HTMLDivElement>(null);
+  const richEditorRef = useRef<HTMLDivElement>(null);
+  const [richHtml, setRichHtml] = useState("");
+  const [selectionMenu, setSelectionMenu] = useState<{ x: number; y: number } | null>(null);
 
   const [textSettings, setTextSettings] = useState<TextSettings>(() => {
     const saved = localStorage.getItem(VIEWER_TEXT_SETTINGS_KEY);
@@ -159,6 +175,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
       setEditCaseNumber(psak.case_number || psak.caseNumber || "");
       setEditSummary(psak.summary || "");
       setEditFullText(psak.full_text || psak.fullText || "");
+      setRichHtml(plainTextToHtml(psak.full_text || psak.fullText || ""));
       setEditTags((psak.tags || []).join(", "));
     }
   }, [open, psak]);
@@ -218,6 +235,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
 
   const handleCancelEdit = () => {
     setIsEditing(false);
+    setSelectionMenu(null);
     // Reset to original values
     setEditTitle(psak?.title || "");
     setEditCourt(psak?.court || "");
@@ -225,8 +243,46 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
     setEditCaseNumber(psak?.case_number || psak?.caseNumber || "");
     setEditSummary(psak?.summary || "");
     setEditFullText(psak?.full_text || psak?.fullText || "");
+    setRichHtml(plainTextToHtml(psak?.full_text || psak?.fullText || ""));
     setEditTags((psak?.tags || []).join(", "));
   };
+
+  const syncRichEditorToState = useCallback(() => {
+    if (!richEditorRef.current) return;
+    const html = richEditorRef.current.innerHTML;
+    const text = richEditorRef.current.innerText;
+    setRichHtml(html);
+    setEditFullText(text);
+  }, []);
+
+  const handleRichSelection = useCallback(() => {
+    if (!isEditing || !richEditorRef.current) return;
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !sel.toString().trim()) {
+      setSelectionMenu(null);
+      return;
+    }
+    const range = sel.getRangeAt(0);
+    if (!richEditorRef.current.contains(range.commonAncestorContainer)) {
+      setSelectionMenu(null);
+      return;
+    }
+    const rect = range.getBoundingClientRect();
+    setSelectionMenu({
+      x: rect.left + rect.width / 2,
+      y: rect.top - 10,
+    });
+  }, [isEditing]);
+
+  const applyFormatCommand = useCallback((command: string, value?: string) => {
+    if (!isEditing) return;
+    if (command === 'hiliteColor') {
+      document.execCommand('styleWithCSS', false, 'true');
+    }
+    document.execCommand(command, false, value);
+    syncRichEditorToState();
+    setSelectionMenu(null);
+  }, [isEditing, syncRichEditorToState]);
 
   // ── Beautify psak din ──
   const handleBeautify = useCallback(async () => {
@@ -366,6 +422,21 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
   useEffect(() => {
     if (!open) { setShowSearch(false); setSearchQuery(""); setCurrentMatch(0); }
   }, [open]);
+
+  useEffect(() => {
+    if (!isEditing) {
+      setSelectionMenu(null);
+      return;
+    }
+    const onMouseDown = (e: MouseEvent) => {
+      if (!(e.target instanceof Node)) return;
+      if (!richEditorRef.current?.contains(e.target)) {
+        setSelectionMenu(null);
+      }
+    };
+    window.addEventListener('mousedown', onMouseDown);
+    return () => window.removeEventListener('mousedown', onMouseDown);
+  }, [isEditing]);
 
   useEffect(() => {
     if (!open) return;
@@ -854,13 +925,43 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
                       </div>
                       <div className="space-y-2">
                         <Label>טקסט מלא</Label>
-                        <Textarea
-                          value={editFullText}
-                          onChange={(e) => setEditFullText(e.target.value)}
-                          placeholder="טקסט מלא של פסק הדין"
-                          rows={12}
-                          className="font-serif"
-                        />
+                          <div className="relative">
+                            <div
+                              ref={richEditorRef}
+                              contentEditable
+                              suppressContentEditableWarning
+                              dir="rtl"
+                              className="min-h-[280px] max-h-[460px] overflow-auto rounded-md border bg-background p-3 text-sm leading-7 font-serif focus:outline-none focus:ring-2 focus:ring-primary/30"
+                              dangerouslySetInnerHTML={{ __html: richHtml }}
+                              onInput={syncRichEditorToState}
+                              onMouseUp={handleRichSelection}
+                              onKeyUp={handleRichSelection}
+                              onBlur={syncRichEditorToState}
+                            />
+
+                            {selectionMenu && (
+                              <div
+                                className="fixed z-50 -translate-x-1/2 -translate-y-full bg-card border rounded-lg shadow-xl p-1.5 flex items-center gap-1"
+                                style={{ left: selectionMenu.x, top: selectionMenu.y }}
+                              >
+                                <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormatCommand('bold')} title="מודגש">
+                                  <Bold className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormatCommand('italic')} title="נטוי">
+                                  <Italic className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormatCommand('underline')} title="קו תחתון">
+                                  <Underline className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormatCommand('hiliteColor', '#fff59d')} title="סימון צהוב">
+                                  <Palette className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormatCommand('removeFormat')} title="נקה עיצוב">
+                                  <X className="w-3.5 h-3.5" />
+                                </Button>
+                              </div>
+                            )}
+                          </div>
                       </div>
                       <div className="space-y-2">
                         <Label>תגיות (מופרדות בפסיק)</Label>
