@@ -43,15 +43,28 @@ serve(async (req) => {
 
     // Mode: "status" — return download status for all masechtot
     if (mode === 'status') {
-      const { data: counts } = await supabaseClient
-        .from('gemara_pages')
-        .select('masechet, text_he');
-
       const statusMap: Record<string, { total: number; withText: number }> = {};
-      for (const row of (counts || [])) {
-        if (!statusMap[row.masechet]) statusMap[row.masechet] = { total: 0, withText: 0 };
-        statusMap[row.masechet].total++;
-        if (row.text_he) statusMap[row.masechet].withText++;
+      
+      // Paginate to avoid 1000 row limit
+      const PAGE = 1000;
+      let offset = 0;
+      let fetchMore = true;
+      while (fetchMore) {
+        const { data: rows } = await supabaseClient
+          .from('gemara_pages')
+          .select('masechet, text_he')
+          .range(offset, offset + PAGE - 1);
+        
+        if (!rows || rows.length === 0) { fetchMore = false; break; }
+        
+        for (const row of rows) {
+          if (!statusMap[row.masechet]) statusMap[row.masechet] = { total: 0, withText: 0 };
+          statusMap[row.masechet].total++;
+          if (row.text_he) statusMap[row.masechet].withText++;
+        }
+        
+        if (rows.length < PAGE) fetchMore = false;
+        else offset += PAGE;
       }
 
       return new Response(
