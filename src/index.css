@@ -41,16 +41,16 @@ All colors MUST be HSL.
     --radius: 0.5rem;
     
     --shadow-card: 0 1px 3px 0 hsl(220 70% 12% / 0.06);
-    --shadow-hover: 0 4px 12px -2px hsl(43 90% 52% / 0.2);
+    --shadow-hover: 0 4px 12px -2px hsl(40 72% 42% / 0.2);
 
     --sidebar-background: 0 0% 99%;
     --sidebar-foreground: 220 70% 12%;
     --sidebar-primary: 220 70% 12%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 43 90% 52%;
+    --sidebar-accent: 40 72% 42%;
     --sidebar-accent-foreground: 220 70% 10%;
-    --sidebar-border: 43 65% 58%;
-    --sidebar-ring: 43 90% 52%;
+    --sidebar-border: 40 55% 48%;
+    --sidebar-ring: 40 72% 42%;
   }
 
   /* Theme: Midnight - חצות (כהה יוקרתי) */
