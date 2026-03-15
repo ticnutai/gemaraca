@@ -8,7 +8,8 @@ import {
   Calendar, Building2, FileText, ExternalLink, Download, Eye, FileIcon, 
   Maximize2, Minimize2, AlignRight, AlignCenter, AlignLeft, AlignJustify,
   Type, Bold, Italic, Highlighter, AArrowUp, AArrowDown, Palette, Edit, Save, X,
-  Search, ChevronUp, ChevronDown, CaseSensitive, WholeWord, Sparkles, Loader2, Printer
+  Search, ChevronUp, ChevronDown, CaseSensitive, WholeWord, Sparkles, Loader2, Printer,
+  ScrollText, BookOpen, ListOrdered
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,6 +68,7 @@ interface TextSettings {
   isItalic: boolean;
   textColor: string;
   bgColor: string;
+  showLineNumbers: boolean;
 }
 
 const defaultTextSettings: TextSettings = {
@@ -77,6 +79,7 @@ const defaultTextSettings: TextSettings = {
   isItalic: false,
   textColor: 'text-foreground',
   bgColor: 'bg-transparent',
+  showLineNumbers: true,
 };
 
 interface PsakDinViewDialogProps {
@@ -161,6 +164,16 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
   const fullText = psak?.full_text || psak?.fullText;
   const sourceUrl = psak?.source_url || psak?.sourceUrl;
   const caseNumber = psak?.case_number || psak?.caseNumber;
+
+  const factualCaseText = useMemo(() => {
+    const base = (fullText || psak?.summary || "").trim();
+    if (!base) return "";
+    const lines = base
+      .split(/\n+/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+    return lines.slice(0, 8).join("\n");
+  }, [fullText, psak?.summary]);
 
   const handleSave = async () => {
     if (!psak?.id) {
@@ -599,6 +612,17 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
           </div>
         </PopoverContent>
       </Popover>
+
+      {/* Line numbers */}
+      <Button
+        variant={textSettings.showLineNumbers ? 'secondary' : 'ghost'}
+        size="icon"
+        className="h-7 w-7"
+        onClick={() => updateTextSetting('showLineNumbers', !textSettings.showLineNumbers)}
+        title="מספרי שורות"
+      >
+        <ListOrdered className="h-3 w-3" />
+      </Button>
     </div>
   );
 
@@ -807,10 +831,23 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
                 ) : (
                   <>
                     {/* View Mode */}
-                     <div>
-                       <h3 className="font-semibold mb-2">תקציר</h3>
-                       <p className="leading-relaxed">{highlightText(psak.summary)}</p>
+                     <div className="p-3 rounded-lg border bg-muted/20">
+                       <h3 className="font-semibold mb-2 flex items-center gap-2 justify-end">
+                         <ScrollText className="w-4 h-4 text-primary" />
+                         תקציר המקרה
+                       </h3>
+                       <p className="leading-relaxed whitespace-pre-wrap">{highlightText(psak.summary)}</p>
                      </div>
+
+                     {!!factualCaseText && (
+                       <div className="p-3 rounded-lg border bg-primary/5">
+                         <h3 className="font-semibold mb-2 flex items-center gap-2 justify-end">
+                           <BookOpen className="w-4 h-4 text-primary" />
+                           המקרה העובדתי
+                         </h3>
+                         <p className="leading-relaxed whitespace-pre-wrap">{highlightText(factualCaseText)}</p>
+                       </div>
+                     )}
 
                      {psak.connection && (
                        <div className="p-3 rounded-lg border">
@@ -821,10 +858,28 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
 
                      {fullText && (
                        <div>
-                         <h3 className="font-semibold mb-2">טקסט מלא</h3>
-                         <div className="p-4 rounded-lg border whitespace-pre-wrap leading-relaxed">
-                           {highlightText(fullText)}
-                         </div>
+                         <h3 className="font-semibold mb-2 flex items-center gap-2 justify-end">
+                           <ListOrdered className="w-4 h-4 text-primary" />
+                           טקסט מלא
+                         </h3>
+                         {textSettings.showLineNumbers ? (
+                           <div className="rounded-lg border overflow-hidden">
+                             <div className="grid grid-cols-[56px_1fr]">
+                               <div className="bg-muted/30 border-l p-3 text-xs text-muted-foreground font-mono select-none">
+                                 {fullText.split("\n").map((_, idx) => (
+                                   <div key={`line-num-${idx}`} className="leading-7 text-left">{idx + 1}</div>
+                                 ))}
+                               </div>
+                               <div className="p-4 whitespace-pre-wrap leading-relaxed">
+                                 {highlightText(fullText)}
+                               </div>
+                             </div>
+                           </div>
+                         ) : (
+                           <div className="p-4 rounded-lg border whitespace-pre-wrap leading-relaxed">
+                             {highlightText(fullText)}
+                           </div>
+                         )}
                        </div>
                      )}
 
@@ -1131,13 +1186,30 @@ const TxtViewer = ({ url, textSettings, textClasses }: TxtViewerProps) => {
 
   return (
     <ScrollArea className="h-full">
-      <pre 
-        className={`p-4 whitespace-pre-wrap ${textClasses}`} 
-        dir="rtl"
-        style={{ fontSize: `${textSettings.fontSize}px` }}
-      >
-        {content}
-      </pre>
+      {textSettings.showLineNumbers ? (
+        <div className="grid grid-cols-[56px_1fr]">
+          <div className="bg-muted/30 border-l p-3 text-xs text-muted-foreground font-mono select-none">
+            {content?.split("\n").map((_, idx) => (
+              <div key={`txt-line-num-${idx}`} className="leading-7 text-left">{idx + 1}</div>
+            ))}
+          </div>
+          <pre
+            className={`p-4 whitespace-pre-wrap ${textClasses}`}
+            dir="rtl"
+            style={{ fontSize: `${textSettings.fontSize}px` }}
+          >
+            {content}
+          </pre>
+        </div>
+      ) : (
+        <pre
+          className={`p-4 whitespace-pre-wrap ${textClasses}`}
+          dir="rtl"
+          style={{ fontSize: `${textSettings.fontSize}px` }}
+        >
+          {content}
+        </pre>
+      )}
     </ScrollArea>
   );
 };

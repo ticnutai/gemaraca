@@ -201,17 +201,14 @@ export default function PsakeiDinDafPanel({
 
   const handleOpenPsak = useCallback((psak: DafPsak) => {
     setSelectedPsak(psak);
-    const saved = localStorage.getItem(PSAK_VIEWER_DEFAULT_KEY) as ViewerType | null;
-    if (saved === 'embedpdf-page' && psak.source_url) {
-      navigate(`/embedpdf-viewer?url=${encodeURIComponent(psak.source_url)}`);
-    } else if (saved === 'regular') {
-      setDialogOpen(true);
-    } else if (saved === 'embedded-pdf' || saved === 'google-viewer' || saved === 'embedpdf') {
-      setEmbeddedPdfOpen(true);
-    } else {
+    // Always let the user choose viewer when source URL exists.
+    // If there is no source file, fall back to the regular info dialog.
+    if (psak.source_url) {
       setViewerSelectOpen(true);
+    } else {
+      setDialogOpen(true);
     }
-  }, [navigate]);
+  }, []);
 
   const openViewer = useCallback((type: ViewerType) => {
     setViewerSelectOpen(false);
