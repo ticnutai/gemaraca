@@ -104,6 +104,16 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
   const [activeTab, setActiveTab] = useState("preview");
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Search state
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [caseSensitive, setCaseSensitive] = useState(false);
+  const [wholeWord, setWholeWord] = useState(false);
+  const [currentMatch, setCurrentMatch] = useState(0);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+
   const [textSettings, setTextSettings] = useState<TextSettings>(() => {
     const saved = localStorage.getItem(VIEWER_TEXT_SETTINGS_KEY);
     return saved ? JSON.parse(saved) : defaultTextSettings;
