@@ -7,6 +7,7 @@ import { useAppContext } from "@/contexts/AppContext";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useGemaraDownloadEngine } from "@/hooks/useGemaraDownloadEngine";
+import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 
 const FloatingGemaraNav = lazy(() => import("./FloatingGemaraNav"));
 const GemaraDownloadFloat = lazy(() => import("./GemaraDownloadFloat"));
@@ -25,11 +26,23 @@ const AppLayoutInner = ({ children }: AppLayoutProps) => {
     isPinned, 
     setIsPinned 
   } = useAppContext();
-  const { open: sidebarOpen } = useSidebar();
+  const { open: sidebarOpen, setOpen } = useSidebar();
   const isMobile = useIsMobile();
 
   // Start the background download engine (processes queued jobs)
   useGemaraDownloadEngine();
+
+  // Swipe gestures: swipe from right edge → open sidebar, swipe right → close
+  useSwipeGesture({
+    onSwipeLeft: () => {
+      if (isMobile && !sidebarOpen) setOpen(true);
+    },
+    onSwipeRight: () => {
+      if (isMobile && sidebarOpen) setOpen(false);
+    },
+    threshold: 50,
+    edgeZoneLeft: isMobile ? 50 : undefined,
+  });
 
   const handleTabChange = (tab: string) => {
     if (tab === "embedpdf-viewer") {
