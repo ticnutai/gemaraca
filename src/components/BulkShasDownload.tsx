@@ -157,7 +157,7 @@ const BulkShasDownload = () => {
           </div>
 
           {/* Active downloads indicator */}
-          {isRunning && activeDownloads.size > 0 && (
+          {isRunning && activeDownloads.length > 0 && (
             <div className="text-sm text-muted-foreground flex flex-wrap gap-2">
               {masechtot
                 .filter((m) => m.status === 'downloading')
