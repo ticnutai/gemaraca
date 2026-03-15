@@ -18,6 +18,7 @@ import {
   Database, Tag, Filter, BarChart3, Sparkles, Building2, Calendar
 } from "lucide-react";
 import PsakDinViewDialog from "./PsakDinViewDialog";
+import ViewerPreferenceDialog, { getViewerPreference, type ViewerMode } from "./ViewerPreferenceDialog";
 
 interface PsakLink {
   id: string;
