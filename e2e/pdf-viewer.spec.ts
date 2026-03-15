@@ -76,13 +76,19 @@ test.describe("מערכת EmbedPDF — טסטים E2E", () => {
     await expect(badges.last()).toBeVisible();
   });
 
-  test("2c. EmbedPDF מסומן כ-Premium ולא ניתן ללחוץ", async ({ page }) => {
+  test("2c. EmbedPDF ניתן לבחירה ולחיצה", async ({ page }) => {
     await openPdfViewerTab(page);
 
-    await expect(page.getByText("Premium")).toBeVisible();
-    // The EmbedPDF card should be disabled
+    // The EmbedPDF card should be enabled and clickable
     const embedCard = page.locator("button:has-text('EmbedPDF (pdfium)')").first();
-    await expect(embedCard).toBeDisabled();
+    await expect(embedCard).toBeEnabled();
+
+    // Click it — should become active
+    await embedCard.click();
+    const main = page.locator('[data-active-tab="pdf-viewer"]');
+    // The "פעיל" badge should appear on EmbedPDF
+    const activeBadge = main.locator("button:has-text('EmbedPDF (pdfium)')").locator("text=פעיל");
+    await expect(activeBadge).toBeVisible();
   });
 
   // ──────────────────────────────
@@ -441,5 +447,167 @@ trailer<</Root 1 0 R>>`;
 
     await expect(page.getByText("לא נבחר מסמך")).toBeVisible();
     await expect(page.getByText("טען קובץ PDF או הדבק קישור למעלה")).toBeVisible();
+  });
+
+  // ──────────────────────────────
+  // 15. EmbedPDF — בחירת מנוע ושמירה
+  // ──────────────────────────────
+  test("15. EmbedPDF — קביעת ברירת מחדל עם כוכב", async ({ page }) => {
+    await openPdfViewerTab(page);
+
+    const main = page.locator('[data-active-tab="pdf-viewer"]');
+    // Click EmbedPDF card first to make it active
+    const embedCard = main.locator("button:has-text('EmbedPDF (pdfium)')").first();
+    await embedCard.click();
+
+    // Set it as default
+    const setDefaultBtn = main
+      .locator("button:has-text('EmbedPDF (pdfium)')")
+      .first()
+      .locator("button[aria-label='קבע כברירת מחדל']");
+    await setDefaultBtn.click();
+
+    // Toast should confirm
+    await expect(page.getByText(/ברירת מחדל/).first()).toBeVisible({ timeout: 5_000 });
+    // Badge should show EmbedPDF as default
+    await expect(main.getByText(/ברירת מחדל: EmbedPDF/).first()).toBeVisible({ timeout: 5_000 });
+  });
+
+  test("15b. EmbedPDF — טעינת PDF מקישור מציגה embed", async ({ page }) => {
+    await openPdfViewerTab(page);
+
+    const main = page.locator('[data-active-tab="pdf-viewer"]');
+    // Switch to EmbedPDF engine
+    const embedCard = main.locator("button:has-text('EmbedPDF (pdfium)')").first();
+    await embedCard.click();
+
+    // Load a PDF URL
+    const urlInput = page.getByPlaceholder("הדבק קישור ל-PDF");
+    await urlInput.fill("https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf");
+    await page.getByRole("button", { name: "טען" }).first().click();
+
+    // Should render an <embed> element, not an iframe
+    const embedEl = page.locator("embed[title='EmbedPDF Viewer']");
+    await expect(embedEl).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("15c. EmbedPDF — העלאת קובץ מציגה embed", async ({ page }) => {
+    await openPdfViewerTab(page);
+
+    const main = page.locator('[data-active-tab="pdf-viewer"]');
+    // Switch to EmbedPDF engine
+    await main.locator("button:has-text('EmbedPDF (pdfium)')").first().click();
+
+    // Switch to upload tab
+    await page.getByRole("tab", { name: /העלאת קובץ/ }).click();
+
+    const fileInput = page.locator('input[type="file"][accept="application/pdf"]').first();
+    const minimalPdf = `%PDF-1.0
+1 0 obj<</Pages 2 0 R>>endobj
+2 0 obj<</Kids[3 0 R]/Count 1>>endobj
+3 0 obj<</MediaBox[0 0 612 792]>>endobj
+trailer<</Root 1 0 R>>`;
+    await fileInput.setInputFiles({
+      name: "embed-test.pdf",
+      mimeType: "application/pdf",
+      buffer: Buffer.from(minimalPdf),
+    });
+
+    // Toast should confirm
+    await expect(page.getByText(/נטען: embed-test\.pdf/)).toBeVisible({ timeout: 5_000 });
+    // Should render an <embed> element
+    const embedEl = page.locator("embed[title='EmbedPDF Viewer']");
+    await expect(embedEl).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("15d. EmbedPDF — פקדי זום מופיעים", async ({ page }) => {
+    await openPdfViewerTab(page);
+
+    const main = page.locator('[data-active-tab="pdf-viewer"]');
+    // Switch to EmbedPDF engine
+    await main.locator("button:has-text('EmbedPDF (pdfium)')").first().click();
+
+    // Load a PDF
+    const urlInput = page.getByPlaceholder("הדבק קישור ל-PDF");
+    await urlInput.fill("https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf");
+    await urlInput.press("Enter");
+    await expect(page.locator("embed[title='EmbedPDF Viewer']")).toBeVisible({ timeout: 10_000 });
+
+    // Zoom controls should appear (toolbar shows zoom for embedpdf engine too)
+    await expect(page.getByText("100%")).toBeVisible();
+  });
+
+  test("15e. EmbedPDF — החלפה בין מנועים", async ({ page }) => {
+    await openPdfViewerTab(page);
+
+    const main = page.locator('[data-active-tab="pdf-viewer"]');
+
+    // Start with browser (default)
+    const urlInput = page.getByPlaceholder("הדבק קישור ל-PDF");
+    await urlInput.fill("https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf");
+    await urlInput.press("Enter");
+    await expect(page.locator("iframe[title='PDF Viewer']")).toBeVisible({ timeout: 10_000 });
+
+    // Switch to EmbedPDF
+    await main.locator("button:has-text('EmbedPDF (pdfium)')").first().click();
+    await expect(page.locator("embed[title='EmbedPDF Viewer']")).toBeVisible({ timeout: 10_000 });
+
+    // Switch to Google Docs
+    await main.locator("button:has-text('Google Docs Viewer')").first().click();
+    await expect(page.locator("iframe[title='Google Docs PDF Viewer']")).toBeVisible({ timeout: 10_000 });
+
+    // Back to browser
+    await main.locator("button:has-text('צפיין מובנה')").first().click();
+    await expect(page.locator("iframe[title='PDF Viewer']")).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("15f. EmbedPDF — split mode עם embed", async ({ page }) => {
+    await openPdfViewerTab(page);
+
+    const main = page.locator('[data-active-tab="pdf-viewer"]');
+    // Switch to EmbedPDF engine
+    await main.locator("button:has-text('EmbedPDF (pdfium)')").first().click();
+
+    // Switch to split mode
+    await page.getByRole("button", { name: "מפוצל" }).click();
+
+    // Upload first PDF
+    await page.getByRole("tab", { name: /העלאת קובץ/ }).click();
+    const fileInput = page.locator('input[type="file"][accept="application/pdf"]').first();
+    const minimalPdf = `%PDF-1.0
+1 0 obj<</Pages 2 0 R>>endobj
+2 0 obj<</Kids[3 0 R]/Count 1>>endobj
+3 0 obj<</MediaBox[0 0 612 792]>>endobj
+trailer<</Root 1 0 R>>`;
+    await fileInput.setInputFiles({
+      name: "split-test.pdf",
+      mimeType: "application/pdf",
+      buffer: Buffer.from(minimalPdf),
+    });
+
+    // Primary embed should appear
+    const embeds = page.locator("embed[title='EmbedPDF Viewer']");
+    await expect(embeds.first()).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("15g. EmbedPDF — ברירת מחדל נשמרת ב-localStorage", async ({ page }) => {
+    // Set EmbedPDF as default via localStorage
+    await page.context().addInitScript(() => {
+      localStorage.setItem("pdf-viewer-default-v1", '"embedpdf"');
+    });
+
+    await page.goto("/");
+    await page.waitForSelector("[data-active-tab]", { timeout: 15_000 });
+
+    const pdfBtn = page.locator('button:has-text("צפיין PDF")');
+    await pdfBtn.evaluate((el) => {
+      el.scrollIntoView({ block: "center" });
+      (el as HTMLElement).click();
+    });
+    await page.waitForSelector('[data-active-tab="pdf-viewer"]', { timeout: 15_000 });
+
+    const main = page.locator('[data-active-tab="pdf-viewer"]');
+    // The badge should show the persisted EmbedPDF default
+    await expect(main.getByText(/ברירת מחדל: EmbedPDF/).first()).toBeVisible({ timeout: 5_000 });
   });
 });

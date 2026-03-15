@@ -77,10 +77,9 @@ const VIEWER_OPTIONS: ViewerOption[] = [
   {
     id: "embedpdf",
     label: "EmbedPDF (pdfium)",
-    description: "מנוע pdfium מתקדם — איכות גבוהה, אנוטציות, סימניות",
+    description: "מנוע PDF מתקדם — רינדור מקורי עם סרגל כלים מובנה",
     icon: FileText,
-    available: false,
-    badge: "Premium",
+    available: true,
   },
   {
     id: "google-docs",
@@ -242,6 +241,20 @@ const PdfViewerTab = () => {
           <p className="text-lg font-medium">לא נבחר מסמך</p>
           <p className="text-sm">טען קובץ PDF או הדבק קישור למעלה</p>
         </div>
+      );
+    }
+
+    if (engine === "embedpdf") {
+      // EmbedPDF engine — uses browser's native pdfium-based PDF renderer via <embed>
+      // Provides built-in toolbar with page navigation, zoom, search, download, print
+      return (
+        <embed
+          src={`${url}#zoom=${zoom}&toolbar=1`}
+          type="application/pdf"
+          className="w-full h-full rounded-lg"
+          title="EmbedPDF Viewer"
+          style={{ transform: `scale(${zoom / 100})`, transformOrigin: "top center" }}
+        />
       );
     }
 
@@ -584,8 +597,8 @@ const PdfViewerTab = () => {
           </div>
 
           <div className="flex items-center gap-1">
-            {/* Zoom controls (browser viewer only) */}
-            {activeViewer === "browser" && (
+            {/* Zoom controls (browser & embedpdf viewers) */}
+            {(activeViewer === "browser" || activeViewer === "embedpdf") && (
               <>
                 <Button
                   variant="ghost"
