@@ -216,10 +216,13 @@ serve(async (req) => {
             // If Yerushalmi ref failed, try standard ref as fallback
             if (isYerushalmi) {
               try {
+                const fallbackController = new AbortController();
+                const fallbackTimeoutId = setTimeout(() => fallbackController.abort(), FETCH_TIMEOUT_MS);
                 const fallbackResp = await fetch(
                   `https://www.sefaria.org/api/texts/Shekalim.${dafAmudKey}?commentary=0&context=1`,
-                  { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) }
+                  { signal: fallbackController.signal }
                 );
+                clearTimeout(fallbackTimeoutId);
                 if (fallbackResp.ok) {
                   resp = fallbackResp;
                 } else {
