@@ -15,7 +15,8 @@ import { MASECHTOT, SEDARIM, Masechet } from "@/lib/masechtotData";
 import { toHebrewNumeral } from "@/lib/hebrewNumbers";
 import { 
   Search, BookOpen, Scale, ChevronRight, TrendingUp, 
-  Database, Tag, Filter, BarChart3, Sparkles, Building2, Calendar
+  Database, Tag, Filter, BarChart3, Sparkles, Building2, Calendar,
+  List, LayoutGrid, TableIcon
 } from "lucide-react";
 import PsakDinViewDialog from "./PsakDinViewDialog";
 import ViewerPreferenceDialog, { getViewerPreference, type ViewerMode } from "./ViewerPreferenceDialog";
