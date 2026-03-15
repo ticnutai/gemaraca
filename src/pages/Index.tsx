@@ -17,6 +17,7 @@ const DafYomiTab = lazy(() => import("@/components/DafYomiTab"));
 const PsakDinCompareTab = lazy(() => import("@/components/PsakDinCompareTab"));
 const KnowledgeGraphTab = lazy(() => import("@/components/KnowledgeGraphTab"));
 const GlobalSearchTab = lazy(() => import("@/components/GlobalSearchTab"));
+const PdfViewerTab = lazy(() => import("@/components/PdfViewerTab"));
 
 const TabFallback = () => (
   <div className="p-3 md:p-6 space-y-4">
@@ -61,6 +62,7 @@ const Index = () => {
               {activeTab === "daf-yomi" && <DafYomiTab />}
               {activeTab === "compare" && <PsakDinCompareTab />}
               {activeTab === "knowledge-graph" && <KnowledgeGraphTab />}
+              {activeTab === "pdf-viewer" && <PdfViewerTab />}
             </Suspense>
           </SectionErrorBoundary>
         </div>
