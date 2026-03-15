@@ -845,6 +845,17 @@ return (
         open={dialogOpen}
         onOpenChange={setDialogOpen}
       />
+
+      <ViewerPreferenceDialog
+        open={prefDialogOpen}
+        onOpenChange={setPrefDialogOpen}
+        onSelect={(mode) => {
+          if (pendingPsak) {
+            openWithMode(pendingPsak, mode);
+            setPendingPsak(null);
+          }
+        }}
+      />
     </div>
   );
 };
