@@ -169,6 +169,7 @@ export function useGemaraDownloadEngine() {
 
       // Refresh loaded pages cache
       await queryClient.invalidateQueries({ queryKey: ['sedarim-loaded-pages'] });
+      await queryClient.refetchQueries({ queryKey: ['sedarim-loaded-pages'] });
     } catch (err: any) {
       if (err?.name === 'AbortError') return;
       const msg = err?.message || 'שגיאה לא ידועה';
@@ -244,6 +245,28 @@ export function useGemaraDownloadEngine() {
     });
     return unsub;
   }, []);
+
+  // Warn user before closing tab if downloads are active
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (useGemaraDownloadStore.getState().hasActiveDownloads()) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, []);
+
+  // When tab becomes visible again, refetch cache so UI stays up-to-date
+  useEffect(() => {
+    const handler = () => {
+      if (document.visibilityState === 'visible') {
+        queryClient.invalidateQueries({ queryKey: ['sedarim-loaded-pages'] });
+      }
+    };
+    document.addEventListener('visibilitychange', handler);
+    return () => document.removeEventListener('visibilitychange', handler);
+  }, [queryClient]);
 
   const enqueue = useCallback((jobDef: Omit<GemaraDownloadJob, 'status' | 'completedDafs' | 'failedDafs' | 'createdAt'>) => {
     useGemaraDownloadStore.getState().enqueueJob(jobDef);

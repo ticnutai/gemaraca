@@ -288,6 +288,23 @@ export const useGemaraDownloadStore = create<GemaraDownloadStore>()(
         }),
         concurrency: state.concurrency,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        // Reset any 'downloading' jobs back to 'queued' so they resume on next mount
+        const updated: Record<string, GemaraDownloadJob> = {};
+        let changed = false;
+        for (const [id, job] of Object.entries(state.jobs)) {
+          if (job.status === 'downloading') {
+            updated[id] = { ...job, status: 'queued' };
+            changed = true;
+          } else {
+            updated[id] = job;
+          }
+        }
+        if (changed) {
+          state.jobs = updated;
+        }
+      },
     }
   )
 );
