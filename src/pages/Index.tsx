@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { useAppContext } from "@/contexts/AppContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { SectionErrorBoundary } from "@/components/SectionErrorBoundary";
 
 // Lazy-loaded tab components (code splitting)
 const SedarimNavigator = lazy(() => import("@/components/SedarimNavigator"));
@@ -37,27 +38,31 @@ const Index = () => {
     <div className="p-2 md:p-6 space-y-3 md:space-y-4 max-w-full" data-active-tab={activeTab}>
       {/* Sedarim Navigator - lazy loaded, hidden on mobile when non-gemara tab active */}
       {showNavigator && (
-        <Suspense fallback={<Skeleton className="h-32 w-full rounded-xl" />}>
-          <SedarimNavigator />
-        </Suspense>
+        <SectionErrorBoundary section="ניווט סדרים">
+          <Suspense fallback={<Skeleton className="h-32 w-full rounded-xl" />}>
+            <SedarimNavigator />
+          </Suspense>
+        </SectionErrorBoundary>
       )}
 
       {/* Content cards - only show for non-gemara tabs */}
       {activeTab !== "gemara" && (
         <div className="bg-card rounded-xl md:rounded-2xl shadow-lg border border-border/50 overflow-hidden">
-          <Suspense fallback={<TabFallback />}>
-            {activeTab === "psak-din" && <PsakDinTab />}
-            {activeTab === "smart-index" && <SmartIndexTab />}
-            {activeTab === "search" && <SearchPsakDinTab />}
-            {activeTab === "global-search" && <GlobalSearchTab />}
-            {activeTab === "upload" && <UploadPsakDinTab />}
-            {activeTab === "download" && <DownloadManagerTab />}
-            {activeTab === "advanced-index" && <AdvancedIndexTab />}
-            {activeTab === "learning-history" && <LearningHistoryTab />}
-            {activeTab === "daf-yomi" && <DafYomiTab />}
-            {activeTab === "compare" && <PsakDinCompareTab />}
-            {activeTab === "knowledge-graph" && <KnowledgeGraphTab />}
-          </Suspense>
+          <SectionErrorBoundary section="תוכן ראשי">
+            <Suspense fallback={<TabFallback />}>
+              {activeTab === "psak-din" && <PsakDinTab />}
+              {activeTab === "smart-index" && <SmartIndexTab />}
+              {activeTab === "search" && <SearchPsakDinTab />}
+              {activeTab === "global-search" && <GlobalSearchTab />}
+              {activeTab === "upload" && <UploadPsakDinTab />}
+              {activeTab === "download" && <DownloadManagerTab />}
+              {activeTab === "advanced-index" && <AdvancedIndexTab />}
+              {activeTab === "learning-history" && <LearningHistoryTab />}
+              {activeTab === "daf-yomi" && <DafYomiTab />}
+              {activeTab === "compare" && <PsakDinCompareTab />}
+              {activeTab === "knowledge-graph" && <KnowledgeGraphTab />}
+            </Suspense>
+          </SectionErrorBoundary>
         </div>
       )}
     </div>

@@ -213,3 +213,47 @@ export function useValidateReference() {
     },
   });
 }
+
+export function useCorrectReference() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, correctedNormalized }: { id: string; correctedNormalized: string }) => {
+      const { error } = await supabase
+        .from('talmud_references')
+        .update({
+          corrected_normalized: correctedNormalized,
+          validation_status: 'correct' as ValidationStatus,
+        })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onMutate: async ({ id, correctedNormalized }) => {
+      await queryClient.cancelQueries({ queryKey: ['talmud_references'] });
+      const previous = queryClient.getQueryData(['talmud_references', 'grouped']);
+
+      queryClient.setQueriesData<TalmudReference[]>(
+        { queryKey: ['talmud_references'] },
+        (old) => old?.map((ref) =>
+          ref.id === id
+            ? { ...ref, corrected_normalized: correctedNormalized, validation_status: 'correct' as ValidationStatus }
+            : ref
+        )
+      );
+
+      return { previous };
+    },
+    onError: (e: Error, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['talmud_references', 'grouped'], context.previous);
+      }
+      toast.error('שגיאה בעדכון התיקון: ' + e.message);
+    },
+    onSuccess: () => {
+      toast.success('ההפניה תוקנה ואושרה בהצלחה');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['talmud_references'] });
+    },
+  });
+}

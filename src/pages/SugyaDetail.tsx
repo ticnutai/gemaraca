@@ -24,6 +24,7 @@ const RelatedPsakimSidebar = lazy(() => import("@/components/RelatedPsakimSideba
 const LinkedPsakimSection = lazy(() => import("@/components/LinkedPsakimSection"));
 const ModernExamplesPanel = lazy(() => import("@/components/ModernExamplesPanel").then(m => ({ default: m.ModernExamplesPanel })));
 const PersonalNotes = lazy(() => import("@/components/PersonalNotes"));
+const PsakeiDinDafPanel = lazy(() => import("@/components/PsakeiDinDafPanel"));
 
 const PanelFallback = () => (
   <div className="space-y-3 p-4">
@@ -408,6 +409,19 @@ const SugyaDetail = () => {
 
           {/* Tab 3: פסקי דין - Legal Rulings */}
           <TabsContent value="psakim" className="mt-0 space-y-6">
+            {/* Psakei Din from Advanced Index (talmud_references) */}
+            {masechetInfo && (
+              <Suspense fallback={<PanelFallback />}>
+                <PsakeiDinDafPanel
+                  tractate={masechetInfo.masechet}
+                  daf={masechetInfo.dafNumber.toString()}
+                  sugyaId={id || ""}
+                  dafYomi={sugya.dafYomi}
+                  masechet={sugya.masechet}
+                />
+              </Suspense>
+            )}
+
             {/* Search Button */}
             <PsakDinSearchButton
               sugyaId={id || ""}

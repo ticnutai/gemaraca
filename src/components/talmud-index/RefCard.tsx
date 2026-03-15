@@ -2,13 +2,14 @@ import { memo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Check, X, RotateCcw, FileText, EyeOff, Minus, Plus, AlignJustify } from 'lucide-react';
+import { Check, X, RotateCcw, FileText, EyeOff, Minus, Plus, AlignJustify, Pencil } from 'lucide-react';
 import { TalmudRefWithPsak, highlightRawInContext, extractContextLines, escapeHtml, ValidationStatus, ConfidenceFactors } from './types';
 
 interface Props {
   data: TalmudRefWithPsak;
   onValidate: (id: string, status: ValidationStatus, autoDismissIds?: string[]) => void;
   onClickRef: (ref: TalmudRefWithPsak) => void;
+  onCorrect?: (ref: TalmudRefWithPsak) => void;
   highlightColor?: string;
   highlightBg?: string;
 }
@@ -77,7 +78,7 @@ function ScoreBadge({ score, confidence, factors }: { score: number | null; conf
   );
 }
 
-export default memo(function RefCard({ data, onValidate, onClickRef, highlightColor, highlightBg }: Props) {
+export default memo(function RefCard({ data, onValidate, onClickRef, onCorrect, highlightColor, highlightBg }: Props) {
   const [contextLines, setContextLines] = useState(0);
 
   const isApproved = data.validation_status === 'correct';
@@ -110,7 +111,10 @@ export default memo(function RefCard({ data, onValidate, onClickRef, highlightCo
       onClick={() => onClickRef(data)}
     >
       <div className="flex items-center gap-3 mb-1">
-        <span className="text-lg font-bold text-primary">{data.normalized}</span>
+        <span className="text-lg font-bold text-primary">{data.corrected_normalized || data.normalized}</span>
+        {data.corrected_normalized && (
+          <Badge variant="outline" className="text-[10px] border-blue-400 text-blue-600">מתוקן</Badge>
+        )}
         <div className="flex items-center gap-2 mr-auto">
           <ScoreBadge score={data.confidence_score} confidence={data.confidence} factors={data.confidence_factors} />
           <Badge variant="secondary" className="text-[10px]">
@@ -214,39 +218,74 @@ export default memo(function RefCard({ data, onValidate, onClickRef, highlightCo
       )}
 
       <div className="flex items-center gap-1.5 mt-2" onClick={e => e.stopPropagation()}>
-        <Button
-          size="sm"
-          variant={isApproved ? 'default' : 'outline'}
-          className="h-6 px-2 text-[11px] gap-1"
-          onClick={() => onValidate(data.id, isApproved ? 'pending' : 'correct')}
-        >
-          <Check className="w-3 h-3" /> נכון
-        </Button>
-        <Button
-          size="sm"
-          variant={isRejected ? 'destructive' : 'outline'}
-          className="h-6 px-2 text-[11px] gap-1"
-          onClick={() => onValidate(data.id, isRejected ? 'pending' : 'incorrect')}
-        >
-          <X className="w-3 h-3" /> שגוי
-        </Button>
-        <Button
-          size="sm"
-          variant={isIgnored ? 'secondary' : 'outline'}
-          className="h-6 px-2 text-[11px] gap-1"
-          onClick={() => onValidate(data.id, isIgnored ? 'pending' : 'ignored')}
-        >
-          <EyeOff className="w-3 h-3" /> התעלם
-        </Button>
-        {data.validation_status !== 'pending' && (
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-6 px-2 text-[11px] gap-1 text-muted-foreground"
-            onClick={() => onValidate(data.id, 'pending')}
-          >
-            <RotateCcw className="w-3 h-3" /> איפוס
-          </Button>
+        {isApproved ? (
+          /* Approved refs: show only edit button */
+          <>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-6 px-2 text-[11px] gap-1 border-blue-400 text-blue-600 hover:bg-blue-50"
+              onClick={() => onCorrect?.(data)}
+            >
+              <Pencil className="w-3 h-3" /> ערוך הקשר
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-6 px-2 text-[11px] gap-1 text-muted-foreground"
+              onClick={() => onValidate(data.id, 'pending')}
+            >
+              <RotateCcw className="w-3 h-3" /> איפוס
+            </Button>
+          </>
+        ) : (
+          /* Non-approved refs: show all action buttons */
+          <>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-6 px-2 text-[11px] gap-1"
+              onClick={() => onValidate(data.id, 'correct')}
+            >
+              <Check className="w-3 h-3" /> נכון
+            </Button>
+            <Button
+              size="sm"
+              variant={isRejected ? 'destructive' : 'outline'}
+              className="h-6 px-2 text-[11px] gap-1"
+              onClick={() => onValidate(data.id, isRejected ? 'pending' : 'incorrect')}
+            >
+              <X className="w-3 h-3" /> שגוי
+            </Button>
+            <Button
+              size="sm"
+              variant={isIgnored ? 'secondary' : 'outline'}
+              className="h-6 px-2 text-[11px] gap-1"
+              onClick={() => onValidate(data.id, isIgnored ? 'pending' : 'ignored')}
+            >
+              <EyeOff className="w-3 h-3" /> התעלם
+            </Button>
+            {onCorrect && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-6 px-2 text-[11px] gap-1 border-blue-400 text-blue-600 hover:bg-blue-50"
+                onClick={() => onCorrect(data)}
+              >
+                <Pencil className="w-3 h-3" /> תקן
+              </Button>
+            )}
+            {(isRejected || isIgnored) && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-6 px-2 text-[11px] gap-1 text-muted-foreground"
+                onClick={() => onValidate(data.id, 'pending')}
+              >
+                <RotateCcw className="w-3 h-3" /> איפוס
+              </Button>
+            )}
+          </>
         )}
       </div>
     </div>

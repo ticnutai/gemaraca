@@ -29,3 +29,12 @@ verify_jwt = false
 
 [functions.generate-modern-examples]
 verify_jwt = false
+
+[functions.ai-tutor]
+verify_jwt = false
+
+[functions.extract-references]
+verify_jwt = false
+
+[functions.run-migration]
+verify_jwt = false

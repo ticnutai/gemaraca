@@ -175,14 +175,14 @@ const AppSidebar = ({
       <Sidebar 
         side="right" 
         className={cn(
-          "border border-border/50 !bg-sidebar shadow-xl",
+          "border border-border/50 !bg-sidebar",
           // Rounded corners + clip content to respect border-radius
-          "!rounded-2xl overflow-hidden",
+          "!rounded-2xl overflow-hidden m-2 !h-[calc(100%-1rem)]",
           // Transition for smooth open/close
           "transition-all duration-300 ease-in-out",
           isMobile
-            ? "fixed z-50 w-[85vw] max-w-[320px] shadow-2xl top-3 right-3 bottom-3"
-            : "fixed z-40 top-3 right-3 bottom-3",
+            ? "fixed right-0 top-0 z-50 w-[85vw] max-w-[320px] shadow-2xl !mt-2 !mr-2 !mb-2"
+            : "fixed right-0 top-0 z-40",
           // When not visible on desktop, slide off screen
           !isMobile && !sidebarVisible && "translate-x-full",
           // Shadow when floating (unpinned & visible)
@@ -192,7 +192,6 @@ const AppSidebar = ({
         variant="sidebar"
         style={{ 
           backgroundColor: 'hsl(var(--sidebar-background, var(--background)))',
-          height: 'auto',
         }}
         onMouseEnter={isMobile ? undefined : handleMouseEnter}
         onMouseLeave={isMobile ? undefined : handleMouseLeave}

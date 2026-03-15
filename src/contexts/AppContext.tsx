@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useMemo, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 interface AppContextType {
@@ -27,14 +27,18 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(SIDEBAR_PINNED_KEY, String(isPinned));
   }, [isPinned]);
 
+  const handleSetActiveTab = useCallback((tab: string) => setActiveTab(tab), []);
+  const handleSetSelectedMasechet = useCallback((m: string | null) => setSelectedMasechet(m), []);
+  const handleSetIsPinned = useCallback((p: boolean) => setIsPinned(p), []);
+
   const value = useMemo(() => ({
     activeTab,
-    setActiveTab,
+    setActiveTab: handleSetActiveTab,
     selectedMasechet,
-    setSelectedMasechet,
+    setSelectedMasechet: handleSetSelectedMasechet,
     isPinned,
-    setIsPinned,
-  }), [activeTab, selectedMasechet, isPinned]);
+    setIsPinned: handleSetIsPinned,
+  }), [activeTab, selectedMasechet, isPinned, handleSetActiveTab, handleSetSelectedMasechet, handleSetIsPinned]);
 
   return (
     <AppContext.Provider value={value}>

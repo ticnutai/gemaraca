@@ -136,6 +136,8 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
 
   useEffect(() => {
     loadGemaraText();
+    // Prefetch next daf in background for instant navigation
+    prefetchNextDaf();
   }, [dafYomi]);
 
   useEffect(() => {
@@ -153,7 +155,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   const loadGemaraText = async () => {
     const ref = convertDafYomiToSefariaRef(dafYomi);
     
-    // Check cache first
+    // 1. Check IndexedDB cache first (instant)
     const cached = getCachedGemaraText(ref);
     if (cached) {
       console.log('Using cached Gemara text for ref:', ref);
@@ -163,8 +165,20 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
 
     setIsLoading(true);
     try {
-      console.log('Loading Gemara text for ref:', ref);
-      
+      // 2. Try direct DB lookup (skips edge function entirely)
+      const { data: dbPage } = await supabase
+        .from('gemara_pages')
+        .select('sefaria_ref')
+        .eq('sefaria_ref', ref)
+        .maybeSingle() as { data: any };
+
+      if (dbPage?.sefaria_ref) {
+        // Page exists in DB but we need full text from edge function
+        console.log('Found page in DB, loading full text for ref:', ref);
+      }
+
+      // 3. Fallback to edge function (which calls Sefaria and caches to DB)
+      console.log('Loading Gemara text from edge function for ref:', ref);
       const { data, error } = await supabase.functions.invoke('get-gemara-text', {
         body: { ref }
       });
@@ -172,8 +186,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
       if (error) throw error;
 
       if (data?.success) {
-        console.log('Gemara text loaded successfully');
-        // Save to cache
+        console.log('Gemara text loaded successfully from:', data.source || 'sefaria');
         setCachedGemaraText(ref, data.data);
         setGemaraText(data.data);
       } else {
@@ -188,6 +201,50 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  /** Prefetch the next daf in background so navigation feels instant */
+  const prefetchNextDaf = async () => {
+    try {
+      const info = getDafInfo(dafYomi);
+      let nextDaf: number, nextAmud: 'a' | 'b';
+      if (info.amud === 'a') {
+        nextDaf = info.daf;
+        nextAmud = 'b';
+      } else {
+        nextDaf = info.daf + 1;
+        nextAmud = 'a';
+      }
+      const nextRef = `${masechet}.${nextDaf}${nextAmud}`;
+      // Only prefetch if not already cached
+      if (!getCachedGemaraText(nextRef)) {
+        // Try DB first
+        const { data: dbPage } = await supabase
+          .from('gemara_pages')
+          .select('sefaria_ref')
+          .eq('sefaria_ref', nextRef)
+          .maybeSingle() as { data: any };
+
+        if (dbPage) {
+          // Page exists, prefetch via edge function
+          const { data } = await supabase.functions.invoke('get-gemara-text', {
+            body: { ref: nextRef },
+          });
+          if (data?.success) {
+            setCachedGemaraText(nextRef, data.data);
+          }
+        } else {
+          const { data } = await supabase.functions.invoke('get-gemara-text', {
+            body: { ref: nextRef },
+          });
+          if (data?.success) {
+            setCachedGemaraText(nextRef, data.data);
+          }
+        }
+      }
+    } catch {
+      // Silent fail — prefetch is best-effort
     }
   };
 

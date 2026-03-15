@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -8,11 +9,12 @@ interface Props {
   grouped: Record<string, TalmudRefWithPsak[]>;
   onValidate: (id: string, status: ValidationStatus, autoDismissIds?: string[]) => void;
   onClickRef: (ref: TalmudRefWithPsak) => void;
+  onCorrect?: (ref: TalmudRefWithPsak) => void;
   highlightColor?: string;
   highlightBg?: string;
 }
 
-export default function AccordionView({ grouped, onValidate, onClickRef, highlightColor, highlightBg }: Props) {
+export default memo(function AccordionView({ grouped, onValidate, onClickRef, onCorrect, highlightColor, highlightBg }: Props) {
   const sortedTractates = Object.keys(grouped).sort((a, b) => {
     const ia = TRACTATES.indexOf(a);
     const ib = TRACTATES.indexOf(b);
@@ -64,7 +66,7 @@ export default function AccordionView({ grouped, onValidate, onClickRef, highlig
                                   </div>
                                   <div className="grid gap-2 mr-3">
                                     {group.refs.map(ref => (
-                                      <RefCard key={ref.id} data={ref} onValidate={onValidate} onClickRef={onClickRef} highlightColor={highlightColor} highlightBg={highlightBg} />
+                                      <RefCard key={ref.id} data={ref} onValidate={onValidate} onClickRef={onClickRef} onCorrect={onCorrect} highlightColor={highlightColor} highlightBg={highlightBg} />
                                     ))}
                                   </div>
                                 </div>
@@ -73,7 +75,7 @@ export default function AccordionView({ grouped, onValidate, onClickRef, highlig
                           ) : (
                             <div className="grid gap-2 pb-2">
                               {amudGroups[0].refs.map(ref => (
-                                <RefCard key={ref.id} data={ref} onValidate={onValidate} onClickRef={onClickRef} highlightColor={highlightColor} highlightBg={highlightBg} />
+                                <RefCard key={ref.id} data={ref} onValidate={onValidate} onClickRef={onClickRef} onCorrect={onCorrect} highlightColor={highlightColor} highlightBg={highlightBg} />
                               ))}
                             </div>
                           )}
@@ -89,4 +91,4 @@ export default function AccordionView({ grouped, onValidate, onClickRef, highlig
       </Accordion>
     </ScrollArea>
   );
-}
+});
