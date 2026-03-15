@@ -49,7 +49,7 @@ export const useShasDownloadStore = create<ShasDownloadStore>()(
       isPaused: false,
       concurrency: 3,
       masechtot: [],
-      activeDownloads: new Set(),
+      activeDownloads: [],
       lastUpdated: 0,
 
       setConcurrency: (n) => set({ concurrency: Math.max(1, Math.min(6, n)) }),
