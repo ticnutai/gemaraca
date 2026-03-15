@@ -148,7 +148,7 @@ export const useShasDownloadStore = create<ShasDownloadStore>()(
 
         // Find next pending masechtot
         const pending = masechtot.filter(
-          (m) => (m.status === 'pending' || m.status === 'paused') && !activeDownloads.has(m.masechet)
+          (m) => (m.status === 'pending' || m.status === 'paused') && !activeDownloads.includes(m.masechet)
         );
 
         const toStart = pending.slice(0, slotsAvailable);
