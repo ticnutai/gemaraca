@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import {
   Database, Tag, Filter, BarChart3, Sparkles, Building2, Calendar
 } from "lucide-react";
 import PsakDinViewDialog from "./PsakDinViewDialog";
+import ViewerPreferenceDialog, { getViewerPreference, type ViewerMode } from "./ViewerPreferenceDialog";
 
 interface PsakLink {
   id: string;
@@ -55,6 +57,7 @@ interface Statistics {
 }
 
 const GemaraPsakDinIndex = () => {
+  const navigate = useNavigate();
   const [indexData, setIndexData] = useState<IndexEntry[]>([]);
   const [allLinks, setAllLinks] = useState<PsakLink[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,6 +70,8 @@ const GemaraPsakDinIndex = () => {
   const [dialogPsak, setDialogPsak] = useState<any | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"tree" | "stats">("tree");
+  const [prefDialogOpen, setPrefDialogOpen] = useState(false);
+  const [pendingPsak, setPendingPsak] = useState<any | null>(null);
 
   const statistics = useMemo<Statistics>(() => {
     const tagCounts = new Map<string, number>();
@@ -409,10 +414,40 @@ const GemaraPsakDinIndex = () => {
     }
   };
 
+  const openWithMode = (psak: any, mode: ViewerMode) => {
+    const sourceUrl = psak?.source_url || psak?.sourceUrl || psak?.psakei_din?.source_url;
+    switch (mode) {
+      case "embedpdf":
+        if (sourceUrl) {
+          navigate(`/embedpdf-viewer?url=${encodeURIComponent(sourceUrl)}`);
+        } else {
+          setDialogPsak(psak);
+          setDialogOpen(true);
+        }
+        break;
+      case "newwindow":
+        if (sourceUrl) {
+          window.open(sourceUrl, "_blank");
+        } else {
+          setDialogPsak(psak);
+          setDialogOpen(true);
+        }
+        break;
+      default:
+        setDialogPsak(psak);
+        setDialogOpen(true);
+    }
+  };
+
   const handlePsakClick = (psak: any) => {
     if (!psak) return;
-    setDialogPsak(psak);
-    setDialogOpen(true);
+    const saved = getViewerPreference();
+    if (saved) {
+      openWithMode(psak, saved);
+    } else {
+      setPendingPsak(psak);
+      setPrefDialogOpen(true);
+    }
   };
 
   const handleTagClick = (tag: string) => {
@@ -809,6 +844,17 @@ return (
         psak={dialogPsak}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
+      />
+
+      <ViewerPreferenceDialog
+        open={prefDialogOpen}
+        onOpenChange={setPrefDialogOpen}
+        onSelect={(mode) => {
+          if (pendingPsak) {
+            openWithMode(pendingPsak, mode);
+            setPendingPsak(null);
+          }
+        }}
       />
     </div>
   );
