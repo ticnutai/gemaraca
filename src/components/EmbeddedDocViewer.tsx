@@ -34,16 +34,27 @@ import {
   Smartphone,
   Tablet,
   Monitor,
+  Moon,
+  Sun,
+  StickyNote,
+  Download,
+  Bookmark,
+  BookmarkCheck,
+  PanelRightOpen,
+  PanelRightClose,
+  Save,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 /* ─── strategy types ─── */
-type Strategy = "direct" | "google-viewer" | "allorigins";
+type Strategy = "direct" | "google-viewer" | "allorigins" | "embedpdf";
 const STRATEGY_LABELS: Record<Strategy, string> = {
   "direct": "טעינה ישירה",
   "google-viewer": "Google Docs Viewer",
   "allorigins": "פרוקסי חיצוני",
+  "embedpdf": "EmbedPDF (pdfium)",
 };
 
 /* ─── Responsive presets ─── */
@@ -66,12 +77,26 @@ export type { Strategy };
 
 export default function EmbeddedDocViewer({ url, title, onClose, onSwitchToRegular, initialStrategy = "google-viewer" }: EmbeddedDocViewerProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const embedRef = useRef<HTMLEmbedElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [zoom, setZoom] = useState(100);
   const [rotation, setRotation] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [strategy, setStrategy] = useState<Strategy>(initialStrategy);
+
+  // Editing features
+  const [darkMode, setDarkMode] = useState(false);
+  const [notesOpen, setNotesOpen] = useState(false);
+  const [notes, setNotes] = useState(() => {
+    try { return localStorage.getItem(`edv-notes-${url}`) || ""; } catch { return ""; }
+  });
+  const [isBookmarked, setIsBookmarked] = useState(() => {
+    try {
+      const bm = JSON.parse(localStorage.getItem("edv-bookmarks") || "[]") as string[];
+      return bm.includes(url);
+    } catch { return false; }
+  });
   const [loadState, setLoadState] = useState<"loading" | "loaded" | "error">("loading");
   const [loadProgress, setLoadProgress] = useState(0);
   const [retryCount, setRetryCount] = useState(0);
@@ -84,6 +109,8 @@ export default function EmbeddedDocViewer({ url, title, onClose, onSwitchToRegul
         return `https://docs.google.com/gview?url=${encodeURIComponent(sourceUrl)}&embedded=true`;
       case "allorigins":
         return `https://api.allorigins.win/raw?url=${encodeURIComponent(sourceUrl)}`;
+      case "embedpdf":
+        return sourceUrl;
       default:
         return sourceUrl;
     }
@@ -116,7 +143,9 @@ export default function EmbeddedDocViewer({ url, title, onClose, onSwitchToRegul
     const timer = setTimeout(() => {
       if (loadState === "loading") {
         // Auto-try next strategy
-        if (strategy === "direct") {
+        if (strategy === "embedpdf") {
+          setStrategy("direct");
+        } else if (strategy === "direct") {
           setStrategy("google-viewer");
         } else if (strategy === "google-viewer") {
           setStrategy("allorigins");
@@ -134,7 +163,9 @@ export default function EmbeddedDocViewer({ url, title, onClose, onSwitchToRegul
   }, []);
 
   const handleIframeError = useCallback(() => {
-    if (strategy === "direct") {
+    if (strategy === "embedpdf") {
+      setStrategy("direct");
+    } else if (strategy === "direct") {
       setStrategy("google-viewer");
     } else if (strategy === "google-viewer") {
       setStrategy("allorigins");
@@ -193,6 +224,47 @@ export default function EmbeddedDocViewer({ url, title, onClose, onSwitchToRegul
       window.open(url, "_blank");
     }
   }, [url]);
+
+  // Download
+  const handleDownload = useCallback(() => {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${title || "document"}.pdf`;
+    a.rel = "noopener noreferrer";
+    a.click();
+  }, [url, title]);
+
+  // Notes
+  const handleSaveNotes = useCallback(() => {
+    try {
+      localStorage.setItem(`edv-notes-${url}`, notes);
+      toast.success("הערות נשמרו");
+    } catch { /* quota exceeded */ }
+  }, [url, notes]);
+
+  const handleClearNotes = useCallback(() => {
+    setNotes("");
+    try { localStorage.removeItem(`edv-notes-${url}`); } catch { /* ignore */ }
+    toast("הערות נמחקו");
+  }, [url]);
+
+  // Bookmark
+  const toggleBookmark = useCallback(() => {
+    try {
+      const bm = JSON.parse(localStorage.getItem("edv-bookmarks") || "[]") as string[];
+      if (isBookmarked) {
+        const next = bm.filter(b => b !== url);
+        localStorage.setItem("edv-bookmarks", JSON.stringify(next));
+        setIsBookmarked(false);
+        toast("הסימניה הוסרה");
+      } else {
+        bm.push(url);
+        localStorage.setItem("edv-bookmarks", JSON.stringify(bm));
+        setIsBookmarked(true);
+        toast.success("נוספה לסימניות");
+      }
+    } catch { /* ignore */ }
+  }, [url, isBookmarked]);
 
   const deviceWidth = DEVICE_PRESETS.find(d => d.key === devicePreset)?.width || "100%";
 
@@ -271,7 +343,12 @@ export default function EmbeddedDocViewer({ url, title, onClose, onSwitchToRegul
           <div className="w-px h-5 bg-border mx-1" />
           <ToolBtn icon={Copy} tip="העתק קישור" onClick={handleCopyUrl} />
           <ToolBtn icon={Printer} tip="הדפסה" onClick={handlePrint} />
+          <ToolBtn icon={Download} tip="הורדה" onClick={handleDownload} />
           <ToolBtn icon={ExternalLink} tip="פתח בלשונית חדשה" onClick={() => window.open(url, "_blank", "noopener,noreferrer")} />
+          <div className="w-px h-5 bg-border mx-1" />
+          <ToolBtn icon={darkMode ? Sun : Moon} tip={darkMode ? "מצב רגיל" : "מצב כהה"} onClick={() => setDarkMode(d => !d)} />
+          <ToolBtn icon={isBookmarked ? BookmarkCheck : Bookmark} tip={isBookmarked ? "הסר סימניה" : "הוסף לסימניות"} onClick={toggleBookmark} />
+          <ToolBtn icon={notesOpen ? PanelRightClose : PanelRightOpen} tip={notesOpen ? "סגור הערות" : "הערות"} onClick={() => setNotesOpen(o => !o)} />
           {onSwitchToRegular && <ToolBtn icon={FileText} tip="עבור לצפיין רגיל" onClick={onSwitchToRegular} />}
         </div>
 
@@ -305,7 +382,8 @@ export default function EmbeddedDocViewer({ url, title, onClose, onSwitchToRegul
             <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
             <p className="text-sm font-semibold text-foreground mb-1">טוען את המסמך...</p>
             <p className="text-[11px] text-muted-foreground mb-3">
-              {strategy === "direct" ? "ניסיון טעינה ישירה..." :
+              {strategy === "embedpdf" ? "טוען עם EmbedPDF (pdfium)..." :
+                strategy === "direct" ? "ניסיון טעינה ישירה..." :
                 strategy === "google-viewer" ? "טוען דרך Google Docs Viewer..." :
                 "טוען דרך פרוקסי חיצוני..."}
             </p>
@@ -343,9 +421,9 @@ export default function EmbeddedDocViewer({ url, title, onClose, onSwitchToRegul
           </div>
         )}
 
-        {/* Iframe (always mounted - hidden behind overlays when loading/error) */}
+        {/* Content: embed or iframe based on strategy */}
         <div className="w-full h-full flex justify-center"
-          style={{ overflow: "auto" }}>
+          style={{ overflow: "auto", filter: darkMode ? "invert(0.88) hue-rotate(180deg)" : "none", transition: "filter 0.3s ease" }}>
           <div style={{
             width: devicePreset === "auto" ? "100%" : deviceWidth,
             height: "100%",
@@ -355,23 +433,68 @@ export default function EmbeddedDocViewer({ url, title, onClose, onSwitchToRegul
             maxWidth: "100%",
             margin: devicePreset !== "auto" && devicePreset !== "desktop" ? "0 auto" : undefined,
           }}>
-            <iframe
-              ref={iframeRef}
-              key={`${currentUrl}-${retryCount}`}
-              src={currentUrl}
-              className="w-full h-full border-0"
-              title={title}
-              sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-popups-to-escape-sandbox"
-              onLoad={handleIframeLoad}
-              onError={handleIframeError}
-              style={{
-                minHeight: zoom < 100 ? `${100 / (zoom / 100)}%` : "100%",
-                boxShadow: devicePreset !== "auto" && devicePreset !== "desktop" ? "0 0 20px rgba(0,0,0,0.1)" : "none",
-                borderRadius: devicePreset === "mobile" ? "16px" : devicePreset === "tablet" ? "12px" : "0",
-              }}
-            />
+            {strategy === "embedpdf" ? (
+              <embed
+                ref={embedRef}
+                key={`embed-${currentUrl}-${retryCount}`}
+                src={`${currentUrl}#toolbar=1&zoom=${zoom}`}
+                type="application/pdf"
+                className="w-full h-full"
+                title={title}
+                onLoad={() => { setLoadProgress(100); setTimeout(() => setLoadState("loaded"), 300); }}
+                onError={() => handleIframeError()}
+                style={{
+                  minHeight: zoom < 100 ? `${100 / (zoom / 100)}%` : "100%",
+                  boxShadow: devicePreset !== "auto" && devicePreset !== "desktop" ? "0 0 20px rgba(0,0,0,0.1)" : "none",
+                  borderRadius: devicePreset === "mobile" ? "16px" : devicePreset === "tablet" ? "12px" : "0",
+                }}
+              />
+            ) : (
+              <iframe
+                ref={iframeRef}
+                key={`${currentUrl}-${retryCount}`}
+                src={currentUrl}
+                className="w-full h-full border-0"
+                title={title}
+                sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-popups-to-escape-sandbox"
+                onLoad={handleIframeLoad}
+                onError={handleIframeError}
+                style={{
+                  minHeight: zoom < 100 ? `${100 / (zoom / 100)}%` : "100%",
+                  boxShadow: devicePreset !== "auto" && devicePreset !== "desktop" ? "0 0 20px rgba(0,0,0,0.1)" : "none",
+                  borderRadius: devicePreset === "mobile" ? "16px" : devicePreset === "tablet" ? "12px" : "0",
+                }}
+              />
+            )}
           </div>
         </div>
+
+        {/* Notes panel */}
+        {notesOpen && (
+          <div className="absolute top-0 left-0 w-72 h-full bg-background border-l shadow-xl z-20 flex flex-col" dir="rtl">
+            <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/30">
+              <div className="flex items-center gap-1.5">
+                <StickyNote className="w-4 h-4 text-amber-500" />
+                <span className="text-sm font-semibold">הערות</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <ToolBtn icon={Save} tip="שמור" onClick={handleSaveNotes} />
+                <ToolBtn icon={Trash2} tip="מחק הכל" onClick={handleClearNotes} />
+                <ToolBtn icon={X} tip="סגור" onClick={() => setNotesOpen(false)} />
+              </div>
+            </div>
+            <textarea
+              className="flex-1 p-3 resize-none text-sm bg-background focus:outline-none placeholder:text-muted-foreground"
+              placeholder="הוסף הערות על המסמך..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              dir="rtl"
+            />
+            <div className="px-3 py-1.5 border-t bg-muted/10 text-[10px] text-muted-foreground">
+              {notes.length > 0 ? `${notes.length} תווים` : "אין הערות"}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ═══ Status bar ═══ */}
@@ -380,6 +503,8 @@ export default function EmbeddedDocViewer({ url, title, onClose, onSwitchToRegul
           <span>זום: {zoom}%</span>
           {rotation !== 0 && <span>סיבוב: {rotation}°</span>}
           <span>שיטה: {STRATEGY_LABELS[strategy]}</span>
+          {darkMode && <span>🌙 מצב כהה</span>}
+          {isBookmarked && <span>⭐ מסומן</span>}
         </div>
         <div className="flex items-center gap-3">
           {devicePreset !== "auto" && <span>מכשיר: {DEVICE_PRESETS.find(d => d.key === devicePreset)?.label}</span>}
