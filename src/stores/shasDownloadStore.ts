@@ -241,8 +241,7 @@ export const useShasDownloadStore = create<ShasDownloadStore>()(
           });
         } finally {
           // Remove from active
-          const active = new Set(get().activeDownloads);
-          active.delete(masechet);
+          const active = get().activeDownloads.filter((m) => m !== masechet);
           set({ activeDownloads: active });
 
           // Process next in queue
