@@ -222,22 +222,18 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
         // Try DB first
         const { data: dbPage } = await supabase
           .from('gemara_pages')
-          .select('text_he, text_en, sefaria_ref, he_ref, book, categories, section_ref')
+          .select('sefaria_ref')
           .eq('sefaria_ref', nextRef)
-          .not('text_he', 'is', null)
-          .maybeSingle();
+          .maybeSingle() as { data: any };
 
-        if (dbPage?.text_he) {
-          setCachedGemaraText(nextRef, {
-            ref: dbPage.sefaria_ref,
-            heRef: dbPage.he_ref,
-            text: dbPage.text_en || [],
-            he: dbPage.text_he,
-            commentary: [],
-            book: dbPage.book,
-            categories: dbPage.categories || [],
-            sectionRef: dbPage.section_ref,
+        if (dbPage) {
+          // Page exists, prefetch via edge function
+          const { data } = await supabase.functions.invoke('get-gemara-text', {
+            body: { ref: nextRef },
           });
+          if (data?.success) {
+            setCachedGemaraText(nextRef, data.data);
+          }
         } else {
           const { data } = await supabase.functions.invoke('get-gemara-text', {
             body: { ref: nextRef },

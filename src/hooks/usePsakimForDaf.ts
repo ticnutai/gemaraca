@@ -50,8 +50,8 @@ export function usePsakimForDaf(tractate: string, daf: string) {
       // Group references by psak_din_id
       const psakMap = new Map<string, DafPsak>();
 
-      for (const row of data || []) {
-        const psak = row.psakei_din as any;
+      for (const row of (data || []) as any[]) {
+        const psak = row.psakei_din;
         if (!psak?.id) continue;
 
         if (!psakMap.has(psak.id)) {
@@ -72,7 +72,7 @@ export function usePsakimForDaf(tractate: string, daf: string) {
         psakMap.get(psak.id)!.references.push({
           id: row.id,
           normalized: row.normalized,
-          corrected_normalized: row.corrected_normalized,
+          corrected_normalized: row.corrected_normalized || null,
           raw_reference: row.raw_reference,
           source: row.source,
           confidence: row.confidence,

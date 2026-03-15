@@ -137,8 +137,8 @@ export function clearAllCaches(): void {
 // Get cache stats for debugging
 export function getCacheStats(): { pages: number; texts: number } {
   try {
-    const pages = localStorage.getItem(PAGE_CACHE_KEY);
-    const texts = localStorage.getItem(TEXT_CACHE_KEY);
+    const pages = localStorage.getItem('gemara_pages_cache');
+    const texts = localStorage.getItem('gemara_text_cache');
     return {
       pages: pages ? Object.keys(JSON.parse(pages)).length : 0,
       texts: texts ? Object.keys(JSON.parse(texts)).length : 0,
