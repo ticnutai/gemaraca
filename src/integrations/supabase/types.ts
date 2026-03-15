@@ -276,6 +276,56 @@ export type Database = {
           },
         ]
       }
+      pdf_annotations: {
+        Row: {
+          book_id: string
+          color: string | null
+          created_at: string | null
+          highlight_rects: Json | null
+          highlight_text: string | null
+          id: string
+          note_text: string
+          page_number: number
+          position_x: number | null
+          position_y: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          book_id: string
+          color?: string | null
+          created_at?: string | null
+          highlight_rects?: Json | null
+          highlight_text?: string | null
+          id?: string
+          note_text: string
+          page_number: number
+          position_x?: number | null
+          position_y?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          book_id?: string
+          color?: string | null
+          created_at?: string | null
+          highlight_rects?: Json | null
+          highlight_text?: string | null
+          id?: string
+          note_text?: string
+          page_number?: number
+          position_x?: number | null
+          position_y?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pdf_annotations_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "user_books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       psakei_din: {
         Row: {
           case_number: string | null
@@ -596,6 +646,36 @@ export type Database = {
           successful_files?: number
           total_files?: number
           updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_books: {
+        Row: {
+          created_at: string | null
+          file_name: string | null
+          file_url: string
+          id: string
+          title: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          file_name?: string | null
+          file_url: string
+          id?: string
+          title?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          file_name?: string | null
+          file_url?: string
+          id?: string
+          title?: string
+          updated_at?: string | null
           user_id?: string | null
         }
         Relationships: []
