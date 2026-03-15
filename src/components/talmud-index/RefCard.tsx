@@ -1,7 +1,7 @@
 import { memo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Check, X, RotateCcw, FileText, EyeOff, ChevronsUpDown } from 'lucide-react';
+import { Check, X, RotateCcw, FileText, EyeOff, Minus, Plus, AlignJustify } from 'lucide-react';
 import { TalmudRefWithPsak, highlightRawInContext, extractContextLines, escapeHtml, ValidationStatus } from './types';
 
 interface Props {
@@ -13,17 +13,21 @@ interface Props {
 }
 
 export default memo(function RefCard({ data, onValidate, onClickRef, highlightColor, highlightBg }: Props) {
-  const [showSurround, setShowSurround] = useState(false);
+  const [contextLines, setContextLines] = useState(0);
 
   const isApproved = data.validation_status === 'correct';
   const isRejected = data.validation_status === 'incorrect';
   const isIgnored = data.validation_status === 'ignored';
 
   const matchContext = extractContextLines(data.context_snippet, data.raw_reference, 0);
-  const surroundContext = extractContextLines(data.context_snippet, data.raw_reference, 1);
-  const hasSurroundLines = surroundContext && surroundContext.surroundLines.length > 1;
+  const surroundContext = contextLines > 0
+    ? extractContextLines(data.context_snippet, data.raw_reference, contextLines)
+    : null;
 
-  // Build the highlighted match line HTML
+  // Check max available lines
+  const maxContext = extractContextLines(data.context_snippet, data.raw_reference, 10);
+  const maxAvailable = maxContext ? Math.max(0, Math.floor((maxContext.surroundLines.length - 1) / 2)) : 0;
+
   const matchLineHtml = matchContext
     ? highlightRawInContext(matchContext.matchLine, data.raw_reference, highlightColor, highlightBg)
     : data.context_snippet
@@ -75,11 +79,11 @@ export default memo(function RefCard({ data, onValidate, onClickRef, highlightCo
         זוהה: "<span className="font-semibold text-foreground">{data.raw_reference}</span>"
       </p>
 
-      {/* Context area - ALWAYS visible, never truncated */}
+      {/* Context area */}
       {matchLineHtml ? (
         <div className="relative">
-          {/* Surrounding lines BEFORE match */}
-          {showSurround && surroundContext && surroundContext.surroundLines.map((line, i) => {
+          {/* Before lines */}
+          {contextLines > 0 && surroundContext && surroundContext.surroundLines.map((line, i) => {
             if (line === matchContext?.matchLine) return null;
             const lineIdx = surroundContext.surroundLines.indexOf(line);
             const matchIdx = surroundContext.surroundLines.indexOf(matchContext?.matchLine ?? '');
@@ -93,15 +97,15 @@ export default memo(function RefCard({ data, onValidate, onClickRef, highlightCo
             );
           })}
 
-          {/* The match line - always fully visible, no truncation */}
+          {/* Match line */}
           <div
             className="text-sm bg-muted/40 rounded px-3 py-2 leading-relaxed whitespace-pre-wrap"
             style={{ background: highlightBg ? `${highlightBg}` : undefined }}
             dangerouslySetInnerHTML={{ __html: matchLineHtml }}
           />
 
-          {/* Surrounding lines AFTER match */}
-          {showSurround && surroundContext && surroundContext.surroundLines.map((line, i) => {
+          {/* After lines */}
+          {contextLines > 0 && surroundContext && surroundContext.surroundLines.map((line, i) => {
             if (line === matchContext?.matchLine) return null;
             const lineIdx = surroundContext.surroundLines.indexOf(line);
             const matchIdx = surroundContext.surroundLines.indexOf(matchContext?.matchLine ?? '');
@@ -115,19 +119,39 @@ export default memo(function RefCard({ data, onValidate, onClickRef, highlightCo
             );
           })}
 
-          {/* Toggle surrounding lines button */}
-          {hasSurroundLines && (
-            <button
-              onClick={(e) => { e.stopPropagation(); setShowSurround(prev => !prev); }}
-              className="absolute top-1 left-1 p-1 rounded hover:bg-muted/60 transition-colors text-muted-foreground hover:text-foreground"
-              title={showSurround ? 'הסתר שורות סביב' : 'הצג שורה לפני ואחרי'}
+          {/* Context lines control */}
+          {maxAvailable > 0 && (
+            <div
+              className="absolute top-1 left-1 flex items-center gap-0.5 bg-background/90 backdrop-blur-sm border border-border/50 rounded-md shadow-sm"
+              onClick={e => e.stopPropagation()}
             >
-              <ChevronsUpDown className="w-3.5 h-3.5" />
-            </button>
+              <button
+                onClick={() => setContextLines(prev => Math.max(0, prev - 1))}
+                disabled={contextLines === 0}
+                className="p-1 rounded-r hover:bg-muted/60 transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+                title="פחות שורות הקשר"
+              >
+                <Minus className="w-3 h-3" />
+              </button>
+              <span className="text-[10px] font-medium text-muted-foreground min-w-[18px] text-center tabular-nums">
+                {contextLines === 0 ? (
+                  <AlignJustify className="w-3 h-3 mx-auto" />
+                ) : (
+                  `±${contextLines}`
+                )}
+              </span>
+              <button
+                onClick={() => setContextLines(prev => Math.min(maxAvailable, prev + 1))}
+                disabled={contextLines >= maxAvailable}
+                className="p-1 rounded-l hover:bg-muted/60 transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+                title="עוד שורות הקשר"
+              >
+                <Plus className="w-3 h-3" />
+              </button>
+            </div>
           )}
         </div>
       ) : (
-        /* No context at all - show a note */
         <div className="text-xs text-muted-foreground/50 bg-muted/20 rounded px-3 py-1.5 italic">
           אין הקשר טקסטואלי זמין
         </div>
