@@ -9,7 +9,7 @@ import {
   Maximize2, Minimize2, AlignRight, AlignCenter, AlignLeft, AlignJustify,
   Type, Bold, Italic, Underline, Highlighter, AArrowUp, AArrowDown, Palette, Edit, Save, X,
   Search, ChevronUp, ChevronDown, CaseSensitive, WholeWord, Sparkles, Loader2, Printer,
-  ScrollText, BookOpen, ListOrdered
+  ScrollText, BookOpen, ListOrdered, Copy
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -155,6 +155,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
   // Beautify state
   const [beautifiedHtml, setBeautifiedHtml] = useState<string | null>(null);
   const [isBeautifying, setIsBeautifying] = useState(false);
+  const [isSavingBeautified, setIsSavingBeautified] = useState(false);
   const beautifyIframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
@@ -317,6 +318,89 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
     if (!beautifyIframeRef.current?.contentWindow) return;
     beautifyIframeRef.current.contentWindow.print();
   }, []);
+
+  // Save beautified: overwrite the original psak din's full_text
+  const handleSaveBeautified = useCallback(async () => {
+    if (!psak?.id || !beautifiedHtml) return;
+    setIsSavingBeautified(true);
+    try {
+      // Upload beautified HTML to storage
+      const fileName = `beautified/${psak.id}-${Date.now()}.html`;
+      const blob = new Blob([beautifiedHtml], { type: "text/html;charset=utf-8" });
+      const { error: uploadError } = await supabase.storage
+        .from("psakei-din-files")
+        .upload(fileName, blob, { contentType: "text/html", upsert: true });
+      if (uploadError) console.warn("Storage upload warning:", uploadError);
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from("psakei-din-files")
+        .getPublicUrl(fileName);
+
+      // Update the original record
+      const { error } = await supabase
+        .from("psakei_din")
+        .update({
+          full_text: beautifiedHtml,
+          source_url: urlData?.publicUrl || undefined,
+        })
+        .eq("id", psak.id);
+      if (error) throw error;
+
+      toast.success("פסק הדין המעוצב נשמר בהצלחה");
+      onSave?.();
+    } catch (err: any) {
+      console.error("Save beautified error:", err);
+      toast.error("שגיאה בשמירת פסק הדין המעוצב");
+    } finally {
+      setIsSavingBeautified(false);
+    }
+  }, [psak, beautifiedHtml, onSave]);
+
+  // Copy & Save: keep original, create a new record with the beautified version
+  const handleCopyAndSaveBeautified = useCallback(async () => {
+    if (!psak || !beautifiedHtml) return;
+    setIsSavingBeautified(true);
+    try {
+      // Upload beautified HTML to storage
+      const newId = crypto.randomUUID();
+      const fileName = `beautified/${newId}.html`;
+      const blob = new Blob([beautifiedHtml], { type: "text/html;charset=utf-8" });
+      const { error: uploadError } = await supabase.storage
+        .from("psakei-din-files")
+        .upload(fileName, blob, { contentType: "text/html", upsert: true });
+      if (uploadError) console.warn("Storage upload warning:", uploadError);
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from("psakei-din-files")
+        .getPublicUrl(fileName);
+
+      // Create a new psak din record
+      const { error } = await supabase
+        .from("psakei_din")
+        .insert({
+          id: newId,
+          title: `${psak.title} (מעוצב)`,
+          court: psak.court || "",
+          year: psak.year || new Date().getFullYear(),
+          case_number: psak.case_number || psak.caseNumber || null,
+          summary: psak.summary || "",
+          full_text: beautifiedHtml,
+          source_url: urlData?.publicUrl || null,
+          tags: [...(psak.tags || []), "מעוצב"],
+        });
+      if (error) throw error;
+
+      toast.success("פסק הדין המעוצב הועתק ונשמר כפריט חדש");
+      onSave?.();
+    } catch (err: any) {
+      console.error("Copy & save beautified error:", err);
+      toast.error("שגיאה בהעתקה ושמירה");
+    } finally {
+      setIsSavingBeautified(false);
+    }
+  }, [psak, beautifiedHtml, onSave]);
 
   // Determine file type from URL
   const getFileType = (url: string | undefined): string => {
@@ -1210,6 +1294,30 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
                   >
                     <Download className="w-3.5 h-3.5" />
                     ייצוא PDF
+                  </Button>
+
+                  {/* Save buttons separator */}
+                  <div className="w-px h-6 bg-border mx-1" />
+
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="gap-1 bg-gradient-to-l from-[#0B1F5B] to-[#1a3580] text-white"
+                    onClick={handleSaveBeautified}
+                    disabled={isSavingBeautified || !psak?.id}
+                  >
+                    {isSavingBeautified ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                    שמור
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1 border-[#D4AF37]/50 text-[#0B1F5B]"
+                    onClick={handleCopyAndSaveBeautified}
+                    disabled={isSavingBeautified}
+                  >
+                    {isSavingBeautified ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Copy className="w-3.5 h-3.5" />}
+                    העתק ושמור
                   </Button>
                 </div>
                 {/* Rendered HTML */}
