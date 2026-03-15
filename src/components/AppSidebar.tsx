@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { BookOpen, Scale, Search, Upload, Pin, PinOff, ChevronDown, ChevronLeft, ArrowDownToLine, BookMarked, FileText, Database } from "lucide-react";
+import { BookOpen, Scale, Search, Upload, Pin, PinOff, ChevronDown, ChevronLeft, ArrowDownToLine, BookMarked, FileText, Database, FileType } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -74,6 +74,13 @@ const menuItems = [
     title: "צפיין PDF",
     icon: FileText,
     description: "צפייה והשוואת מסמכי PDF",
+  },
+  {
+    id: "embedpdf-viewer",
+    title: "צפיין EmbedPDF",
+    icon: FileType,
+    description: "צפיין PDF מתקדם עם אנוטציות",
+    badge: "חדש",
   },
 ];
 
@@ -257,6 +264,9 @@ const AppSidebar = ({
                       activeTab === item.id ? "text-accent" : "text-muted-foreground"
                     )} />
                     <span className="font-medium text-sm">{item.title}</span>
+                    {"badge" in item && item.badge && (
+                      <span className="text-[10px] bg-amber-400/20 text-amber-600 dark:text-amber-300 border border-amber-400/40 px-1.5 py-0.5 rounded-full font-medium">{item.badge}</span>
+                    )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

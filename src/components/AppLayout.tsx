@@ -32,6 +32,10 @@ const AppLayoutInner = ({ children }: AppLayoutProps) => {
   useGemaraDownloadEngine();
 
   const handleTabChange = (tab: string) => {
+    if (tab === "embedpdf-viewer") {
+      navigate("/embedpdf-viewer");
+      return;
+    }
     setActiveTab(tab);
     if (location.pathname !== '/') {
       navigate('/');
