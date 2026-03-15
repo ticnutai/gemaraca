@@ -4,10 +4,10 @@
  */
 
 const FILE_TYPES = {
-  pdf:  { letter: "P", label: "PDF",  bg: "bg-red-100 dark:bg-red-950",    text: "text-red-700 dark:text-red-300",    border: "border-red-300 dark:border-red-800" },
-  word: { letter: "W", label: "Word", bg: "bg-blue-100 dark:bg-blue-950",  text: "text-blue-700 dark:text-blue-300",  border: "border-blue-300 dark:border-blue-800" },
-  text: { letter: "T", label: "Text", bg: "bg-green-100 dark:bg-green-950",text: "text-green-700 dark:text-green-300",border: "border-green-300 dark:border-green-800" },
-  html: { letter: "H", label: "HTML", bg: "bg-orange-100 dark:bg-orange-950",text: "text-orange-700 dark:text-orange-300",border: "border-orange-300 dark:border-orange-800" },
+  pdf:  { letter: "P", label: "PDF",  bg: "bg-primary/10",    text: "text-foreground",    border: "border-border" },
+  word: { letter: "W", label: "Word", bg: "bg-primary/10",  text: "text-foreground",  border: "border-border" },
+  text: { letter: "T", label: "Text", bg: "bg-primary/10",text: "text-foreground",border: "border-border" },
+  html: { letter: "H", label: "HTML", bg: "bg-primary/10",text: "text-foreground",border: "border-border" },
 } as const;
 
 type FileType = keyof typeof FILE_TYPES;
