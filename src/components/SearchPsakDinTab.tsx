@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Search, Calendar, Building2, FileText, ExternalLink, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import PsakDinViewDialog from "./PsakDinViewDialog";
+import FileTypeBadge from "./FileTypeBadge";
 
 const SearchPsakDinTab = () => {
   const navigate = useNavigate();
@@ -189,7 +190,8 @@ const SearchPsakDinTab = () => {
                 onClick={() => handlePsakClick(psak)}
               >
                 <CardHeader>
-                  <CardTitle className="text-lg font-semibold text-foreground">
+                  <CardTitle className="text-lg font-semibold text-foreground flex items-center gap-2 justify-end">
+                    <FileTypeBadge url={psak.sourceUrl} size="sm" />
                     {psak.title}
                   </CardTitle>
                   <div className="flex flex-wrap gap-2 text-sm text-muted-foreground mt-2">

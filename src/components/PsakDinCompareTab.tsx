@@ -7,6 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Columns2, Search, X, ArrowRight, Scale, Calendar, Building2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import FileTypeBadge from "./FileTypeBadge";
 
 interface PsakDin {
   id: string;
@@ -17,6 +18,7 @@ interface PsakDin {
   case_number?: string;
   full_text?: string;
   tags?: string[];
+  source_url?: string;
 }
 
 export default function PsakDinCompareTab() {
@@ -33,7 +35,7 @@ export default function PsakDinCompareTab() {
     try {
       const { data } = await supabase
         .from("psakei_din")
-        .select("id, title, summary, court, year, case_number, full_text, tags")
+        .select("id, title, summary, court, year, case_number, full_text, tags, source_url")
         .or(`title.ilike.%${q}%,summary.ilike.%${q}%,court.ilike.%${q}%`)
         .order("year", { ascending: false })
         .limit(20);
@@ -166,7 +168,7 @@ export default function PsakDinCompareTab() {
                   onClick={() => selectPsak(p)}
                   className="w-full text-right p-3 rounded-lg border hover:bg-accent/30 transition-colors"
                 >
-                  <div className="font-medium text-sm">{p.title}</div>
+                  <div className="font-medium text-sm flex items-center gap-1.5 justify-end"><FileTypeBadge url={p.source_url} />{p.title}</div>
                   <div className="text-xs text-muted-foreground mt-1">{p.court} • {p.year}</div>
                 </button>
               ))}
@@ -216,7 +218,7 @@ function CompareSlot({
             <X className="h-3 w-3" />
           </Button>
         </div>
-        <CardTitle className="text-sm">{psak.title}</CardTitle>
+        <CardTitle className="text-sm flex items-center gap-1.5 justify-end"><FileTypeBadge url={psak.source_url} />{psak.title}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">

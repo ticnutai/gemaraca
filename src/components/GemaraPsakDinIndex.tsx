@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
+import FileTypeBadge from "./FileTypeBadge";
 import { MASECHTOT, SEDARIM, Masechet } from "@/lib/masechtotData";
 import { toHebrewNumeral } from "@/lib/hebrewNumbers";
 import { 
@@ -760,7 +761,8 @@ return (
                         <div className="flex items-start justify-between gap-2">
                           <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0 mt-1" />
                           <div className="flex-1 text-right">
-                            <h4 className="font-medium text-foreground line-clamp-1">
+                            <h4 className="font-medium text-foreground line-clamp-1 flex items-center gap-1.5 justify-end">
+                              <FileTypeBadge url={link.psakei_din?.source_url} />
                               {link.psakei_din?.title}
                             </h4>
                             <div className="flex items-center justify-end gap-3 text-sm text-muted-foreground mt-1">

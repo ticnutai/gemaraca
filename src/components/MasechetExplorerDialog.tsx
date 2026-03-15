@@ -22,6 +22,7 @@ import { useNavigate } from "react-router-dom";
 import { useAppContext } from "@/contexts/AppContext";
 import { useQuery } from "@tanstack/react-query";
 import PsakDinViewDialog from "./PsakDinViewDialog";
+import FileTypeBadge from "./FileTypeBadge";
 import { useGemaraDownloadStore } from "@/stores/gemaraDownloadStore";
 import { buildMasechetJob, buildSederJob, buildShasJob } from "@/hooks/useGemaraDownloadEngine";
 import { useToast } from "@/hooks/use-toast";
@@ -46,6 +47,7 @@ interface DafPsak {
   tags: string[];
   relevance_score: number;
   connection: string;
+  source_url?: string;
 }
 
 // ─── Seder icons & colors ───────────────────────────────
@@ -190,14 +192,14 @@ const MasechetExplorerDialog = ({ open, onOpenChange }: MasechetExplorerDialogPr
           .from("sugya_psak_links")
           .select(`
             id, psak_din_id, sugya_id, connection_explanation, relevance_score,
-            psakei_din (id, title, court, year, summary, tags)
+            psakei_din (id, title, court, year, summary, tags, source_url)
           `)
           .like("sugya_id", `${masechet.sefariaName}_${dafNumber}%`),
         supabase
           .from("pattern_sugya_links")
           .select(`
             id, psak_din_id, sugya_id, source_text, confidence,
-            psakei_din:psak_din_id (id, title, court, year, summary, tags)
+            psakei_din:psak_din_id (id, title, court, year, summary, tags, source_url)
           `)
           .eq("masechet", masechet.hebrewName)
           .eq("daf", dafNumber.toString()),
@@ -219,6 +221,7 @@ const MasechetExplorerDialog = ({ open, onOpenChange }: MasechetExplorerDialogPr
             tags: link.psakei_din.tags || [],
             relevance_score: link.relevance_score,
             connection: link.connection_explanation || "",
+            source_url: link.psakei_din.source_url,
           });
         }
       });
@@ -236,6 +239,7 @@ const MasechetExplorerDialog = ({ open, onOpenChange }: MasechetExplorerDialogPr
             tags: link.psakei_din.tags || [],
             relevance_score: link.confidence === "high" ? 8 : link.confidence === "medium" ? 6 : 4,
             connection: link.source_text || "",
+            source_url: link.psakei_din.source_url,
           });
         }
       });
@@ -578,7 +582,7 @@ const MasechetExplorerDialog = ({ open, onOpenChange }: MasechetExplorerDialogPr
                       >
                         <div className="flex items-start gap-3">
                           <div className="flex-1">
-                            <h4 className="font-bold text-sm line-clamp-2">{psak.title}</h4>
+                            <h4 className="font-bold text-sm line-clamp-2 flex items-center gap-1 justify-end"><FileTypeBadge url={psak.source_url} />{psak.title}</h4>
                             <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
                               <span className="flex items-center gap-1">
                                 <Building2 className="h-3 w-3" />

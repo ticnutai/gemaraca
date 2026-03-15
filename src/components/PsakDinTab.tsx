@@ -13,6 +13,7 @@ import PsakDinViewDialog from "./PsakDinViewDialog";
 import PsakDinEditDialog from "./PsakDinEditDialog";
 import PsakDinActions from "./PsakDinActions";
 import BulkActionsBar from "./BulkActionsBar";
+import FileTypeBadge from "./FileTypeBadge";
 import GemaraPsakDinIndex from "./GemaraPsakDinIndex";
 import { useToast } from "@/hooks/use-toast";
 
@@ -400,7 +401,8 @@ const PsakDinTab = () => {
                             className="flex-1 cursor-pointer"
                             onClick={() => handlePsakClick(psak)}
                           >
-                            <h3 className="text-lg font-semibold text-foreground text-right mb-2 leading-tight">
+                            <h3 className="text-lg font-semibold text-foreground text-right mb-2 leading-tight flex items-center gap-2 justify-end">
+                              <FileTypeBadge url={psak.source_url} size="sm" />
                               {psak.title}
                             </h3>
                             <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground justify-end">

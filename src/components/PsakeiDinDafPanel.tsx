@@ -51,6 +51,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import FileTypeBadge from "./FileTypeBadge";
 import { toast } from "sonner";
 
 const PsakDinViewDialog = lazy(() => import("@/components/PsakDinViewDialog"));
@@ -449,7 +450,7 @@ export default function PsakeiDinDafPanel({
                 {visiblePsakim.map((psak, i) => (
                   <tr key={psak.id} className="border-b last:border-b-0 hover:bg-muted/30 transition-colors">
                     <td className="px-3 py-2 text-muted-foreground">{i + 1}</td>
-                    <td className="px-3 py-2 font-medium max-w-[240px] truncate">{psak.title}</td>
+                    <td className="px-3 py-2 font-medium max-w-[240px]"><span className="flex items-center gap-1 truncate"><FileTypeBadge url={psak.source_url} />{psak.title}</span></td>
                     <td className="px-3 py-2 text-muted-foreground">{psak.court}</td>
                     <td className="px-3 py-2">{psak.year}</td>
                     <td className="px-3 py-2"><Badge variant="secondary" className="text-[10px]">{psak.references.length}</Badge></td>
@@ -559,7 +560,7 @@ export default function PsakeiDinDafPanel({
               <ScrollArea className="h-[calc(60vh-80px)]" dir="rtl">
                 <div className="p-4 space-y-4">
                   <div className="space-y-2">
-                    <h3 className="text-base font-bold">{selectedPsak.title}</h3>
+                    <h3 className="text-base font-bold flex items-center gap-1.5 justify-end"><FileTypeBadge url={selectedPsak.source_url} size="sm" />{selectedPsak.title}</h3>
                     <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
                       <span>{selectedPsak.court}</span><span>•</span><span>{selectedPsak.year}</span>
                     </div>
@@ -694,7 +695,7 @@ function PsakCardList({ psak, expanded, onToggle, onOpen, onSplitView }: {
       <CardContent className="p-4 space-y-3">
         <div className="flex items-start justify-between gap-2">
           <div className="space-y-1 min-w-0">
-            <h4 className="text-sm font-bold leading-tight">{psak.title}</h4>
+            <h4 className="text-sm font-bold leading-tight flex items-center gap-1.5 justify-end"><FileTypeBadge url={psak.source_url} />{psak.title}</h4>
             <div className="flex flex-wrap gap-1.5 text-xs text-muted-foreground">
               <span>{psak.court}</span><span>•</span><span>{psak.year}</span>
               {psak.case_number && <><span>•</span><span className="font-mono">{psak.case_number}</span></>}
@@ -745,7 +746,7 @@ function PsakCardGrid({ psak, onOpen }: { psak: DafPsak; onOpen: () => void }) {
     <Card className="overflow-hidden hover:shadow-lg transition-all cursor-pointer group" onClick={onOpen}>
       <div className="h-1.5 bg-gradient-to-l from-primary/80 to-primary/30" />
       <CardContent className="p-3 space-y-2">
-        <h4 className="text-xs font-bold leading-tight line-clamp-2 group-hover:text-primary transition-colors">{psak.title}</h4>
+        <h4 className="text-xs font-bold leading-tight line-clamp-2 group-hover:text-primary transition-colors flex items-center gap-1 justify-end"><FileTypeBadge url={psak.source_url} />{psak.title}</h4>
         <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
           <Building2 className="w-3 h-3" /><span className="truncate">{psak.court}</span>
           <span>•</span><span>{psak.year}</span>
@@ -767,7 +768,7 @@ function PsakCardCompact({ psak, onOpen }: { psak: DafPsak; onOpen: () => void }
   return (
     <button onClick={onOpen}
       className="w-full text-right p-2.5 rounded-lg border hover:bg-muted/50 hover:border-primary/30 transition-all flex items-center gap-2 group">
-      <div className="w-2 h-2 rounded-full bg-primary/60 shrink-0 group-hover:bg-primary" />
+      <FileTypeBadge url={psak.source_url} />
       <div className="min-w-0 flex-1">
         <p className="text-[11px] font-semibold truncate">{psak.title}</p>
         <p className="text-[9px] text-muted-foreground truncate">{psak.court} • {psak.year}</p>
@@ -786,7 +787,7 @@ function PsakCardMagazineFeatured({ psak, onOpen }: { psak: DafPsak; onOpen: () 
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1 flex-1 min-w-0">
             <Badge variant="default" className="text-[9px] mb-1">פסק מרכזי</Badge>
-            <h3 className="text-base font-bold leading-tight">{psak.title}</h3>
+            <h3 className="text-base font-bold leading-tight flex items-center gap-1.5 justify-end"><FileTypeBadge url={psak.source_url} size="sm" />{psak.title}</h3>
             <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
               <span className="flex items-center gap-1"><Building2 className="w-3 h-3" />{psak.court}</span>
               <span>{psak.year}</span>
@@ -811,7 +812,7 @@ function PsakCardMagazine({ psak, onOpen }: { psak: DafPsak; onOpen: () => void 
   return (
     <Card className="overflow-hidden hover:shadow-md transition-all cursor-pointer group" onClick={onOpen}>
       <CardContent className="p-4 space-y-2">
-        <h4 className="text-sm font-bold leading-tight group-hover:text-primary transition-colors line-clamp-2">{psak.title}</h4>
+        <h4 className="text-sm font-bold leading-tight group-hover:text-primary transition-colors line-clamp-2 flex items-center gap-1 justify-end"><FileTypeBadge url={psak.source_url} />{psak.title}</h4>
         <div className="flex gap-1.5 text-[10px] text-muted-foreground">
           <span>{psak.court}</span><span>•</span><span>{psak.year}</span>
         </div>
@@ -838,7 +839,7 @@ function PsakCardTimeline({ psak, index, onOpen }: { psak: DafPsak; index: numbe
       <Card className="overflow-hidden group-hover:shadow-md transition-all mr-4">
         <CardContent className="p-3 space-y-1.5">
           <div className="flex items-center justify-between gap-2">
-            <h4 className="text-xs font-bold leading-tight line-clamp-1 group-hover:text-primary transition-colors">{psak.title}</h4>
+            <h4 className="text-xs font-bold leading-tight line-clamp-1 group-hover:text-primary transition-colors flex items-center gap-1"><FileTypeBadge url={psak.source_url} />{psak.title}</h4>
             <Badge variant="outline" className="text-[9px] shrink-0">{psak.year}</Badge>
           </div>
           <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
@@ -857,7 +858,7 @@ function PsakCardKanban({ psak, onOpen }: { psak: DafPsak; onOpen: () => void })
   return (
     <button onClick={onOpen}
       className="w-full text-right p-2.5 rounded-lg border bg-background hover:shadow-sm hover:border-primary/30 transition-all space-y-1">
-      <p className="text-[11px] font-semibold line-clamp-2 leading-tight">{psak.title}</p>
+      <p className="text-[11px] font-semibold line-clamp-2 leading-tight flex items-center gap-1 justify-end"><FileTypeBadge url={psak.source_url} />{psak.title}</p>
       <div className="flex items-center justify-between text-[9px] text-muted-foreground">
         <span>{psak.year}</span>
         <Badge variant="secondary" className="text-[8px]">{psak.references.length}</Badge>

@@ -9,6 +9,7 @@ import { buildMasechetJob, buildSederJob, buildShasJob } from "@/hooks/useGemara
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "@/contexts/AppContext";
+import FileTypeBadge from "./FileTypeBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -29,6 +30,7 @@ interface PsakDinExample {
   court: string;
   year: number;
   summary: string;
+  source_url?: string;
 }
 
 interface LoadedPagesMap {
@@ -83,7 +85,7 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
     queryFn: async () => {
       const { data } = await supabase
         .from('psakei_din')
-        .select('id, title, court, year, summary')
+        .select('id, title, court, year, summary, source_url')
         .order('created_at', { ascending: false })
         .limit(6);
       return (data || []) as PsakDinExample[];
@@ -550,7 +552,7 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
                   "hover:bg-accent/10"
                 )}
               >
-                <h4 className="font-medium text-xs md:text-sm line-clamp-2 mb-0.5 md:mb-1">{psak.title}</h4>
+                <h4 className="font-medium text-xs md:text-sm line-clamp-2 mb-0.5 md:mb-1 flex items-center gap-1 justify-end"><FileTypeBadge url={psak.source_url} />{psak.title}</h4>
                 <div className="flex items-center gap-1.5 md:gap-2 text-[10px] md:text-xs text-muted-foreground">
                   <span className="truncate max-w-[100px] md:max-w-none">{psak.court}</span>
                   <span>•</span>

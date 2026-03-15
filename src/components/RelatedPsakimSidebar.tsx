@@ -8,6 +8,7 @@ import { Scale, ExternalLink, Plus } from "lucide-react";
 import PsakDinViewDialog from "./PsakDinViewDialog";
 import PsakDinEditDialog from "./PsakDinEditDialog";
 import PsakDinActions from "./PsakDinActions";
+import FileTypeBadge from "./FileTypeBadge";
 
 interface RelatedPsakimSidebarProps {
   sugyaId: string;
@@ -199,7 +200,8 @@ const RelatedPsakimSidebar = ({ sugyaId }: RelatedPsakimSidebarProps) => {
                 >
                   <div className="flex items-start justify-between gap-2 flex-row-reverse">
                     <div className="flex-1 min-w-0 text-right">
-                      <h4 className="font-medium text-sm text-foreground line-clamp-1 text-right">
+                      <h4 className="font-medium text-sm text-foreground line-clamp-1 text-right flex items-center gap-1.5 justify-end">
+                        <FileTypeBadge url={link.psakei_din?.source_url} />
                         {link.psakei_din?.title}
                       </h4>
                       <p className="text-xs text-muted-foreground text-right">

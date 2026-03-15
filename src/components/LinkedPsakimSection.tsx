@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import PsakDinViewDialog from "./PsakDinViewDialog";
 import PsakDinEditDialog from "./PsakDinEditDialog";
 import PsakDinActions from "./PsakDinActions";
+import FileTypeBadge from "./FileTypeBadge";
 
 interface LinkedPsakimSectionProps {
   sugyaId: string;
@@ -24,6 +25,7 @@ interface LinkedPsak {
   summary: string;
   court: string;
   year: number;
+  source_url?: string;
   source_text?: string;
   confidence?: string;
   connection_explanation?: string;
@@ -56,7 +58,7 @@ const LinkedPsakimSection = ({ sugyaId, masechet, dafNumber }: LinkedPsakimSecti
         .select(`
           source_text,
           confidence,
-          psakei_din:psak_din_id (id, title, summary, court, year)
+          psakei_din:psak_din_id (id, title, summary, court, year, source_url)
         `)
         .eq('masechet', masechet)
         .eq('daf', dafNumber.toString());
@@ -70,7 +72,7 @@ const LinkedPsakimSection = ({ sugyaId, masechet, dafNumber }: LinkedPsakimSecti
         .select(`
           source_text,
           confidence,
-          psakei_din:psak_din_id (id, title, summary, court, year)
+          psakei_din:psak_din_id (id, title, summary, court, year, source_url)
         `)
         .or(`sugya_id.eq.${sugyaPatternA},sugya_id.eq.${sugyaPatternB}`);
 
@@ -308,7 +310,8 @@ const LinkedPsakimSection = ({ sugyaId, masechet, dafNumber }: LinkedPsakimSecti
                     
                     {/* Left side: Content */}
                     <div className="flex-1 text-right">
-                      <div className="font-medium line-clamp-1 group-hover:text-primary transition-colors text-right">
+                      <div className="font-medium line-clamp-1 group-hover:text-primary transition-colors text-right flex items-center gap-1.5 justify-end">
+                        <FileTypeBadge url={psak.source_url} />
                         {psak.title}
                       </div>
                       <div className="text-xs text-muted-foreground mt-1 text-right">

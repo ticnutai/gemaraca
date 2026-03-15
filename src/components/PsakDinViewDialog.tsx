@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import FileTypeBadge from "./FileTypeBadge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
@@ -574,7 +575,8 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
       >
         <DialogHeader className="flex-shrink-0">
           <div className="flex items-start justify-between">
-            <DialogTitle className="text-xl font-bold text-foreground text-right flex-1">
+            <DialogTitle className="text-xl font-bold text-foreground text-right flex-1 flex items-center gap-2 justify-end">
+              <FileTypeBadge url={psak.source_url || psak.sourceUrl} size="sm" />
               {psak.title}
             </DialogTitle>
             <div className="flex items-center gap-1">
