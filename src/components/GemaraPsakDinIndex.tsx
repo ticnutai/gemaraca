@@ -607,20 +607,18 @@ return (
             ))}
           </SelectContent>
         </Select>
-        <div className="flex gap-1">
-          <Button 
-            variant={viewMode === "tree" ? "default" : "outline"} 
-            size="icon"
-            onClick={() => setViewMode("tree")}
-          >
-            <BookOpen className="w-4 h-4" />
+        <div className="flex gap-1 bg-muted rounded-lg p-0.5">
+          <Button variant={viewMode === "tree" ? "default" : "ghost"} size="sm" className="h-7 px-2 gap-1 text-xs" onClick={() => setViewMode("tree")} title="עץ">
+            <BookOpen className="w-4 h-4" /><span className="hidden sm:inline">עץ</span>
           </Button>
-          <Button 
-            variant={viewMode === "stats" ? "default" : "outline"} 
-            size="icon"
-            onClick={() => setViewMode("stats")}
-          >
-            <BarChart3 className="w-4 h-4" />
+          <Button variant={viewMode === "table" ? "default" : "ghost"} size="sm" className="h-7 px-2 gap-1 text-xs" onClick={() => setViewMode("table")} title="טבלה">
+            <TableIcon className="w-4 h-4" /><span className="hidden sm:inline">טבלה</span>
+          </Button>
+          <Button variant={viewMode === "cards" ? "default" : "ghost"} size="sm" className="h-7 px-2 gap-1 text-xs" onClick={() => setViewMode("cards")} title="כרטיסיות">
+            <LayoutGrid className="w-4 h-4" /><span className="hidden sm:inline">כרטיסיות</span>
+          </Button>
+          <Button variant={viewMode === "stats" ? "default" : "ghost"} size="sm" className="h-7 px-2 gap-1 text-xs" onClick={() => setViewMode("stats")} title="סטטיסטיקות">
+            <BarChart3 className="w-4 h-4" /><span className="hidden sm:inline">סטטיסטיקות</span>
           </Button>
         </div>
       </div>
