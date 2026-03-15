@@ -1,6 +1,6 @@
-import { Info, BookOpen, Scale, Search, Upload, Library, User, LogOut, LogIn, ArrowDownToLine, BookMarked, History, CalendarDays, GitCompareArrows, Share2, MoreHorizontal } from "lucide-react";
+import { Info, BookOpen, Scale, Search, Upload, Library, User, LogOut, LogIn, ArrowDownToLine, BookMarked, History, CalendarDays, GitCompareArrows, Share2, MoreHorizontal, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { useSidebar } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -33,10 +33,13 @@ const tabs = [
 
 const mainTabs = tabs.slice(0, 7);
 const moreTabs = tabs.slice(7);
+const mobileMainTabs = tabs.slice(0, 4);
+const mobileMoreTabs = tabs.slice(4);
 
 const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
   const { user, isAuthenticated, signOut } = useAuth();
   const navigate = useNavigate();
+  const { setOpen } = useSidebar();
 
   const handleSignOut = async () => {
     await signOut();
@@ -48,7 +51,15 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
       <div className="flex h-16 items-center justify-between px-4 md:px-6">
         {/* Right side - Logo and title */}
         <div className="flex items-center gap-4">
-          <SidebarTrigger className="text-primary-foreground hover:bg-primary-foreground/10 min-h-[44px] min-w-[44px]" />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-primary-foreground hover:bg-primary-foreground/10 min-h-[44px] min-w-[44px] rounded-full border border-primary-foreground/20"
+            onClick={() => setOpen(true)}
+            title="פתח סיידבר"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
           <h1 className="text-xl md:text-2xl font-bold text-accent tracking-wide">
             גמרא להלכה
           </h1>
@@ -150,14 +161,14 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
         </div>
       </div>
 
-      {/* Mobile tabs - horizontal scroll, bigger touch targets */}
-      <nav className="md:hidden flex items-center gap-1.5 px-3 pb-3 overflow-x-auto scrollbar-hide">
-        {tabs.map((tab) => (
+      {/* Mobile tabs - reduced and cleaner */}
+      <nav className="md:hidden flex items-center gap-1.5 px-3 pb-3 overflow-x-auto scrollbar-hide border-t border-primary-foreground/15">
+        {mobileMainTabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all whitespace-nowrap min-h-[44px]",
+              "flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all whitespace-nowrap min-h-[40px]",
               activeTab === tab.id
                 ? "bg-accent text-accent-foreground"
                 : "bg-primary-foreground/10 text-primary-foreground/80"
@@ -167,6 +178,39 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
             <span>{tab.label}</span>
           </button>
         ))}
+
+        {mobileMoreTabs.length > 0 && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all whitespace-nowrap min-h-[40px]",
+                  mobileMoreTabs.some(t => t.id === activeTab)
+                    ? "bg-accent text-accent-foreground"
+                    : "bg-primary-foreground/10 text-primary-foreground/80"
+                )}
+              >
+                <MoreHorizontal className="h-4 w-4" />
+                <span>עוד</span>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="text-right">
+              {mobileMoreTabs.map((tab) => (
+                <DropdownMenuItem
+                  key={tab.id}
+                  onClick={() => onTabChange(tab.id)}
+                  className={cn(
+                    "flex items-center gap-2 cursor-pointer",
+                    activeTab === tab.id && "bg-accent/20 font-bold"
+                  )}
+                >
+                  <tab.icon className="h-4 w-4" />
+                  {tab.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </nav>
     </header>
   );
