@@ -142,6 +142,7 @@ export default function AdvancedIndexTab() {
 
   const VIEW_OPTIONS: { value: ViewMode; icon: React.ReactNode; label: string }[] = [
     { value: 'tree', icon: <TreePine className="w-4 h-4" />, label: 'עץ' },
+    { value: 'genealogy', icon: <GitBranch className="w-4 h-4" />, label: 'עץ ענפים' },
     { value: 'list', icon: <List className="w-4 h-4" />, label: 'רשימה' },
     { value: 'accordion', icon: <ChevronsUpDown className="w-4 h-4" />, label: 'אקורדיון' },
     { value: 'table', icon: <TableIcon className="w-4 h-4" />, label: 'טבלה' },
