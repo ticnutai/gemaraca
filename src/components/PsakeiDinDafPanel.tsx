@@ -53,6 +53,7 @@ import { toast } from "sonner";
 
 const PsakDinViewDialog = lazy(() => import("@/components/PsakDinViewDialog"));
 const GemaraTextPanel = lazy(() => import("@/components/GemaraTextPanel"));
+const EmbeddedDocViewer = lazy(() => import("@/components/EmbeddedDocViewer"));
 
 const PSAK_VIEWER_DEFAULT_KEY = 'psak-din-default-viewer';
 const PSAK_VIEW_MODE_KEY = 'psak-din-view-mode';
@@ -589,41 +590,30 @@ export default function PsakeiDinDafPanel({
       </Dialog>
 
       <Dialog open={embeddedPdfOpen} onOpenChange={setEmbeddedPdfOpen}>
-        <DialogContent className="max-w-[95vw] w-[95vw] h-[90vh] flex flex-col p-0 gap-0" dir="rtl">
-          <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/30 shrink-0">
-            <div className="flex items-center gap-2 min-w-0">
-              <Globe className="w-5 h-5 text-blue-600 shrink-0" />
-              <h3 className="font-bold text-sm truncate">{selectedPsak?.title}</h3>
-            </div>
-            <div className="flex items-center gap-1 shrink-0">
-              {defaultViewer === 'embedded-pdf' && (
-                <Button variant="ghost" size="sm" className="h-7 px-2 gap-1 text-xs" onClick={clearDefault}>
-                  <RotateCcw className="w-3 h-3" /> נקה ברירת מחדל
-                </Button>
-              )}
-              {selectedPsak?.source_url && (
-                <Button variant="ghost" size="sm" className="h-7 px-2" asChild>
-                  <a href={selectedPsak.source_url} target="_blank" rel="noopener noreferrer"><ExternalLink className="w-3.5 h-3.5" /></a>
-                </Button>
-              )}
-              <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => setEmbeddedPdfOpen(false)}>
-                <X className="w-4 h-4" />
+        <DialogContent className="max-w-[97vw] w-[97vw] h-[93vh] flex flex-col p-0 gap-0" dir="rtl">
+          <DialogHeader className="sr-only"><DialogTitle>צפייה במסמך — {selectedPsak?.title}</DialogTitle></DialogHeader>
+          {selectedPsak?.source_url ? (
+            <Suspense fallback={
+              <div className="flex items-center justify-center h-full">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              </div>
+            }>
+              <EmbeddedDocViewer
+                url={selectedPsak.source_url}
+                title={selectedPsak.title}
+                onClose={() => setEmbeddedPdfOpen(false)}
+                onSwitchToRegular={() => { setEmbeddedPdfOpen(false); setDialogOpen(true); }}
+              />
+            </Suspense>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+              <Globe className="w-16 h-16 mb-4 opacity-30" />
+              <p className="font-medium">אין כתובת מקור לפסק דין זה</p>
+              <Button variant="outline" size="sm" className="mt-4 gap-1.5" onClick={() => { setEmbeddedPdfOpen(false); setDialogOpen(true); }}>
+                <FileText className="w-3.5 h-3.5" /> פתח בצפיין הרגיל
               </Button>
             </div>
-          </div>
-          <div className="flex-1 min-h-0">
-            {selectedPsak?.source_url ? (
-              <iframe src={selectedPsak.source_url} className="w-full h-full border-0" title={selectedPsak.title} />
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                <Globe className="w-16 h-16 mb-4 opacity-30" />
-                <p className="font-medium">אין כתובת מקור לפסק דין זה</p>
-                <Button variant="outline" size="sm" className="mt-4 gap-1.5" onClick={() => { setEmbeddedPdfOpen(false); setDialogOpen(true); }}>
-                  <FileText className="w-3.5 h-3.5" /> פתח בצפיין הרגיל
-                </Button>
-              </div>
-            )}
-          </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
