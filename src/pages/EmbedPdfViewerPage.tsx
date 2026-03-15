@@ -23,6 +23,7 @@ import { useUserBooks, type UserBook } from "@/hooks/useUserBooks";
 // ─── Constants ───────────────────────────────────────────────
 
 const VIEW_MODE_STORAGE_KEY = "embedpdf-view-mode-v1";
+const EDITED_TEXT_STORAGE_PREFIX = "embedpdf-edited-text-v1:";
 
 type ViewMode = "single" | "split" | "compare";
 
@@ -267,7 +268,7 @@ export default function EmbedPdfViewerPage() {
   }, [searchParams]);
 
   // Data hooks
-  const { books, addBook, deleteBook } = useUserBooks();
+  const { books, addBook, deleteBook, updateBookEditedText } = useUserBooks();
   const selectedPdf = books.find((b) => b.id === selectedPdfId) ?? null;
   const comparePdf = books.find((b) => b.id === comparePdfId) ?? null;
 
@@ -329,6 +330,13 @@ export default function EmbedPdfViewerPage() {
   const [fetchedText, setFetchedText] = useState<string | null>(null);
   const [fetchingText, setFetchingText] = useState(false);
   const [fetchTextError, setFetchTextError] = useState<string | null>(null);
+  const [isTextEditing, setIsTextEditing] = useState(false);
+  const [textEditBuffer, setTextEditBuffer] = useState("");
+
+  const currentTextStorageKey = useMemo(() => {
+    if (!leftSourceUrl) return null;
+    return `${EDITED_TEXT_STORAGE_PREFIX}${leftSourceUrl}`;
+  }, [leftSourceUrl]);
 
   // Reset loading state when URL changes
   useEffect(() => {
@@ -336,6 +344,8 @@ export default function EmbedPdfViewerPage() {
     setIframeError(false);
     setFetchedText(null);
     setFetchTextError(null);
+    setIsTextEditing(false);
+    setTextEditBuffer("");
   }, [leftSourceUrl]);
 
   // Fetch text content for .txt files
@@ -351,7 +361,26 @@ export default function EmbedPdfViewerPage() {
       })
       .then(text => {
         if (!cancelled) {
-          setFetchedText(text);
+          let finalText = text;
+
+          // Priority 1: cloud-edited text for selected documents
+          if (canPersist && selectedPdf?.edited_text) {
+            finalText = selectedPdf.edited_text;
+          }
+
+          // Priority 2: local edited text cache (for manual URLs)
+          if (!canPersist && currentTextStorageKey) {
+            try {
+              const locallyEdited = localStorage.getItem(currentTextStorageKey);
+              if (locallyEdited !== null) {
+                finalText = locallyEdited;
+              }
+            } catch {
+              // ignore localStorage issues
+            }
+          }
+          setFetchedText(finalText);
+          setTextEditBuffer(finalText);
           setFetchingText(false);
         }
       })
@@ -362,7 +391,90 @@ export default function EmbedPdfViewerPage() {
         }
       });
     return () => { cancelled = true; };
-  }, [leftSourceUrl, leftContentType]);
+  }, [leftSourceUrl, leftContentType, currentTextStorageKey, canPersist, selectedPdf?.edited_text]);
+
+  const startTextEdit = useCallback(() => {
+    if (fetchedText === null) return;
+    setTextEditBuffer(fetchedText);
+    setIsTextEditing(true);
+    setSelectionPopup(null);
+  }, [fetchedText]);
+
+  const cancelTextEdit = useCallback(() => {
+    setTextEditBuffer(fetchedText ?? "");
+    setIsTextEditing(false);
+  }, [fetchedText]);
+
+  const saveTextEdit = useCallback(async () => {
+    const nextText = textEditBuffer;
+    setFetchedText(nextText);
+    setIsTextEditing(false);
+
+    if (canPersist && selectedPdf?.id) {
+      try {
+        await updateBookEditedText.mutateAsync({
+          id: selectedPdf.id,
+          editedText: nextText,
+        });
+        toast.success("הטקסט נשמר למסד הנתונים");
+        return;
+      } catch {
+        toast.warning("שמירה לענן נכשלה, נשמר מקומית בלבד");
+      }
+    }
+
+    if (currentTextStorageKey) {
+      try {
+        localStorage.setItem(currentTextStorageKey, nextText);
+        toast.success("הטקסט נשמר מקומית");
+      } catch {
+        toast.error("שמירת הטקסט נכשלה");
+      }
+    }
+  }, [textEditBuffer, currentTextStorageKey, canPersist, selectedPdf?.id, updateBookEditedText]);
+
+  const clearTextEdit = useCallback(() => {
+    if (!leftSourceUrl) return;
+    setFetchingText(true);
+    setFetchTextError(null);
+    fetch(leftSourceUrl)
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.text();
+      })
+      .then(text => {
+        if (canPersist && selectedPdf?.id) {
+          updateBookEditedText.mutate({
+            id: selectedPdf.id,
+            editedText: null,
+          });
+        } else if (currentTextStorageKey) {
+          localStorage.removeItem(currentTextStorageKey);
+        }
+        setFetchedText(text);
+        setTextEditBuffer(text);
+        setIsTextEditing(false);
+        setFetchingText(false);
+        toast.success("הטקסט חזר לגרסה המקורית");
+      })
+      .catch(err => {
+        setFetchTextError(err.message);
+        setFetchingText(false);
+        toast.error("לא ניתן לשחזר את הטקסט המקורי");
+      });
+  }, [leftSourceUrl, currentTextStorageKey, canPersist, selectedPdf?.id, updateBookEditedText]);
+
+  useEffect(() => {
+    if (!isTextEditing) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        saveTextEdit();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isTextEditing, saveTextEdit]);
 
   // ── Text Selection Handler ──
   const handleTextSelection = useCallback(() => {
@@ -902,6 +1014,27 @@ export default function EmbedPdfViewerPage() {
                         <Search className="h-3.5 w-3.5 text-[#0B1F5B]" />
                       </Button>
 
+                      {/* Edit mode */}
+                      {!isTextEditing ? (
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={startTextEdit} title="עריכת טקסט">
+                          <Scissors className="h-3.5 w-3.5 text-[#0B1F5B]" />
+                        </Button>
+                      ) : (
+                        <>
+                          <Button size="sm" variant="outline" className="h-7 text-xs border-[#D4AF37] text-[#0B1F5B]" onClick={saveTextEdit} title="שמור שינויים (Ctrl+S)">
+                            <ClipboardPaste className="h-3.5 w-3.5 ml-1" /> שמור
+                          </Button>
+                          <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={cancelTextEdit} title="בטל עריכה">
+                            ביטול
+                          </Button>
+                        </>
+                      )}
+
+                      {/* Restore original text */}
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={clearTextEdit} title="שחזר טקסט מקורי">
+                        <RefreshCw className="h-3.5 w-3.5 text-[#0B1F5B]" />
+                      </Button>
+
                       {/* Copy all */}
                       <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { navigator.clipboard.writeText(fetchedText); toast.success("כל הטקסט הועתק"); }} title="העתק הכל">
                         <Copy className="h-3.5 w-3.5 text-[#0B1F5B]" />
@@ -1024,34 +1157,55 @@ export default function EmbedPdfViewerPage() {
                       )}
                       {fetchedText !== null && (
                         <ScrollArea className="absolute inset-0">
-                          <div
-                            ref={textViewerRef}
-                            onMouseUp={handleTextSelection}
-                            className={`p-4 text-[#0B1F5B] ${textFormat.fontFamily} select-text`}
-                            dir="rtl"
-                            style={{
-                              fontSize: `${textFormat.fontSize}px`,
-                              lineHeight: textFormat.lineHeight,
-                              textAlign: textFormat.textAlign,
-                              fontWeight: textFormat.isBold ? "bold" : "normal",
-                              fontStyle: textFormat.isItalic ? "italic" : "normal",
-                              textDecoration: textFormat.isUnderline ? "underline" : "none",
-                              whiteSpace: textFormat.wordWrap ? "pre-wrap" : "pre",
-                            }}
-                          >
-                            {textFormat.showLineNumbers ? (
-                              <div className="flex">
-                                <div className="pr-3 pl-3 border-l-2 border-[#D4AF37]/20 text-[#0B1F5B]/25 text-right select-none" style={{ fontSize: `${Math.max(10, textFormat.fontSize - 2)}px`, minWidth: "3rem" }}>
-                                  {fetchedText.split("\n").map((_, i) => (
-                                    <div key={i}>{i + 1}</div>
-                                  ))}
+                          {isTextEditing ? (
+                            <div className="p-4 h-full">
+                              <Textarea
+                                value={textEditBuffer}
+                                onChange={(e) => setTextEditBuffer(e.target.value)}
+                                className={`h-full min-h-[450px] resize-none text-[#0B1F5B] ${textFormat.fontFamily} border-[#D4AF37]/30 focus-visible:ring-[#D4AF37]`}
+                                dir="rtl"
+                                style={{
+                                  fontSize: `${textFormat.fontSize}px`,
+                                  lineHeight: textFormat.lineHeight,
+                                  textAlign: textFormat.textAlign,
+                                  fontWeight: textFormat.isBold ? "bold" : "normal",
+                                  fontStyle: textFormat.isItalic ? "italic" : "normal",
+                                  textDecoration: textFormat.isUnderline ? "underline" : "none",
+                                  whiteSpace: textFormat.wordWrap ? "pre-wrap" : "pre",
+                                }}
+                              />
+                              <p className="text-[11px] text-[#0B1F5B]/45 mt-2">אפשר למחוק, להוסיף ולערוך טקסט חופשי. לשמירה מהירה: Ctrl+S</p>
+                            </div>
+                          ) : (
+                            <div
+                              ref={textViewerRef}
+                              onMouseUp={handleTextSelection}
+                              className={`p-4 text-[#0B1F5B] ${textFormat.fontFamily} select-text`}
+                              dir="rtl"
+                              style={{
+                                fontSize: `${textFormat.fontSize}px`,
+                                lineHeight: textFormat.lineHeight,
+                                textAlign: textFormat.textAlign,
+                                fontWeight: textFormat.isBold ? "bold" : "normal",
+                                fontStyle: textFormat.isItalic ? "italic" : "normal",
+                                textDecoration: textFormat.isUnderline ? "underline" : "none",
+                                whiteSpace: textFormat.wordWrap ? "pre-wrap" : "pre",
+                              }}
+                            >
+                              {textFormat.showLineNumbers ? (
+                                <div className="flex">
+                                  <div className="pr-3 pl-3 border-l-2 border-[#D4AF37]/20 text-[#0B1F5B]/25 text-right select-none" style={{ fontSize: `${Math.max(10, textFormat.fontSize - 2)}px`, minWidth: "3rem" }}>
+                                    {fetchedText.split("\n").map((_, i) => (
+                                      <div key={i}>{i + 1}</div>
+                                    ))}
+                                  </div>
+                                  <div className="flex-1 pr-3">{renderedText}</div>
                                 </div>
-                                <div className="flex-1 pr-3">{renderedText}</div>
-                              </div>
-                            ) : (
-                              renderedText
-                            )}
-                          </div>
+                              ) : (
+                                renderedText
+                              )}
+                            </div>
+                          )}
                         </ScrollArea>
                       )}
                     </>

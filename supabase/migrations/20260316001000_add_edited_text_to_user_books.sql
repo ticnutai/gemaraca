@@ -1,0 +1,3 @@
+ALTER TABLE user_books
+ADD COLUMN IF NOT EXISTS edited_text TEXT,
+ADD COLUMN IF NOT EXISTS edited_text_updated_at TIMESTAMPTZ;

@@ -7,6 +7,8 @@ export interface UserBook {
   title: string;
   file_name: string | null;
   file_url: string;
+  edited_text: string | null;
+  edited_text_updated_at: string | null;
   user_id: string | null;
   created_at: string;
   updated_at: string;
@@ -68,5 +70,25 @@ export function useUserBooks() {
     onError: () => toast.error("מחיקת מסמך נכשלה"),
   });
 
-  return { books, addBook, deleteBook, ...queryRest };
+  const updateBookEditedText = useMutation({
+    mutationFn: async (input: { id: string; editedText: string | null }) => {
+      const { data, error } = await supabase
+        .from("user_books" as any)
+        .update({
+          edited_text: input.editedText,
+          edited_text_updated_at: input.editedText ? new Date().toISOString() : null,
+        } as any)
+        .eq("id", input.id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data as unknown as UserBook;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: key });
+    },
+    onError: () => toast.error("שמירת עריכת הטקסט למסד הנתונים נכשלה"),
+  });
+
+  return { books, addBook, deleteBook, updateBookEditedText, ...queryRest };
 }
