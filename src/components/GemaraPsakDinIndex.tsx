@@ -414,10 +414,40 @@ const GemaraPsakDinIndex = () => {
     }
   };
 
+  const openWithMode = (psak: any, mode: ViewerMode) => {
+    const sourceUrl = psak?.source_url || psak?.sourceUrl || psak?.psakei_din?.source_url;
+    switch (mode) {
+      case "embedpdf":
+        if (sourceUrl) {
+          navigate(`/embedpdf-viewer?url=${encodeURIComponent(sourceUrl)}`);
+        } else {
+          setDialogPsak(psak);
+          setDialogOpen(true);
+        }
+        break;
+      case "newwindow":
+        if (sourceUrl) {
+          window.open(sourceUrl, "_blank");
+        } else {
+          setDialogPsak(psak);
+          setDialogOpen(true);
+        }
+        break;
+      default:
+        setDialogPsak(psak);
+        setDialogOpen(true);
+    }
+  };
+
   const handlePsakClick = (psak: any) => {
     if (!psak) return;
-    setDialogPsak(psak);
-    setDialogOpen(true);
+    const saved = getViewerPreference();
+    if (saved) {
+      openWithMode(psak, saved);
+    } else {
+      setPendingPsak(psak);
+      setPrefDialogOpen(true);
+    }
   };
 
   const handleTagClick = (tag: string) => {
