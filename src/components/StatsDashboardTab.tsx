@@ -110,7 +110,7 @@ export default function StatsDashboardTab() {
 
   // Total Shas progress
   const shasProgress = useMemo(() => {
-    const total = MASECHTOT.reduce((sum, m) => sum + m.dafCount, 0);
+    const total = MASECHTOT.reduce((sum, m) => sum + (m.maxDaf - 1), 0);
     return { total, studied: uniquePages, pct: total > 0 ? Math.round((uniquePages / total) * 100) : 0 };
   }, [uniquePages]);
 

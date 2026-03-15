@@ -308,7 +308,7 @@ export default function EmbeddedDocViewer({ url, title, onClose, onSwitchToRegul
                 <MonitorSmartphone className="w-3.5 h-3.5" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="center" dir="rtl">
+            <DropdownMenuContent align="center">
               <DropdownMenuLabel className="text-[10px]">תצוגת מכשיר</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {DEVICE_PRESETS.map(({ key, label, icon: DIcon }) => (
@@ -328,7 +328,7 @@ export default function EmbeddedDocViewer({ url, title, onClose, onSwitchToRegul
                 <ChevronDown className="w-2.5 h-2.5" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="center" dir="rtl">
+            <DropdownMenuContent align="center">
               <DropdownMenuLabel className="text-[10px]">שיטת טעינה</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {(Object.keys(STRATEGY_LABELS) as Strategy[]).map(s => (

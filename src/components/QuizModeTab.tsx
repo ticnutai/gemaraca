@@ -160,7 +160,7 @@ export default function QuizModeTab() {
                 <Select value={masechet} onValueChange={setMasechet}>
                   <SelectTrigger><SelectValue placeholder="בחר מסכת" /></SelectTrigger>
                   <SelectContent>
-                    {MASECHTOT.map(m => <SelectItem key={m.id} value={m.hebrewName}>{m.hebrewName}</SelectItem>)}
+                    {MASECHTOT.map(m => <SelectItem key={m.hebrewName} value={m.hebrewName}>{m.hebrewName}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
