@@ -60,7 +60,7 @@ export default function ShasHeatmapTab() {
     return count;
   }, [visitMap]);
 
-  const totalDafs = useMemo(() => MASECHTOT.reduce((sum, m) => sum + m.dafCount, 0), []);
+  const totalDafs = useMemo(() => MASECHTOT.reduce((sum, m) => sum + (m.maxDaf - 1), 0), []);
 
   const groupedMasechtot = useMemo(() => SEDARIM.map(seder => ({
     seder,
