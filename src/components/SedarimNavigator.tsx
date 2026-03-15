@@ -1,4 +1,4 @@
-import { useState, lazy, Suspense } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { BookOpen, ChevronLeft, ChevronDown, Scale, Download, Loader2, Check, X, MoreVertical, Trash2, RefreshCw, LayoutGrid, List, Compass, GitBranch } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SEDARIM, getMasechtotBySeder, MASECHTOT, Masechet } from "@/lib/masechtotData";
@@ -38,7 +38,7 @@ interface LoadedPagesMap {
 const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { setSelectedMasechet, setActiveTab } = useAppContext();
+  const { setSelectedMasechet, setActiveTab, selectedMasechet } = useAppContext();
   const [selectedSeder, setSelectedSeder] = useState<string | null>(null);
   const [selectedMasechetLocal, setSelectedMasechetLocal] = useState<Masechet | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -47,6 +47,22 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [explorerOpen, setExplorerOpen] = useState(false);
   const queryClient = useQueryClient();
+
+  // Auto-expand seder + masechet when selectedMasechet is set from context (e.g. sidebar click)
+  useEffect(() => {
+    if (!selectedMasechet) return;
+    const masechet = MASECHTOT.find(m => m.hebrewName === selectedMasechet);
+    if (!masechet) return;
+    setSelectedSeder(masechet.seder);
+    setSelectedMasechetLocal(masechet);
+    setIsExpanded(false);
+    // Switch to grid view (which shows dafim grid)
+    if (viewMode === 'list' || viewMode === 'tree' || viewMode === 'explorer') {
+      setViewMode('grid');
+    }
+    // Clear context so this effect doesn't re-fire on next render
+    setSelectedMasechet(null);
+  }, [selectedMasechet]);
 
   const enqueueJobRaw = useGemaraDownloadStore((s) => s.enqueueJob);
 
