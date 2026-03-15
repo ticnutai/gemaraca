@@ -76,6 +76,7 @@ const SmartIndexTab = () => {
   const [filterConfidence, setFilterConfidence] = useState<'all' | 'high' | 'medium' | 'low'>('all');
   const [filterHasFullText, setFilterHasFullText] = useState<boolean | null>(null);
   const [displayPage, setDisplayPage] = useState(0);
+  const [smartViewMode, setSmartViewMode] = useState<'cards' | 'table' | 'compact'>('cards');
   
   const { toast } = useToast();
 
