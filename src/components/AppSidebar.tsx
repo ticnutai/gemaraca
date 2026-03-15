@@ -64,6 +64,12 @@ const menuItems = [
     description: "אינדקס תלמודי מתקדם",
   },
   {
+    id: "bulk-shas",
+    title: "הורדת ש\"ס",
+    icon: Database,
+    description: "הורדת כל הש\"ס לענן",
+  },
+  {
     id: "pdf-viewer",
     title: "צפיין PDF",
     icon: FileText,
