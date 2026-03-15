@@ -149,8 +149,6 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
     }
   }, [open, psak]);
 
-  // Early return moved after all hooks
-  if (!psak) return null;
 
   const fullText = psak.full_text || psak.fullText;
   const sourceUrl = psak.source_url || psak.sourceUrl;
