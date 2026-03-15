@@ -50,7 +50,7 @@ export function useSwipeGesture({
       }
       touchStart.current = null;
     },
-    [onSwipeLeft, onSwipeRight, threshold]
+    [onSwipeLeft, onSwipeRight, threshold, edgeZoneLeft]
   );
 
   useEffect(() => {
