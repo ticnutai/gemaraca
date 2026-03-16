@@ -11,20 +11,23 @@ interface PsakPreviewPopoverProps {
   mode: "summary" | "facts";
 }
 
-/** Extract case facts from full_text or beautified HTML */
+/** Extract case facts/summary from full_text or beautified HTML */
 function extractFacts(text: string): string {
-  // Try to find "עובדות המקרה" section in HTML or plain text
-  const patterns = [
-    /עובדות\s*המקרה[:\s]*\n?([\s\S]*?)(?=<h[23]|<\/section|טענות|ניתוח|פסיקה|החלטה|סיכום|$)/i,
-    /עובדות[:\s]*\n?([\s\S]*?)(?=טענות|ניתוח|פסיקה|החלטה|סיכום|$)/i,
-  ];
-
   // Strip HTML tags for extraction
   const plainText = text.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 
+  // Patterns ordered from most specific to least specific
+  const patterns = [
+    /עובדות\s*המקרה[:\s]*\n?([\s\S]*?)(?=<h[23]|<\/section|טענות\s|ניתוח\s|פסיקה|החלטה|סיכום|דיון|$)/i,
+    /תקציר\s*המקרה[:\s]*\n?([\s\S]*?)(?=<h[23]|<\/section|טענות\s|ניתוח\s|פסיקה|החלטה|עובדות|דיון|$)/i,
+    /המקרה[:\s]*\n?([\s\S]*?)(?=<h[23]|<\/section|טענות\s|ניתוח\s|פסיקה|החלטה|סיכום|דיון|$)/i,
+    /תקציר[:\s]*\n?([\s\S]*?)(?=<h[23]|<\/section|טענות\s|ניתוח\s|פסיקה|החלטה|עובדות|דיון|$)/i,
+    /עובדות[:\s]*\n?([\s\S]*?)(?=טענות\s|ניתוח\s|פסיקה|החלטה|סיכום|דיון|$)/i,
+  ];
+
   for (const pattern of patterns) {
     const match = plainText.match(pattern);
-    if (match?.[1]?.trim()) {
+    if (match?.[1]?.trim() && match[1].trim().length > 20) {
       return match[1].trim();
     }
   }

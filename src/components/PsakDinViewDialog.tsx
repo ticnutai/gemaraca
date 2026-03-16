@@ -197,7 +197,13 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
       setEditCaseNumber(psak.case_number || psak.caseNumber || "");
       setEditSummary(psak.summary || "");
       setEditFullText(psak.full_text || psak.fullText || "");
-      setRichHtml(plainTextToHtml(psak.full_text || psak.fullText || ""));
+      const ft = psak.full_text || psak.fullText || "";
+      const isHtmlContent = /<[a-z][\s\S]*>/i.test(ft);
+      setRichHtml(isHtmlContent ? ft : plainTextToHtml(ft));
+      // If full_text already contains beautified HTML, auto-load it
+      if (isHtmlContent && !beautifiedHtml) {
+        setBeautifiedHtml(ft);
+      }
       setEditTags((psak.tags || []).join(", "));
     }
   }, [open, psak]);
@@ -278,14 +284,19 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
   }, []);
 
   // Auto-save full text on blur (works in both edit and view modes)
+  // Preserves HTML formatting if the content was beautified
   const autoSaveFullText = useCallback(async () => {
     if (!richEditorRef.current || !psak?.id) return;
-    const text = richEditorRef.current.innerText;
-    if (text === (psak?.full_text || psak?.fullText || "")) return;
+    const html = richEditorRef.current.innerHTML;
+    const originalFt = psak?.full_text || psak?.fullText || "";
+    // If content hasn't changed, skip
+    const isOriginalHtml = /<[a-z][\s\S]*>/i.test(originalFt);
+    const currentContent = isOriginalHtml ? html : richEditorRef.current.innerText;
+    if (currentContent === originalFt) return;
     try {
       await supabase
         .from("psakei_din")
-        .update({ full_text: text.trim() || null })
+        .update({ full_text: currentContent.trim() || null })
         .eq("id", psak.id);
       toast.success("הטקסט נשמר אוטומטית");
       onSave?.();
@@ -509,6 +520,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
     if (lower.includes('.doc') || lower.includes('.docx')) return 'doc';
     if (lower.includes('.txt')) return 'txt';
     if (lower.includes('.rtf')) return 'rtf';
+    if (lower.includes('.html') || lower.includes('.htm')) return 'html';
     return 'unknown';
   };
 
@@ -1264,6 +1276,13 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
                       src={getPreviewUrl(sourceUrl, fileType)}
                       className="w-full h-full min-h-[500px]"
                       title="צפייה בפסק דין"
+                    />
+                  ) : fileType === 'html' ? (
+                    <iframe
+                      src={sourceUrl}
+                      className="w-full h-full min-h-[500px]"
+                      title="צפייה בפסק דין מעוצב"
+                      sandbox="allow-same-origin"
                     />
                   ) : fileType === 'txt' ? (
                     <TxtViewer url={sourceUrl} textSettings={textSettings} textClasses={textClasses} />
