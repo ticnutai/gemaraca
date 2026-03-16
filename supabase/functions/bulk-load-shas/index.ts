@@ -166,10 +166,19 @@ serve(async (req) => {
 
       // Update shas_download_progress for each masechet
       let synced = 0;
+      const details: Record<string, { actual: number; total: number; status: string }> = {};
+      
       for (const m of MASECHTOT_LIST) {
-        const totalPages = (m.maxDaf - 1) * 2;
+        const formulaTotal = (m.maxDaf - 1) * 2;
         const actual = actualCounts[m.sefariaName] || 0;
-        const isComplete = actual >= totalPages;
+        
+        // Many masechtot end on amud א only (no last amud ב), 
+        // so actual can be 1 less than formula. Also Tamid starts at daf 25.
+        // Use tolerance: if actual >= formulaTotal - 2, consider it complete
+        const isComplete = actual >= formulaTotal - 2 && actual > 0;
+        
+        // Set total_pages to actual count when complete (reflects reality, not formula)
+        const totalPages = isComplete ? actual : formulaTotal;
 
         await supabaseClient
           .from('shas_download_progress')
@@ -184,11 +193,13 @@ serve(async (req) => {
             errors: [],
             ...(isComplete ? { completed_at: new Date().toISOString() } : {}),
           }, { onConflict: 'masechet' });
+        
+        details[m.sefariaName] = { actual, total: totalPages, status: isComplete ? 'completed' : 'incomplete' };
         synced++;
       }
 
       return new Response(
-        JSON.stringify({ success: true, message: `Synced ${synced} masechtot`, counts: actualCounts }),
+        JSON.stringify({ success: true, message: `Synced ${synced} masechtot`, details }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
