@@ -257,7 +257,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
   }, []);
 
   const handleRichSelection = useCallback(() => {
-    if (!isEditing || !richEditorRef.current) return;
+    if (!richEditorRef.current) return;
     const sel = window.getSelection();
     if (!sel || sel.isCollapsed || !sel.toString().trim()) {
       setSelectionMenu(null);
