@@ -982,10 +982,7 @@ export default function EmbedPdfViewerPage() {
 
   // Icon toolbar items
   const toolbarItems = [
-    { id: "upload", icon: Upload, label: "העלה קובץ מהמחשב", badge: undefined },
-    { id: "cloud", icon: Database, label: "מסמכים מהענן", badge: undefined },
-    { id: "add", icon: Plus, label: "הוסף קישור", badge: undefined },
-    { id: "url", icon: Link, label: "קישור ידני", badge: undefined },
+    { id: "add", icon: Plus, label: "הוסף מסמך", badge: undefined },
     { id: "docs", icon: BookOpen, label: `מסמכים (${books.length})`, badge: books.length > 0 ? books.length : undefined },
     { id: "annotations", icon: Palette, label: "אנוטציות", badge: annotations.length > 0 ? annotations.length : undefined },
     { id: "bookmarks", icon: Bookmark, label: `סימניות (${bookmarks.length})`, badge: bookmarks.length > 0 ? bookmarks.length : undefined },
