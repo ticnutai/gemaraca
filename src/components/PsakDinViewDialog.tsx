@@ -509,6 +509,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
     if (lower.includes('.doc') || lower.includes('.docx')) return 'doc';
     if (lower.includes('.txt')) return 'txt';
     if (lower.includes('.rtf')) return 'rtf';
+    if (lower.includes('.html') || lower.includes('.htm')) return 'html';
     return 'unknown';
   };
 
