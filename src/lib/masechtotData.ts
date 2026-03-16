@@ -53,6 +53,7 @@ export const MASECHTOT: Masechet[] = [
   { hebrewName: "תמורה", englishName: "Temurah", sefariaName: "Temurah", maxDaf: 34, seder: "קדשים" },
   { hebrewName: "כריתות", englishName: "Keritot", sefariaName: "Keritot", maxDaf: 28, seder: "קדשים" },
   { hebrewName: "מעילה", englishName: "Meilah", sefariaName: "Meilah", maxDaf: 22, seder: "קדשים" },
+  { hebrewName: "תמיד", englishName: "Tamid", sefariaName: "Tamid", maxDaf: 33, seder: "קדשים" },
   
   // סדר טהרות
   { hebrewName: "נידה", englishName: "Niddah", sefariaName: "Niddah", maxDaf: 73, seder: "טהרות" },
