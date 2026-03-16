@@ -170,8 +170,12 @@ const LinkedPsakimSection = ({ sugyaId, masechet, dafNumber }: LinkedPsakimSecti
       .maybeSingle();
     
     if (data) {
-      setSelectedPsak(data);
-      setDialogOpen(true);
+      if (data.source_url) {
+        navigate(`/embedpdf-viewer?url=${encodeURIComponent(data.source_url)}&psakId=${data.id}`);
+      } else {
+        setSelectedPsak(data);
+        setDialogOpen(true);
+      }
     }
   };
 

@@ -221,8 +221,12 @@ const PsakDinTab = () => {
   };
 
   const handlePsakClick = (psak: PsakDinRow) => {
-    setSelectedPsak(psak);
-    setDialogOpen(true);
+    if (psak.source_url) {
+      navigate(`/embedpdf-viewer?url=${encodeURIComponent(psak.source_url)}&psakId=${psak.id}`);
+    } else {
+      setSelectedPsak(psak);
+      setDialogOpen(true);
+    }
   };
 
   const handleEditPsak = (psakId: string) => {

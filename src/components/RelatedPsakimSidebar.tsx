@@ -116,9 +116,13 @@ const RelatedPsakimSidebar = ({ sugyaId }: RelatedPsakimSidebarProps) => {
   }, [sugyaId]);
 
   const handlePsakClick = useCallback((psak: typeof psakim[number]) => {
-    setSelectedPsak(psak);
-    setDialogOpen(true);
-  }, []);
+    if ((psak as any).source_url) {
+      navigate(`/embedpdf-viewer?url=${encodeURIComponent((psak as any).source_url)}&psakId=${psak.id}`);
+    } else {
+      setSelectedPsak(psak);
+      setDialogOpen(true);
+    }
+  }, [navigate]);
 
   const handleEditPsak = useCallback(async (psakId: string) => {
     const { data } = await supabase
