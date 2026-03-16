@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Calendar, Building2, FileText, List, BookOpen, Sparkles, Brain, Loader2,
   Link, Plus, Pencil, Trash2, Download, Search, Filter, ArrowUpDown, FileSpreadsheet,
+  Paintbrush,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
