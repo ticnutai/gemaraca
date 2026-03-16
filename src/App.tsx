@@ -26,7 +26,8 @@ const OfflineIndicator = lazy(() => import("./components/OfflineIndicator"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 30_000,
+      staleTime: 60_000,       // 1 min before data considered stale
+      gcTime: 10 * 60 * 1000,  // Keep unused data in memory 10 min (was 5 default)
       retry: 2,
       refetchOnWindowFocus: false,
     },

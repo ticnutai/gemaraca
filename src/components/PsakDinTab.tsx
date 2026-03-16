@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { Calendar, Building2, FileText, List, BookOpen, Sparkles, Brain, Loader2, Link, Plus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import PsakDinViewDialog from "./PsakDinViewDialog";
 import PsakDinEditDialog from "./PsakDinEditDialog";
 import PsakDinActions from "./PsakDinActions";
@@ -23,6 +23,7 @@ const ITEMS_PER_PAGE = 50;
 const PsakDinTab = () => {
   const [psakim, setPsakim] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [selectedPsak, setSelectedPsak] = useState<any | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedForAnalysis, setSelectedForAnalysis] = useState<Set<string>>(new Set());
@@ -126,21 +127,40 @@ const PsakDinTab = () => {
     }
   };
 
+  // Prefetch next page in background for instant navigation
+  useEffect(() => {
+    if (currentPage < totalPages) {
+      const nextFrom = currentPage * ITEMS_PER_PAGE;
+      const nextTo = nextFrom + ITEMS_PER_PAGE - 1;
+      queryClient.prefetchQuery({
+        queryKey: ['psakim-page', currentPage + 1],
+        queryFn: async () => {
+          const { data } = await supabase
+            .from('psakei_din')
+            .select('*')
+            .order('year', { ascending: false })
+            .range(nextFrom, nextTo);
+          return data || [];
+        },
+        staleTime: 5 * 60 * 1000,
+      });
+    }
+  }, [currentPage, totalPages, queryClient]);
+
   const loadTotalUnlinkedCount = async () => {
     try {
+      // Efficient count: total psakim count (head-only, no data transfer)
       const { count: totalPsakim } = await supabase
         .from('psakei_din')
         .select('*', { count: 'exact', head: true });
 
-      // Count distinct linked psakei din with single query
-      const { data } = await supabase
+      // Count distinct linked psakei din via DB aggregation
+      const { count: linkedCount } = await supabase
         .from('sugya_psak_links')
-        .select('psak_din_id')
-        .limit(10000);
+        .select('psak_din_id', { count: 'exact', head: true });
       
-      const linkedIds = new Set((data || []).map(l => l.psak_din_id));
-      
-      setTotalUnlinkedCount((totalPsakim || 0) - linkedIds.size);
+      // Approximate: linked count may have duplicates, but much faster than limit(10000)
+      setTotalUnlinkedCount(Math.max(0, (totalPsakim || 0) - (linkedCount || 0)));
     } catch (error) {
       console.error('Error loading unlinked count:', error);
     }

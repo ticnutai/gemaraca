@@ -321,13 +321,27 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
     setSelectionMenu(null);
   }, [syncRichEditorToState]);
 
-  // ── Beautify psak din ──
+  // ── Beautify psak din (streaming) ──
   const handleBeautify = useCallback(async () => {
     if (!psak) return;
     setIsBeautifying(true);
+    setActiveTab("beautified");
+    setBeautifiedHtml("");
+
     try {
-      const { data, error } = await supabase.functions.invoke("beautify-psak-din", {
-        body: {
+      // Use fetch directly for SSE streaming
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const session = (await supabase.auth.getSession()).data.session;
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/beautify-psak-din`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session?.access_token || supabaseKey}`,
+          "apikey": supabaseKey,
+        },
+        body: JSON.stringify({
           title: psak.title,
           court: psak.court,
           year: psak.year,
@@ -335,15 +349,55 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
           summary: psak.summary,
           fullText: psak.full_text || psak.fullText,
           tags: psak.tags,
-        },
+        }),
       });
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || "שגיאה בעיצוב");
-      setBeautifiedHtml(data.html);
-      setActiveTab("beautified");
-      // Cache beautified HTML in IndexedDB for instant future loads
-      if (psak.id) cacheBeautified(psak.id, data.html);
-      toast.success("פסק הדין עוצב בהצלחה!");
+
+      if (!response.ok) throw new Error(`שגיאה: ${response.status}`);
+
+      const contentType = response.headers.get("content-type") || "";
+
+      if (contentType.includes("text/event-stream") && response.body) {
+        // Stream mode: read chunks as they arrive
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let accumulated = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split("\n");
+
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
+            try {
+              const evt = JSON.parse(line.slice(6));
+              if (evt.chunk) {
+                accumulated += evt.chunk;
+                setBeautifiedHtml(accumulated);
+              }
+              if (evt.done && evt.html) {
+                accumulated = evt.html;
+                setBeautifiedHtml(evt.html);
+              }
+              if (evt.error) throw new Error(evt.error);
+            } catch (e: any) {
+              if (e.message && !e.message.includes("JSON")) throw e;
+            }
+          }
+        }
+
+        if (psak.id && accumulated) cacheBeautified(psak.id, accumulated);
+        toast.success("פסק הדין עוצב בהצלחה!");
+      } else {
+        // Fallback: non-streaming JSON response
+        const data = await response.json();
+        if (!data?.success) throw new Error(data?.error || "שגיאה בעיצוב");
+        setBeautifiedHtml(data.html);
+        if (psak.id) cacheBeautified(psak.id, data.html);
+        toast.success("פסק הדין עוצב בהצלחה!");
+      }
     } catch (err: any) {
       console.error("Beautify error:", err);
       toast.error(err.message || "שגיאה בעיצוב פסק הדין");

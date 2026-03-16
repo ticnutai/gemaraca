@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,13 +22,19 @@ const SearchPsakDinTab = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  // Local text search fallback using ilike
+  // AI search result cache (in-memory for session)
+  const searchCacheRef = useRef<Map<string, any[]>>(new Map());
+
+  // Local text search using full-text search (FTS) with ilike fallback
   const localSearch = async (searchQuery: string): Promise<any[]> => {
+    // Build FTS query: split words, join with &
+    const ftsQuery = searchQuery.trim().split(/\s+/).filter(Boolean).join(' & ');
     const pattern = `%${searchQuery}%`;
+
     const { data, error } = await supabase
       .from('psakei_din')
       .select('id, title, summary, court, year, case_number, source_url, tags')
-      .or(`title.ilike.${pattern},summary.ilike.${pattern}`)
+      .or(`search_vector.fts.${ftsQuery},title.ilike.${pattern}`)
       .order('year', { ascending: false })
       .limit(30);
 
@@ -57,6 +63,17 @@ const SearchPsakDinTab = () => {
 
     setLoading(true);
     setResults([]);
+
+    // Check AI search cache first
+    const cacheKey = query.trim().toLowerCase();
+    const cached = searchCacheRef.current.get(cacheKey);
+    if (cached) {
+      setResults(cached);
+      setHasSearched(true);
+      setLoading(false);
+      toast({ title: `נמצאו ${cached.length} תוצאות (מהמטמון)` });
+      return;
+    }
     
     try {
       // Try AI search first
@@ -75,6 +92,7 @@ const SearchPsakDinTab = () => {
       if (aiResults.length > 0) {
         setResults(aiResults);
         setHasSearched(true);
+        searchCacheRef.current.set(cacheKey, aiResults);
         toast({ title: `נמצאו ${aiResults.length} תוצאות` });
       } else {
         // Fallback: local text search

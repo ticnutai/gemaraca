@@ -43,13 +43,22 @@ export default defineConfig(({ mode }) => ({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
           {
-            // Cache Supabase API responses
+            // Cache Supabase API responses — show cached, refresh in background
             urlPattern: /^https:\/\/jaotdqumpcfhcbkgtfib\.supabase\.co\/rest\/v1\/.*/i,
-            handler: 'NetworkFirst',
+            handler: 'StaleWhileRevalidate',
             options: {
               cacheName: 'supabase-api-cache',
-              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 }, // 1 hour
-              networkTimeoutSeconds: 5,
+              expiration: { maxEntries: 300, maxAgeSeconds: 60 * 60 * 2 }, // 2 hours
+            },
+          },
+          {
+            // Cache Supabase Edge Functions responses
+            urlPattern: /^https:\/\/jaotdqumpcfhcbkgtfib\.supabase\.co\/functions\/v1\/.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'supabase-functions-cache',
+              expiration: { maxEntries: 50, maxAgeSeconds: 60 * 30 }, // 30 min
+              networkTimeoutSeconds: 10,
             },
           },
           {

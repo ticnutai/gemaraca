@@ -69,6 +69,7 @@ serve(async (req) => {
         ],
         temperature: 0.3,
         max_tokens: 65000,
+        stream: true,
       }),
     });
 
@@ -78,16 +79,59 @@ serve(async (req) => {
       throw new Error(`AI service error: ${response.status}`);
     }
 
-    const data = await response.json();
-    let html = data.choices?.[0]?.message?.content || "";
+    // Stream the response back to the client using SSE
+    const readable = new ReadableStream({
+      async start(controller) {
+        const encoder = new TextEncoder();
+        const reader = response.body!.getReader();
+        const decoder = new TextDecoder();
+        let fullHtml = '';
 
-    // Clean up any markdown code block wrapper
-    html = html.replace(/^```html?\s*/i, "").replace(/\s*```$/i, "").trim();
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
 
-    return new Response(
-      JSON.stringify({ success: true, html }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n');
+
+            for (const line of lines) {
+              if (!line.startsWith('data: ') || line === 'data: [DONE]') continue;
+              try {
+                const json = JSON.parse(line.slice(6));
+                const content = json.choices?.[0]?.delta?.content;
+                if (content) {
+                  fullHtml += content;
+                  // Send each chunk as SSE event
+                  controller.enqueue(encoder.encode(`data: ${JSON.stringify({ chunk: content })}\n\n`));
+                }
+              } catch {
+                // Skip unparseable lines
+              }
+            }
+          }
+
+          // Clean up any markdown code block wrapper from full result
+          fullHtml = fullHtml.replace(/^```html?\s*/i, "").replace(/\s*```$/i, "").trim();
+
+          // Send final complete event
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true, html: fullHtml })}\n\n`));
+        } catch (err) {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: err.message })}\n\n`));
+        } finally {
+          controller.close();
+        }
+      }
+    });
+
+    return new Response(readable, {
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+      },
+    });
   } catch (error) {
     console.error("beautify-psak-din error:", error);
     return new Response(

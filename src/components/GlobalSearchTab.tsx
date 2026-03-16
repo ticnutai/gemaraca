@@ -84,10 +84,12 @@ export default function GlobalSearchTab() {
     if (q.length < 2) { setSuggestions([]); return; }
     const historyMatches = getSearchHistory().filter((h) => h.includes(q)).slice(0, 3);
     try {
+      // Use FTS for psak suggestions when possible 
+      const ftsQ = q.split(/\s+/).filter(Boolean).join(' & ');
       const { data: titles } = await supabase
         .from("psakei_din")
         .select("title")
-        .ilike("title", `%${q}%`)
+        .or(`search_vector.fts.${ftsQ},title.ilike.%${q}%`)
         .limit(4);
       const { data: masechets } = await supabase
         .from("gemara_pages")
