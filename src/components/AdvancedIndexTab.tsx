@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAllReferencesGrouped, useValidateReference, useCorrectReference } from '@/hooks/useTalmudReferences';
 import { useFilterWorker } from '@/hooks/useFilterWorker';
 import { Input } from '@/components/ui/input';
@@ -19,6 +20,7 @@ import CardsView from './talmud-index/CardsView';
 import TreeViewIndex from './talmud-index/TreeViewIndex';
 import GenealogyTreeView from './talmud-index/GenealogyTreeView';
 import PsakDinViewDialog from './PsakDinViewDialog';
+import ViewerPreferenceDialog, { getViewerPreference, type ViewerMode } from './ViewerPreferenceDialog';
 import IndexingControlPanel from './IndexingControlPanel';
 import DebugDiagnosticDialog from './DebugDiagnosticDialog';
 import { TalmudRefWithPsak, TRACTATES, ValidationStatus, ViewMode, HIGHLIGHT_COLORS } from './talmud-index/types';
@@ -109,19 +111,56 @@ export default function AdvancedIndexTab() {
   // Load selected psak for dialog
   const [selectedPsak, setSelectedPsak] = useState<Database['public']['Tables']['psakei_din']['Row'] | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [prefDialogOpen, setPrefDialogOpen] = useState(false);
+  const [pendingRef, setPendingRef] = useState<TalmudRefWithPsak | null>(null);
+  const navigate = useNavigate();
 
-  const openPsakDialog = async (ref: TalmudRefWithPsak) => {
+  const openWithMode = useCallback(async (ref: TalmudRefWithPsak, mode: ViewerMode) => {
     const { data } = await supabase
       .from('psakei_din')
       .select('*')
       .eq('id', ref.psak_din_id)
       .maybeSingle();
+    if (!data) return;
 
-    if (data) {
-      setSelectedPsak(data);
-      setDialogOpen(true);
+    switch (mode) {
+      case 'dialog':
+        setSelectedPsak(data);
+        setDialogOpen(true);
+        break;
+      case 'embedpdf': {
+        const sourceUrl = data.source_url;
+        if (sourceUrl) {
+          navigate(`/embed-pdf?url=${encodeURIComponent(sourceUrl)}&title=${encodeURIComponent(data.title)}&psakId=${data.id}`);
+        } else {
+          // No file URL — open in dialog instead
+          setSelectedPsak(data);
+          setDialogOpen(true);
+        }
+        break;
+      }
+      case 'newwindow': {
+        const sourceUrl = data.source_url;
+        if (sourceUrl) {
+          window.open(sourceUrl, '_blank');
+        } else {
+          setSelectedPsak(data);
+          setDialogOpen(true);
+        }
+        break;
+      }
     }
-  };
+  }, [navigate]);
+
+  const openPsakDialog = useCallback(async (ref: TalmudRefWithPsak) => {
+    const saved = getViewerPreference();
+    if (saved) {
+      openWithMode(ref, saved);
+    } else {
+      setPendingRef(ref);
+      setPrefDialogOpen(true);
+    }
+  }, [openWithMode]);
 
   if (isLoading) {
     return (
@@ -369,6 +408,18 @@ export default function AdvancedIndexTab() {
           psak={selectedPsak}
         />
       )}
+
+      {/* Viewer Preference Dialog */}
+      <ViewerPreferenceDialog
+        open={prefDialogOpen}
+        onOpenChange={setPrefDialogOpen}
+        onSelect={(mode) => {
+          if (pendingRef) {
+            openWithMode(pendingRef, mode);
+            setPendingRef(null);
+          }
+        }}
+      />
 
       {/* Correction Dialog */}
       {correctionRef && (
