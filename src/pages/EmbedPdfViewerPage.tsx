@@ -1254,6 +1254,7 @@ export default function EmbedPdfViewerPage() {
                     }}
                   />
                 ) : (
+                <>
                 {/* TEXT */}
                 {leftContentType === 'text' && (
                   <>
