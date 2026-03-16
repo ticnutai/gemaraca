@@ -1035,7 +1035,58 @@ export default function EmbedPdfViewerPage() {
                 </Button>
               </div>
 
-              {/* ADD DOC */}
+              {/* UPLOAD FROM COMPUTER (panel info) */}
+              {activePanel === "upload" && (
+                <div className="space-y-3 text-center py-4">
+                  <Upload className="h-10 w-10 mx-auto text-[#D4AF37]" />
+                  <p className="text-xs text-[#0B1F5B]/60">העלה קובץ מהמחשב</p>
+                  <p className="text-[10px] text-[#0B1F5B]/40">נתמכים: PDF, TXT, תמונות, DOCX</p>
+                  <Button size="sm" className="w-full bg-[#0B1F5B] text-white border-2 border-[#D4AF37] gap-2" onClick={triggerFileUpload} disabled={isUploading}>
+                    {isUploading ? <><Loader2Icon className="h-4 w-4 animate-spin" /> מעלה...</> : <><Upload className="h-4 w-4" /> בחר קובץ</>}
+                  </Button>
+                </div>
+              )}
+
+              {/* CLOUD DOCUMENTS */}
+              {activePanel === "cloud" && (
+                <div className="space-y-2">
+                  <p className="text-[10px] text-[#0B1F5B]/50">מסמכים מפסקי דין שהועלו למערכת:</p>
+                  {loadingCloudDocs ? (
+                    <div className="flex items-center justify-center py-6">
+                      <Loader2Icon className="h-6 w-6 animate-spin text-[#D4AF37]" />
+                    </div>
+                  ) : cloudDocs.length === 0 ? (
+                    <p className="text-xs text-[#0B1F5B]/40 text-center py-4">אין מסמכים זמינים</p>
+                  ) : (
+                    <ScrollArea className="max-h-[400px]">
+                      <div className="space-y-1">
+                        {cloudDocs.map((doc) => (
+                          <div
+                            key={doc.id}
+                            className="flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer text-sm hover:bg-[#D4AF37]/10 transition-colors"
+                            onClick={() => {
+                              setManualUrl(doc.source_url);
+                              setActivePanel(null);
+                              toast.success(`נטען: ${doc.title}`);
+                            }}
+                          >
+                            <FileText className="h-3.5 w-3.5 text-[#D4AF37] shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs truncate font-medium text-[#0B1F5B]">{doc.title}</p>
+                              <p className="text-[10px] text-[#0B1F5B]/40">{doc.court} · {doc.year}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  )}
+                  <Button size="sm" variant="outline" className="w-full text-xs border-[#D4AF37] gap-1" onClick={loadCloudDocs} disabled={loadingCloudDocs}>
+                    <RefreshCw className={`h-3 w-3 ${loadingCloudDocs ? "animate-spin" : ""}`} /> רענן
+                  </Button>
+                </div>
+              )}
+
+              {/* ADD DOC (URL) */}
               {activePanel === "add" && (
                 <div className="space-y-2">
                   <Input placeholder="שם המסמך" value={newBookTitle} onChange={(e) => setNewBookTitle(e.target.value)} className="text-sm border-[#D4AF37]/30 focus-visible:ring-[#D4AF37]" />
