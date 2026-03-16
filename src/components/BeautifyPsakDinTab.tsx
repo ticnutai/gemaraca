@@ -692,7 +692,7 @@ const BeautifyPsakDinTab = () => {
   const previewJob = useMemo(() => batchJobs.find(j => j.id === previewJobId), [batchJobs, previewJobId]);
 
   return (
-    <div className="p-3 md:p-6 space-y-4">
+    <div className="p-3 md:p-6 space-y-4 h-full overflow-y-auto">
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
         <Paintbrush className="h-6 w-6 text-primary" />
