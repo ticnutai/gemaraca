@@ -1131,16 +1131,61 @@ export default function EmbedPdfViewerPage() {
               {activePanel === "cloud" && (
                 <div className="space-y-2">
                   <p className="text-[10px] text-[#0B1F5B]/50">מסמכים מפסקי דין שהועלו למערכת:</p>
+                  
+                  {/* Search */}
+                  <div className="relative">
+                    <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-[#0B1F5B]/40" />
+                    <Input
+                      placeholder="חפש לפי שם..."
+                      value={cloudSearch}
+                      onChange={(e) => setCloudSearch(e.target.value)}
+                      className="h-7 text-xs pr-7 border-[#D4AF37]/30 focus-visible:ring-[#D4AF37]"
+                    />
+                  </div>
+
+                  {/* Filters row */}
+                  <div className="flex gap-1">
+                    <select
+                      value={cloudCourtFilter}
+                      onChange={(e) => setCloudCourtFilter(e.target.value)}
+                      className="flex-1 h-6 text-[10px] rounded border border-[#D4AF37]/30 bg-white text-[#0B1F5B] px-1"
+                    >
+                      <option value="all">כל בתי הדין</option>
+                      {cloudCourts.map(c => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                    <select
+                      value={cloudYearFilter}
+                      onChange={(e) => setCloudYearFilter(e.target.value)}
+                      className="w-16 h-6 text-[10px] rounded border border-[#D4AF37]/30 bg-white text-[#0B1F5B] px-1"
+                    >
+                      <option value="all">שנה</option>
+                      {cloudYears.map(y => (
+                        <option key={y} value={String(y)}>{y}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Results count */}
+                  {cloudDocs.length > 0 && (
+                    <p className="text-[10px] text-[#0B1F5B]/40">
+                      {filteredCloudDocs.length} מתוך {cloudDocs.length} מסמכים
+                    </p>
+                  )}
+
                   {loadingCloudDocs ? (
                     <div className="flex items-center justify-center py-6">
                       <Loader2Icon className="h-6 w-6 animate-spin text-[#D4AF37]" />
                     </div>
-                  ) : cloudDocs.length === 0 ? (
-                    <p className="text-xs text-[#0B1F5B]/40 text-center py-4">אין מסמכים זמינים</p>
+                  ) : filteredCloudDocs.length === 0 ? (
+                    <p className="text-xs text-[#0B1F5B]/40 text-center py-4">
+                      {cloudDocs.length === 0 ? "אין מסמכים זמינים" : "לא נמצאו תוצאות"}
+                    </p>
                   ) : (
-                    <ScrollArea className="max-h-[400px]">
+                    <ScrollArea className="max-h-[350px]">
                       <div className="space-y-1">
-                        {cloudDocs.map((doc) => (
+                        {filteredCloudDocs.map((doc) => (
                           <div
                             key={doc.id}
                             className="flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer text-sm hover:bg-[#D4AF37]/10 transition-colors"
