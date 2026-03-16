@@ -64,6 +64,7 @@ interface RealCaseLink {
   id: string;
   psak_din_id: string;
   relevance_score: number;
+  connection_explanation?: string;
   psakei_din: {
     id: string;
     title: string;
@@ -81,6 +82,7 @@ interface FaqItem {
   psak_din_id: string;
   question: string;
   answer: string;
+  order_index?: number;
 }
 
 // Helper function to get Hebrew name from Sefaria name
