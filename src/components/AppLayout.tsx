@@ -87,7 +87,11 @@ const AppLayoutInner = ({ children }: AppLayoutProps) => {
           "flex-1 flex flex-col min-w-0 transition-all duration-300",
           shouldReserveSpace ? "md:mr-[--sidebar-width]" : ""
         )}>
-          <main className="flex-1">
+          <main className="flex-1" style={{
+            fontFamily: 'var(--page-font-family, inherit)',
+            fontSize: 'var(--page-font-size, inherit)',
+            lineHeight: 'var(--page-line-height, inherit)',
+          }}>
             {children}
           </main>
         </div>
