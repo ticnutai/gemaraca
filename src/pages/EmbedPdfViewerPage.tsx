@@ -1269,8 +1269,8 @@ export default function EmbedPdfViewerPage() {
                             >
                               <FileText className="h-3.5 w-3.5 text-[#D4AF37] shrink-0" />
                               <div className="flex-1 min-w-0">
-                                <p className="text-xs truncate font-medium text-[#0B1F5B]">{doc.title}</p>
-                                <p className="text-[10px] text-[#0B1F5B]/40">{doc.court} · {doc.year}</p>
+                                <p className="text-xs truncate font-medium text-[#0B1F5B]">{doc.title || "ללא כותרת"}</p>
+                                <p className="text-[10px] text-[#0B1F5B]/40">{doc.court || "—"} · {doc.year || "—"}</p>
                               </div>
                             </div>
                           ))}
