@@ -25,6 +25,11 @@ const GlobalDownloadProgress = () => {
     ["downloading", "paused", "packaging"].includes(s.status)
   );
 
+  const resumableSessions = Object.values(sessions).filter((s) =>
+    ["paused", "error"].includes(s.status) && s.completedIds.length > 0 &&
+    !activeSessions.some(a => a.id === s.id && a.status === "downloading")
+  );
+
   // Update speed every second
   useEffect(() => {
     if (activeSessions.length === 0) return;
@@ -32,7 +37,7 @@ const GlobalDownloadProgress = () => {
     return () => clearInterval(interval);
   }, [activeSessions.length, getSpeed]);
 
-  if (activeSessions.length === 0) return null;
+  if (activeSessions.length === 0 && resumableSessions.length === 0) return null;
 
   return (
     <div
