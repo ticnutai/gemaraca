@@ -57,10 +57,34 @@ const PsakDinTab = () => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setPsakim([]);
+      setHasMore(true);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Reset on filter/sort change
+  useEffect(() => {
+    setPsakim([]);
+    setHasMore(true);
+  }, [courtFilter, sortOrder]);
+
+  // Load courts for filter
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from('psakei_din').select('court').order('court');
+      if (data) setCourts([...new Set(data.map(r => r.court).filter(Boolean))].sort());
+    })();
+  }, []);
+
   useEffect(() => {
     loadPsakim(0, true);
     loadTotalUnlinkedCount();
-  }, []);
+  }, [debouncedSearch, courtFilter, sortOrder]);
 
   // React Query for link counts
   const psakIds = psakim.map(p => p.id);
