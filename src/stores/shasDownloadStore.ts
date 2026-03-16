@@ -60,6 +60,17 @@ export const useShasDownloadStore = create<ShasDownloadStore>()(
 
       setConcurrency: (n) => set({ concurrency: Math.max(1, Math.min(6, n)) }),
 
+      syncAndRefresh: async () => {
+        try {
+          // First sync actual page counts on server
+          await supabase.functions.invoke('bulk-load-shas', { body: { mode: 'sync' } });
+          // Then refresh local state
+          await get()._refreshFromServer();
+        } catch (e) {
+          console.error('Failed to sync:', e);
+        }
+      },
+
       _refreshFromServer: async () => {
         try {
           const { data, error } = await supabase.functions.invoke('bulk-load-shas', {
