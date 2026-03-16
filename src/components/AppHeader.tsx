@@ -1,4 +1,4 @@
-import { Info, BookOpen, Scale, Search, Upload, Library, User, LogOut, LogIn, ArrowDownToLine, BookMarked, History, CalendarDays, GitCompareArrows, Share2, MoreHorizontal, Menu } from "lucide-react";
+import { Info, BookOpen, Scale, Search, Upload, Library, User, LogOut, LogIn, ArrowDownToLine, BookMarked, History, CalendarDays, GitCompareArrows, Share2, MoreHorizontal, Menu, Type } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
