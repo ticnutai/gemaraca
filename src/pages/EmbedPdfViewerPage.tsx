@@ -953,20 +953,45 @@ export default function EmbedPdfViewerPage() {
             </Popover>
           )}
 
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,.txt,.png,.jpg,.jpeg,.webp,.docx"
+            className="hidden"
+            onChange={handleFileUpload}
+          />
+
           {/* Icon toolbar */}
           <div className="flex items-center gap-0.5 border border-[#D4AF37]/30 rounded-lg px-1 py-0.5 bg-[#D4AF37]/5">
             {toolbarItems.map((item) => (
               <button
                 key={item.id}
-                onClick={() => togglePanel(item.id)}
+                onClick={() => {
+                  if (item.id === "upload") {
+                    triggerFileUpload();
+                  } else if (item.id === "cloud") {
+                    loadCloudDocs();
+                    togglePanel("cloud");
+                  } else {
+                    togglePanel(item.id);
+                  }
+                }}
                 className={`relative p-1.5 rounded-md transition-all ${
-                  activePanel === item.id
+                  item.id === "upload" && isUploading
+                    ? "bg-[#D4AF37] text-white animate-pulse"
+                    : activePanel === item.id
                     ? "bg-[#0B1F5B] text-white"
                     : "text-[#0B1F5B]/60 hover:bg-[#D4AF37]/15 hover:text-[#0B1F5B]"
                 }`}
                 title={item.label}
+                disabled={item.id === "upload" && isUploading}
               >
-                <item.icon className="h-4 w-4" />
+                {item.id === "upload" && isUploading ? (
+                  <Loader2Icon className="h-4 w-4 animate-spin" />
+                ) : (
+                  <item.icon className="h-4 w-4" />
+                )}
                 {item.badge && (
                   <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] flex items-center justify-center rounded-full bg-[#D4AF37] text-[#0B1F5B] text-[8px] font-bold px-0.5">
                     {item.badge}
