@@ -35,6 +35,7 @@ interface ShasDownloadStore {
   resume: () => void;
   stop: () => void;
   setConcurrency: (n: number) => void;
+  syncAndRefresh: () => Promise<void>;
   _refreshFromServer: () => Promise<void>;
   _processQueue: () => void;
   _downloadMasechet: (masechet: string) => Promise<void>;
