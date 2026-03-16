@@ -13,7 +13,7 @@ import {
 import {
   Paintbrush, Upload, Download, Sparkles, FileText, Loader2, Eye, Code,
   RotateCcw, Database, Save, Copy, Search, X, CheckSquare, Square,
-  Play, Pause, CheckCircle2, AlertCircle, ExternalLink,
+  Play, Pause, CheckCircle2, AlertCircle, ExternalLink, Pencil, Trash2,
 } from "lucide-react";
 import { parsePsakDinText, isPsakDinFormat } from "@/lib/psakDinParser";
 import { generatePsakDinHtml } from "@/lib/psakDinHtmlTemplate";
