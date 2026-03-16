@@ -29,6 +29,7 @@ interface ShasDownloadStore {
 
   // Actions
   startFullDownload: () => void;
+  startMissingOnly: () => void;
   startSingleMasechet: (masechet: string) => void;
   pause: () => void;
   resume: () => void;
@@ -107,6 +108,24 @@ export const useShasDownloadStore = create<ShasDownloadStore>()(
         // Initialize on server
         supabase.functions.invoke('bulk-load-shas', { body: { mode: 'init' } })
           .then(() => get()._processQueue());
+      },
+
+      startMissingOnly: () => {
+        _abortController = new AbortController();
+        
+        // Only mark masechtot that have missing pages as pending
+        const masechtot = get().masechtot.map((m) => {
+          if (m.loadedPages < m.totalPages) {
+            return { ...m, status: 'pending' as const, currentDaf: 2 };
+          }
+          return m;
+        });
+        
+        const hasMissing = masechtot.some((m) => m.status === 'pending');
+        if (!hasMissing) return;
+        
+        set({ isRunning: true, isPaused: false, masechtot });
+        get()._processQueue();
       },
 
       startSingleMasechet: (masechet) => {

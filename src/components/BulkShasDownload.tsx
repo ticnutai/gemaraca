@@ -32,6 +32,7 @@ const BulkShasDownload = () => {
     masechtot,
     activeDownloads,
     startFullDownload,
+    startMissingOnly,
     startSingleMasechet,
     pause,
     resume,
@@ -68,12 +69,18 @@ const BulkShasDownload = () => {
   const totalCompleted = masechtot.filter((m) => m.status === 'completed').length;
   const overallProgress = totalPagesInShas > 0 ? (totalLoaded / totalPagesInShas) * 100 : 0;
   const totalErrors = masechtot.reduce((sum, m) => sum + m.errors.length, 0);
+  const totalMissing = masechtot.reduce((sum, m) => Math.max(0, m.totalPages - m.loadedPages), 0);
 
   const sedarim = [...new Set(MASECHTOT.map((m) => m.seder))];
 
   const handleStart = () => {
     startFullDownload();
     toast("הורדת הש\"ס התחילה ברקע");
+  };
+
+  const handleCompleteMissing = () => {
+    startMissingOnly();
+    toast(`משלים ${totalMissing} עמודים חסרים...`);
   };
 
   return (
@@ -99,6 +106,7 @@ const BulkShasDownload = () => {
               <span className="text-muted-foreground">
                 {totalLoaded.toLocaleString()} / {totalPagesInShas.toLocaleString()} עמודים
                 ({totalCompleted}/{MASECHTOT.length} מסכתות)
+                {totalMissing > 0 && <span className="text-destructive mr-2"> • {totalMissing} חסרים</span>}
               </span>
               <span className="font-semibold">{overallProgress.toFixed(1)}%</span>
             </div>
@@ -130,6 +138,12 @@ const BulkShasDownload = () => {
                     ? 'המשך הורדה'
                     : 'הורד את כל הש"ס'}
                 </Button>
+                {totalMissing > 0 && (
+                  <Button variant="secondary" onClick={handleCompleteMissing} className="gap-2">
+                    <Zap className="h-4 w-4" />
+                    השלם חסרים ({totalMissing})
+                  </Button>
+                )}
                 <Button variant="outline" onClick={_refreshFromServer} className="gap-2">
                   <RefreshCw className="h-4 w-4" />
                   רענן סטטוס
