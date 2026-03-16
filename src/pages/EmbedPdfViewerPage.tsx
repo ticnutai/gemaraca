@@ -6,7 +6,8 @@ import {
   AlignCenter, AlignLeft, AlignJustify, Type, AArrowUp, AArrowDown, Highlighter,
   Copy, MessageSquarePlus, Hash, ZoomIn, ZoomOut, ChevronUp, ChevronDown,
   RotateCcw, Printer, StickyNote, Scissors, ClipboardPaste, Sparkles, Eye,
-  ListOrdered, WrapText, PilcrowSquare, ArrowRight, Link, BarChart3
+  ListOrdered, WrapText, PilcrowSquare, ArrowRight, Link, BarChart3,
+  Upload, HardDrive, Database, Loader2 as Loader2Icon
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,7 @@ import { toast } from "sonner";
 import { usePDFAnnotations, type PDFAnnotation } from "@/hooks/usePDFAnnotations";
 import { useUserBooks, type UserBook } from "@/hooks/useUserBooks";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
+
 
 // ─── Constants ───────────────────────────────────────────────
 
@@ -820,9 +821,109 @@ export default function EmbedPdfViewerPage() {
     } catch { return "מסמך"; }
   }, [leftSourceUrl]);
 
+  // ── File upload state ──
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragCounterRef = useRef(0);
+
+  const processFileUpload = useCallback(async (file: File) => {
+    const allowedTypes = ['application/pdf', 'text/plain', 'image/png', 'image/jpeg', 'image/webp', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (!allowedTypes.includes(file.type) && !file.name.match(/\.(pdf|txt|png|jpg|jpeg|webp|docx)$/i)) {
+      toast.error("סוג קובץ לא נתמך. נתמכים: PDF, TXT, תמונות, DOCX");
+      return;
+    }
+    setIsUploading(true);
+    try {
+      const filePath = `uploads/${Date.now()}-${file.name}`;
+      const { error: uploadError } = await supabase.storage.from('user-books').upload(filePath, file, { contentType: file.type, upsert: false });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from('user-books').getPublicUrl(filePath);
+      const publicUrl = urlData?.publicUrl;
+      if (!publicUrl) throw new Error("Failed to get public URL");
+      const result = await addBook.mutateAsync({
+        title: file.name.replace(/\.[^.]+$/, ''),
+        fileName: file.name,
+        fileUrl: publicUrl,
+      });
+      setSelectedPdfId(result.id);
+      setManualUrl("");
+      setActivePanel(null);
+      toast.success(`הקובץ "${file.name}" הועלה בהצלחה`);
+    } catch (err: any) {
+      console.error("Upload error:", err);
+      toast.error(`שגיאה בהעלאה: ${err.message}`);
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  }, [addBook]);
+
+  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processFileUpload(file);
+  }, [processFileUpload]);
+
+  // ── Drag & Drop handlers ──
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current++;
+    if (e.dataTransfer.types.includes('Files')) {
+      setIsDragging(true);
+    }
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current--;
+    if (dragCounterRef.current === 0) {
+      setIsDragging(false);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current = 0;
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) processFileUpload(file);
+  }, [processFileUpload]);
+
+  // ── Cloud documents (from psakei_din with source_url) ──
+  const [cloudDocs, setCloudDocs] = useState<any[]>([]);
+  const [loadingCloudDocs, setLoadingCloudDocs] = useState(false);
+
+  const loadCloudDocs = useCallback(async () => {
+    setLoadingCloudDocs(true);
+    try {
+      const { data, error } = await supabase
+        .from('psakei_din')
+        .select('id, title, source_url, court, year')
+        .not('source_url', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      setCloudDocs(data || []);
+    } catch (err) {
+      toast.error("שגיאה בטעינת מסמכים מהענן");
+    } finally {
+      setLoadingCloudDocs(false);
+    }
+  }, []);
+
   // Icon toolbar items
   const toolbarItems = [
-    { id: "add", icon: Plus, label: "הוסף מסמך", badge: undefined },
+    { id: "upload", icon: Upload, label: "העלה קובץ מהמחשב", badge: undefined },
+    { id: "cloud", icon: Database, label: "מסמכים מהענן", badge: undefined },
+    { id: "add", icon: Plus, label: "הוסף קישור", badge: undefined },
     { id: "url", icon: Link, label: "קישור ידני", badge: undefined },
     { id: "docs", icon: BookOpen, label: `מסמכים (${books.length})`, badge: books.length > 0 ? books.length : undefined },
     { id: "annotations", icon: Palette, label: "אנוטציות", badge: annotations.length > 0 ? annotations.length : undefined },
@@ -831,8 +932,28 @@ export default function EmbedPdfViewerPage() {
     ...(psakIdParam ? [{ id: "beautify", icon: Sparkles, label: "עצב פסק דין", badge: beautifiedHtml ? 1 : undefined }] : []),
   ];
 
+  // Hidden file input
+  const triggerFileUpload = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
   return (
-    <div dir="rtl" className="min-h-screen bg-white text-[#0B1F5B] flex flex-col">
+    <div dir="rtl" className="min-h-screen bg-white text-[#0B1F5B] flex flex-col relative"
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
+      {/* ── Drag & Drop Overlay ── */}
+      {isDragging && (
+        <div className="absolute inset-0 z-50 bg-[#0B1F5B]/80 backdrop-blur-sm flex items-center justify-center pointer-events-none">
+          <div className="border-4 border-dashed border-[#D4AF37] rounded-3xl p-16 text-center space-y-4 animate-pulse">
+            <Upload className="h-20 w-20 mx-auto text-[#D4AF37]" />
+            <p className="text-2xl font-bold text-white">שחרר כאן להעלאה</p>
+            <p className="text-sm text-white/60">PDF, TXT, תמונות, DOCX</p>
+          </div>
+        </div>
+      )}
       {/* ── Compact Header ── */}
       <header className="border-b-2 border-[#D4AF37] bg-white px-3 py-2 shadow-sm flex-shrink-0">
         <div className="flex items-center gap-2 max-w-[1800px] mx-auto">
@@ -885,20 +1006,45 @@ export default function EmbedPdfViewerPage() {
             </Popover>
           )}
 
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,.txt,.png,.jpg,.jpeg,.webp,.docx"
+            className="hidden"
+            onChange={handleFileUpload}
+          />
+
           {/* Icon toolbar */}
           <div className="flex items-center gap-0.5 border border-[#D4AF37]/30 rounded-lg px-1 py-0.5 bg-[#D4AF37]/5">
             {toolbarItems.map((item) => (
               <button
                 key={item.id}
-                onClick={() => togglePanel(item.id)}
+                onClick={() => {
+                  if (item.id === "upload") {
+                    triggerFileUpload();
+                  } else if (item.id === "cloud") {
+                    loadCloudDocs();
+                    togglePanel("cloud");
+                  } else {
+                    togglePanel(item.id);
+                  }
+                }}
                 className={`relative p-1.5 rounded-md transition-all ${
-                  activePanel === item.id
+                  item.id === "upload" && isUploading
+                    ? "bg-[#D4AF37] text-white animate-pulse"
+                    : activePanel === item.id
                     ? "bg-[#0B1F5B] text-white"
                     : "text-[#0B1F5B]/60 hover:bg-[#D4AF37]/15 hover:text-[#0B1F5B]"
                 }`}
                 title={item.label}
+                disabled={item.id === "upload" && isUploading}
               >
-                <item.icon className="h-4 w-4" />
+                {item.id === "upload" && isUploading ? (
+                  <Loader2Icon className="h-4 w-4 animate-spin" />
+                ) : (
+                  <item.icon className="h-4 w-4" />
+                )}
                 {item.badge && (
                   <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] flex items-center justify-center rounded-full bg-[#D4AF37] text-[#0B1F5B] text-[8px] font-bold px-0.5">
                     {item.badge}
@@ -942,7 +1088,58 @@ export default function EmbedPdfViewerPage() {
                 </Button>
               </div>
 
-              {/* ADD DOC */}
+              {/* UPLOAD FROM COMPUTER (panel info) */}
+              {activePanel === "upload" && (
+                <div className="space-y-3 text-center py-4">
+                  <Upload className="h-10 w-10 mx-auto text-[#D4AF37]" />
+                  <p className="text-xs text-[#0B1F5B]/60">העלה קובץ מהמחשב</p>
+                  <p className="text-[10px] text-[#0B1F5B]/40">נתמכים: PDF, TXT, תמונות, DOCX</p>
+                  <Button size="sm" className="w-full bg-[#0B1F5B] text-white border-2 border-[#D4AF37] gap-2" onClick={triggerFileUpload} disabled={isUploading}>
+                    {isUploading ? <><Loader2Icon className="h-4 w-4 animate-spin" /> מעלה...</> : <><Upload className="h-4 w-4" /> בחר קובץ</>}
+                  </Button>
+                </div>
+              )}
+
+              {/* CLOUD DOCUMENTS */}
+              {activePanel === "cloud" && (
+                <div className="space-y-2">
+                  <p className="text-[10px] text-[#0B1F5B]/50">מסמכים מפסקי דין שהועלו למערכת:</p>
+                  {loadingCloudDocs ? (
+                    <div className="flex items-center justify-center py-6">
+                      <Loader2Icon className="h-6 w-6 animate-spin text-[#D4AF37]" />
+                    </div>
+                  ) : cloudDocs.length === 0 ? (
+                    <p className="text-xs text-[#0B1F5B]/40 text-center py-4">אין מסמכים זמינים</p>
+                  ) : (
+                    <ScrollArea className="max-h-[400px]">
+                      <div className="space-y-1">
+                        {cloudDocs.map((doc) => (
+                          <div
+                            key={doc.id}
+                            className="flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer text-sm hover:bg-[#D4AF37]/10 transition-colors"
+                            onClick={() => {
+                              setManualUrl(doc.source_url);
+                              setActivePanel(null);
+                              toast.success(`נטען: ${doc.title}`);
+                            }}
+                          >
+                            <FileText className="h-3.5 w-3.5 text-[#D4AF37] shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs truncate font-medium text-[#0B1F5B]">{doc.title}</p>
+                              <p className="text-[10px] text-[#0B1F5B]/40">{doc.court} · {doc.year}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  )}
+                  <Button size="sm" variant="outline" className="w-full text-xs border-[#D4AF37] gap-1" onClick={loadCloudDocs} disabled={loadingCloudDocs}>
+                    <RefreshCw className={`h-3 w-3 ${loadingCloudDocs ? "animate-spin" : ""}`} /> רענן
+                  </Button>
+                </div>
+              )}
+
+              {/* ADD DOC (URL) */}
               {activePanel === "add" && (
                 <div className="space-y-2">
                   <Input placeholder="שם המסמך" value={newBookTitle} onChange={(e) => setNewBookTitle(e.target.value)} className="text-sm border-[#D4AF37]/30 focus-visible:ring-[#D4AF37]" />
@@ -1098,7 +1295,7 @@ export default function EmbedPdfViewerPage() {
                         onClick={handleBeautify}
                         disabled={isBeautifying || !psakData}
                       >
-                        {isBeautifying ? <><Loader2 className="h-4 w-4 animate-spin" /> מעצב...</> : <><Sparkles className="h-4 w-4" /> עצב פסק דין ✨</>}
+                        {isBeautifying ? <><Loader2Icon className="h-4 w-4 animate-spin" /> מעצב...</> : <><Sparkles className="h-4 w-4" /> עצב פסק דין ✨</>}
                       </Button>
                       {!psakData && <p className="text-[10px] text-red-500">טוען נתוני פסק דין...</p>}
                     </div>
@@ -1106,15 +1303,15 @@ export default function EmbedPdfViewerPage() {
                     <div className="space-y-2">
                       <p className="text-xs text-green-600 font-semibold">✓ פסק הדין עוצב בהצלחה</p>
                       <Button size="sm" variant="outline" className="w-full text-xs gap-1 border-[#D4AF37]" onClick={handleBeautify} disabled={isBeautifying}>
-                        {isBeautifying ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />} עצב מחדש
+                        {isBeautifying ? <Loader2Icon className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />} עצב מחדש
                       </Button>
                       <Separator className="bg-[#D4AF37]/20" />
                       <p className="text-[10px] text-[#0B1F5B]/50">שמירה:</p>
                       <Button size="sm" className="w-full text-xs bg-[#0B1F5B] text-white border-2 border-[#D4AF37] gap-1" onClick={handleSaveBeautified} disabled={isSavingBeautified}>
-                        {isSavingBeautified ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />} שמור (דרוס מקור)
+                        {isSavingBeautified ? <Loader2Icon className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />} שמור (דרוס מקור)
                       </Button>
                       <Button size="sm" variant="outline" className="w-full text-xs border-[#D4AF37] gap-1" onClick={handleCopyAndSaveBeautified} disabled={isSavingBeautified}>
-                        {isSavingBeautified ? <Loader2 className="h-3 w-3 animate-spin" /> : <Copy className="h-3 w-3" />} העתק ושמור כחדש
+                        {isSavingBeautified ? <Loader2Icon className="h-3 w-3 animate-spin" /> : <Copy className="h-3 w-3" />} העתק ושמור כחדש
                       </Button>
                       <Separator className="bg-[#D4AF37]/20" />
                       <Button size="sm" variant="ghost" className="w-full text-xs gap-1" onClick={() => {
@@ -1132,9 +1329,9 @@ export default function EmbedPdfViewerPage() {
         )}
 
         {/* ═══ VIEWER ═══ */}
-        <main className="flex-1 flex flex-col min-w-0">
+        <main className={`flex-1 min-w-0 ${viewMode === "split" ? "flex flex-row" : "flex flex-col"}`}>
           {leftSourceUrl ? (
-            <div className="flex-1 flex flex-col" style={{ minHeight: viewerFullscreen ? "calc(100vh - 50px)" : "calc(100vh - 50px)" }}>
+            <div className={`flex-1 flex flex-col ${viewMode === "split" ? "w-1/2" : ""}`} style={{ minHeight: viewerFullscreen ? "calc(100vh - 50px)" : "calc(100vh - 50px)" }}>
               {/* ═══ BEAUTIFIED FORMATTING TOOLBAR ═══ */}
               {beautifiedHtml && activePanel === "beautify" && (
                 <div className="border-b-2 border-[#D4AF37]/20 bg-white/80 backdrop-blur-sm flex-shrink-0">
@@ -1444,21 +1641,53 @@ export default function EmbedPdfViewerPage() {
             </div>
           ) : (
             <div className="flex-1 flex items-center justify-center">
-              <div className="text-center space-y-3 p-8">
-                <FileText className="h-16 w-16 mx-auto text-[#D4AF37]/30" />
-                <p className="text-[#0B1F5B]/50 text-sm">בחר מסמך מהרשימה או הדבק קישור</p>
-                <Button size="sm" variant="outline" className="border-[#D4AF37] text-[#0B1F5B]" onClick={() => togglePanel("add")}>
-                  <Plus className="h-4 w-4 ml-1" /> הוסף מסמך
-                </Button>
+              <div className="text-center space-y-4 p-8">
+                <div className="border-2 border-dashed border-[#D4AF37]/40 rounded-2xl p-10 hover:border-[#D4AF37] transition-colors">
+                  <FileText className="h-16 w-16 mx-auto text-[#D4AF37]/30 mb-4" />
+                  <p className="text-[#0B1F5B]/50 text-sm mb-1">גרור קובץ לכאן או בחר מסמך</p>
+                  <p className="text-[10px] text-[#0B1F5B]/30 mb-4">PDF, TXT, תמונות, DOCX</p>
+                  <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                    <Button size="sm" className="bg-[#0B1F5B] text-white border-2 border-[#D4AF37] gap-1" onClick={triggerFileUpload} disabled={isUploading}>
+                      {isUploading ? <Loader2Icon className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} העלה מהמחשב
+                    </Button>
+                    <Button size="sm" variant="outline" className="border-[#D4AF37] text-[#0B1F5B] gap-1" onClick={() => { loadCloudDocs(); togglePanel("cloud"); }}>
+                      <Database className="h-4 w-4" /> מסמכים מהענן
+                    </Button>
+                    <Button size="sm" variant="outline" className="border-[#D4AF37] text-[#0B1F5B] gap-1" onClick={() => togglePanel("add")}>
+                      <Plus className="h-4 w-4" /> הוסף קישור
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
           )}
 
           {/* Second viewer for split/compare */}
-          {viewMode !== "single" && rightSourceUrl && (
-            <div className="h-[400px] border-t-2 border-[#D4AF37]/30 relative bg-[#f8f8f6]">
-              <iframe src={rightViewerUrl} className="absolute inset-0 w-full h-full border-0" title="PDF Compare" allow="fullscreen" />
-            </div>
+          {viewMode !== "single" && (
+            rightSourceUrl ? (
+              <div className={`${viewMode === "split" ? "w-1/2" : "h-[400px]"} border-t-2 sm:border-t-0 sm:border-r-2 border-[#D4AF37]/30 relative bg-[#f8f8f6]`}>
+                <iframe src={rightViewerUrl} className="absolute inset-0 w-full h-full border-0" title="PDF Compare" allow="fullscreen" />
+              </div>
+            ) : (
+              <div className={`${viewMode === "split" ? "w-1/2" : "h-[300px]"} border-t-2 sm:border-t-0 sm:border-r-2 border-[#D4AF37]/30 flex items-center justify-center bg-[#f8f8f6]`}>
+                <div className="text-center space-y-3 p-6">
+                  <FileText className="h-10 w-10 mx-auto text-[#D4AF37]/30" />
+                  <p className="text-xs text-[#0B1F5B]/50">בחר מסמך שני להשוואה</p>
+                  <div className="space-y-1.5">
+                    <Button size="sm" variant="outline" className="border-[#D4AF37] text-[#0B1F5B] text-xs w-full" onClick={() => togglePanel("docs")}>
+                      <BookOpen className="h-3.5 w-3.5 ml-1" /> בחר מהרשימה
+                    </Button>
+                    <Input
+                      placeholder="או הדבק URL..."
+                      value={compareManualUrl}
+                      onChange={(e) => setCompareManualUrl(e.target.value)}
+                      className="text-xs border-[#D4AF37]/30 focus-visible:ring-[#D4AF37]"
+                      dir="ltr"
+                    />
+                  </div>
+                </div>
+              </div>
+            )
           )}
         </main>
       </div>
