@@ -151,9 +151,9 @@ export const useShasDownloadStore = create<ShasDownloadStore>()(
 
         if (slotsAvailable <= 0) return;
 
-        // Find next pending masechtot
+        // Find next masechtot to download (pending, paused, or 'downloading' that lost its worker after reload)
         const pending = masechtot.filter(
-          (m) => (m.status === 'pending' || m.status === 'paused') && !activeDownloads.includes(m.masechet)
+          (m) => (m.status === 'pending' || m.status === 'paused' || m.status === 'downloading') && !activeDownloads.includes(m.masechet)
         );
 
         const toStart = pending.slice(0, slotsAvailable);
