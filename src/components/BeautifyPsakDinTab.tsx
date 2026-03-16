@@ -1038,7 +1038,7 @@ const BeautifyPsakDinTab = () => {
           </div>
 
           {/* Items list */}
-          <ScrollArea className="flex-1">
+          <div className="flex-1 overflow-y-auto">
             {dbLoading ? (
               <div className="flex items-center justify-center py-16">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -1059,7 +1059,15 @@ const BeautifyPsakDinTab = () => {
                       className="mt-1 shrink-0"
                     />
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm truncate">{item.title}</div>
+                      <div className="font-medium text-sm truncate flex items-center gap-2">
+                        {item.title}
+                        {(item.beautify_count || 0) > 0 && (
+                          <Badge className="gap-1 text-[10px] px-1.5 py-0 bg-amber-500/15 text-amber-600 border border-amber-500/30 dark:text-amber-400 shrink-0">
+                            <Paintbrush className="w-2.5 h-2.5" />
+                            עוצב {item.beautify_count}
+                          </Badge>
+                        )}
+                      </div>
                       <div className="text-xs text-muted-foreground mt-0.5 flex gap-2 flex-wrap">
                         <span>{item.court}</span>
                         <span>•</span>
@@ -1080,7 +1088,7 @@ const BeautifyPsakDinTab = () => {
                 )}
               </div>
             )}
-          </ScrollArea>
+          </div>
         </div>
       )}
     </div>
