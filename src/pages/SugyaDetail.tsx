@@ -656,7 +656,7 @@ const SugyaDetail = () => {
                   <HelpCircle className="w-5 h-5 text-primary" />
                   שאלות נפוצות
                 </h3>
-                <FAQSection items={faqItems} />
+                <FAQSection items={faqItems.map(f => ({ ...f, order_index: f.order_index ?? 0 }))} />
               </div>
             )}
           </TabsContent>
