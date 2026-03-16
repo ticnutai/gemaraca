@@ -82,18 +82,35 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
 
   const INITIAL_DAF_COUNT = 20;
 
-  // Load Psakei Din examples with caching
+  // Load recently viewed Psakei Din
   const { data: psakDinExamples = [] } = useQuery({
-    queryKey: ['sedarim-psak-examples'],
+    queryKey: ['recently-viewed-psakim'],
     queryFn: async () => {
-      const { data } = await supabase
-        .from('psakei_din')
-        .select('id, title, court, year, summary, source_url')
-        .order('created_at', { ascending: false })
-        .limit(6);
-      return (data || []) as PsakDinExample[];
+      try {
+        const recentIds: string[] = JSON.parse(localStorage.getItem(RECENT_PSAKIM_KEY) || '[]');
+        if (recentIds.length === 0) {
+          // Fallback: show latest psakim
+          const { data } = await supabase
+            .from('psakei_din')
+            .select('id, title, court, year, summary, source_url')
+            .order('created_at', { ascending: false })
+            .limit(6);
+          return (data || []) as PsakDinExample[];
+        }
+        // Fetch by IDs preserving order
+        const { data } = await supabase
+          .from('psakei_din')
+          .select('id, title, court, year, summary, source_url')
+          .in('id', recentIds.slice(0, 6));
+        if (!data) return [];
+        // Sort by the order in localStorage (most recent first)
+        const orderMap = new Map(recentIds.map((id, i) => [id, i]));
+        return (data as PsakDinExample[]).sort((a, b) => (orderMap.get(a.id) ?? 99) - (orderMap.get(b.id) ?? 99));
+      } catch {
+        return [];
+      }
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000,
   });
 
   // Load loaded pages counts from shas_download_progress (accurate, no row limit issues)
