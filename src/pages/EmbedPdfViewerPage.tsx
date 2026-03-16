@@ -6,7 +6,8 @@ import {
   AlignCenter, AlignLeft, AlignJustify, Type, AArrowUp, AArrowDown, Highlighter,
   Copy, MessageSquarePlus, Hash, ZoomIn, ZoomOut, ChevronUp, ChevronDown,
   RotateCcw, Printer, StickyNote, Scissors, ClipboardPaste, Sparkles, Eye,
-  ListOrdered, WrapText, PilcrowSquare, ArrowRight, Link, BarChart3
+  ListOrdered, WrapText, PilcrowSquare, ArrowRight, Link, BarChart3,
+  Upload, HardDrive, Database, Loader2 as Loader2Icon
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
