@@ -116,11 +116,6 @@ const AppLayoutInner = ({ children }: AppLayoutProps) => {
       <Suspense fallback={null}>
         <GemaraDownloadFloat />
       </Suspense>
-
-      {/* Typography Settings Float */}
-      <Suspense fallback={null}>
-        <FloatingTypography />
-      </Suspense>
     </div>
   );
 };
