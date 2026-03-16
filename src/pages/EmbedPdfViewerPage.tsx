@@ -447,6 +447,8 @@ export default function EmbedPdfViewerPage() {
     setIframeError(false);
     setFetchedText(null);
     setFetchTextError(null);
+    setFetchedHtml(null);
+    setFetchHtmlError(null);
     setIsTextEditing(false);
     setTextEditBuffer("");
   }, [leftSourceUrl]);
@@ -495,6 +497,33 @@ export default function EmbedPdfViewerPage() {
       });
     return () => { cancelled = true; };
   }, [leftSourceUrl, leftContentType, currentTextStorageKey, canPersist, selectedPdf?.edited_text]);
+
+  // Fetch HTML content for beautified .html files and render via srcDoc
+  useEffect(() => {
+    if (leftContentType !== 'html-embed' || !leftSourceUrl) return;
+    let cancelled = false;
+    setFetchingHtml(true);
+    setFetchHtmlError(null);
+
+    fetch(leftSourceUrl)
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const buffer = await r.arrayBuffer();
+        return new TextDecoder('utf-8').decode(buffer);
+      })
+      .then((html) => {
+        if (cancelled) return;
+        setFetchedHtml(html);
+        setFetchingHtml(false);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setFetchHtmlError(err.message);
+        setFetchingHtml(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [leftSourceUrl, leftContentType]);
 
   const startTextEdit = useCallback(() => {
     if (fetchedText === null) return;
