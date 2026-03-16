@@ -1126,7 +1126,7 @@ export default function EmbedPdfViewerPage() {
                     </div>
                   )}
                 </div>
-              )
+              )}
             </div>
           </aside>
         )}
