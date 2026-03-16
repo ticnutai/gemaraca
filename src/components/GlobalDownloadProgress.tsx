@@ -135,6 +135,59 @@ const GlobalDownloadProgress = () => {
           </div>
         );
       })}
+
+      {/* Resumable sessions (stopped/failed) */}
+      {resumableSessions.filter(s => !activeSessions.some(a => a.id === s.id)).map((session) => {
+        const progress = getProgress(session.id);
+        const isError = session.status === "error";
+        const formatLabel = session.format === 'pdf' ? 'PDF' : session.format === 'docx' ? 'Word' : 'HTML';
+
+        return (
+          <div key={`resume-${session.id}`} className="space-y-2 border-t border-border/50 pt-3 mt-3 first:border-t-0 first:pt-0 first:mt-0">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <AlertCircle className={cn("w-4 h-4", isError ? "text-destructive" : "text-muted-foreground")} />
+                <span className="text-sm font-medium truncate max-w-[180px]">{session.name}</span>
+                <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{formatLabel}</span>
+              </div>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                onClick={() => clearSession(session.id)}
+              >
+                <X className="w-3 h-3" />
+              </Button>
+            </div>
+
+            <Progress value={progress.percent} className="h-1.5" />
+
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">
+                {progress.completed}/{progress.total} הושלמו ({progress.percent}%)
+                {progress.failed > 0 && ` • ${progress.failed} שגיאות`}
+              </span>
+              <Button
+                size="sm"
+                variant="default"
+                className="h-7 gap-1.5 text-xs"
+                onClick={() => {
+                  // Resume by restarting with remaining items
+                  const remainingItems = session.items
+                    .filter(i => i.status !== 'done')
+                    .map(i => ({ id: i.id, title: i.title, court: i.court, year: i.year }));
+                  if (remainingItems.length > 0) {
+                    resume(session.id);
+                  }
+                }}
+              >
+                <RotateCcw className="w-3 h-3" />
+                המשך הורדה
+              </Button>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };
