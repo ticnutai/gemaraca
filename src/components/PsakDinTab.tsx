@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Calendar, Building2, FileText, List, BookOpen, Sparkles, Brain, Loader2,
   Link, Plus, Pencil, Trash2, Download, Search, Filter, ArrowUpDown, FileSpreadsheet,
+  Paintbrush,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
@@ -533,6 +534,12 @@ const PsakDinTab = () => {
                             <div className="flex items-start justify-between gap-3 mb-3">
                               <div className="flex-1 cursor-pointer" onClick={() => handlePsakClick(psak)}>
                                 <h3 className="text-lg font-semibold text-foreground text-right mb-2 leading-tight flex items-center gap-2 justify-end">
+                                  {(psak as Record<string, unknown>).beautify_count && Number((psak as Record<string, unknown>).beautify_count) > 0 && (
+                                    <Badge className="gap-1 text-[10px] px-1.5 py-0.5 bg-amber-500/15 text-amber-600 border border-amber-500/30 dark:text-amber-400">
+                                      <Paintbrush className="w-3 h-3" />
+                                      עוצב {Number((psak as Record<string, unknown>).beautify_count)}
+                                    </Badge>
+                                  )}
                                   <FileTypeBadge url={psak.source_url} size="sm" />
                                   {psak.title}
                                 </h3>

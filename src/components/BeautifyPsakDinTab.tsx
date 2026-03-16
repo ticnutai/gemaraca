@@ -334,15 +334,17 @@ const BeautifyPsakDinTab = () => {
           .getPublicUrl(fileName);
 
         if (mode === "save") {
-          const { error } = await supabase
-            .from("psakei_din")
-            .update({ full_text: job.html, source_url: urlData?.publicUrl || undefined })
+          const { data: current } = await supabase.from("psakei_din").select("beautify_count").eq("id", job.id).single();
+          const newCount = ((current?.beautify_count as number) || 0) + 1;
+          const { error } = await (supabase
+            .from("psakei_din") as any)
+            .update({ full_text: job.html, source_url: urlData?.publicUrl || undefined, beautify_count: newCount })
             .eq("id", job.id);
           if (error) throw error;
         } else {
           const parsed = parsePsakDinText(job.rawText);
-          const { error } = await supabase
-            .from("psakei_din")
+          const { error } = await (supabase
+            .from("psakei_din") as any)
             .insert({
               id: fileId,
               title: `${job.title} (מעוצב)`,
@@ -353,6 +355,7 @@ const BeautifyPsakDinTab = () => {
               full_text: job.html,
               source_url: urlData?.publicUrl || null,
               tags: ["מעוצב"],
+              beautify_count: 1,
             });
           if (error) throw error;
         }
@@ -486,8 +489,12 @@ const BeautifyPsakDinTab = () => {
       await supabase.storage.from("psakei-din-files").upload(fileName, blob, { contentType: "text/html", upsert: true });
       const { data: urlData } = supabase.storage.from("psakei-din-files").getPublicUrl(fileName);
 
-      const { error } = await supabase.from("psakei_din")
-        .update({ full_text: htmlResult, source_url: urlData?.publicUrl || undefined })
+      // Fetch current beautify_count to increment
+      const { data: current } = await supabase.from("psakei_din").select("beautify_count").eq("id", loadedPsakId).single();
+      const newCount = ((current?.beautify_count as number) || 0) + 1;
+
+      const { error } = await (supabase.from("psakei_din") as any)
+        .update({ full_text: htmlResult, source_url: urlData?.publicUrl || undefined, beautify_count: newCount })
         .eq("id", loadedPsakId);
       if (error) throw error;
 
@@ -511,7 +518,7 @@ const BeautifyPsakDinTab = () => {
       const { data: urlData } = supabase.storage.from("psakei-din-files").getPublicUrl(fileName);
 
       const parsed = parsePsakDinText(rawText);
-      const { error } = await supabase.from("psakei_din").insert({
+      const { error } = await (supabase.from("psakei_din") as any).insert({
         id: newId,
         title: `${loadedPsakTitle || parsed.title} (מעוצב)`,
         court: parsed.court || "לא ידוע",
@@ -521,6 +528,7 @@ const BeautifyPsakDinTab = () => {
         full_text: htmlResult,
         source_url: urlData?.publicUrl || null,
         tags: ["מעוצב"],
+        beautify_count: 1,
       });
       if (error) throw error;
 
