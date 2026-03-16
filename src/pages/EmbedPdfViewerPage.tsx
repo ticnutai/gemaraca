@@ -1084,6 +1084,49 @@ export default function EmbedPdfViewerPage() {
                   </div>
                 </div>
               )}
+
+              {/* BEAUTIFY */}
+              {activePanel === "beautify" && (
+                <div className="space-y-3">
+                  {!beautifiedHtml ? (
+                    <div className="text-center py-4 space-y-3">
+                      <Sparkles className="h-8 w-8 mx-auto text-[#D4AF37]" />
+                      <p className="text-xs text-[#0B1F5B]/60">עצב את פסק הדין באמצעות AI</p>
+                      <Button
+                        size="sm"
+                        className="w-full bg-[#0B1F5B] text-white border-2 border-[#D4AF37] gap-2"
+                        onClick={handleBeautify}
+                        disabled={isBeautifying || !psakData}
+                      >
+                        {isBeautifying ? <><Loader2 className="h-4 w-4 animate-spin" /> מעצב...</> : <><Sparkles className="h-4 w-4" /> עצב פסק דין ✨</>}
+                      </Button>
+                      {!psakData && <p className="text-[10px] text-red-500">טוען נתוני פסק דין...</p>}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <p className="text-xs text-green-600 font-semibold">✓ פסק הדין עוצב בהצלחה</p>
+                      <Button size="sm" variant="outline" className="w-full text-xs gap-1 border-[#D4AF37]" onClick={handleBeautify} disabled={isBeautifying}>
+                        {isBeautifying ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />} עצב מחדש
+                      </Button>
+                      <Separator className="bg-[#D4AF37]/20" />
+                      <p className="text-[10px] text-[#0B1F5B]/50">שמירה:</p>
+                      <Button size="sm" className="w-full text-xs bg-[#0B1F5B] text-white border-2 border-[#D4AF37] gap-1" onClick={handleSaveBeautified} disabled={isSavingBeautified}>
+                        {isSavingBeautified ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />} שמור (דרוס מקור)
+                      </Button>
+                      <Button size="sm" variant="outline" className="w-full text-xs border-[#D4AF37] gap-1" onClick={handleCopyAndSaveBeautified} disabled={isSavingBeautified}>
+                        {isSavingBeautified ? <Loader2 className="h-3 w-3 animate-spin" /> : <Copy className="h-3 w-3" />} העתק ושמור כחדש
+                      </Button>
+                      <Separator className="bg-[#D4AF37]/20" />
+                      <Button size="sm" variant="ghost" className="w-full text-xs gap-1" onClick={() => {
+                        const win = window.open("", "_blank");
+                        if (win) { win.document.write(beautifiedHtml); win.document.close(); win.print(); }
+                      }}>
+                        <Printer className="h-3 w-3" /> הדפס
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )
             </div>
           </aside>
         )}
