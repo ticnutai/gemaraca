@@ -154,7 +154,7 @@ const SugyaDetail = () => {
     const cached = getCachedPage(id);
     if (cached) {
       console.log('Using cached page for:', id);
-      setLoadedPage(cached);
+      setLoadedPage(cached as LoadedPageData);
       setIsPageLoading(false);
       return;
     }
