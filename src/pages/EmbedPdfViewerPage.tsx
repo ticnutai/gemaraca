@@ -218,6 +218,102 @@ export default function EmbedPdfViewerPage() {
   const [compareManualUrl, setCompareManualUrl] = useState("");
   const [viewerFullscreen, setViewerFullscreen] = useState(false);
 
+  // ── Psak Din context (for beautify) ──
+  const psakIdParam = searchParams.get("psakId");
+  const [psakData, setPsakData] = useState<any>(null);
+  const [beautifiedHtml, setBeautifiedHtml] = useState<string | null>(null);
+  const [isBeautifying, setIsBeautifying] = useState(false);
+  const [isSavingBeautified, setIsSavingBeautified] = useState(false);
+  const beautifyIframeRef = useRef<HTMLIFrameElement>(null);
+
+  // Fetch psak din data when psakId is provided
+  useEffect(() => {
+    if (!psakIdParam) { setPsakData(null); return; }
+    (async () => {
+      const { data } = await (supabase as any).from("psakei_din").select("*").eq("id", psakIdParam).single();
+      if (data) setPsakData(data);
+    })();
+  }, [psakIdParam]);
+
+  const handleBeautify = useCallback(async () => {
+    if (!psakData) { toast.error("לא נמצא פסק דין לעיצוב"); return; }
+    setIsBeautifying(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("beautify-psak-din", {
+        body: {
+          title: psakData.title,
+          court: psakData.court,
+          year: psakData.year,
+          caseNumber: psakData.case_number,
+          summary: psakData.summary,
+          fullText: psakData.full_text,
+          tags: psakData.tags,
+        },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || "שגיאה בעיצוב");
+      setBeautifiedHtml(data.html);
+      setActivePanel("beautify");
+      toast.success("פסק הדין עוצב בהצלחה!");
+    } catch (err: any) {
+      console.error("Beautify error:", err);
+      toast.error(err.message || "שגיאה בעיצוב פסק הדין");
+    } finally {
+      setIsBeautifying(false);
+    }
+  }, [psakData]);
+
+  const handleSaveBeautified = useCallback(async () => {
+    if (!psakData?.id || !beautifiedHtml) return;
+    setIsSavingBeautified(true);
+    try {
+      const doc = beautifyIframeRef.current?.contentDocument;
+      const currentHtml = doc?.documentElement?.outerHTML || beautifiedHtml;
+      const fileName = `beautified/${psakData.id}-${Date.now()}.html`;
+      const blob = new Blob([currentHtml], { type: "text/html;charset=utf-8" });
+      await supabase.storage.from("psakei-din-files").upload(fileName, blob, { contentType: "text/html", upsert: true });
+      const { data: urlData } = supabase.storage.from("psakei-din-files").getPublicUrl(fileName);
+      const { error } = await supabase.from("psakei_din").update({ full_text: currentHtml, source_url: urlData?.publicUrl || undefined }).eq("id", psakData.id);
+      if (error) throw error;
+      toast.success("פסק הדין המעוצב נשמר בהצלחה");
+    } catch (err: any) {
+      toast.error("שגיאה בשמירת פסק הדין המעוצב");
+    } finally {
+      setIsSavingBeautified(false);
+    }
+  }, [psakData, beautifiedHtml]);
+
+  const handleCopyAndSaveBeautified = useCallback(async () => {
+    if (!psakData || !beautifiedHtml) return;
+    setIsSavingBeautified(true);
+    try {
+      const doc = beautifyIframeRef.current?.contentDocument;
+      const currentHtml = doc?.documentElement?.outerHTML || beautifiedHtml;
+      const newId = crypto.randomUUID();
+      const fileName = `beautified/${newId}.html`;
+      const blob = new Blob([currentHtml], { type: "text/html;charset=utf-8" });
+      await supabase.storage.from("psakei-din-files").upload(fileName, blob, { contentType: "text/html", upsert: true });
+      const { data: urlData } = supabase.storage.from("psakei-din-files").getPublicUrl(fileName);
+      const { error } = await supabase.from("psakei_din").insert({
+        id: newId,
+        title: `${psakData.title} (מעוצב)`,
+        court: psakData.court || "",
+        year: psakData.year || new Date().getFullYear(),
+        case_number: psakData.case_number || null,
+        summary: psakData.summary || "",
+        full_text: currentHtml,
+        source_url: urlData?.publicUrl || null,
+        tags: [...(psakData.tags || []), "מעוצב"],
+      });
+      if (error) throw error;
+      toast.success("פסק הדין המעוצב הועתק ונשמר כפריט חדש");
+    } catch (err: any) {
+      toast.error("שגיאה בהעתקה ושמירה");
+    } finally {
+      setIsSavingBeautified(false);
+    }
+  }, [psakData, beautifiedHtml]);
+
   // Add book form
   const [newBookTitle, setNewBookTitle] = useState("");
   const [newBookUrl, setNewBookUrl] = useState("");
