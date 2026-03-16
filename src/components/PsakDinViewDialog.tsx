@@ -408,7 +408,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
           year: psak.year || new Date().getFullYear(),
           case_number: psak.case_number || psak.caseNumber || null,
           summary: psak.summary || "",
-          full_text: beautifiedHtml,
+          full_text: currentHtml,
           source_url: urlData?.publicUrl || null,
           tags: [...(psak.tags || []), "מעוצב"],
         });
