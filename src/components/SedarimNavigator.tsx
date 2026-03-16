@@ -34,6 +34,8 @@ interface PsakDinExample {
   source_url?: string;
 }
 
+const RECENT_PSAKIM_KEY = 'recently_viewed_psakim';
+
 interface LoadedPagesMap {
   [masechetName: string]: { loaded: number; total: number };
 }
@@ -80,18 +82,35 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
 
   const INITIAL_DAF_COUNT = 20;
 
-  // Load Psakei Din examples with caching
+  // Load recently viewed Psakei Din
   const { data: psakDinExamples = [] } = useQuery({
-    queryKey: ['sedarim-psak-examples'],
+    queryKey: ['recently-viewed-psakim'],
     queryFn: async () => {
-      const { data } = await supabase
-        .from('psakei_din')
-        .select('id, title, court, year, summary, source_url')
-        .order('created_at', { ascending: false })
-        .limit(6);
-      return (data || []) as PsakDinExample[];
+      try {
+        const recentIds: string[] = JSON.parse(localStorage.getItem(RECENT_PSAKIM_KEY) || '[]');
+        if (recentIds.length === 0) {
+          // Fallback: show latest psakim
+          const { data } = await supabase
+            .from('psakei_din')
+            .select('id, title, court, year, summary, source_url')
+            .order('created_at', { ascending: false })
+            .limit(6);
+          return (data || []) as PsakDinExample[];
+        }
+        // Fetch by IDs preserving order
+        const { data } = await supabase
+          .from('psakei_din')
+          .select('id, title, court, year, summary, source_url')
+          .in('id', recentIds.slice(0, 6));
+        if (!data) return [];
+        // Sort by the order in localStorage (most recent first)
+        const orderMap = new Map(recentIds.map((id, i) => [id, i]));
+        return (data as PsakDinExample[]).sort((a, b) => (orderMap.get(a.id) ?? 99) - (orderMap.get(b.id) ?? 99));
+      } catch {
+        return [];
+      }
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000,
   });
 
   // Load loaded pages counts from shas_download_progress (accurate, no row limit issues)
@@ -196,8 +215,14 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
   };
 
   const handlePsakDinClick = (id: string) => {
+    // Track recently viewed
+    try {
+      const recent: string[] = JSON.parse(localStorage.getItem(RECENT_PSAKIM_KEY) || '[]');
+      const updated = [id, ...recent.filter(r => r !== id)].slice(0, 20);
+      localStorage.setItem(RECENT_PSAKIM_KEY, JSON.stringify(updated));
+      queryClient.invalidateQueries({ queryKey: ['recently-viewed-psakim'] });
+    } catch { /* ignore */ }
     setActiveTab("psak-din");
-    // Could navigate to specific psak din view
   };
 
   const getMasechetCount = (seder: string) => {
@@ -532,9 +557,9 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
       {/* Psak Din Examples Section */}
       {psakDinExamples.length > 0 && !selectedMasechetLocal && (
         <div className="bg-card rounded-lg md:rounded-xl border border-border p-2 md:p-4">
-          <div className="flex items-center gap-1.5 md:gap-2 mb-2 md:mb-4">
+           <div className="flex items-center gap-1.5 md:gap-2 mb-2 md:mb-4">
             <Scale className="h-3.5 w-3.5 md:h-5 md:w-5 text-foreground" />
-            <h3 className="font-bold text-sm md:text-lg">דוגמאות פסקי דין</h3>
+            <h3 className="font-bold text-sm md:text-lg">פסקי דין אחרונים</h3>
           </div>
           
           <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
