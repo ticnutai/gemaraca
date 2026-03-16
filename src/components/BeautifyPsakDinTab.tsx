@@ -1151,7 +1151,7 @@ const BeautifyPsakDinTab = () => {
                       </Button>
                     </div>
                   </div>
-                ))
+                ))}
                 {/* Infinite scroll sentinel */}
                 <div ref={scrollSentinelRef} className="h-4" />
                 {dbLoadingMore && (
