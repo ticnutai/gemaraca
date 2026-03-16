@@ -106,6 +106,7 @@ const BulkShasDownload = () => {
               <span className="text-muted-foreground">
                 {totalLoaded.toLocaleString()} / {totalPagesInShas.toLocaleString()} עמודים
                 ({totalCompleted}/{MASECHTOT.length} מסכתות)
+                {totalMissing > 0 && <span className="text-destructive mr-2"> • {totalMissing} חסרים</span>}
               </span>
               <span className="font-semibold">{overallProgress.toFixed(1)}%</span>
             </div>
