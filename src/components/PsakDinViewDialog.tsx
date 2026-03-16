@@ -1272,6 +1272,13 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
                       className="w-full h-full min-h-[500px]"
                       title="צפייה בפסק דין"
                     />
+                  ) : fileType === 'html' ? (
+                    <iframe
+                      src={sourceUrl}
+                      className="w-full h-full min-h-[500px]"
+                      title="צפייה בפסק דין מעוצב"
+                      sandbox="allow-same-origin"
+                    />
                   ) : fileType === 'txt' ? (
                     <TxtViewer url={sourceUrl} textSettings={textSettings} textClasses={textClasses} />
                   ) : (
