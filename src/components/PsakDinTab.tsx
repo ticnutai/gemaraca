@@ -122,8 +122,8 @@ const PsakDinTab = () => {
     else setLoadingMore(true);
 
     try {
-      // Show cached data on first load
-      if (isInitial && offset === 0) {
+      // Show cached data on first load (only without filters)
+      if (isInitial && offset === 0 && !debouncedSearch && courtFilter === 'all') {
         const cached = await getAllCachedPsakim();
         if (cached.length > 0) {
           const sorted = cached.sort((a, b) => (b.year || 0) - (a.year || 0)).slice(0, PAGE_SIZE);
@@ -132,11 +132,22 @@ const PsakDinTab = () => {
         }
       }
 
-      const { data, error, count } = await supabase
+      const ascending = sortOrder === 'year-asc' || sortOrder === 'title-asc';
+      const orderCol = sortOrder.startsWith('title') ? 'title' : 'year';
+
+      let query = supabase
         .from('psakei_din')
         .select('*', { count: 'exact' })
-        .order('year', { ascending: false })
-        .range(offset, offset + PAGE_SIZE - 1);
+        .order(orderCol, { ascending });
+
+      if (debouncedSearch) {
+        query = query.or(`title.ilike.%${debouncedSearch}%,court.ilike.%${debouncedSearch}%,summary.ilike.%${debouncedSearch}%`);
+      }
+      if (courtFilter !== 'all') {
+        query = query.eq('court', courtFilter);
+      }
+
+      const { data, error, count } = await query.range(offset, offset + PAGE_SIZE - 1);
 
       if (error) throw error;
 
