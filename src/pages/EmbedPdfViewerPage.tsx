@@ -1683,8 +1683,8 @@ export default function EmbedPdfViewerPage() {
                   </div>
                 )}
 
-                {/* PDF / DOCX */}
-                {(leftContentType === 'pdf' || leftContentType === 'docx') && (
+                {/* PDF / DOCX / HTML-EMBED */}
+                {(leftContentType === 'pdf' || leftContentType === 'docx' || leftContentType === 'html-embed') && (
                   <>
                     {!iframeLoaded && !iframeError && (
                       <div className="absolute inset-0 flex items-center justify-center z-10">
