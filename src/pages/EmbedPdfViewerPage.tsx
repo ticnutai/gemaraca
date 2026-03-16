@@ -1,12 +1,12 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import {
   FileText, Bookmark, Download, Search, Trash2, Plus, ExternalLink, BookOpen,
   Palette, Maximize2, Minimize2, RefreshCw, Bold, Italic, Underline, AlignRight,
   AlignCenter, AlignLeft, AlignJustify, Type, AArrowUp, AArrowDown, Highlighter,
   Copy, MessageSquarePlus, Hash, ZoomIn, ZoomOut, ChevronUp, ChevronDown,
   RotateCcw, Printer, StickyNote, Scissors, ClipboardPaste, Sparkles, Eye,
-  ListOrdered, WrapText, PilcrowSquare
+  ListOrdered, WrapText, PilcrowSquare, ArrowRight, Link, BarChart3
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
