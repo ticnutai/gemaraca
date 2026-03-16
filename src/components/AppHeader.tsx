@@ -12,6 +12,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Slider } from "@/components/ui/slider";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { usePageTypography } from "@/hooks/usePageTypography";
+
+const FONTS = [
+  { value: "Arial", label: "אריאל" },
+  { value: "David", label: "דוד" },
+  { value: "'Frank Ruhl Libre', serif", label: "פרנק רוהל" },
+  { value: "'Heebo', sans-serif", label: "חיבו" },
+  { value: "'Rubik', sans-serif", label: "רוביק" },
+  { value: "'Noto Serif Hebrew', serif", label: "נוטו סריף" },
+  { value: "Georgia, serif", label: "ג'ורג'יה" },
+  { value: "'Times New Roman', serif", label: "טיימס" },
+];
 
 interface AppHeaderProps {
   activeTab: string;
