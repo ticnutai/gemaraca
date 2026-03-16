@@ -103,7 +103,7 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
         .from('shas_download_progress')
         .select('masechet, hebrew_name, loaded_pages, total_pages');
       if (data) {
-        data.forEach((row: any) => {
+        data.forEach((row: { masechet: string; hebrew_name?: string; loaded_pages?: number; total_pages?: number }) => {
           // Store under both keys for lookup
           const entry = { loaded: row.loaded_pages || 0, total: row.total_pages || 0 };
           map[row.masechet] = entry;
@@ -228,7 +228,7 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
         supabase.from('pattern_sugya_links').select('masechet'),
       ]);
 
-      (sugyaRes.data || []).forEach((link: any) => {
+      (sugyaRes.data || []).forEach((link: { sugya_id?: string }) => {
         const sid = (link.sugya_id || '').toLowerCase();
         for (const m of MASECHTOT) {
           if (sid.startsWith(m.sefariaName.toLowerCase() + '_')) {
@@ -238,7 +238,7 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
         }
       });
 
-      (patternRes.data || []).forEach((link: any) => {
+      (patternRes.data || []).forEach((link: { masechet?: string }) => {
         const m = MASECHTOT.find(ms => ms.hebrewName === link.masechet);
         if (m) counts[m.sefariaName] = (counts[m.sefariaName] || 0) + 1;
       });

@@ -84,7 +84,7 @@ export const useShasDownloadStore = create<ShasDownloadStore>()(
 
           const masechtot: MasechetDownloadState[] = MASECHTOT.map((m) => {
             const dbStatus = statusMap[m.sefariaName] || { total: 0, withText: 0 };
-            const progress = progressList.find((p: any) => p.masechet === m.sefariaName);
+            const progress = progressList.find((p: { masechet: string }) => p.masechet === m.sefariaName);
             const totalPages = (m.maxDaf - 1) * 2;
 
             return {

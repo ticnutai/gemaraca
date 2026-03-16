@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import type { PsakDinRow } from "@/types/psakDin";
 import { Scale, ExternalLink, Plus } from "lucide-react";
 import PsakDinViewDialog from "./PsakDinViewDialog";
 import PsakDinEditDialog from "./PsakDinEditDialog";
@@ -37,7 +38,7 @@ const RelatedPsakimSidebar = ({ sugyaId }: RelatedPsakimSidebarProps) => {
   const [selectedPsak, setSelectedPsak] = useState<any | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [editingPsak, setEditingPsak] = useState<any | null>(null);
+  const [editingPsak, setEditingPsak] = useState<PsakDinRow | null>(null);
   const [isNewPsak, setIsNewPsak] = useState(false);
 
   useEffect(() => {
@@ -46,7 +47,7 @@ const RelatedPsakimSidebar = ({ sugyaId }: RelatedPsakimSidebarProps) => {
     }
   }, [sugyaId]);
 
-  const loadRelatedPsakim = async () => {
+  const loadRelatedPsakim = useCallback(async () => {
     try {
       // חיפוש קישורים ישירים
       const { data: directLinks, error: directError } = await supabase
@@ -73,7 +74,7 @@ const RelatedPsakimSidebar = ({ sugyaId }: RelatedPsakimSidebarProps) => {
 
       // גם חיפוש לפי תבנית דומה (למשל daf-2 יתאים ל bava_batra_2a)
       const dafMatch = sugyaId.match(/daf-(\d+)/);
-      let additionalLinks: any[] = [];
+      let additionalLinks: typeof directLinks = [];
       
       if (dafMatch) {
         const dafNum = dafMatch[1];
@@ -112,14 +113,14 @@ const RelatedPsakimSidebar = ({ sugyaId }: RelatedPsakimSidebarProps) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [sugyaId]);
 
-  const handlePsakClick = (psak: any) => {
+  const handlePsakClick = useCallback((psak: typeof psakim[number]) => {
     setSelectedPsak(psak);
     setDialogOpen(true);
-  };
+  }, []);
 
-  const handleEditPsak = async (psakId: string) => {
+  const handleEditPsak = useCallback(async (psakId: string) => {
     const { data } = await supabase
       .from('psakei_din')
       .select('*')
@@ -131,17 +132,17 @@ const RelatedPsakimSidebar = ({ sugyaId }: RelatedPsakimSidebarProps) => {
       setIsNewPsak(false);
       setEditDialogOpen(true);
     }
-  };
+  }, []);
 
-  const handleAddNew = () => {
+  const handleAddNew = useCallback(() => {
     setEditingPsak(null);
     setIsNewPsak(true);
     setEditDialogOpen(true);
-  };
+  }, []);
 
-  const handleSaved = () => {
+  const handleSaved = useCallback(() => {
     loadRelatedPsakim();
-  };
+  }, [loadRelatedPsakim]);
 
   if (loading) {
     return (

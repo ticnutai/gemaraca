@@ -238,7 +238,7 @@ export const RichTextViewer = ({
     }
   };
 
-  const updateStyle = (key: keyof TextAnnotation['styles'], value: any) => {
+  const updateStyle = (key: keyof TextAnnotation['styles'], value: string | number | boolean) => {
     const newStyles = { ...currentStyles, [key]: value };
     setCurrentStyles(newStyles);
     saveAnnotation(newStyles);

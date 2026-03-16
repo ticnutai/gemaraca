@@ -142,12 +142,12 @@ export default function AiTutorChat() {
         };
         setMessages((prev) => [...prev, assistantMsg]);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: `שגיאה: ${err.message || "לא ניתן להתחבר לשרת"}. נסה שוב מאוחר יותר.`,
+          content: `שגיאה: ${err instanceof Error ? err.message : "לא ניתן להתחבר לשרת"}. נסה שוב מאוחר יותר.`,
           timestamp: Date.now(),
         },
       ]);

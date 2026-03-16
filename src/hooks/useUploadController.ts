@@ -139,7 +139,7 @@ export function useUploadController(options: UseUploadControllerOptions = {}) {
       skipped: 0,
     });
 
-    const allResults: any[] = [];
+    const allResults: Array<{ id: string; fileName: string; title?: string }> = [];
     const allErrors: string[] = [];
     const uploadedFileNames: string[] = [];
 
@@ -249,7 +249,7 @@ export function useUploadController(options: UseUploadControllerOptions = {}) {
 
   const runAIAnalysis = useCallback(async (
     sessionId: string,
-    psakimToAnalyze: any[],
+    psakimToAnalyze: Array<{ id: string; title?: string; fileName?: string }>,
     signal?: AbortSignal
   ) => {
     const { supabase } = await import('@/integrations/supabase/client');

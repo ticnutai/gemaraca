@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +39,17 @@ interface PsakLink {
   };
 }
 
+interface PatternLink {
+  id: string;
+  psak_din_id: string;
+  sugya_id: string;
+  masechet: string;
+  daf: string;
+  source_text: string;
+  confidence: string;
+  psakei_din?: PsakLink['psakei_din'];
+}
+
 interface IndexEntry {
   masechet: Masechet;
   dafim: {
@@ -69,12 +80,12 @@ const GemaraPsakDinIndex = () => {
   const [expandedMasechet, setExpandedMasechet] = useState<string | null>(null);
   const [selectedDafPsakim, setSelectedDafPsakim] = useState<PsakLink[]>([]);
   const [selectedDafInfo, setSelectedDafInfo] = useState<{ masechet: string; daf: number } | null>(null);
-  const [dialogPsak, setDialogPsak] = useState<any | null>(null);
+  const [dialogPsak, setDialogPsak] = useState<PsakLink | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"tree" | "stats" | "table" | "cards">("tree");
   const [psakimView, setPsakimView] = useState<"list" | "table" | "compact">("list");
   const [prefDialogOpen, setPrefDialogOpen] = useState(false);
-  const [pendingPsak, setPendingPsak] = useState<any | null>(null);
+  const [pendingPsak, setPendingPsak] = useState<PsakLink | null>(null);
 
   const statistics = useMemo<Statistics>(() => {
     const tagCounts = new Map<string, number>();
@@ -198,7 +209,7 @@ const GemaraPsakDinIndex = () => {
       const seenIds = new Set<string>();
 
       // Add sugya_psak_links first
-      sugyaLinks.forEach((link: any) => {
+      sugyaLinks.forEach((link: PsakLink) => {
         if (link.psakei_din && !seenIds.has(link.id)) {
           seenIds.add(link.id);
           combinedLinks.push(link);
@@ -206,7 +217,7 @@ const GemaraPsakDinIndex = () => {
       });
 
       // Add pattern_sugya_links, converting format
-      patternLinks.forEach((link: any) => {
+      patternLinks.forEach((link: PatternLink) => {
         const uniqueKey = `pattern_${link.id}`;
         if (link.psakei_din && !seenIds.has(uniqueKey)) {
           seenIds.add(uniqueKey);
@@ -233,7 +244,7 @@ const GemaraPsakDinIndex = () => {
         const hebrewName = masechet.hebrewName;
         
         // חיפוש כל הקישורים - כולל מ-pattern_sugya_links שמשתמש בשמות עבריים
-        const masechetLinks = combinedLinks.filter((link: any) => {
+        const masechetLinks = combinedLinks.filter((link: PsakLink) => {
           const sugyaId = link.sugya_id || '';
           
           // Check Sefaria format (sefariaName_number)
@@ -251,12 +262,12 @@ const GemaraPsakDinIndex = () => {
         });
         
         // Also search by pattern_sugya_links that use Hebrew masechet names
-        const patternMasechetLinks = patternLinks.filter((link: any) => 
+        const patternMasechetLinks = patternLinks.filter((link: PatternLink) => 
           link.masechet === hebrewName
         );
         
         // Add pattern links that weren't caught by sugya_id matching
-        patternMasechetLinks.forEach((link: any) => {
+        patternMasechetLinks.forEach((link: PatternLink) => {
           const exists = masechetLinks.some(ml => ml.id === link.id);
           if (!exists && link.psakei_din) {
             masechetLinks.push({
@@ -277,7 +288,7 @@ const GemaraPsakDinIndex = () => {
         // קיבוץ לפי דף
         const dafMap = new Map<number, { sugya_id: string; count: number }>();
         
-        masechetLinks.forEach((link: any) => {
+        masechetLinks.forEach((link: PsakLink) => {
           let dafNumber: number | null = null;
           const sugyaId = link.sugya_id || '';
           
@@ -344,7 +355,7 @@ const GemaraPsakDinIndex = () => {
       if (cachedData && cachedData.length > 0) {
         let filteredCached = cachedData;
         if (selectedTag !== "all") {
-          filteredCached = filteredCached.filter((link: any) => 
+          filteredCached = filteredCached.filter((link: PsakLink) => 
             link.psakei_din?.tags?.includes(selectedTag)
           );
         }
@@ -407,7 +418,7 @@ const GemaraPsakDinIndex = () => {
       const seenPsakIds = new Set<string>();
 
       // Add sugya_psak_links
-      (sugyaLinksResult.data || []).forEach((link: any) => {
+      (sugyaLinksResult.data || []).forEach((link: PsakLink) => {
         if (link.psakei_din && !seenPsakIds.has(link.psak_din_id)) {
           seenPsakIds.add(link.psak_din_id);
           combined.push(link);
@@ -415,7 +426,7 @@ const GemaraPsakDinIndex = () => {
       });
 
       // Add pattern_sugya_links, converting format
-      (patternLinksResult.data || []).forEach((link: any) => {
+      (patternLinksResult.data || []).forEach((link: PatternLink) => {
         if (link.psakei_din && !seenPsakIds.has(link.psak_din_id)) {
           seenPsakIds.add(link.psak_din_id);
           combined.push({
@@ -432,7 +443,7 @@ const GemaraPsakDinIndex = () => {
       // סינון לפי תגית אם נבחרה
       let filteredData = combined;
       if (selectedTag !== "all") {
-        filteredData = filteredData.filter((link: any) => 
+        filteredData = filteredData.filter((link: PsakLink) => 
           link.psakei_din?.tags?.includes(selectedTag)
         );
       }
@@ -448,7 +459,7 @@ const GemaraPsakDinIndex = () => {
     }
   };
 
-  const openWithMode = (psak: any, mode: ViewerMode) => {
+  const openWithMode = useCallback((psak: PsakLink, mode: ViewerMode) => {
     const sourceUrl = psak?.source_url || psak?.sourceUrl || psak?.psakei_din?.source_url;
     switch (mode) {
       case "embedpdf":
@@ -471,9 +482,9 @@ const GemaraPsakDinIndex = () => {
         setDialogPsak(psak);
         setDialogOpen(true);
     }
-  };
+  }, [navigate]);
 
-  const handlePsakClick = (psak: any) => {
+  const handlePsakClick = useCallback((psak: PsakLink) => {
     if (!psak) return;
     const saved = getViewerPreference();
     if (saved) {
@@ -482,11 +493,11 @@ const GemaraPsakDinIndex = () => {
       setPendingPsak(psak);
       setPrefDialogOpen(true);
     }
-  };
+  }, [openWithMode]);
 
-  const handleTagClick = (tag: string) => {
+  const handleTagClick = useCallback((tag: string) => {
     setSelectedTag(tag === selectedTag ? "all" : tag);
-  };
+  }, [selectedTag]);
 
   const filteredIndex = indexData.filter(entry => {
     const matchesSearch = searchQuery === "" || 

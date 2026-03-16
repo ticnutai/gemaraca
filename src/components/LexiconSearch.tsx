@@ -13,10 +13,10 @@ interface LexiconSearchProps {
 
 interface LexiconResult {
   word: string;
-  definitions: any[];
-  related_words: any[];
-  forms: any[];
-  examples: any[];
+  definitions: Array<{ definition: string; pos?: string }>;
+  related_words: Array<{ word: string; relation?: string }>;
+  forms: Array<{ form: string; description?: string }>;
+  examples: Array<{ text: string; ref?: string }>;
 }
 
 export default function LexiconSearch({ dafYomi }: LexiconSearchProps) {
@@ -107,7 +107,7 @@ export default function LexiconSearch({ dafYomi }: LexiconSearchProps) {
                 <div className="mb-4">
                   <h4 className="font-semibold mb-2">הגדרות:</h4>
                   <ul className="list-disc list-inside space-y-1">
-                    {result.definitions.map((def: any, index: number) => (
+                    {result.definitions.map((def: { definition: string; pos?: string }, index: number) => (
                       <li key={index} className="text-sm">
                         {typeof def === 'string' ? def : def.definition || def.text}
                       </li>
@@ -120,7 +120,7 @@ export default function LexiconSearch({ dafYomi }: LexiconSearchProps) {
                 <div className="mb-4">
                   <h4 className="font-semibold mb-2">מילים קשורות:</h4>
                   <div className="flex flex-wrap gap-2">
-                    {result.related_words.map((word: any, index: number) => (
+                    {result.related_words.map((word: { word: string; relation?: string }, index: number) => (
                       <span
                         key={index}
                         className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm"
@@ -136,7 +136,7 @@ export default function LexiconSearch({ dafYomi }: LexiconSearchProps) {
                 <div className="mb-4">
                   <h4 className="font-semibold mb-2">צורות המילה:</h4>
                   <div className="flex flex-wrap gap-2">
-                    {result.forms.map((form: any, index: number) => (
+                    {result.forms.map((form: { form: string; description?: string }, index: number) => (
                       <span
                         key={index}
                         className="px-3 py-1 bg-secondary/10 text-secondary rounded-full text-sm"

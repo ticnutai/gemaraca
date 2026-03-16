@@ -87,9 +87,9 @@ export default function DevMigrationsPanel({ open, onClose }: { open: boolean; o
   const [migrations, setMigrations] = useState<Migration[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [viewMigration, setViewMigration] = useState<Migration | null>(null);
-  const [lastResult, setLastResult] = useState<any>(null);
+  const [lastResult, setLastResult] = useState<Record<string, unknown> | null>(null);
 
-  const invoke = useCallback(async (body: any) => {
+  const invoke = useCallback(async (body: Record<string, unknown>) => {
     const { data, error } = await supabase.functions.invoke('run-migration', { body });
     if (error) throw error;
     return data;
@@ -101,8 +101,8 @@ export default function DevMigrationsPanel({ open, onClose }: { open: boolean; o
     try {
       const result = await invoke({ action: 'analyze', sql: sqlContent });
       setAnalysis(result);
-    } catch (err: any) {
-      toast({ title: "שגיאה בניתוח", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "שגיאה בניתוח", description: err instanceof Error ? err.message : String(err), variant: "destructive" });
     } finally {
       setIsAnalyzing(false);
     }
@@ -145,12 +145,12 @@ export default function DevMigrationsPanel({ open, onClose }: { open: boolean; o
       } else {
         toast({
           title: "❌ מיגרציה נכשלה",
-          description: result.error,
+          description: String(result.error),
           variant: "destructive",
         });
       }
-    } catch (err: any) {
-      toast({ title: "שגיאה", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "שגיאה", description: err instanceof Error ? err.message : String(err), variant: "destructive" });
     } finally {
       setIsExecuting(false);
     }
@@ -177,8 +177,8 @@ export default function DevMigrationsPanel({ open, onClose }: { open: boolean; o
       const analysis = await invoke({ action: 'analyze', sql: result.sql });
       setAnalysis(analysis);
       setIsAnalyzing(false);
-    } catch (err: any) {
-      toast({ title: "שגיאה", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "שגיאה", description: err instanceof Error ? err.message : String(err), variant: "destructive" });
     } finally {
       setIsFetching(false);
     }
@@ -189,8 +189,8 @@ export default function DevMigrationsPanel({ open, onClose }: { open: boolean; o
     try {
       const result = await invoke({ action: 'list' });
       setMigrations(result.migrations || []);
-    } catch (err: any) {
-      toast({ title: "שגיאה", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "שגיאה", description: err instanceof Error ? err.message : String(err), variant: "destructive" });
     } finally {
       setIsLoadingHistory(false);
     }
@@ -202,8 +202,8 @@ export default function DevMigrationsPanel({ open, onClose }: { open: boolean; o
       await invoke({ action: 'rollback', migrationId: id });
       toast({ title: "סומנה כמבוטלת" });
       loadHistory();
-    } catch (err: any) {
-      toast({ title: "שגיאה", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "שגיאה", description: err instanceof Error ? err.message : String(err), variant: "destructive" });
     }
   }, [invoke, loadHistory]);
 

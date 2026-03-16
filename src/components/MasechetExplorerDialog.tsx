@@ -77,7 +77,7 @@ const MasechetExplorerDialog = ({ open, onOpenChange }: MasechetExplorerDialogPr
   const [selectedDaf, setSelectedDaf] = useState<number | null>(null);
   const [dafPsakim, setDafPsakim] = useState<DafPsak[]>([]);
   const [loadingPsakim, setLoadingPsakim] = useState(false);
-  const [viewPsak, setViewPsak] = useState<any>(null);
+  const [viewPsak, setViewPsak] = useState<DafPsak | null>(null);
   const [viewPsakOpen, setViewPsakOpen] = useState(false);
 
   const enqueueJobRaw = useGemaraDownloadStore((s) => s.enqueueJob);
@@ -104,7 +104,7 @@ const MasechetExplorerDialog = ({ open, onOpenChange }: MasechetExplorerDialogPr
       ]);
 
       // Process sugya_psak_links
-      (sugyaRes.data || []).forEach((link: any) => {
+      (sugyaRes.data || []).forEach((link: { sugya_id?: string }) => {
         const sugyaId = link.sugya_id || "";
         for (const m of MASECHTOT) {
           const prefix = m.sefariaName.toLowerCase() + "_";
@@ -123,7 +123,7 @@ const MasechetExplorerDialog = ({ open, onOpenChange }: MasechetExplorerDialogPr
       });
 
       // Process pattern_sugya_links (Hebrew masechet names)
-      (patternRes.data || []).forEach((link: any) => {
+      (patternRes.data || []).forEach((link: { masechet?: string; daf?: string }) => {
         const m = MASECHTOT.find(ms => ms.hebrewName === link.masechet);
         if (m && link.daf) {
           const dafNum = parseInt(link.daf);
@@ -209,25 +209,7 @@ const MasechetExplorerDialog = ({ open, onOpenChange }: MasechetExplorerDialogPr
       const seen = new Set<string>();
       const result: DafPsak[] = [];
 
-      (sugyaRes.data || []).forEach((link: any) => {
-        if (link.psakei_din && !seen.has(link.psak_din_id)) {
-          seen.add(link.psak_din_id);
-          result.push({
-            id: link.id,
-            psak_din_id: link.psak_din_id,
-            title: link.psakei_din.title,
-            court: link.psakei_din.court,
-            year: link.psakei_din.year,
-            summary: link.psakei_din.summary,
-            tags: link.psakei_din.tags || [],
-            relevance_score: link.relevance_score,
-            connection: link.connection_explanation || "",
-            source_url: link.psakei_din.source_url,
-          });
-        }
-      });
-
-      (patternRes.data || []).forEach((link: any) => {
+      (sugyaRes.data || []).forEach((link: { psak_din_id: string; psakei_din?: { title: string; court: string; year: number; summary: string; tags?: string[]; source_url?: string }; id: string; relevance_score?: number; connection_explanation?: string }) => {
         if (link.psakei_din && !seen.has(link.psak_din_id)) {
           seen.add(link.psak_din_id);
           result.push({

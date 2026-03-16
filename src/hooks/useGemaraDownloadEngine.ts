@@ -52,8 +52,9 @@ async function loadDafWithRetry(masechet: Masechet, dafNumber: number, amud: 'a'
     try {
       await loadSingleDaf(masechet, dafNumber, amud, signal);
       return;
-    } catch (err: any) {
-      if (err?.name === 'AbortError') throw err;
+    } catch (err: unknown) {
+      if (err instanceof DOMException && err.name === 'AbortError') throw err;
+      if (err instanceof Error && err.name === 'AbortError') throw err;
       if (attempt >= RETRY_DELAYS.length) throw err;
       await new Promise((r) => setTimeout(r, RETRY_DELAYS[attempt]));
       if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
@@ -170,9 +171,9 @@ export function useGemaraDownloadEngine() {
       // Refresh loaded pages cache
       await queryClient.invalidateQueries({ queryKey: ['sedarim-loaded-pages'] });
       await queryClient.refetchQueries({ queryKey: ['sedarim-loaded-pages'] });
-    } catch (err: any) {
-      if (err?.name === 'AbortError') return;
-      const msg = err?.message || 'שגיאה לא ידועה';
+    } catch (err: unknown) {
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+      const msg = err instanceof Error ? err.message : 'שגיאה לא ידועה';
       errorJob(job.id, msg);
       toast({ title: 'שגיאה בהורדה', description: `${job.label}: ${msg}`, variant: 'destructive' });
     } finally {

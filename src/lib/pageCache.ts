@@ -16,7 +16,7 @@ const pageStore = createStore('gemara-page-cache', 'pages');
 const textStore = createStore('gemara-text-cache', 'texts');
 
 // In-memory LRU for ultra-fast repeat access
-const memoryCache = new Map<string, CacheEntry<any>>();
+const memoryCache = new Map<string, CacheEntry<unknown>>();
 
 async function getFromIDB<T>(store: ReturnType<typeof createStore>, key: string): Promise<T | null> {
   // Check memory first
@@ -54,7 +54,7 @@ async function saveToIDB<T>(store: ReturnType<typeof createStore>, key: string, 
     if (allKeys.length > MAX_ENTRIES) {
       const entries: { key: IDBValidKey; ts: number }[] = [];
       for (const k of allKeys) {
-        const e = await get<CacheEntry<any>>(k, store);
+        const e = await get<CacheEntry<unknown>>(k, store);
         entries.push({ key: k, ts: e?.timestamp ?? 0 });
       }
       entries.sort((a, b) => a.ts - b.ts);
@@ -94,7 +94,7 @@ function saveToLocalStorage<T>(key: string, data: T): void {
 }
 
 // Page cache functions
-export function getCachedPage(sugyaId: string): any | null {
+export function getCachedPage(sugyaId: string): unknown | null {
   // Sync check memory only (for backward compat)
   const entry = memoryCache.get(`page:${sugyaId}`);
   if (entry && Date.now() - entry.timestamp < CACHE_DURATION) return entry.data;
@@ -105,12 +105,12 @@ export function getCachedPage(sugyaId: string): any | null {
   return getFromLocalStorage(sugyaId);
 }
 
-export function setCachedPage(sugyaId: string, pageData: any): void {
+export function setCachedPage(sugyaId: string, pageData: unknown): void {
   saveToIDB(pageStore, sugyaId, pageData);
 }
 
 // Gemara text cache functions
-export function getCachedGemaraText(ref: string): any | null {
+export function getCachedGemaraText(ref: string): unknown | null {
   const entry = memoryCache.get(`text:${ref}`);
   if (entry && Date.now() - entry.timestamp < CACHE_DURATION) return entry.data;
   getFromIDB(textStore, ref).then(data => {
@@ -119,7 +119,7 @@ export function getCachedGemaraText(ref: string): any | null {
   return getFromLocalStorage(`text:${ref}`);
 }
 
-export function setCachedGemaraText(ref: string, textData: any): void {
+export function setCachedGemaraText(ref: string, textData: unknown): void {
   saveToIDB(textStore, ref, textData);
 }
 

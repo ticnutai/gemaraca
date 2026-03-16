@@ -82,13 +82,13 @@ const DevConsoleMonitor = ({ enabled }: DevConsoleMonitorProps) => {
     const origError = console.error;
     const origWarn = console.warn;
 
-    console.error = (...args: any[]) => {
+    console.error = (...args: unknown[]) => {
       origError.apply(console, args);
       const msg = args.map(a => typeof a === "object" ? JSON.stringify(a, null, 2) : String(a)).join(" ");
       addEntry({ type: "error", message: msg, timestamp: Date.now(), source: "console.error" });
     };
 
-    console.warn = (...args: any[]) => {
+    console.warn = (...args: unknown[]) => {
       origWarn.apply(console, args);
       const msg = args.map(a => typeof a === "object" ? JSON.stringify(a, null, 2) : String(a)).join(" ");
       addEntry({ type: "warn", message: msg, timestamp: Date.now(), source: "console.warn" });

@@ -32,7 +32,7 @@ const SugyaCard = ({ id, title, dafYomi, summary, casesCount, tags }: SugyaCardP
       if (!error && data) {
         // Count only cases with real source URLs
         const realCases = data.filter(
-          (link: any) => link.psakei_din?.source_url && 
+          (link: { psakei_din?: { source_url?: string } }) => link.psakei_din?.source_url && 
           link.psakei_din.source_url.startsWith('http')
         );
         setRealCasesCount(realCases.length);

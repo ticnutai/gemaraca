@@ -53,7 +53,7 @@ export default function QuizModeTab() {
   const recentMasechtot = useMemo(() => {
     try {
       const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
-      const unique = [...new Set(history.slice(0, 30).map((h: any) => h.masechet))].filter(Boolean);
+      const unique = [...new Set(history.slice(0, 30).map((h: { masechet: string }) => h.masechet))].filter(Boolean);
       return unique.slice(0, 5) as string[];
     } catch { return []; }
   }, []);

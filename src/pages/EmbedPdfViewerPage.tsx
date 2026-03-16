@@ -255,9 +255,9 @@ export default function EmbedPdfViewerPage() {
       setBeautifiedHtml(data.html);
       setActivePanel("beautify");
       toast.success("פסק הדין עוצב בהצלחה!");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Beautify error:", err);
-      toast.error(err.message || "שגיאה בעיצוב פסק הדין");
+      toast.error(err instanceof Error ? err.message : "שגיאה בעיצוב פסק הדין");
     } finally {
       setIsBeautifying(false);
     }
@@ -276,7 +276,7 @@ export default function EmbedPdfViewerPage() {
       const { error } = await supabase.from("psakei_din").update({ full_text: currentHtml, source_url: urlData?.publicUrl || undefined }).eq("id", psakData.id);
       if (error) throw error;
       toast.success("פסק הדין המעוצב נשמר בהצלחה");
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error("שגיאה בשמירת פסק הדין המעוצב");
     } finally {
       setIsSavingBeautified(false);
@@ -307,7 +307,7 @@ export default function EmbedPdfViewerPage() {
       });
       if (error) throw error;
       toast.success("פסק הדין המעוצב הועתק ונשמר כפריט חדש");
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error("שגיאה בהעתקה ושמירה");
     } finally {
       setIsSavingBeautified(false);

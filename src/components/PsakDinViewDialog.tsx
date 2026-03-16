@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import DOMPurify from "dompurify";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import FileTypeBadge from "./FileTypeBadge";
@@ -246,7 +247,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
       toast.success("פסק הדין עודכן בהצלחה");
       setIsEditing(false);
       onSave?.();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error saving psak din:", error);
       toast.error("שגיאה בשמירת פסק הדין");
     } finally {
@@ -382,8 +383,8 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
                 setBeautifiedHtml(evt.html);
               }
               if (evt.error) throw new Error(evt.error);
-            } catch (e: any) {
-              if (e.message && !e.message.includes("JSON")) throw e;
+            } catch (e: unknown) {
+              if (e instanceof Error && e.message && !e.message.includes("JSON")) throw e;
             }
           }
         }
@@ -398,9 +399,9 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
         if (psak.id) cacheBeautified(psak.id, data.html);
         toast.success("פסק הדין עוצב בהצלחה!");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Beautify error:", err);
-      toast.error(err.message || "שגיאה בעיצוב פסק הדין");
+      toast.error(err instanceof Error ? err.message : "שגיאה בעיצוב פסק הדין");
     } finally {
       setIsBeautifying(false);
     }
@@ -444,7 +445,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
 
       toast.success("פסק הדין המעוצב נשמר בהצלחה");
       onSave?.();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Save beautified error:", err);
       toast.error("שגיאה בשמירת פסק הדין המעוצב");
     } finally {
@@ -492,7 +493,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
 
       toast.success("פסק הדין המעוצב הועתק ונשמר כפריט חדש");
       onSave?.();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Copy & save beautified error:", err);
       toast.error("שגיאה בהעתקה ושמירה");
     } finally {
@@ -1115,7 +1116,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
                               suppressContentEditableWarning
                               dir="rtl"
                               className="min-h-[280px] max-h-[460px] overflow-auto rounded-md border bg-background p-3 text-sm leading-7 font-serif focus:outline-none focus:ring-2 focus:ring-primary/30"
-                              dangerouslySetInnerHTML={{ __html: richHtml }}
+                              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(richHtml) }}
                               onInput={syncRichEditorToState}
                               onMouseUp={handleRichSelection}
                               onKeyUp={handleRichSelection}
@@ -1197,7 +1198,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
                               suppressContentEditableWarning
                               dir="rtl"
                               className="min-h-[200px] max-h-[460px] overflow-auto rounded-md border bg-background p-4 leading-relaxed focus:outline-none focus:ring-2 focus:ring-accent/30"
-                              dangerouslySetInnerHTML={{ __html: richHtml }}
+                              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(richHtml) }}
                               onInput={syncRichEditorToState}
                               onMouseUp={handleRichSelection}
                               onKeyUp={handleRichSelection}

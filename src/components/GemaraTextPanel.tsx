@@ -170,7 +170,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
         .from('gemara_pages')
         .select('sefaria_ref')
         .eq('sefaria_ref', ref)
-        .maybeSingle() as { data: any };
+        .maybeSingle() as { data: { sefaria_ref?: string } | null };
 
       if (dbPage?.sefaria_ref) {
         // Page exists in DB but we need full text from edge function
@@ -224,7 +224,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
           .from('gemara_pages')
           .select('sefaria_ref')
           .eq('sefaria_ref', nextRef)
-          .maybeSingle() as { data: any };
+          .maybeSingle() as { data: { sefaria_ref?: string } | null };
 
         if (dbPage) {
           // Page exists, prefetch via edge function
@@ -346,7 +346,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
     }
   };
 
-  const getPlainText = (htmlOrArray: any): string => {
+  const getPlainText = (htmlOrArray: string | string[]): string => {
     const parser = new DOMParser();
     const extract = (html: string): string => {
       const doc = parser.parseFromString(html, 'text/html');

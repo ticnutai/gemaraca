@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 export function installFunctionLogger() {
   const originalInvoke = supabase.functions.invoke.bind(supabase.functions);
 
-  supabase.functions.invoke = async (functionName: string, options?: any) => {
+  supabase.functions.invoke = async (functionName: string, options?: { body?: unknown; headers?: Record<string, string> }) => {
     const startTime = performance.now();
     let status = 'success';
     let statusCode: number | null = 200;

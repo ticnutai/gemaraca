@@ -37,7 +37,7 @@ const LinkedPsakimSection = ({ sugyaId, masechet, dafNumber }: LinkedPsakimSecti
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
-  const [selectedPsak, setSelectedPsak] = useState<any | null>(null);
+  const [selectedPsak, setSelectedPsak] = useState<LinkedPsak | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingPsak, setEditingPsak] = useState<any | null>(null);
@@ -92,7 +92,7 @@ const LinkedPsakimSection = ({ sugyaId, masechet, dafNumber }: LinkedPsakimSecti
       const seenIds = new Set<string>();
 
       // Add pattern links by masechet/daf
-      patternLinks?.forEach((link: any) => {
+      patternLinks?.forEach((link: { psakei_din?: LinkedPsak; source_text?: string; confidence?: string }) => {
         if (link.psakei_din && !seenIds.has(link.psakei_din.id)) {
           seenIds.add(link.psakei_din.id);
           combined.push({
@@ -104,7 +104,7 @@ const LinkedPsakimSection = ({ sugyaId, masechet, dafNumber }: LinkedPsakimSecti
       });
 
       // Add pattern links by sugya_id
-      patternLinksBySugya?.forEach((link: any) => {
+      patternLinksBySugya?.forEach((link: { psakei_din?: LinkedPsak; source_text?: string; confidence?: string }) => {
         if (link.psakei_din && !seenIds.has(link.psakei_din.id)) {
           seenIds.add(link.psakei_din.id);
           combined.push({
@@ -115,7 +115,7 @@ const LinkedPsakimSection = ({ sugyaId, masechet, dafNumber }: LinkedPsakimSecti
         }
       });
 
-      aiLinks?.forEach((link: any) => {
+      aiLinks?.forEach((link: { psakei_din?: LinkedPsak; connection_explanation?: string }) => {
         if (link.psakei_din && !seenIds.has(link.psakei_din.id)) {
           seenIds.add(link.psakei_din.id);
           combined.push({

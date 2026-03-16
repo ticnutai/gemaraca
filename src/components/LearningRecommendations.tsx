@@ -22,7 +22,7 @@ export default function LearningRecommendations({ currentMasechet }: LearningRec
     setIsLoading(true);
     try {
       const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
-      const recentTopics = [...new Set(history.slice(0, 20).map((h: any) => h.masechet))].join(", ");
+      const recentTopics = [...new Set(history.slice(0, 20).map((h: { masechet: string }) => h.masechet))].join(", ");
 
       const session = (await supabase.auth.getSession()).data.session;
       const token = session?.access_token;

@@ -3,9 +3,20 @@
  * Offloads CPU work from the main thread.
  */
 
+interface TalmudReference {
+  tractate: string;
+  daf: string;
+  source: 'ai' | 'regex';
+  validation_status?: string;
+  normalized?: string;
+  raw_reference?: string;
+  psak_din_id?: string;
+  psakei_din?: { title?: string };
+}
+
 interface FilterMessage {
   type: 'filter';
-  refs: any[];
+  refs: TalmudReference[];
   hideResolved: boolean;
   filterTractate: string;
   search: string;
@@ -15,7 +26,7 @@ interface FilterMessage {
 
 interface GroupMessage {
   type: 'group';
-  filtered: any[];
+  filtered: TalmudReference[];
 }
 
 type WorkerMessage = FilterMessage | GroupMessage;
@@ -41,7 +52,7 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
       bothSet = new Set([...aiKeys].filter(k => regexKeys.has(k)));
     }
 
-    const filtered = refs.filter((r: any) => {
+    const filtered = refs.filter((r: TalmudReference) => {
       if (hideResolved && (r.validation_status === 'incorrect' || r.validation_status === 'ignored' || r.validation_status === 'correct')) return false;
       if (filterApproved && r.validation_status !== 'correct') return false;
       if (filterSource === 'ai' && r.source !== 'ai') return false;
@@ -53,7 +64,7 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
     });
 
     // Also compute grouped
-    const grouped: Record<string, any[]> = {};
+    const grouped: Record<string, TalmudReference[]> = {};
     for (const ref of filtered) {
       if (!grouped[ref.tractate]) grouped[ref.tractate] = [];
       grouped[ref.tractate].push(ref);

@@ -12,21 +12,34 @@ import PsakDinViewDialog from "./PsakDinViewDialog";
 import FileTypeBadge from "./FileTypeBadge";
 import SummaryToggle from "./SummaryToggle";
 
+interface SearchResult {
+  id: string;
+  title: string;
+  summary: string;
+  court: string;
+  year: number;
+  caseNumber?: string;
+  sourceUrl?: string;
+  tags?: string[];
+  source?: string;
+  connection?: string;
+}
+
 const SearchPsakDinTab = () => {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-  const [selectedPsak, setSelectedPsak] = useState<any | null>(null);
+  const [selectedPsak, setSelectedPsak] = useState<SearchResult | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const { toast } = useToast();
 
   // AI search result cache (in-memory for session)
-  const searchCacheRef = useRef<Map<string, any[]>>(new Map());
+  const searchCacheRef = useRef<Map<string, SearchResult[]>>(new Map());
 
   // Local text search using full-text search (FTS) with ilike fallback
-  const localSearch = async (searchQuery: string): Promise<any[]> => {
+  const localSearch = async (searchQuery: string): Promise<SearchResult[]> => {
     // Build FTS query: split words, join with &
     const ftsQuery = searchQuery.trim().split(/\s+/).filter(Boolean).join(' & ');
     const pattern = `%${searchQuery}%`;
@@ -138,7 +151,7 @@ const SearchPsakDinTab = () => {
     }
   };
 
-  const handlePsakClick = (psak: any) => {
+  const handlePsakClick = (psak: SearchResult) => {
     setSelectedPsak(psak);
     setDialogOpen(true);
   };

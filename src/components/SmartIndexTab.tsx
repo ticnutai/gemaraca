@@ -100,15 +100,15 @@ const SmartIndexTab = () => {
 
       if (initialError) throw initialError;
 
-      const mapRow = (row: any): AnalysisResult => ({
-        id: row.psak_din_id,
-        title: row.psakei_din?.title || '',
+      const mapRow = (row: Record<string, unknown>): AnalysisResult => ({
+        id: (row.psak_din_id as string),
+        title: ((row.psakei_din as Record<string, unknown>)?.title as string) || '',
         sources: row.sources as DetectedSource[],
-        topics: row.topics,
-        masechtot: row.masechtot || [],
-        books: row.books || [],
-        wordCount: row.word_count,
-        hasFullText: row.has_full_text
+        topics: row.topics as AnalysisResult['topics'],
+        masechtot: (row.masechtot as string[]) || [],
+        books: (row.books as string[]) || [],
+        wordCount: row.word_count as number,
+        hasFullText: row.has_full_text as boolean
       });
 
       const initialResults = (initialData || []).map(mapRow);
@@ -333,7 +333,15 @@ const SmartIndexTab = () => {
       .in('psak_din_id', psakIds);
 
     // Collect all new links
-    const allLinks: any[] = [];
+    const allLinks: Array<{
+      psak_din_id: string;
+      sugya_id: string;
+      masechet: string;
+      daf: string;
+      amud: string | null;
+      source_text: string;
+      confidence: string;
+    }> = [];
     for (const result of results) {
       const gemaraSources = result.sources.filter(
         s => s.type === 'gemara' && s.sugyaId && s.masechet

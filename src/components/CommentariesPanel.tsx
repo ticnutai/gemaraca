@@ -24,7 +24,7 @@ interface Commentary {
   he: string | string[];
   book: string;
   index_title: string;
-  collectiveTitle: any;
+  collectiveTitle: { he?: string; en?: string } | null;
 }
 
 export default function CommentariesPanel({ dafYomi, masechet: masechetProp }: CommentariesPanelProps) {

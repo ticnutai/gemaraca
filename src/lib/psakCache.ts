@@ -197,40 +197,4 @@ export async function setMeta(key: string, value: unknown): Promise<void> {
   await putToStore(STORE_META, { key, value });
 }
 
-// ── Cache stats (for debugging) ──
 
-export async function getCacheStats(): Promise<{
-  psakimCount: number;
-  dafIndexCount: number;
-  beautifiedCount: number;
-}> {
-  const [psakim, dafIndex, beautified] = await Promise.all([
-    getAllFromStore(STORE_PSAKIM),
-    getAllFromStore(STORE_DAF_INDEX),
-    getAllFromStore(STORE_BEAUTIFIED),
-  ]);
-  return {
-    psakimCount: psakim.length,
-    dafIndexCount: dafIndex.length,
-    beautifiedCount: beautified.length,
-  };
-}
-
-// ── Clear all cache ──
-
-export async function clearPsakCache(): Promise<void> {
-  try {
-    const db = await openDB();
-    const tx = db.transaction([STORE_PSAKIM, STORE_DAF_INDEX, STORE_BEAUTIFIED, STORE_META], 'readwrite');
-    tx.objectStore(STORE_PSAKIM).clear();
-    tx.objectStore(STORE_DAF_INDEX).clear();
-    tx.objectStore(STORE_BEAUTIFIED).clear();
-    tx.objectStore(STORE_META).clear();
-    await new Promise<void>((resolve) => {
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => resolve();
-    });
-  } catch {
-    // Best effort
-  }
-}

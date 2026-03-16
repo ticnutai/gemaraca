@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export interface UploadBatchResult {
-  results: any[];
+  results: Array<{ id: string; fileName: string; title?: string }>;
   errors: string[];
 }
 
@@ -125,7 +125,7 @@ async function uploadBatchWithTimeout(
       throw result;
     }
 
-    const { data, error } = result as { data: any; error: any };
+    const { data, error } = result as { data: { results?: Array<{ id: string; fileName: string; title?: string }>; errors?: string[] } | null; error: { message: string } | null };
 
     if (error) {
       return { results: [], errors: batch.map(f => `${f.name}: ${error.message}`) };

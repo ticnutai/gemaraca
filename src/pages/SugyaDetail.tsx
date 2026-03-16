@@ -9,6 +9,7 @@ import DafAmudNavigator from "@/components/DafAmudNavigator";
 import FAQSection from "@/components/FAQSection";
 import PsakDinSearchButton from "@/components/PsakDinSearchButton";
 import ShareExportButton from "@/components/ShareExportButton";
+import { SectionErrorBoundary } from "@/components/SectionErrorBoundary";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MASECHTOT } from "@/lib/masechtotData";
@@ -40,6 +41,48 @@ const PanelFallback = () => (
   </div>
 );
 
+interface SugyaCase {
+  title: string;
+  court: string;
+  year: number;
+  summary: string;
+  connection: string;
+}
+
+interface LoadedPageData {
+  title: string;
+  dafYomi: string;
+  summary: string;
+  tags: string[];
+  masechet: string;
+  gemaraText: string;
+  fullText: string;
+  cases: SugyaCase[];
+}
+
+interface RealCaseLink {
+  id: string;
+  psak_din_id: string;
+  relevance_score: number;
+  psakei_din: {
+    id: string;
+    title: string;
+    court: string;
+    year: number;
+    summary: string;
+    case_number?: string;
+    tags?: string[];
+    source_url?: string;
+  };
+}
+
+interface FaqItem {
+  id: string;
+  psak_din_id: string;
+  question: string;
+  answer: string;
+}
+
 // Helper function to get Hebrew name from Sefaria name
 const getMasechetHebrewName = (sefariaName: string): string => {
   const masechet = MASECHTOT.find(m => m.sefariaName === sefariaName);
@@ -64,10 +107,10 @@ const parseSugyaId = (sugyaId: string) => {
 const SugyaDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [realCases, setRealCases] = useState<any[]>([]);
-  const [faqItems, setFaqItems] = useState<any[]>([]);
+  const [realCases, setRealCases] = useState<RealCaseLink[]>([]);
+  const [faqItems, setFaqItems] = useState<FaqItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [loadedPage, setLoadedPage] = useState<any>(null);
+  const [loadedPage, setLoadedPage] = useState<LoadedPageData | null>(null);
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [mainTab, setMainTab] = useState("gemara");
   const [selectedGemaraText, setSelectedGemaraText] = useState("");
@@ -129,16 +172,19 @@ const SugyaDetail = () => {
         const masechetName = data.masechet || 'Bava_Batra';
         const hebrewMasechetName = getMasechetHebrewName(masechetName);
         
+        // Cast to access columns not in generated types
+        const ext = data as Record<string, unknown>;
+        
         // Convert DB format to component format
-        const pageData = {
+        const pageData: LoadedPageData = {
           title: data.title,
           dafYomi: data.daf_yomi,
           summary: `דף ${data.daf_yomi}`,
-          tags: (data as any).tags || ["גמרא", hebrewMasechetName],
+          tags: (ext.tags as string[]) || ["גמרא", hebrewMasechetName],
           masechet: masechetName,
-          gemaraText: (data as any).gemara_text || "",
-          fullText: (data as any).full_text || "",
-          cases: (data as any).cases || []
+          gemaraText: (ext.gemara_text as string) || "",
+          fullText: (ext.full_text as string) || "",
+          cases: (ext.cases as SugyaCase[]) || []
         };
         
         // Save to cache
@@ -190,7 +236,7 @@ const SugyaDetail = () => {
         setRealCases(data || []);
         // Fetch FAQ items in parallel — don't wait for cases to finish rendering
         if (data && data.length > 0) {
-          const psakDinIds = data.map((link: any) => link.psak_din_id);
+          const psakDinIds = data.map((link: RealCaseLink) => link.psak_din_id);
           // Fire and forget — don't cascade
           fetchFAQItems(psakDinIds);
         }
@@ -348,9 +394,11 @@ const SugyaDetail = () => {
                 <TabsTrigger value="lexicon">מילון</TabsTrigger>
               </TabsList>
               <TabsContent value="text" className="mt-4">
+                <SectionErrorBoundary section="טקסט גמרא">
                 <Suspense fallback={<PanelFallback />}>
                   <GemaraTextPanel sugyaId={id || ""} dafYomi={sugya.dafYomi} masechet={sugya.masechet} />
                 </Suspense>
+                </SectionErrorBoundary>
               </TabsContent>
               <TabsContent value="illustrations" className="mt-4">
                 <Suspense fallback={<PanelFallback />}>
@@ -405,7 +453,7 @@ const SugyaDetail = () => {
                 </div>
                 
                 <div className="space-y-3">
-                  {sugya.cases.map((case_: any, index: number) => (
+                  {sugya.cases.map((case_: SugyaCase, index: number) => (
                     <Card key={index} className="p-4 space-y-3 hover:shadow-lg transition-all">
                       <div className="space-y-1">
                         <h4 className="text-base font-bold text-foreground">{case_.title}</h4>
@@ -474,7 +522,7 @@ const SugyaDetail = () => {
                 </div>
                 
                 <div className="space-y-3">
-                  {realCases.map((link: any) => {
+                  {realCases.map((link: RealCaseLink) => {
                     const caseData = link.psakei_din;
                     const caseFaqItems = faqItems.filter(
                       (faq) => faq.psak_din_id === caseData.id

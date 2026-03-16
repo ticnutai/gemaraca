@@ -76,10 +76,10 @@ const DafQuickNav = () => {
       await loadExistingPages();
       navigate(`/sugya/${sugya_id}`);
       setOpen(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error loading daf:', error);
       toast.error("שגיאה בטעינת הדף", {
-        description: error.message || "אנא נסה שוב"
+        description: error instanceof Error ? error.message : "אנא נסה שוב"
       });
     } finally {
       setIsLoading(false);

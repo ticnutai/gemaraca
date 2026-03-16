@@ -61,11 +61,11 @@ const PsakDinSearchButton = ({
           variant: "destructive",
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error searching:", error);
       toast({
         title: "שגיאה בחיפוש",
-        description: error.message || "אירעה שגיאה בחיפוש פסקי דין",
+        description: error instanceof Error ? error.message : "אירעה שגיאה בחיפוש פסקי דין",
         variant: "destructive",
       });
     } finally {
