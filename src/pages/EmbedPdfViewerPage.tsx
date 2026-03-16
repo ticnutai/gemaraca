@@ -1255,7 +1255,7 @@ export default function EmbedPdfViewerPage() {
                       <Separator className="bg-[#D4AF37]/20" />
                       <p className="text-[10px] text-[#0B1F5B]/50">שמירה:</p>
                       <Button size="sm" className="w-full text-xs bg-[#0B1F5B] text-white border-2 border-[#D4AF37] gap-1" onClick={handleSaveBeautified} disabled={isSavingBeautified}>
-                        {isSavingBeautified ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />} שמור (דרוס מקור)
+                        {isSavingBeautified ? <Loader2Icon className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />} שמור (דרוס מקור)
                       </Button>
                       <Button size="sm" variant="outline" className="w-full text-xs border-[#D4AF37] gap-1" onClick={handleCopyAndSaveBeautified} disabled={isSavingBeautified}>
                         {isSavingBeautified ? <Loader2 className="h-3 w-3 animate-spin" /> : <Copy className="h-3 w-3" />} העתק ושמור כחדש
