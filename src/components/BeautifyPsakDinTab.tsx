@@ -137,25 +137,40 @@ const BeautifyPsakDinTab = () => {
   }, [handleFileUpload]);
 
   // ===== DB PICKER LOADING =====
-  const loadDbItems = useCallback(async (search: string, offset: number, append: boolean) => {
+  const loadDbItems = useCallback(async (search: string, offset: number, append: boolean, pageSize?: number) => {
     if (append) setDbLoadingMore(true);
     else setDbLoading(true);
+    const limit = pageSize || dbLoadCount;
     try {
       let query = supabase
         .from("psakei_din")
-        .select("id, title, court, year, summary")
-        .order("year", { ascending: false })
-        .range(offset, offset + DB_PAGE - 1);
+        .select("id, title, court, year, summary, beautify_count" as any)
+        .range(offset, offset + limit - 1);
 
+      // Sort
+      if (dbSortBy === "title") {
+        query = query.order("title", { ascending: true });
+      } else {
+        query = query.order("year", { ascending: false });
+      }
+
+      // Search
       if (search.trim()) {
         query = query.or(`title.ilike.%${search}%,court.ilike.%${search}%,summary.ilike.%${search}%`);
+      }
+
+      // Beautify filter
+      if (dbBeautifyFilter === "beautified") {
+        query = query.gt("beautify_count", 0);
+      } else if (dbBeautifyFilter === "not_beautified") {
+        query = query.or("beautify_count.is.null,beautify_count.eq.0");
       }
 
       const { data, error } = await query;
       if (error) throw error;
 
-      const items = data || [];
-      setDbHasMore(items.length === DB_PAGE);
+      const items = (data || []).map((d: any) => ({ ...d, beautify_count: d.beautify_count || 0 }));
+      setDbHasMore(items.length === limit);
       if (append) {
         setDbItems(prev => [...prev, ...items]);
       } else {
@@ -168,7 +183,7 @@ const BeautifyPsakDinTab = () => {
       setDbLoading(false);
       setDbLoadingMore(false);
     }
-  }, [toast]);
+  }, [toast, dbSortBy, dbBeautifyFilter, dbLoadCount]);
 
   const openDbPicker = useCallback(() => {
     setShowDbPicker(true);
