@@ -11,6 +11,7 @@ import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 
 const FloatingGemaraNav = lazy(() => import("./FloatingGemaraNav"));
 const GemaraDownloadFloat = lazy(() => import("./GemaraDownloadFloat"));
+const FloatingTypography = lazy(() => import("./FloatingTypography"));
 
 interface AppLayoutProps {
   children: React.ReactNode;
