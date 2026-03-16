@@ -1,28 +1,33 @@
-import { useState, useEffect, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, Building2, FileText, List, BookOpen, Sparkles, Brain, Loader2, Link, Plus } from "lucide-react";
+import {
+  Calendar, Building2, FileText, List, BookOpen, Sparkles, Brain, Loader2,
+  Link, Plus, Pencil, Trash2, Download,
+} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import PsakDinViewDialog from "./PsakDinViewDialog";
 import PsakDinEditDialog from "./PsakDinEditDialog";
-import PsakDinActions from "./PsakDinActions";
 import BulkActionsBar from "./BulkActionsBar";
 import FileTypeBadge from "./FileTypeBadge";
 import GemaraPsakDinIndex from "./GemaraPsakDinIndex";
 import { useToast } from "@/hooks/use-toast";
 import { cachePsakim, getAllCachedPsakim, type CachedPsak } from "@/lib/psakCache";
+import { cn } from "@/lib/utils";
 
-const ITEMS_PER_PAGE = 50;
+const PAGE_SIZE = 50;
 
 const PsakDinTab = () => {
   const [psakim, setPsakim] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const queryClient = useQueryClient();
   const [selectedPsak, setSelectedPsak] = useState<any | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -32,21 +37,22 @@ const PsakDinTab = () => {
   const [psakLinks, setPsakLinks] = useState<Map<string, number>>(new Map());
   const [totalUnlinkedCount, setTotalUnlinkedCount] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingPsak, setEditingPsak] = useState<any | null>(null);
   const [isNewPsak, setIsNewPsak] = useState(false);
   const [selectedForBulk, setSelectedForBulk] = useState<Set<string>>(new Set());
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    loadPsakim(currentPage);
+    loadPsakim(0, true);
     loadTotalUnlinkedCount();
-  }, [currentPage]);
+  }, []);
 
-  // React Query for link counts — cached per page of psakim IDs
+  // React Query for link counts
   const psakIds = psakim.map(p => p.id);
   const { data: linkCountsData } = useQuery({
     queryKey: ['psak-link-counts', psakIds],
@@ -64,10 +70,9 @@ const PsakDinTab = () => {
       return counts;
     },
     enabled: psakIds.length > 0,
-    staleTime: 5 * 60 * 1000, // cache 5 min
+    staleTime: 5 * 60 * 1000,
   });
 
-  // Sync React Query result to state (for compatibility)
   useEffect(() => {
     if (linkCountsData) {
       setPsakLinks(prev => {
@@ -78,45 +83,50 @@ const PsakDinTab = () => {
     }
   }, [linkCountsData]);
 
-  const loadPsakim = async (page: number) => {
-    setLoading(true);
+  const loadPsakim = useCallback(async (offset: number, isInitial: boolean) => {
+    if (isInitial) setLoading(true);
+    else setLoadingMore(true);
+
     try {
-      // Show cached data instantly while cloud loads
-      if (page === 1 && psakim.length === 0) {
+      // Show cached data on first load
+      if (isInitial && offset === 0) {
         const cached = await getAllCachedPsakim();
         if (cached.length > 0) {
-          const sorted = cached.sort((a, b) => (b.year || 0) - (a.year || 0)).slice(0, ITEMS_PER_PAGE);
+          const sorted = cached.sort((a, b) => (b.year || 0) - (a.year || 0)).slice(0, PAGE_SIZE);
           setPsakim(sorted);
           setLoading(false);
         }
       }
 
-      const from = (page - 1) * ITEMS_PER_PAGE;
-      const to = from + ITEMS_PER_PAGE - 1;
-
       const { data, error, count } = await supabase
         .from('psakei_din')
         .select('*', { count: 'exact' })
         .order('year', { ascending: false })
-        .range(from, to);
+        .range(offset, offset + PAGE_SIZE - 1);
 
       if (error) throw error;
-      setPsakim(data || []);
-      setTotalCount(count || 0);
 
-      // Cache fetched psakim in IndexedDB for next time
-      if (data && data.length > 0) {
-        const toCache: CachedPsak[] = data.map((p: any) => ({
-          id: p.id,
-          title: p.title,
-          court: p.court || '',
-          year: p.year || 0,
-          summary: p.summary || '',
-          full_text: p.full_text || null,
-          source_url: p.source_url || null,
-          case_number: p.case_number || null,
-          tags: p.tags || [],
-          _cachedAt: Date.now(),
+      const newData = data || [];
+      setTotalCount(count || 0);
+      setHasMore(newData.length === PAGE_SIZE);
+
+      if (isInitial) {
+        setPsakim(newData);
+      } else {
+        setPsakim(prev => {
+          const existingIds = new Set(prev.map(i => i.id));
+          const unique = newData.filter(i => !existingIds.has(i.id));
+          return [...prev, ...unique];
+        });
+      }
+
+      // Cache
+      if (newData.length > 0) {
+        const toCache: CachedPsak[] = newData.map((p: any) => ({
+          id: p.id, title: p.title, court: p.court || '', year: p.year || 0,
+          summary: p.summary || '', full_text: p.full_text || null,
+          source_url: p.source_url || null, case_number: p.case_number || null,
+          tags: p.tags || [], _cachedAt: Date.now(),
         }));
         cachePsakim(toCache);
       }
@@ -124,42 +134,34 @@ const PsakDinTab = () => {
       console.error('Error loading psakim:', error);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  };
+  }, []);
 
-  // Prefetch next page in background for instant navigation
+  // Infinite scroll
   useEffect(() => {
-    if (currentPage < totalPages) {
-      const nextFrom = currentPage * ITEMS_PER_PAGE;
-      const nextTo = nextFrom + ITEMS_PER_PAGE - 1;
-      queryClient.prefetchQuery({
-        queryKey: ['psakim-page', currentPage + 1],
-        queryFn: async () => {
-          const { data } = await supabase
-            .from('psakei_din')
-            .select('*')
-            .order('year', { ascending: false })
-            .range(nextFrom, nextTo);
-          return data || [];
-        },
-        staleTime: 5 * 60 * 1000,
-      });
-    }
-  }, [currentPage, totalPages, queryClient]);
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading && !loadingMore) {
+          loadPsakim(psakim.length, false);
+        }
+      },
+      { root: scrollContainerRef.current, threshold: 0.1 }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMore, loading, loadingMore, psakim.length, loadPsakim]);
 
   const loadTotalUnlinkedCount = async () => {
     try {
-      // Efficient count: total psakim count (head-only, no data transfer)
       const { count: totalPsakim } = await supabase
         .from('psakei_din')
         .select('*', { count: 'exact', head: true });
-
-      // Count distinct linked psakei din via DB aggregation
       const { count: linkedCount } = await supabase
         .from('sugya_psak_links')
         .select('psak_din_id', { count: 'exact', head: true });
-      
-      // Approximate: linked count may have duplicates, but much faster than limit(10000)
       setTotalUnlinkedCount(Math.max(0, (totalPsakim || 0) - (linkedCount || 0)));
     } catch (error) {
       console.error('Error loading unlinked count:', error);
@@ -171,7 +173,7 @@ const PsakDinTab = () => {
     setDialogOpen(true);
   };
 
-  const handleEditPsak = async (psakId: string) => {
+  const handleEditPsak = (psakId: string) => {
     const psak = psakim.find(p => p.id === psakId);
     if (psak) {
       setEditingPsak(psak);
@@ -187,22 +189,50 @@ const PsakDinTab = () => {
   };
 
   const handleEditSaved = () => {
-    loadPsakim(currentPage);
+    loadPsakim(0, true);
   };
 
-  const handleDeletePsak = () => {
-    loadPsakim(currentPage);
-    loadTotalUnlinkedCount();
+  const handleDeletePsak = async (psakId?: string) => {
+    if (psakId) {
+      // Single delete
+      try {
+        await supabase.from('sugya_psak_links').delete().eq('psak_din_id', psakId);
+        await supabase.from('pattern_sugya_links').delete().eq('psak_din_id', psakId);
+        await supabase.from('talmud_references').delete().eq('psak_din_id', psakId);
+        await supabase.from('psakei_din').delete().eq('id', psakId);
+        setPsakim(prev => prev.filter(p => p.id !== psakId));
+        setTotalCount(prev => prev - 1);
+        toast({ title: 'פסק הדין נמחק בהצלחה' });
+      } catch (err) {
+        toast({ title: 'שגיאה במחיקה', variant: 'destructive' });
+      }
+    } else {
+      loadPsakim(0, true);
+      loadTotalUnlinkedCount();
+    }
+  };
+
+  const handleDownloadSingle = (psak: any) => {
+    const content = psak.full_text || psak.summary || '';
+    const html = `<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="UTF-8"><title>${psak.title}</title>
+<style>body{font-family:'David',serif;max-width:800px;margin:0 auto;padding:20px;direction:rtl;line-height:1.8}h1{color:#1a365d;border-bottom:2px solid #2b6cb0;padding-bottom:10px}.meta{background:#f7fafc;padding:12px;border-radius:8px;margin-bottom:20px;color:#4a5568}.content{white-space:pre-wrap}</style>
+</head><body><h1>${psak.title}</h1><div class="meta"><span>בית דין: ${psak.court}</span> <span>שנה: ${psak.year}</span></div><div class="content">${content}</div></body></html>`;
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${psak.title.replace(/[\\/:*?"<>|]/g, '_').substring(0, 80)}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
   };
 
   const toggleBulkSelect = (id: string) => {
     setSelectedForBulk(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
+      if (newSet.has(id)) newSet.delete(id);
+      else newSet.add(id);
       return newSet;
     });
   };
@@ -218,11 +248,8 @@ const PsakDinTab = () => {
   const toggleSelectForAnalysis = useCallback((id: string) => {
     setSelectedForAnalysis(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
+      if (newSet.has(id)) newSet.delete(id);
+      else newSet.add(id);
       return newSet;
     });
   }, []);
@@ -238,52 +265,30 @@ const PsakDinTab = () => {
 
   const runAIAnalysis = async () => {
     if (selectedForAnalysis.size === 0) {
-      toast({
-        title: "בחר פסקי דין לניתוח",
-        variant: "destructive",
-      });
+      toast({ title: "בחר פסקי דין לניתוח", variant: "destructive" });
       return;
     }
-
     setAnalyzing(true);
     const idsToAnalyze = Array.from(selectedForAnalysis);
     setAnalysisProgress({ current: 0, total: idsToAnalyze.length });
-
     let successCount = 0;
-    
     for (let i = 0; i < idsToAnalyze.length; i++) {
       setAnalysisProgress({ current: i + 1, total: idsToAnalyze.length });
-      
       try {
         const { error } = await supabase.functions.invoke('analyze-psak-din', {
           body: { psakId: idsToAnalyze[i] }
         });
-        
-        if (!error) {
-          successCount++;
-        }
-        console.log(`Analyzed psak ${idsToAnalyze[i]}`);
+        if (!error) successCount++;
       } catch (err) {
         console.error(`Error analyzing psak ${idsToAnalyze[i]}:`, err);
       }
-      
-      if (i < idsToAnalyze.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
+      if (i < idsToAnalyze.length - 1) await new Promise(resolve => setTimeout(resolve, 500));
     }
-    
     setAnalyzing(false);
     setSelectedForAnalysis(new Set());
-    
-    // Reload link counts, page data and refresh the list to update status badges
-    // Link counts are automatically refreshed via React Query
     await loadTotalUnlinkedCount();
-    await loadPsakim(currentPage); // Reload the current page to refresh badges
-    
-    toast({
-      title: "ניתוח AI הושלם",
-      description: `נותחו ${successCount} פסקי דין בהצלחה`,
-    });
+    await loadPsakim(0, true);
+    toast({ title: "ניתוח AI הושלם", description: `נותחו ${successCount} פסקי דין בהצלחה` });
   };
 
   const displayedUnlinkedCount = psakim.filter(p => !psakLinks.has(p.id)).length;
@@ -304,7 +309,7 @@ const PsakDinTab = () => {
           </TabsList>
 
           <TabsContent value="recent">
-            {loading ? (
+            {loading && psakim.length === 0 ? (
               <div className="space-y-4 py-4">
                 {[...Array(5)].map((_, i) => (
                   <div key={i} className="flex items-center gap-3 p-4 border rounded-lg">
@@ -322,39 +327,19 @@ const PsakDinTab = () => {
                 <div className="flex items-center justify-between mb-6 flex-row-reverse">
                   <div className="flex items-center gap-3">
                     <h2 className="text-2xl font-bold text-foreground">פסקי דין אחרונים</h2>
-                    <Button
-                      size="sm"
-                      onClick={handleAddNew}
-                      className="gap-2"
-                    >
+                    <Button size="sm" onClick={handleAddNew} className="gap-2">
                       <Plus className="w-4 h-4" />
                       הוסף פסק דין
                     </Button>
                   </div>
-                  
                   {totalUnlinkedCount > 0 && (
                     <div className="flex items-center gap-3">
                       <span className="text-sm text-muted-foreground">
                         {totalUnlinkedCount} פסקים ללא קישור
                       </span>
                       {selectedForAnalysis.size > 0 && (
-                        <Button
-                          size="sm"
-                          onClick={runAIAnalysis}
-                          disabled={analyzing}
-                          className="gap-2 flex-row-reverse"
-                        >
-                          {analyzing ? (
-                            <>
-                              מנתח...
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            </>
-                          ) : (
-                            <>
-                              נתח {selectedForAnalysis.size} פסקים
-                              <Sparkles className="w-4 h-4" />
-                            </>
-                          )}
+                        <Button size="sm" onClick={runAIAnalysis} disabled={analyzing} className="gap-2 flex-row-reverse">
+                          {analyzing ? (<><span>מנתח...</span><Loader2 className="w-4 h-4 animate-spin" /></>) : (<><span>נתח {selectedForAnalysis.size} פסקים</span><Sparkles className="w-4 h-4" /></>)}
                         </Button>
                       )}
                     </div>
@@ -368,7 +353,7 @@ const PsakDinTab = () => {
                   onSelectAll={selectAllForBulk}
                   onClearSelection={clearBulkSelection}
                   selectedIds={Array.from(selectedForBulk)}
-                  onDeleted={handleDeletePsak}
+                  onDeleted={() => handleDeletePsak()}
                 />
 
                 {/* Analysis Progress */}
@@ -378,17 +363,9 @@ const PsakDinTab = () => {
                       <div className="flex items-center gap-3 mb-2 flex-row-reverse">
                         <Brain className="w-5 h-5 text-primary animate-pulse" />
                         <span className="font-medium">מנתח פסקי דין באמצעות AI...</span>
-                        <span className="ml-auto text-sm">
-                          {analysisProgress.current}/{analysisProgress.total}
-                        </span>
+                        <span className="ml-auto text-sm">{analysisProgress.current}/{analysisProgress.total}</span>
                       </div>
-                      <Progress 
-                        value={(analysisProgress.current / analysisProgress.total) * 100} 
-                        className="h-2" 
-                      />
-                      <p className="text-xs text-muted-foreground mt-2 text-right">
-                        מזהה מקורות תלמודיים ומקשר לדפי גמרא רלוונטיים
-                      </p>
+                      <Progress value={(analysisProgress.current / analysisProgress.total) * 100} className="h-2" />
                     </CardContent>
                   </Card>
                 )}
@@ -401,22 +378,17 @@ const PsakDinTab = () => {
                         <Sparkles className="w-5 h-5 text-accent" />
                         <div className="text-right">
                           <p className="font-medium text-sm">ניתוח AI לפסקי דין קיימים</p>
-                          <p className="text-xs text-muted-foreground">
-                            בחר פסקי דין לניתוח וקישור אוטומטי למקורות גמרא
-                          </p>
+                          <p className="text-xs text-muted-foreground">בחר פסקי דין לניתוח וקישור אוטומטי למקורות גמרא</p>
                         </div>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={selectAllForAnalysis}
-                      >
+                      <Button size="sm" variant="outline" onClick={selectAllForAnalysis}>
                         {selectedForAnalysis.size === displayedUnlinkedCount ? 'בטל בחירה' : `בחר הכל (${displayedUnlinkedCount})`}
                       </Button>
                     </CardContent>
                   </Card>
                 )}
-                
+
+                {/* Items list - infinite scroll */}
                 {psakim.length === 0 ? (
                   <Card className="border-dashed border-2">
                     <CardContent className="p-12 text-center">
@@ -429,195 +401,177 @@ const PsakDinTab = () => {
                       </Button>
                     </CardContent>
                   </Card>
-                ) : psakim.map((psak) => {
-                  const hasLinks = psakLinks.has(psak.id);
-                  const linkCount = psakLinks.get(psak.id) || 0;
-                  const isSelected = selectedForAnalysis.has(psak.id);
-                  
-                  return (
-                    <Card 
-                      key={psak.id} 
-                      className={`border shadow-sm hover:shadow-md transition-shadow ${
-                        isSelected ? 'border-accent ring-1 ring-accent' : 'border-border'
-                      }`}
-                    >
-                      <CardContent className="p-4">
-                        {/* Top Row: Title + Action Items */}
-                        <div className="flex items-start justify-between gap-3 mb-3">
-                          {/* Right Side: Title and Meta */}
-                          <div 
-                            className="flex-1 cursor-pointer"
-                            onClick={() => handlePsakClick(psak)}
-                          >
-                            <h3 className="text-lg font-semibold text-foreground text-right mb-2 leading-tight flex items-center gap-2 justify-end">
-                              <FileTypeBadge url={psak.source_url} size="sm" />
-                              {psak.title}
-                            </h3>
-                            <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground justify-end">
-                              <div className="flex items-center gap-1">
-                                <span>{psak.court}</span>
-                                <Building2 className="w-3.5 h-3.5 text-primary" />
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <span>{psak.year}</span>
-                                <Calendar className="w-3.5 h-3.5 text-primary" />
-                              </div>
-                              {psak.case_number && (
-                                <div className="flex items-center gap-1">
-                                  <span>{psak.case_number}</span>
-                                  <FileText className="w-3.5 h-3.5 text-primary" />
-                                </div>
-                              )}
-                            </div>
-                          </div>
+                ) : (
+                  <div
+                    ref={scrollContainerRef}
+                    className="max-h-[70vh] overflow-y-auto space-y-4 pr-1"
+                  >
+                    {psakim.map((psak) => {
+                      const hasLinks = psakLinks.has(psak.id);
+                      const linkCount = psakLinks.get(psak.id) || 0;
+                      const isSelected = selectedForAnalysis.has(psak.id);
+                      const isHovered = hoveredId === psak.id;
 
-                          {/* Left Side: Actions + Checkbox */}
-                          <div className="flex items-center gap-1 shrink-0">
-                            <PsakDinActions
-                              psakId={psak.id}
-                              onEdit={handleEditPsak}
-                              onDelete={handleDeletePsak}
-                              showCheckbox={true}
-                              isSelected={selectedForBulk.has(psak.id)}
-                              onSelectChange={() => toggleBulkSelect(psak.id)}
-                              compact
-                            />
-                            {!hasLinks && !analyzing && (
-                              <Checkbox
-                                checked={isSelected}
-                                onCheckedChange={() => toggleSelectForAnalysis(psak.id)}
-                                onClick={(e) => e.stopPropagation()}
-                                title="בחר לניתוח AI"
-                              />
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Summary */}
-                        <p 
-                          className="text-foreground mb-4 line-clamp-2 text-right cursor-pointer"
-                          onClick={() => handlePsakClick(psak)}
+                      return (
+                        <Card
+                          key={psak.id}
+                          className={cn(
+                            "border shadow-sm hover:shadow-md transition-all relative",
+                            isSelected && "border-accent ring-1 ring-accent",
+                            selectedForBulk.has(psak.id) && "border-primary ring-1 ring-primary"
+                          )}
+                          onMouseEnter={() => setHoveredId(psak.id)}
+                          onMouseLeave={() => setHoveredId(null)}
                         >
-                          {psak.summary}
-                        </p>
+                          <CardContent className="p-4">
+                            {/* Top Row: Title + Hover Actions */}
+                            <div className="flex items-start justify-between gap-3 mb-3">
+                              <div className="flex-1 cursor-pointer" onClick={() => handlePsakClick(psak)}>
+                                <h3 className="text-lg font-semibold text-foreground text-right mb-2 leading-tight flex items-center gap-2 justify-end">
+                                  <FileTypeBadge url={psak.source_url} size="sm" />
+                                  {psak.title}
+                                </h3>
+                                <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground justify-end">
+                                  <div className="flex items-center gap-1">
+                                    <span>{psak.court}</span>
+                                    <Building2 className="w-3.5 h-3.5 text-primary" />
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <span>{psak.year}</span>
+                                    <Calendar className="w-3.5 h-3.5 text-primary" />
+                                  </div>
+                                  {psak.case_number && (
+                                    <div className="flex items-center gap-1">
+                                      <span>{psak.case_number}</span>
+                                      <FileText className="w-3.5 h-3.5 text-primary" />
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
 
-                        {/* Bottom Row: Status Badge + Tags */}
-                        <div className="flex items-center justify-between gap-3 border-t border-border/50 pt-3">
-                          {/* Right Side: Tags */}
-                          <div className="flex flex-wrap gap-1.5 flex-1 justify-end">
-                            {psak.tags && psak.tags.slice(0, 4).map((tag: string, idx: number) => (
-                              <Badge 
-                                key={idx} 
-                                variant="secondary" 
-                                className="text-xs px-2 py-0.5 bg-muted/60 text-muted-foreground"
-                              >
-                                {tag}
-                              </Badge>
-                            ))}
-                            {psak.tags && psak.tags.length > 4 && (
-                              <Badge variant="outline" className="text-xs px-2 py-0.5">
-                                +{psak.tags.length - 4}
-                              </Badge>
-                            )}
+                              {/* Hover action icons + checkbox */}
+                              <div className="flex items-center gap-1 shrink-0">
+                                {/* Hover icons - only visible on hover */}
+                                <div className={cn(
+                                  "flex items-center gap-0.5 transition-opacity duration-150",
+                                  isHovered ? "opacity-100" : "opacity-0 pointer-events-none"
+                                )}>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                    title="ערוך שם"
+                                    onClick={(e) => { e.stopPropagation(); handleEditPsak(psak.id); }}
+                                  >
+                                    <Pencil className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                    title="מחק"
+                                    onClick={(e) => { e.stopPropagation(); handleDeletePsak(psak.id); }}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                    title="הורד"
+                                    onClick={(e) => { e.stopPropagation(); handleDownloadSingle(psak); }}
+                                  >
+                                    <Download className="w-4 h-4" />
+                                  </Button>
+                                </div>
+
+                                <Checkbox
+                                  checked={selectedForBulk.has(psak.id)}
+                                  onCheckedChange={() => toggleBulkSelect(psak.id)}
+                                  onClick={(e) => e.stopPropagation()}
+                                />
+
+                                {!hasLinks && !analyzing && (
+                                  <Checkbox
+                                    checked={isSelected}
+                                    onCheckedChange={() => toggleSelectForAnalysis(psak.id)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    title="בחר לניתוח AI"
+                                  />
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Summary */}
+                            <p
+                              className="text-foreground mb-4 line-clamp-2 text-right cursor-pointer"
+                              onClick={() => handlePsakClick(psak)}
+                            >
+                              {psak.summary}
+                            </p>
+
+                            {/* Bottom Row: Status + Tags */}
+                            <div className="flex items-center justify-between gap-3 border-t border-border/50 pt-3">
+                              <div className="flex flex-wrap gap-1.5 flex-1 justify-end">
+                                {psak.tags && psak.tags.slice(0, 4).map((tag: string, idx: number) => (
+                                  <Badge key={idx} variant="secondary" className="text-xs px-2 py-0.5 bg-muted/60 text-muted-foreground">
+                                    {tag}
+                                  </Badge>
+                                ))}
+                                {psak.tags && psak.tags.length > 4 && (
+                                  <Badge variant="outline" className="text-xs px-2 py-0.5">+{psak.tags.length - 4}</Badge>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                {hasLinks ? (
+                                  <Badge className="gap-1.5 text-xs px-2.5 py-1 bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20">
+                                    <Link className="w-3 h-3" />
+                                    <span>{linkCount} קישורים</span>
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="text-xs px-2.5 py-1 text-muted-foreground border-dashed">לא מנותח</Badge>
+                                )}
+                                {!hasLinks && !analyzing && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={async (e) => {
+                                      e.stopPropagation();
+                                      setSelectedForAnalysis(new Set([psak.id]));
+                                      await runAIAnalysis();
+                                    }}
+                                    className="h-7 px-2 gap-1 text-xs"
+                                  >
+                                    <Sparkles className="w-3.5 h-3.5" />
+                                    <span>נתח</span>
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+
+                    {/* Sentinel for infinite scroll */}
+                    {hasMore && (
+                      <div ref={sentinelRef} className="p-4 flex justify-center">
+                        {loadingMore && (
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span className="text-sm">טוען עוד...</span>
                           </div>
-
-                          {/* Left Side: Status Badge + Quick Action */}
-                          <div className="flex items-center gap-2 shrink-0">
-                            {hasLinks ? (
-                              <Badge className="gap-1.5 text-xs px-2.5 py-1 bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20">
-                                <Link className="w-3 h-3" />
-                                <span>{linkCount} קישורים</span>
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline" className="text-xs px-2.5 py-1 text-muted-foreground border-dashed">
-                                לא מנותח
-                              </Badge>
-                            )}
-                            {!hasLinks && !analyzing && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={async (e) => {
-                                  e.stopPropagation();
-                                  setSelectedForAnalysis(new Set([psak.id]));
-                                  await runAIAnalysis();
-                                }}
-                                className="h-7 px-2 gap-1 text-xs"
-                              >
-                                <Sparkles className="w-3.5 h-3.5" />
-                                <span>נתח</span>
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-2 mt-6">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                      disabled={currentPage === 1 || loading}
-                    >
-                      הקודם
-                    </Button>
-                    <div className="flex items-center gap-1">
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        let pageNum: number;
-                        if (totalPages <= 5) {
-                          pageNum = i + 1;
-                        } else if (currentPage <= 3) {
-                          pageNum = i + 1;
-                        } else if (currentPage >= totalPages - 2) {
-                          pageNum = totalPages - 4 + i;
-                        } else {
-                          pageNum = currentPage - 2 + i;
-                        }
-                        return (
-                          <Button
-                            key={pageNum}
-                            variant={currentPage === pageNum ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setCurrentPage(pageNum)}
-                            disabled={loading}
-                            className="w-10"
-                          >
-                            {pageNum}
-                          </Button>
-                        );
-                      })}
-                      {totalPages > 5 && currentPage < totalPages - 2 && (
-                        <>
-                          <span className="px-2 text-muted-foreground">...</span>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setCurrentPage(totalPages)}
-                            disabled={loading}
-                            className="w-10"
-                          >
-                            {totalPages}
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                      disabled={currentPage === totalPages || loading}
-                    >
-                      הבא
-                    </Button>
-                    <span className="text-sm text-muted-foreground mr-4">
-                      עמוד {currentPage} מתוך {totalPages} ({totalCount} פסקי דין)
-                    </span>
+                        )}
+                      </div>
+                    )}
                   </div>
+                )}
+
+                {/* Loaded count */}
+                {psakim.length > 0 && (
+                  <p className="text-xs text-muted-foreground text-center mt-2">
+                    מוצגים {psakim.length.toLocaleString()} מתוך {totalCount.toLocaleString()} פסקי דין
+                  </p>
                 )}
               </div>
             )}
@@ -628,19 +582,8 @@ const PsakDinTab = () => {
           </TabsContent>
         </Tabs>
 
-        <PsakDinViewDialog 
-          psak={selectedPsak} 
-          open={dialogOpen} 
-          onOpenChange={setDialogOpen} 
-        />
-
-        <PsakDinEditDialog
-          psak={editingPsak}
-          open={editDialogOpen}
-          onOpenChange={setEditDialogOpen}
-          onSaved={handleEditSaved}
-          isNew={isNewPsak}
-        />
+        <PsakDinViewDialog psak={selectedPsak} open={dialogOpen} onOpenChange={setDialogOpen} />
+        <PsakDinEditDialog psak={editingPsak} open={editDialogOpen} onOpenChange={setEditDialogOpen} onSaved={handleEditSaved} isNew={isNewPsak} />
       </div>
     </div>
   );
