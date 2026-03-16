@@ -336,9 +336,9 @@ const BeautifyPsakDinTab = () => {
         if (mode === "save") {
           const { data: current } = await supabase.from("psakei_din").select("beautify_count").eq("id", job.id).single();
           const newCount = ((current?.beautify_count as number) || 0) + 1;
-          const { error } = await supabase
-            .from("psakei_din")
-            .update({ full_text: job.html, source_url: urlData?.publicUrl || undefined, beautify_count: newCount } as Record<string, unknown>)
+          const { error } = await (supabase
+            .from("psakei_din") as any)
+            .update({ full_text: job.html, source_url: urlData?.publicUrl || undefined, beautify_count: newCount })
             .eq("id", job.id);
           if (error) throw error;
         } else {
