@@ -369,12 +369,23 @@ const PsakDinTab = () => {
             ) : (
               <div className="max-w-4xl mx-auto space-y-4">
                 {/* Header */}
-                <div className="flex items-center justify-between mb-6 flex-row-reverse">
+                <div className="flex items-center justify-between mb-4 flex-row-reverse">
                   <div className="flex items-center gap-3">
-                    <h2 className="text-2xl font-bold text-foreground">פסקי דין אחרונים</h2>
+                    <h2 className="text-2xl font-bold text-foreground">פסקי דין</h2>
+                    <Badge variant="secondary">{totalCount.toLocaleString()} פסקים</Badge>
                     <Button size="sm" onClick={handleAddNew} className="gap-2">
                       <Plus className="w-4 h-4" />
-                      הוסף פסק דין
+                      הוסף
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => exportPsakimToCsv(psakim)}
+                      disabled={psakim.length === 0}
+                      className="gap-2"
+                    >
+                      <FileSpreadsheet className="w-4 h-4" />
+                      ייצא CSV
                     </Button>
                   </div>
                   {totalUnlinkedCount > 0 && (
@@ -389,6 +400,43 @@ const PsakDinTab = () => {
                       )}
                     </div>
                   )}
+                </div>
+
+                {/* Search & Filter Bar */}
+                <div className="flex flex-wrap gap-3 items-center bg-muted/30 rounded-lg p-3">
+                  <div className="relative flex-1 min-w-[200px]">
+                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      placeholder="חיפוש לפי כותרת, בית דין, תקציר..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pr-9"
+                    />
+                  </div>
+                  <Select value={courtFilter} onValueChange={setCourtFilter}>
+                    <SelectTrigger className="w-[170px]">
+                      <Filter className="w-4 h-4 ml-2" />
+                      <SelectValue placeholder="בית דין" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">כל בתי הדין</SelectItem>
+                      {courts.map((c) => (
+                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={sortOrder} onValueChange={setSortOrder}>
+                    <SelectTrigger className="w-[140px]">
+                      <ArrowUpDown className="w-4 h-4 ml-2" />
+                      <SelectValue placeholder="מיון" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="year-desc">שנה (חדש→ישן)</SelectItem>
+                      <SelectItem value="year-asc">שנה (ישן→חדש)</SelectItem>
+                      <SelectItem value="title-asc">שם (א-ת)</SelectItem>
+                      <SelectItem value="title-desc">שם (ת-א)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* Bulk Actions Bar */}
