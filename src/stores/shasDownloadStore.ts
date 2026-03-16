@@ -29,6 +29,7 @@ interface ShasDownloadStore {
 
   // Actions
   startFullDownload: () => void;
+  startMissingOnly: () => void;
   startSingleMasechet: (masechet: string) => void;
   pause: () => void;
   resume: () => void;
