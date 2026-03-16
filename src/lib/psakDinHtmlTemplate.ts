@@ -1,4 +1,5 @@
 import type { ParsedPsakDin } from './psakDinParser';
+import { classifyLines, classifiedLinesToHtml } from './smartTextFormatter';
 
 function esc(str: string): string {
   return str
@@ -6,14 +7,6 @@ function esc(str: string): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
-}
-
-function nl2p(text: string): string {
-  return text
-    .split('\n')
-    .filter(l => l.trim())
-    .map(l => `<div class="paragraph">${esc(l)}</div>`)
-    .join('\n        ');
 }
 
 /**
