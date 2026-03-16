@@ -201,14 +201,19 @@ export default function PsakeiDinDafPanel({
 
   const handleOpenPsak = useCallback((psak: DafPsak) => {
     setSelectedPsak(psak);
-    // Always let the user choose viewer when source URL exists.
-    // If there is no source file, fall back to the regular info dialog.
-    if (psak.source_url) {
-      setViewerSelectOpen(true);
-    } else {
+    if (!psak.source_url) {
       setDialogOpen(true);
+      return;
     }
-  }, []);
+    // If a default viewer is saved, open directly with it
+    const saved = localStorage.getItem(PSAK_VIEWER_DEFAULT_KEY) as ViewerType | null;
+    if (saved) {
+      // Need to set selectedPsak first, then open via timeout so state is ready
+      setTimeout(() => openViewer(saved), 0);
+    } else {
+      setViewerSelectOpen(true);
+    }
+  }, [openViewer]);
 
   const openViewer = useCallback((type: ViewerType) => {
     setViewerSelectOpen(false);
