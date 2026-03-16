@@ -1242,7 +1242,7 @@ export default function EmbedPdfViewerPage() {
                         onClick={handleBeautify}
                         disabled={isBeautifying || !psakData}
                       >
-                        {isBeautifying ? <><Loader2 className="h-4 w-4 animate-spin" /> מעצב...</> : <><Sparkles className="h-4 w-4" /> עצב פסק דין ✨</>}
+                        {isBeautifying ? <><Loader2Icon className="h-4 w-4 animate-spin" /> מעצב...</> : <><Sparkles className="h-4 w-4" /> עצב פסק דין ✨</>}
                       </Button>
                       {!psakData && <p className="text-[10px] text-red-500">טוען נתוני פסק דין...</p>}
                     </div>
