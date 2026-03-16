@@ -1278,7 +1278,7 @@ export default function EmbedPdfViewerPage() {
         {/* ═══ VIEWER ═══ */}
         <main className={`flex-1 min-w-0 ${viewMode === "split" ? "flex flex-row" : "flex flex-col"}`}>
           {leftSourceUrl ? (
-            <div className="flex-1 flex flex-col" style={{ minHeight: viewerFullscreen ? "calc(100vh - 50px)" : "calc(100vh - 50px)" }}>
+            <div className={`flex-1 flex flex-col ${viewMode === "split" ? "w-1/2" : ""}`} style={{ minHeight: viewerFullscreen ? "calc(100vh - 50px)" : "calc(100vh - 50px)" }}>
               {/* ═══ BEAUTIFIED FORMATTING TOOLBAR ═══ */}
               {beautifiedHtml && activePanel === "beautify" && (
                 <div className="border-b-2 border-[#D4AF37]/20 bg-white/80 backdrop-blur-sm flex-shrink-0">
