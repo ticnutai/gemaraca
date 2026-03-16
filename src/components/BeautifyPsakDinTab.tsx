@@ -8,6 +8,9 @@ import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
   Paintbrush, Upload, Download, Sparkles, FileText, Loader2, Eye, Code,
   RotateCcw, Database, Save, Copy, Search, X, CheckSquare, Square,
   Play, Pause, CheckCircle2, AlertCircle, ExternalLink,
@@ -25,6 +28,7 @@ interface DbPsakItem {
   court: string;
   year: number;
   summary: string;
+  beautify_count?: number;
 }
 
 type JobStatus = "pending" | "processing" | "done" | "error";
@@ -98,6 +102,9 @@ const BeautifyPsakDinTab = () => {
   const [dbHasMore, setDbHasMore] = useState(false);
   const [dbOffset, setDbOffset] = useState(0);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [dbBeautifyFilter, setDbBeautifyFilter] = useState<"all" | "beautified" | "not_beautified">("all");
+  const [dbSortBy, setDbSortBy] = useState<"year" | "title">("year");
+  const [dbLoadCount, setDbLoadCount] = useState<number>(DB_PAGE);
 
   // --- Batch state ---
   const [batchJobs, setBatchJobs] = useState<BatchJob[]>([]);
@@ -130,25 +137,40 @@ const BeautifyPsakDinTab = () => {
   }, [handleFileUpload]);
 
   // ===== DB PICKER LOADING =====
-  const loadDbItems = useCallback(async (search: string, offset: number, append: boolean) => {
+  const loadDbItems = useCallback(async (search: string, offset: number, append: boolean, pageSize?: number) => {
     if (append) setDbLoadingMore(true);
     else setDbLoading(true);
+    const limit = pageSize || dbLoadCount;
     try {
       let query = supabase
         .from("psakei_din")
-        .select("id, title, court, year, summary")
-        .order("year", { ascending: false })
-        .range(offset, offset + DB_PAGE - 1);
+        .select("id, title, court, year, summary, beautify_count" as any)
+        .range(offset, offset + limit - 1);
 
+      // Sort
+      if (dbSortBy === "title") {
+        query = query.order("title", { ascending: true });
+      } else {
+        query = query.order("year", { ascending: false });
+      }
+
+      // Search
       if (search.trim()) {
         query = query.or(`title.ilike.%${search}%,court.ilike.%${search}%,summary.ilike.%${search}%`);
+      }
+
+      // Beautify filter
+      if (dbBeautifyFilter === "beautified") {
+        query = query.gt("beautify_count", 0);
+      } else if (dbBeautifyFilter === "not_beautified") {
+        query = query.or("beautify_count.is.null,beautify_count.eq.0");
       }
 
       const { data, error } = await query;
       if (error) throw error;
 
-      const items = data || [];
-      setDbHasMore(items.length === DB_PAGE);
+      const items = (data || []).map((d: any) => ({ ...d, beautify_count: d.beautify_count || 0 }));
+      setDbHasMore(items.length === limit);
       if (append) {
         setDbItems(prev => [...prev, ...items]);
       } else {
@@ -161,7 +183,7 @@ const BeautifyPsakDinTab = () => {
       setDbLoading(false);
       setDbLoadingMore(false);
     }
-  }, [toast]);
+  }, [toast, dbSortBy, dbBeautifyFilter, dbLoadCount]);
 
   const openDbPicker = useCallback(() => {
     setShowDbPicker(true);
@@ -171,7 +193,7 @@ const BeautifyPsakDinTab = () => {
     loadDbItems("", 0, false);
   }, [loadDbItems]);
 
-  // Debounced search
+  // Debounced search + filter/sort change
   useEffect(() => {
     if (!showDbPicker) return;
     const timer = setTimeout(() => {
@@ -179,7 +201,7 @@ const BeautifyPsakDinTab = () => {
       loadDbItems(dbSearch, 0, false);
     }, 300);
     return () => clearTimeout(timer);
-  }, [dbSearch, showDbPicker, loadDbItems]);
+  }, [dbSearch, showDbPicker, loadDbItems, dbBeautifyFilter, dbSortBy]);
 
   // Lazy loading with IntersectionObserver
   useEffect(() => {
@@ -670,7 +692,7 @@ const BeautifyPsakDinTab = () => {
   const previewJob = useMemo(() => batchJobs.find(j => j.id === previewJobId), [batchJobs, previewJobId]);
 
   return (
-    <div className="p-3 md:p-6 space-y-4">
+    <div className="p-3 md:p-6 space-y-4 h-full overflow-y-auto">
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
         <Paintbrush className="h-6 w-6 text-primary" />
@@ -926,8 +948,8 @@ const BeautifyPsakDinTab = () => {
             </Button>
           </div>
 
-          {/* Search */}
-          <div className="p-3 border-b">
+          {/* Search + Filters */}
+          <div className="p-3 border-b space-y-2">
             <div className="relative">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -938,6 +960,41 @@ const BeautifyPsakDinTab = () => {
                 dir="rtl"
                 autoFocus
               />
+            </div>
+            <div className="flex gap-2 flex-wrap items-center">
+              <Select value={dbBeautifyFilter} onValueChange={(v) => setDbBeautifyFilter(v as any)}>
+                <SelectTrigger className="w-[140px] h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">הכל</SelectItem>
+                  <SelectItem value="beautified">עוצבו ✓</SelectItem>
+                  <SelectItem value="not_beautified">לא עוצבו</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={dbSortBy} onValueChange={(v) => setDbSortBy(v as any)}>
+                <SelectTrigger className="w-[120px] h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="year">לפי שנה</SelectItem>
+                  <SelectItem value="title">לפי שם</SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="flex items-center gap-1 mr-auto">
+                <label className="text-xs text-muted-foreground whitespace-nowrap">כמות:</label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={500}
+                  value={dbLoadCount}
+                  onChange={(e) => {
+                    const v = parseInt(e.target.value) || DB_PAGE;
+                    setDbLoadCount(Math.min(500, Math.max(1, v)));
+                  }}
+                  className="w-[70px] h-8 text-xs text-center"
+                />
+              </div>
             </div>
           </div>
 
@@ -981,7 +1038,7 @@ const BeautifyPsakDinTab = () => {
           </div>
 
           {/* Items list */}
-          <ScrollArea className="flex-1">
+          <div className="flex-1 overflow-y-auto">
             {dbLoading ? (
               <div className="flex items-center justify-center py-16">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -1002,7 +1059,15 @@ const BeautifyPsakDinTab = () => {
                       className="mt-1 shrink-0"
                     />
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm truncate">{item.title}</div>
+                      <div className="font-medium text-sm truncate flex items-center gap-2">
+                        {item.title}
+                        {(item.beautify_count || 0) > 0 && (
+                          <Badge className="gap-1 text-[10px] px-1.5 py-0 bg-amber-500/15 text-amber-600 border border-amber-500/30 dark:text-amber-400 shrink-0">
+                            <Paintbrush className="w-2.5 h-2.5" />
+                            עוצב {item.beautify_count}
+                          </Badge>
+                        )}
+                      </div>
                       <div className="text-xs text-muted-foreground mt-0.5 flex gap-2 flex-wrap">
                         <span>{item.court}</span>
                         <span>•</span>
@@ -1023,7 +1088,7 @@ const BeautifyPsakDinTab = () => {
                 )}
               </div>
             )}
-          </ScrollArea>
+          </div>
         </div>
       )}
     </div>
