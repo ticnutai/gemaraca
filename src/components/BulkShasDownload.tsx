@@ -69,12 +69,18 @@ const BulkShasDownload = () => {
   const totalCompleted = masechtot.filter((m) => m.status === 'completed').length;
   const overallProgress = totalPagesInShas > 0 ? (totalLoaded / totalPagesInShas) * 100 : 0;
   const totalErrors = masechtot.reduce((sum, m) => sum + m.errors.length, 0);
+  const totalMissing = masechtot.reduce((sum, m) => Math.max(0, m.totalPages - m.loadedPages), 0);
 
   const sedarim = [...new Set(MASECHTOT.map((m) => m.seder))];
 
   const handleStart = () => {
     startFullDownload();
     toast("הורדת הש\"ס התחילה ברקע");
+  };
+
+  const handleCompleteMissing = () => {
+    startMissingOnly();
+    toast(`משלים ${totalMissing} עמודים חסרים...`);
   };
 
   return (
