@@ -948,8 +948,8 @@ const BeautifyPsakDinTab = () => {
             </Button>
           </div>
 
-          {/* Search */}
-          <div className="p-3 border-b">
+          {/* Search + Filters */}
+          <div className="p-3 border-b space-y-2">
             <div className="relative">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -960,6 +960,41 @@ const BeautifyPsakDinTab = () => {
                 dir="rtl"
                 autoFocus
               />
+            </div>
+            <div className="flex gap-2 flex-wrap items-center">
+              <Select value={dbBeautifyFilter} onValueChange={(v) => setDbBeautifyFilter(v as any)}>
+                <SelectTrigger className="w-[140px] h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">הכל</SelectItem>
+                  <SelectItem value="beautified">עוצבו ✓</SelectItem>
+                  <SelectItem value="not_beautified">לא עוצבו</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={dbSortBy} onValueChange={(v) => setDbSortBy(v as any)}>
+                <SelectTrigger className="w-[120px] h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="year">לפי שנה</SelectItem>
+                  <SelectItem value="title">לפי שם</SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="flex items-center gap-1 mr-auto">
+                <label className="text-xs text-muted-foreground whitespace-nowrap">כמות:</label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={500}
+                  value={dbLoadCount}
+                  onChange={(e) => {
+                    const v = parseInt(e.target.value) || DB_PAGE;
+                    setDbLoadCount(Math.min(500, Math.max(1, v)));
+                  }}
+                  className="w-[70px] h-8 text-xs text-center"
+                />
+              </div>
             </div>
           </div>
 
