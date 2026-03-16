@@ -484,13 +484,22 @@ const GemaraPsakDinIndex = () => {
     }
   }, [navigate]);
 
-  const handlePsakClick = useCallback((psak: PsakLink) => {
+  const handlePsakClick = useCallback((psak: any) => {
     if (!psak) return;
+    // Wrap psakei_din data into PsakLink shape if needed
+    const psakLink: PsakLink = psak.psak_din_id ? psak : {
+      id: psak.id || '',
+      psak_din_id: psak.id || '',
+      sugya_id: '',
+      connection_explanation: '',
+      relevance_score: 0,
+      psakei_din: psak,
+    };
     const saved = getViewerPreference();
     if (saved) {
-      openWithMode(psak, saved);
+      openWithMode(psakLink, saved);
     } else {
-      setPendingPsak(psak);
+      setPendingPsak(psakLink);
       setPrefDialogOpen(true);
     }
   }, [openWithMode]);

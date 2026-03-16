@@ -548,12 +548,15 @@ const MasechetExplorerDialog = ({ open, onOpenChange }: MasechetExplorerDialogPr
                         key={psak.id}
                         onClick={() => {
                           setViewPsak({
-                            id: psak.psak_din_id,
+                            id: psak.id,
+                            psak_din_id: psak.psak_din_id,
                             title: psak.title,
                             court: psak.court,
                             year: psak.year,
                             summary: psak.summary,
                             tags: psak.tags,
+                            relevance_score: psak.relevance_score,
+                            connection: psak.connection,
                           });
                           setViewPsakOpen(true);
                         }}
