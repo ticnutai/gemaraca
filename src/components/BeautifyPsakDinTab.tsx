@@ -343,8 +343,8 @@ const BeautifyPsakDinTab = () => {
           if (error) throw error;
         } else {
           const parsed = parsePsakDinText(job.rawText);
-          const { error } = await supabase
-            .from("psakei_din")
+          const { error } = await (supabase
+            .from("psakei_din") as any)
             .insert({
               id: fileId,
               title: `${job.title} (מעוצב)`,
@@ -356,7 +356,7 @@ const BeautifyPsakDinTab = () => {
               source_url: urlData?.publicUrl || null,
               tags: ["מעוצב"],
               beautify_count: 1,
-            } as Record<string, unknown>);
+            });
           if (error) throw error;
         }
         successCount++;
