@@ -584,7 +584,7 @@ const SugyaDetail = () => {
                         <div className="pt-2 border-t border-border">
                           <p className="text-xs font-medium text-primary">
                             <span className="text-muted-foreground">קשר לגמרא: </span>
-                            {link.connection_explanation}
+                            {link.connection_explanation || ''}
                           </p>
                         </div>
 
