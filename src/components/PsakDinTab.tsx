@@ -5,10 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Calendar, Building2, FileText, List, BookOpen, Sparkles, Brain, Loader2,
-  Link, Plus, Pencil, Trash2, Download,
+  Link, Plus, Pencil, Trash2, Download, Search, Filter, ArrowUpDown, FileSpreadsheet,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -19,6 +23,7 @@ import FileTypeBadge from "./FileTypeBadge";
 import GemaraPsakDinIndex from "./GemaraPsakDinIndex";
 import { useToast } from "@/hooks/use-toast";
 import { cachePsakim, getAllCachedPsakim, type CachedPsak } from "@/lib/psakCache";
+import { exportPsakimToCsv } from "@/lib/csvExporter";
 import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 50;
