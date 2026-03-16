@@ -131,7 +131,7 @@ export default function AdvancedIndexTab() {
       case 'embedpdf': {
         const sourceUrl = data.source_url;
         if (sourceUrl) {
-          navigate(`/embed-pdf?url=${encodeURIComponent(sourceUrl)}&title=${encodeURIComponent(data.title)}&psakId=${data.id}`);
+          navigate(`/embedpdf-viewer?url=${encodeURIComponent(sourceUrl)}&title=${encodeURIComponent(data.title)}&psakId=${data.id}`);
         } else {
           // No file URL — open in dialog instead
           setSelectedPsak(data);
