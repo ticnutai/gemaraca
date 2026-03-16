@@ -273,7 +273,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
       x: rect.left + rect.width / 2,
       y: rect.top - 10,
     });
-  }, [isEditing]);
+  }, []);
 
   const applyFormatCommand = useCallback((command: string, value?: string) => {
     if (!isEditing) return;
