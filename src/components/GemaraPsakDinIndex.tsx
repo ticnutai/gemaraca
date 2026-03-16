@@ -1044,7 +1044,16 @@ return (
       )}
 
       <PsakDinViewDialog
-        psak={dialogPsak}
+        psak={dialogPsak ? {
+          id: dialogPsak.psakei_din?.id || dialogPsak.id,
+          title: dialogPsak.psakei_din?.title || '',
+          court: dialogPsak.psakei_din?.court,
+          year: dialogPsak.psakei_din?.year,
+          summary: dialogPsak.psakei_din?.summary || '',
+          tags: dialogPsak.psakei_din?.tags,
+          source_url: dialogPsak.psakei_din?.source_url,
+          connection: dialogPsak.connection_explanation,
+        } : null}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
       />
