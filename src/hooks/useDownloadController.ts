@@ -244,7 +244,12 @@ export function useDownloadController() {
     } catch (err) {
       if ((err as Error).message !== 'aborted') {
         setSessionStatus(sessionId, 'error');
-        toast({ title: 'שגיאה בהורדה', description: (err as Error).message, variant: 'destructive' });
+        toast({
+          title: '❌ שגיאה בהורדה',
+          description: `${(err as Error).message} — ניתן להמשיך מאותה נקודה`,
+          variant: 'destructive',
+          duration: 8000,
+        });
       }
     } finally {
       activeRef.current = false;
