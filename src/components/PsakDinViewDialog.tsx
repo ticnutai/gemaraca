@@ -276,14 +276,13 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
   }, []);
 
   const applyFormatCommand = useCallback((command: string, value?: string) => {
-    if (!isEditing) return;
     if (command === 'hiliteColor') {
       document.execCommand('styleWithCSS', false, 'true');
     }
     document.execCommand(command, false, value);
     syncRichEditorToState();
     setSelectionMenu(null);
-  }, [isEditing, syncRichEditorToState]);
+  }, [syncRichEditorToState]);
 
   // ── Beautify psak din ──
   const handleBeautify = useCallback(async () => {
