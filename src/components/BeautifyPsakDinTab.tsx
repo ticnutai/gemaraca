@@ -486,8 +486,12 @@ const BeautifyPsakDinTab = () => {
       await supabase.storage.from("psakei-din-files").upload(fileName, blob, { contentType: "text/html", upsert: true });
       const { data: urlData } = supabase.storage.from("psakei-din-files").getPublicUrl(fileName);
 
+      // Fetch current beautify_count to increment
+      const { data: current } = await supabase.from("psakei_din").select("beautify_count").eq("id", loadedPsakId).single();
+      const newCount = ((current?.beautify_count as number) || 0) + 1;
+
       const { error } = await supabase.from("psakei_din")
-        .update({ full_text: htmlResult, source_url: urlData?.publicUrl || undefined })
+        .update({ full_text: htmlResult, source_url: urlData?.publicUrl || undefined, beautify_count: newCount } as Record<string, unknown>)
         .eq("id", loadedPsakId);
       if (error) throw error;
 
