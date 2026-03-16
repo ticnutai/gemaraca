@@ -1599,10 +1599,31 @@ export default function EmbedPdfViewerPage() {
           )}
 
           {/* Second viewer for split/compare */}
-          {viewMode !== "single" && rightSourceUrl && (
-            <div className="h-[400px] border-t-2 border-[#D4AF37]/30 relative bg-[#f8f8f6]">
-              <iframe src={rightViewerUrl} className="absolute inset-0 w-full h-full border-0" title="PDF Compare" allow="fullscreen" />
-            </div>
+          {viewMode !== "single" && (
+            rightSourceUrl ? (
+              <div className={`${viewMode === "split" ? "w-1/2" : "h-[400px]"} border-t-2 sm:border-t-0 sm:border-r-2 border-[#D4AF37]/30 relative bg-[#f8f8f6]`}>
+                <iframe src={rightViewerUrl} className="absolute inset-0 w-full h-full border-0" title="PDF Compare" allow="fullscreen" />
+              </div>
+            ) : (
+              <div className={`${viewMode === "split" ? "w-1/2" : "h-[300px]"} border-t-2 sm:border-t-0 sm:border-r-2 border-[#D4AF37]/30 flex items-center justify-center bg-[#f8f8f6]`}>
+                <div className="text-center space-y-3 p-6">
+                  <FileText className="h-10 w-10 mx-auto text-[#D4AF37]/30" />
+                  <p className="text-xs text-[#0B1F5B]/50">בחר מסמך שני להשוואה</p>
+                  <div className="space-y-1.5">
+                    <Button size="sm" variant="outline" className="border-[#D4AF37] text-[#0B1F5B] text-xs w-full" onClick={() => togglePanel("docs")}>
+                      <BookOpen className="h-3.5 w-3.5 ml-1" /> בחר מהרשימה
+                    </Button>
+                    <Input
+                      placeholder="או הדבק URL..."
+                      value={compareManualUrl}
+                      onChange={(e) => setCompareManualUrl(e.target.value)}
+                      className="text-xs border-[#D4AF37]/30 focus-visible:ring-[#D4AF37]"
+                      dir="ltr"
+                    />
+                  </div>
+                </div>
+              </div>
+            )
           )}
         </main>
       </div>
