@@ -208,12 +208,17 @@ export default function PsakeiDinDafPanel({
     // If a default viewer is saved, open directly with it
     const saved = localStorage.getItem(PSAK_VIEWER_DEFAULT_KEY) as ViewerType | null;
     if (saved) {
-      // Need to set selectedPsak first, then open via timeout so state is ready
-      setTimeout(() => openViewer(saved), 0);
+      if (saved === 'embedpdf-page' && psak.source_url) {
+        navigate(`/embedpdf-viewer?url=${encodeURIComponent(psak.source_url)}&psakId=${psak.id}`);
+      } else if (saved === 'regular') {
+        setDialogOpen(true);
+      } else {
+        setEmbeddedPdfOpen(true);
+      }
     } else {
       setViewerSelectOpen(true);
     }
-  }, [openViewer]);
+  }, [navigate]);
 
   const openViewer = useCallback((type: ViewerType) => {
     setViewerSelectOpen(false);
