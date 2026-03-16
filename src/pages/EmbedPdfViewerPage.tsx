@@ -1255,27 +1255,28 @@ export default function EmbedPdfViewerPage() {
                         {cloudDocs.length === 0 ? "אין מסמכים זמינים" : "לא נמצאו תוצאות"}
                       </p>
                     ) : (
-                      <ScrollArea className="max-h-[250px]">
-                        <div className="space-y-1">
+                      <div className="overflow-y-auto max-h-[300px] border border-[#D4AF37]/20 rounded-md">
+                        <div className="divide-y divide-[#D4AF37]/10">
                           {filteredCloudDocs.map((doc) => (
-                            <div
+                            <button
                               key={doc.id}
-                              className="flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer text-sm hover:bg-[#D4AF37]/10 transition-colors"
+                              type="button"
+                              className="w-full flex items-start gap-2 px-2 py-2 text-right hover:bg-[#D4AF37]/10 transition-colors"
                               onClick={() => {
                                 setManualUrl(doc.source_url);
                                 setActivePanel(null);
-                                toast.success(`נטען: ${doc.title}`);
+                                toast.success(`נטען: ${doc.title || "מסמך"}`);
                               }}
                             >
-                              <FileText className="h-3.5 w-3.5 text-[#D4AF37] shrink-0" />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs truncate font-medium text-[#0B1F5B]">{doc.title || "ללא כותרת"}</p>
-                                <p className="text-[10px] text-[#0B1F5B]/40">{doc.court || "—"} · {doc.year || "—"}</p>
+                              <FileText className="h-4 w-4 text-[#D4AF37] shrink-0 mt-0.5" />
+                              <div className="flex-1 min-w-0 text-right">
+                                <p className="text-xs font-medium truncate" style={{ color: "#0B1F5B" }}>{doc.title || "ללא כותרת"}</p>
+                                <p className="text-[10px]" style={{ color: "#0B1F5B99" }}>{doc.court || "—"} · {doc.year || "—"}</p>
                               </div>
-                            </div>
+                            </button>
                           ))}
                         </div>
-                      </ScrollArea>
+                      </div>
                     )}
                     <Button size="sm" variant="outline" className="w-full text-xs border-[#D4AF37] gap-1" onClick={loadCloudDocs} disabled={loadingCloudDocs}>
                       <RefreshCw className={`h-3 w-3 ${loadingCloudDocs ? "animate-spin" : ""}`} /> רענן
