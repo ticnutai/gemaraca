@@ -1023,10 +1023,27 @@ export default function EmbedPdfViewerPage() {
             size="icon"
             variant="ghost"
             className="h-8 w-8 text-[#0B1F5B] hover:bg-[#D4AF37]/10"
-            onClick={() => navigate(-1)}
+            onClick={() => {
+              if (window.history.length > 1) {
+                navigate(-1);
+              } else {
+                navigate('/');
+              }
+            }}
             title="חזור"
           >
             <ArrowRight className="h-4 w-4" />
+          </Button>
+
+          {/* Home button */}
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8 text-[#0B1F5B] hover:bg-[#D4AF37]/10"
+            onClick={() => navigate('/')}
+            title="דף הבית"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
           </Button>
 
           <FileText className="h-5 w-5 text-[#D4AF37] shrink-0" />
