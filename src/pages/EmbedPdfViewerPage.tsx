@@ -1357,6 +1357,7 @@ export default function EmbedPdfViewerPage() {
                     <iframe key={leftViewerUrl} src={leftViewerUrl} className="absolute inset-0 w-full h-full border-0" title="PDF Viewer" allow="fullscreen" onLoad={() => setIframeLoaded(true)} onError={() => setIframeError(true)} />
                   </>
                 )}
+                </>
                 )}
               </div>
             </div>
