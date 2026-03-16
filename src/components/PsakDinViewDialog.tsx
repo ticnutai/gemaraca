@@ -1101,32 +1101,50 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
                        </div>
                      )}
 
-                     {fullText && (
-                       <div>
-                         <h3 className="font-semibold mb-2 flex items-center gap-2 justify-end">
-                           <ListOrdered className="w-4 h-4 text-primary" />
-                           טקסט מלא
-                         </h3>
-                         {textSettings.showLineNumbers ? (
-                           <div className="rounded-lg border overflow-hidden">
-                             <div className="grid grid-cols-[56px_1fr]">
-                               <div className="bg-muted/30 border-l p-3 text-xs text-muted-foreground font-mono select-none">
-                                 {fullText.split("\n").map((_, idx) => (
-                                   <div key={`line-num-${idx}`} className="leading-7 text-left">{idx + 1}</div>
-                                 ))}
-                               </div>
-                               <div className="p-4 whitespace-pre-wrap leading-relaxed">
-                                 {highlightText(fullText)}
-                               </div>
-                             </div>
-                           </div>
-                         ) : (
-                           <div className="p-4 rounded-lg border whitespace-pre-wrap leading-relaxed">
-                             {highlightText(fullText)}
-                           </div>
-                         )}
-                       </div>
-                     )}
+                     <div>
+                          <h3 className="font-semibold mb-2 flex items-center gap-2 justify-end">
+                            <ListOrdered className="w-4 h-4 text-primary" />
+                            טקסט מלא
+                            <span className="text-[10px] text-muted-foreground font-normal">(ניתן לעריכה)</span>
+                          </h3>
+                          <div className="relative">
+                            <div
+                              ref={richEditorRef}
+                              contentEditable
+                              suppressContentEditableWarning
+                              dir="rtl"
+                              className="min-h-[200px] max-h-[460px] overflow-auto rounded-md border bg-background p-4 leading-relaxed focus:outline-none focus:ring-2 focus:ring-accent/30"
+                              dangerouslySetInnerHTML={{ __html: richHtml }}
+                              onInput={syncRichEditorToState}
+                              onMouseUp={handleRichSelection}
+                              onKeyUp={handleRichSelection}
+                              onBlur={() => { syncRichEditorToState(); autoSaveFullText(); }}
+                              style={{ fontSize: `${textSettings.fontSize}px` }}
+                            />
+                            {selectionMenu && (
+                              <div
+                                className="fixed z-50 -translate-x-1/2 -translate-y-full bg-card border rounded-lg shadow-xl p-1.5 flex items-center gap-1"
+                                style={{ left: selectionMenu.x, top: selectionMenu.y }}
+                              >
+                                <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormatCommand('bold')} title="מודגש">
+                                  <Bold className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormatCommand('italic')} title="נטוי">
+                                  <Italic className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormatCommand('underline')} title="קו תחתון">
+                                  <Underline className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormatCommand('hiliteColor', '#fff59d')} title="סימון צהוב">
+                                  <Palette className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormatCommand('removeFormat')} title="נקה עיצוב">
+                                  <X className="w-3.5 h-3.5" />
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
 
                     {psak.tags && psak.tags.length > 0 && (
                       <div>
