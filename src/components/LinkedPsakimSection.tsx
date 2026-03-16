@@ -34,6 +34,7 @@ interface LinkedPsak {
 }
 
 const LinkedPsakimSection = ({ sugyaId, masechet, dafNumber }: LinkedPsakimSectionProps) => {
+  const navigate = useNavigate();
   const [psakim, setPsakim] = useState<LinkedPsak[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);

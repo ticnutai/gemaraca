@@ -34,6 +34,7 @@ interface PsakLink {
 }
 
 const RelatedPsakimSidebar = ({ sugyaId }: RelatedPsakimSidebarProps) => {
+  const navigate = useNavigate();
   const [psakim, setPsakim] = useState<PsakLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPsak, setSelectedPsak] = useState<any | null>(null);

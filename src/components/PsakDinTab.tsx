@@ -37,6 +37,7 @@ function escapeHtml(str: string): string {
 const PAGE_SIZE = 50;
 
 const PsakDinTab = () => {
+  const navigate = useNavigate();
   const [psakim, setPsakim] = useState<PsakDinRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
