@@ -1096,14 +1096,10 @@ export default function EmbedPdfViewerPage() {
               <button
                 key={item.id}
                 onClick={() => {
-                  if (item.id === "upload") {
-                    triggerFileUpload();
-                  } else if (item.id === "cloud") {
+                  if (item.id === "add") {
                     loadCloudDocs();
-                    togglePanel("cloud");
-                  } else {
-                    togglePanel(item.id);
                   }
+                  togglePanel(item.id);
                 }}
                 className={`relative p-1.5 rounded-md transition-all ${
                   item.id === "upload" && isUploading
