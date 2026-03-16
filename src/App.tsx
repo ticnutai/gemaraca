@@ -14,6 +14,7 @@ const Index = lazy(() => import("./pages/Index"));
 const SugyaDetail = lazy(() => import("./pages/SugyaDetail"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Auth = lazy(() => import("./pages/Auth"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const EmbedPdfViewerPage = lazy(() => import("./pages/EmbedPdfViewerPage"));
 
 // Lazy-loaded global overlays — only loaded when actually needed
@@ -51,6 +52,7 @@ const App = () => (
             <OfflineIndicator />
             <Routes>
               <Route path="/auth" element={<Auth />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/" element={<AppLayout><Index /></AppLayout>} />
               <Route path="/sugya/:id" element={<AppLayout><SugyaDetail /></AppLayout>} />
               <Route path="/embedpdf-viewer" element={<EmbedPdfViewerPage />} />
