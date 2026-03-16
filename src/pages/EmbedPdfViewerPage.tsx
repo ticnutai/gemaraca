@@ -1135,8 +1135,89 @@ export default function EmbedPdfViewerPage() {
         <main className="flex-1 flex flex-col min-w-0">
           {leftSourceUrl ? (
             <div className="flex-1 flex flex-col" style={{ minHeight: viewerFullscreen ? "calc(100vh - 50px)" : "calc(100vh - 50px)" }}>
+              {/* ═══ BEAUTIFIED FORMATTING TOOLBAR ═══ */}
+              {beautifiedHtml && activePanel === "beautify" && (
+                <div className="border-b-2 border-[#D4AF37]/20 bg-white/80 backdrop-blur-sm flex-shrink-0">
+                  <div className="px-2 py-1.5 flex items-center gap-1 flex-wrap">
+                    <span className="text-[10px] text-[#D4AF37] font-semibold ml-2">עריכת מסמך מעוצב</span>
+                    <div className="w-px h-5 bg-[#D4AF37]/20" />
+
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
+                      beautifyIframeRef.current?.contentDocument?.execCommand("fontSize", false, "2");
+                    }}><AArrowDown className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
+                      beautifyIframeRef.current?.contentDocument?.execCommand("fontSize", false, "5");
+                    }}><AArrowUp className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+
+                    <div className="w-px h-5 bg-[#D4AF37]/20" />
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
+                      beautifyIframeRef.current?.contentDocument?.execCommand("bold");
+                    }}><Bold className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
+                      beautifyIframeRef.current?.contentDocument?.execCommand("italic");
+                    }}><Italic className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
+                      beautifyIframeRef.current?.contentDocument?.execCommand("underline");
+                    }}><Underline className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+
+                    <div className="w-px h-5 bg-[#D4AF37]/20" />
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
+                      beautifyIframeRef.current?.contentDocument?.execCommand("justifyRight");
+                    }}><AlignRight className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
+                      beautifyIframeRef.current?.contentDocument?.execCommand("justifyCenter");
+                    }}><AlignCenter className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
+                      beautifyIframeRef.current?.contentDocument?.execCommand("justifyLeft");
+                    }}><AlignLeft className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
+                      beautifyIframeRef.current?.contentDocument?.execCommand("justifyFull");
+                    }}><AlignJustify className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+
+                    <div className="w-px h-5 bg-[#D4AF37]/20" />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button size="icon" variant="ghost" className="h-7 w-7"><Highlighter className="h-3.5 w-3.5 text-[#D4AF37]" /></Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-2" align="start">
+                        <div className="flex gap-1.5">
+                          {HIGHLIGHT_COLORS.map((c) => (
+                            <button key={c.value} className="w-6 h-6 rounded-full border-2 border-white shadow-sm hover:scale-125 transition-transform" style={{ backgroundColor: c.value }} onClick={() => {
+                              beautifyIframeRef.current?.contentDocument?.execCommand("hiliteColor", false, c.value);
+                            }} />
+                          ))}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button size="icon" variant="ghost" className="h-7 w-7"><Palette className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-2" align="start">
+                        <div className="flex gap-1.5">
+                          {["#000000", "#0B1F5B", "#b91c1c", "#15803d", "#7e22ce", "#b45309", "#D4AF37"].map((color) => (
+                            <button key={color} className="w-6 h-6 rounded-full border-2 border-white shadow-sm hover:scale-125 transition-transform" style={{ backgroundColor: color }} onClick={() => {
+                              beautifyIframeRef.current?.contentDocument?.execCommand("foreColor", false, color);
+                            }} />
+                          ))}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+
+                    <div className="w-px h-5 bg-[#D4AF37]/20" />
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { beautifyIframeRef.current?.contentDocument?.execCommand("removeFormat"); }} title="הסר עיצוב"><RotateCcw className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { beautifyIframeRef.current?.contentDocument?.execCommand("undo"); }} title="בטל"><RefreshCw className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
+                      const sel = beautifyIframeRef.current?.contentDocument?.getSelection()?.toString() || "";
+                      if (sel) { navigator.clipboard.writeText(sel); toast.success("הועתק"); }
+                    }} title="העתק בחירה"><Copy className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { beautifyIframeRef.current?.contentWindow?.print(); }} title="הדפסה"><Printer className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                  </div>
+                </div>
+              )}
+
               {/* ═══ TEXT FORMATTING TOOLBAR ═══ */}
-              {leftContentType === 'text' && fetchedText !== null && (
+              {leftContentType === 'text' && fetchedText !== null && !(beautifiedHtml && activePanel === "beautify") && (
                 <div className="border-b-2 border-[#D4AF37]/20 bg-white/80 backdrop-blur-sm flex-shrink-0">
                   <div className="px-2 py-1.5 flex items-center gap-1 flex-wrap">
                     {/* Font selector */}
@@ -1247,7 +1328,7 @@ export default function EmbedPdfViewerPage() {
                     srcDoc={beautifiedHtml}
                     className="absolute inset-0 w-full h-full border-0"
                     title="Beautified Psak Din"
-                    sandbox="allow-same-origin allow-popups"
+                    sandbox="allow-same-origin allow-popups allow-scripts"
                     onLoad={() => {
                       const doc = beautifyIframeRef.current?.contentDocument;
                       if (doc?.body) doc.designMode = "on";
