@@ -340,9 +340,12 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
     if (!psak?.id || !beautifiedHtml) return;
     setIsSavingBeautified(true);
     try {
+      // Read current content from the editable iframe
+      const doc = beautifyIframeRef.current?.contentDocument;
+      const currentHtml = doc?.documentElement?.outerHTML || beautifiedHtml;
       // Upload beautified HTML to storage
       const fileName = `beautified/${psak.id}-${Date.now()}.html`;
-      const blob = new Blob([beautifiedHtml], { type: "text/html;charset=utf-8" });
+      const blob = new Blob([currentHtml], { type: "text/html;charset=utf-8" });
       const { error: uploadError } = await supabase.storage
         .from("psakei-din-files")
         .upload(fileName, blob, { contentType: "text/html", upsert: true });
