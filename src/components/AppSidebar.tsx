@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { BookOpen, Scale, Search, Upload, Pin, PinOff, ChevronDown, ChevronLeft, ArrowDownToLine, BookMarked, FileText, Database, FileType, Calendar, BookA, Map, Layers, GraduationCap, BarChart3, Compass } from "lucide-react";
+import { BookOpen, Scale, Search, Upload, Pin, PinOff, ChevronDown, ChevronLeft, ArrowDownToLine, BookMarked, FileText, Database, FileType, Calendar, BookA, Map, Layers, GraduationCap, BarChart3, Compass, Paintbrush } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -128,6 +128,13 @@ const menuItems = [
     title: "המלצות למידה",
     icon: Compass,
     description: "מה ללמוד הלאה - AI",
+    badge: "חדש",
+  },
+  {
+    id: "beautify-psak",
+    title: "עיצוב פסקי דין",
+    icon: Paintbrush,
+    description: "עיצוב מתקדם של פסקי דין מטקסט",
     badge: "חדש",
   },
 ];

@@ -66,7 +66,7 @@ export default function QuizModeTab() {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
       // Try to get text from cached data
-      let textHe = "";
+      const textHe = "";
       const dbKey = masechet ? `${masechet} ${daf}` : recentMasechtot[0] || "ברכות";
 
       const res = await fetch(`${supabaseUrl}/functions/v1/generate-quiz`, {

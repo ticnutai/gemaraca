@@ -26,6 +26,7 @@ const FlashcardsTab = lazy(() => import("@/components/FlashcardsTab"));
 const QuizModeTab = lazy(() => import("@/components/QuizModeTab"));
 const StatsDashboardTab = lazy(() => import("@/components/StatsDashboardTab"));
 const LearningRecommendations = lazy(() => import("@/components/LearningRecommendations"));
+const BeautifyPsakDinTab = lazy(() => import("@/components/BeautifyPsakDinTab"));
 
 const TabFallback = () => (
   <div className="p-3 md:p-6 space-y-4">
@@ -79,6 +80,7 @@ const Index = () => {
               {activeTab === "quiz" && <QuizModeTab />}
               {activeTab === "stats" && <StatsDashboardTab />}
               {activeTab === "recommendations" && <LearningRecommendations />}
+              {activeTab === "beautify-psak" && <BeautifyPsakDinTab />}
             </Suspense>
           </SectionErrorBoundary>
         </div>

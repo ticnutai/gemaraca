@@ -15,7 +15,7 @@ import {
   Link, Plus, Pencil, Trash2, Download, Search, Filter, ArrowUpDown, FileSpreadsheet,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import PsakDinViewDialog from "./PsakDinViewDialog";
 import PsakDinEditDialog from "./PsakDinEditDialog";
 import BulkActionsBar from "./BulkActionsBar";
@@ -26,6 +26,10 @@ import { cachePsakim, getAllCachedPsakim, type CachedPsak } from "@/lib/psakCach
 import { exportPsakimToCsv } from "@/lib/csvExporter";
 import { cn } from "@/lib/utils";
 
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 const PAGE_SIZE = 50;
 
 const PsakDinTab = () => {
@@ -33,7 +37,6 @@ const PsakDinTab = () => {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const queryClient = useQueryClient();
   const [selectedPsak, setSelectedPsak] = useState<any | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedForAnalysis, setSelectedForAnalysis] = useState<Set<string>>(new Set());
@@ -259,9 +262,9 @@ const PsakDinTab = () => {
 
   const handleDownloadSingle = (psak: any) => {
     const content = psak.full_text || psak.summary || '';
-    const html = `<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="UTF-8"><title>${psak.title}</title>
+    const html = `<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="UTF-8"><title>${escapeHtml(psak.title)}</title>
 <style>body{font-family:'David',serif;max-width:800px;margin:0 auto;padding:20px;direction:rtl;line-height:1.8}h1{color:#1a365d;border-bottom:2px solid #2b6cb0;padding-bottom:10px}.meta{background:#f7fafc;padding:12px;border-radius:8px;margin-bottom:20px;color:#4a5568}.content{white-space:pre-wrap}</style>
-</head><body><h1>${psak.title}</h1><div class="meta"><span>בית דין: ${psak.court}</span> <span>שנה: ${psak.year}</span></div><div class="content">${content}</div></body></html>`;
+</head><body><h1>${escapeHtml(psak.title)}</h1><div class="meta"><span>בית דין: ${escapeHtml(psak.court)}</span> <span>שנה: ${psak.year}</span></div><div class="content">${escapeHtml(content)}</div></body></html>`;
     const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -317,6 +320,7 @@ const PsakDinTab = () => {
     const idsToAnalyze = Array.from(selectedForAnalysis);
     setAnalysisProgress({ current: 0, total: idsToAnalyze.length });
     let successCount = 0;
+    let failedCount = 0;
     for (let i = 0; i < idsToAnalyze.length; i++) {
       setAnalysisProgress({ current: i + 1, total: idsToAnalyze.length });
       try {
@@ -324,8 +328,10 @@ const PsakDinTab = () => {
           body: { psakId: idsToAnalyze[i] }
         });
         if (!error) successCount++;
+        else failedCount++;
       } catch (err) {
         console.error(`Error analyzing psak ${idsToAnalyze[i]}:`, err);
+        failedCount++;
       }
       if (i < idsToAnalyze.length - 1) await new Promise(resolve => setTimeout(resolve, 500));
     }
@@ -333,7 +339,11 @@ const PsakDinTab = () => {
     setSelectedForAnalysis(new Set());
     await loadTotalUnlinkedCount();
     await loadPsakim(0, true);
-    toast({ title: "ניתוח AI הושלם", description: `נותחו ${successCount} פסקי דין בהצלחה` });
+    toast({
+      title: "ניתוח AI הושלם",
+      description: `נותחו ${successCount} פסקי דין בהצלחה${failedCount > 0 ? ` (${failedCount} נכשלו)` : ''}`,
+      variant: failedCount > 0 ? 'destructive' : 'default',
+    });
   };
 
   const displayedUnlinkedCount = psakim.filter(p => !psakLinks.has(p.id)).length;
