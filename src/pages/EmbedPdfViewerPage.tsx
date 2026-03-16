@@ -1642,18 +1642,21 @@ export default function EmbedPdfViewerPage() {
           ) : (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center space-y-4 p-8">
-                <FileText className="h-16 w-16 mx-auto text-[#D4AF37]/30" />
-                <p className="text-[#0B1F5B]/50 text-sm">בחר מסמך מהרשימה או העלה קובץ</p>
-                <div className="flex flex-col sm:flex-row gap-2 justify-center">
-                  <Button size="sm" className="bg-[#0B1F5B] text-white border-2 border-[#D4AF37] gap-1" onClick={triggerFileUpload} disabled={isUploading}>
-                    {isUploading ? <Loader2Icon className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} העלה מהמחשב
-                  </Button>
-                  <Button size="sm" variant="outline" className="border-[#D4AF37] text-[#0B1F5B] gap-1" onClick={() => { loadCloudDocs(); togglePanel("cloud"); }}>
-                    <Database className="h-4 w-4" /> מסמכים מהענן
-                  </Button>
-                  <Button size="sm" variant="outline" className="border-[#D4AF37] text-[#0B1F5B] gap-1" onClick={() => togglePanel("add")}>
-                    <Plus className="h-4 w-4" /> הוסף קישור
-                  </Button>
+                <div className="border-2 border-dashed border-[#D4AF37]/40 rounded-2xl p-10 hover:border-[#D4AF37] transition-colors">
+                  <FileText className="h-16 w-16 mx-auto text-[#D4AF37]/30 mb-4" />
+                  <p className="text-[#0B1F5B]/50 text-sm mb-1">גרור קובץ לכאן או בחר מסמך</p>
+                  <p className="text-[10px] text-[#0B1F5B]/30 mb-4">PDF, TXT, תמונות, DOCX</p>
+                  <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                    <Button size="sm" className="bg-[#0B1F5B] text-white border-2 border-[#D4AF37] gap-1" onClick={triggerFileUpload} disabled={isUploading}>
+                      {isUploading ? <Loader2Icon className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} העלה מהמחשב
+                    </Button>
+                    <Button size="sm" variant="outline" className="border-[#D4AF37] text-[#0B1F5B] gap-1" onClick={() => { loadCloudDocs(); togglePanel("cloud"); }}>
+                      <Database className="h-4 w-4" /> מסמכים מהענן
+                    </Button>
+                    <Button size="sm" variant="outline" className="border-[#D4AF37] text-[#0B1F5B] gap-1" onClick={() => togglePanel("add")}>
+                      <Plus className="h-4 w-4" /> הוסף קישור
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
