@@ -54,17 +54,21 @@ export function useDownloadController() {
 
     if (error || !data) throw new Error(error?.message || 'Not found');
 
-    // PDF format: try to fetch original file from storage
-    if (format === 'pdf' && data.source_url) {
-      try {
-        const res = await fetch(data.source_url);
-        if (res.ok) {
-          const blob = await res.blob();
-          return { title: data.title, content: blob, ext: '.pdf' };
-        }
-      } catch {
-        // fallback to HTML
+    // PDF format: try original file first, then generate real PDF
+    if (format === 'pdf') {
+      if (data.source_url) {
+        try {
+          const res = await fetch(data.source_url);
+          if (res.ok) {
+            const blob = await res.blob();
+            return { title: data.title, content: blob, ext: '.pdf' };
+          }
+        } catch { /* fallback to generated PDF */ }
       }
+
+      // Generate real PDF with jsPDF
+      const pdfBlob = await generatePdf(data);
+      return { title: data.title, content: pdfBlob, ext: '.pdf' };
     }
 
     const textContent = data.full_text || data.summary || '';
@@ -320,4 +324,82 @@ function buildHtmlContent(data: { title: string; court: string; year: number; ca
 <div class="content">${escapeHtml(textContent)}</div>
 </body>
 </html>`;
+}
+
+async function generatePdf(data: { title: string; court: string; year: number; case_number?: string | null; full_text?: string | null; summary?: string | null }): Promise<Blob> {
+  const { default: jsPDF } = await import('jspdf');
+
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 20;
+  const maxWidth = pageWidth - margin * 2;
+  let y = margin;
+
+  // Use built-in Helvetica (supports basic Latin). For Hebrew we render via UTF-16BE.
+  // jsPDF doesn't natively support Hebrew fonts, so we render HTML to canvas then to PDF.
+  const textContent = data.full_text || data.summary || '';
+
+  // Create an offscreen container to render HTML
+  const container = document.createElement('div');
+  container.style.cssText = `
+    position: fixed; top: -9999px; left: -9999px;
+    width: 700px; padding: 40px; background: white;
+    font-family: 'David', 'Times New Roman', serif;
+    direction: rtl; line-height: 1.8; color: #1a1a1a;
+  `;
+  container.innerHTML = `
+    <h1 style="color:#1a365d;border-bottom:2px solid #2b6cb0;padding-bottom:10px;font-size:22px;margin-bottom:16px">${escapeHtml(data.title)}</h1>
+    <div style="background:#f0f4f8;padding:12px;border-radius:8px;margin-bottom:20px;color:#4a5568;font-size:14px">
+      <span>בית דין: ${escapeHtml(data.court)}</span>&nbsp;&nbsp;
+      <span>שנה: ${data.year}</span>
+      ${data.case_number ? `&nbsp;&nbsp;<span>תיק: ${escapeHtml(data.case_number)}</span>` : ''}
+    </div>
+    <div style="white-space:pre-wrap;font-size:15px">${escapeHtml(textContent)}</div>
+  `;
+  document.body.appendChild(container);
+
+  try {
+    const { default: html2canvas } = await import('html2canvas');
+    const canvas = await html2canvas(container, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+    });
+
+    const imgData = canvas.toDataURL('image/jpeg', 0.92);
+    const imgWidth = maxWidth;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+    // Split across pages if needed
+    let remainingHeight = imgHeight;
+    let sourceY = 0;
+    const availableHeight = pageHeight - margin * 2;
+
+    while (remainingHeight > 0) {
+      if (sourceY > 0) doc.addPage();
+
+      const sliceHeight = Math.min(availableHeight, remainingHeight);
+      // Calculate source coordinates for this slice
+      const srcYPx = (sourceY / imgHeight) * canvas.height;
+      const srcHPx = (sliceHeight / imgHeight) * canvas.height;
+
+      // Create a slice canvas
+      const sliceCanvas = document.createElement('canvas');
+      sliceCanvas.width = canvas.width;
+      sliceCanvas.height = srcHPx;
+      const ctx = sliceCanvas.getContext('2d')!;
+      ctx.drawImage(canvas, 0, srcYPx, canvas.width, srcHPx, 0, 0, canvas.width, srcHPx);
+
+      const sliceData = sliceCanvas.toDataURL('image/jpeg', 0.92);
+      doc.addImage(sliceData, 'JPEG', margin, margin, imgWidth, sliceHeight);
+
+      sourceY += sliceHeight;
+      remainingHeight -= sliceHeight;
+    }
+
+    return doc.output('blob');
+  } finally {
+    document.body.removeChild(container);
+  }
 }
