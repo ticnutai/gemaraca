@@ -420,7 +420,7 @@ export default function DevMigrationsPanel({ open, onClose }: { open: boolean; o
                       {lastResult.success ? 'הצליחה' : 'נכשלה'}
                     </span>
                     <span className="text-muted-foreground">
-                      ({lastResult.executionTime}ms)
+                      ({String(lastResult.executionTime)}ms)
                     </span>
                   </div>
                   {lastResult.error && (
