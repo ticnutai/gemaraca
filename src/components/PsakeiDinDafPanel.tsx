@@ -213,7 +213,7 @@ export default function PsakeiDinDafPanel({
   const openViewer = useCallback((type: ViewerType) => {
     setViewerSelectOpen(false);
     if (type === 'embedpdf-page' && selectedPsak?.source_url) {
-      navigate(`/embedpdf-viewer?url=${encodeURIComponent(selectedPsak.source_url)}`);
+      navigate(`/embedpdf-viewer?url=${encodeURIComponent(selectedPsak.source_url)}&psakId=${selectedPsak.id}`);
     } else if (type === 'regular') {
       setDialogOpen(true);
     } else {
