@@ -551,9 +551,9 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
       {/* Psak Din Examples Section */}
       {psakDinExamples.length > 0 && !selectedMasechetLocal && (
         <div className="bg-card rounded-lg md:rounded-xl border border-border p-2 md:p-4">
-          <div className="flex items-center gap-1.5 md:gap-2 mb-2 md:mb-4">
+           <div className="flex items-center gap-1.5 md:gap-2 mb-2 md:mb-4">
             <Scale className="h-3.5 w-3.5 md:h-5 md:w-5 text-foreground" />
-            <h3 className="font-bold text-sm md:text-lg">דוגמאות פסקי דין</h3>
+            <h3 className="font-bold text-sm md:text-lg">פסקי דין אחרונים</h3>
           </div>
           
           <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
