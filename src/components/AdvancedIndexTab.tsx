@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAllReferencesGrouped, useValidateReference, useCorrectReference } from '@/hooks/useTalmudReferences';
 import { useFilterWorker } from '@/hooks/useFilterWorker';
 import { Input } from '@/components/ui/input';
@@ -19,6 +20,7 @@ import CardsView from './talmud-index/CardsView';
 import TreeViewIndex from './talmud-index/TreeViewIndex';
 import GenealogyTreeView from './talmud-index/GenealogyTreeView';
 import PsakDinViewDialog from './PsakDinViewDialog';
+import ViewerPreferenceDialog, { getViewerPreference, type ViewerMode } from './ViewerPreferenceDialog';
 import IndexingControlPanel from './IndexingControlPanel';
 import DebugDiagnosticDialog from './DebugDiagnosticDialog';
 import { TalmudRefWithPsak, TRACTATES, ValidationStatus, ViewMode, HIGHLIGHT_COLORS } from './talmud-index/types';
