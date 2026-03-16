@@ -1174,13 +1174,27 @@ export default function EmbedPdfViewerPage() {
               {/* ADD DOCUMENT (unified panel) */}
               {activePanel === "add" && (
                 <div className="space-y-3">
-                  {/* Upload from computer */}
-                  <div className="border border-[#D4AF37]/30 rounded-lg p-3 space-y-2">
+                  {/* Upload from computer with drag & drop */}
+                  <div
+                    className={`border-2 border-dashed rounded-lg p-3 space-y-2 transition-colors ${
+                      isDragging ? "border-[#D4AF37] bg-[#D4AF37]/10" : "border-[#D4AF37]/30"
+                    }`}
+                    onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      dragCounterRef.current = 0;
+                      setIsDragging(false);
+                      const file = e.dataTransfer.files?.[0];
+                      if (file) processFileUpload(file);
+                    }}
+                  >
                     <div className="flex items-center gap-2">
                       <Upload className="h-4 w-4 text-[#D4AF37]" />
                       <p className="text-xs font-semibold text-[#0B1F5B]">העלה מהמחשב</p>
                     </div>
-                    <p className="text-[10px] text-[#0B1F5B]/40">PDF, TXT, תמונות, DOCX</p>
+                    <p className="text-[10px] text-[#0B1F5B]/40">PDF, TXT, תמונות, DOCX — גרור לכאן או לחץ</p>
                     <Button size="sm" className="w-full bg-[#0B1F5B] text-white border-2 border-[#D4AF37] gap-2" onClick={triggerFileUpload} disabled={isUploading}>
                       {isUploading ? <><Loader2Icon className="h-4 w-4 animate-spin" /> מעלה...</> : <><Upload className="h-4 w-4" /> בחר קובץ</>}
                     </Button>
