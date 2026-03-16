@@ -128,6 +128,7 @@ export const useShasDownloadStore = create<ShasDownloadStore>()(
         get()._processQueue();
       },
 
+      startSingleMasechet: (masechet) => {
         if (!_abortController) _abortController = new AbortController();
         
         const masechtot = get().masechtot.map((m) =>
