@@ -110,7 +110,24 @@ export const useShasDownloadStore = create<ShasDownloadStore>()(
           .then(() => get()._processQueue());
       },
 
-      startSingleMasechet: (masechet) => {
+      startMissingOnly: () => {
+        _abortController = new AbortController();
+        
+        // Only mark masechtot that have missing pages as pending
+        const masechtot = get().masechtot.map((m) => {
+          if (m.loadedPages < m.totalPages) {
+            return { ...m, status: 'pending' as const, currentDaf: 2 };
+          }
+          return m;
+        });
+        
+        const hasMissing = masechtot.some((m) => m.status === 'pending');
+        if (!hasMissing) return;
+        
+        set({ isRunning: true, isPaused: false, masechtot });
+        get()._processQueue();
+      },
+
         if (!_abortController) _abortController = new AbortController();
         
         const masechtot = get().masechtot.map((m) =>
