@@ -591,7 +591,7 @@ const SugyaDetail = () => {
                         {caseFaqItems.length > 0 && (
                           <div className="pt-2 border-t border-border">
                             <FAQSection 
-                              items={caseFaqItems} 
+                              items={caseFaqItems.map(f => ({ ...f, order_index: f.order_index ?? 0 }))} 
                               title="שאלות ותשובות"
                             />
                           </div>
