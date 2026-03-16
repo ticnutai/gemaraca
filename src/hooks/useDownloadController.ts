@@ -238,8 +238,8 @@ export function useDownloadController() {
 
       setSessionStatus(sessionId, 'completed');
       toast({
-        title: 'ההורדה הושלמה!',
-        description: `הורדו ${downloadedContents.size} פסקי דין${errors.length > 0 ? ` (${errors.length} שגיאות)` : ''}`,
+        title: '✅ ההורדה הושלמה!',
+        description: `הורדו ${downloadedContents.size} פסקי דין בפורמט ${format.toUpperCase()}${errors.length > 0 ? ` (${errors.length} שגיאות)` : ''}`,
       });
     } catch (err) {
       if ((err as Error).message !== 'aborted') {
