@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useDownloadController } from "@/hooks/useDownloadController";
+import { useDownloadController, DownloadFormat } from "@/hooks/useDownloadController";
 import { useDownloadStore } from "@/stores/downloadStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
