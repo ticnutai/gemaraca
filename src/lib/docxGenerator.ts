@@ -43,7 +43,6 @@ export async function generateDocx(data: PsakData): Promise<Blob> {
           },
           paragraph: {
             alignment: AlignmentType.RIGHT,
-            bidirectional: true,
             spacing: { after: 120, line: 360 },
           },
         },
