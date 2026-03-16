@@ -283,7 +283,7 @@ const BeautifyPsakDinTab = () => {
 
   const toggleSelectAll = useCallback(() => {
     setSelectedIds(prev => {
-      if (prev.size === dbItems.length) return new Set();
+      if (prev.size > 0 && prev.size === dbItems.length) return new Set();
       return new Set(dbItems.map(i => i.id));
     });
   }, [dbItems]);
@@ -1093,16 +1093,15 @@ const BeautifyPsakDinTab = () => {
 
           {/* Selection bar */}
           <div className="flex items-center justify-between px-4 py-2 bg-muted/50 border-b text-sm">
-            <button
-              onClick={toggleSelectAll}
-              className="flex items-center gap-2 text-primary hover:underline"
+            <label
+              className="flex items-center gap-2 text-primary hover:underline cursor-pointer select-none"
             >
               <Checkbox
                 checked={dbItems.length > 0 && selectedIds.size === dbItems.length}
-                onCheckedChange={toggleSelectAll}
+                onCheckedChange={() => toggleSelectAll()}
               />
-              {selectedIds.size === dbItems.length && dbItems.length > 0 ? "בטל הכל" : "בחר הכל"}
-            </button>
+              {selectedIds.size > 0 && selectedIds.size === dbItems.length ? "בטל הכל" : "בחר הכל"}
+            </label>
             <div className="flex items-center gap-2">
               {selectedIds.size > 0 && (
                 <Badge variant="secondary">{selectedIds.size} נבחרו</Badge>
