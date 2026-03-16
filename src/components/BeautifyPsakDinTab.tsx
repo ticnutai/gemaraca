@@ -13,7 +13,7 @@ import {
 import {
   Paintbrush, Upload, Download, Sparkles, FileText, Loader2, Eye, Code,
   RotateCcw, Database, Save, Copy, Search, X, CheckSquare, Square,
-  Play, Pause, CheckCircle2, AlertCircle, ExternalLink,
+  Play, Pause, CheckCircle2, AlertCircle, ExternalLink, Pencil, Trash2,
 } from "lucide-react";
 import { parsePsakDinText, isPsakDinFormat } from "@/lib/psakDinParser";
 import { generatePsakDinHtml } from "@/lib/psakDinHtmlTemplate";
@@ -111,6 +111,10 @@ const BeautifyPsakDinTab = () => {
   const [batchRunning, setBatchRunning] = useState(false);
   const [previewJobId, setPreviewJobId] = useState<string | null>(null);
   const batchAbortRef = useRef(false);
+
+  // --- Inline edit/delete state ---
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollSentinelRef = useRef<HTMLDivElement>(null);
@@ -236,6 +240,32 @@ const BeautifyPsakDinTab = () => {
       return new Set(dbItems.map(i => i.id));
     });
   }, [dbItems]);
+
+  const handleRenameItem = useCallback(async (id: string, newTitle: string) => {
+    if (!newTitle.trim()) return;
+    try {
+      const { error } = await supabase.from("psakei_din").update({ title: newTitle.trim() }).eq("id", id);
+      if (error) throw error;
+      setDbItems(prev => prev.map(i => i.id === id ? { ...i, title: newTitle.trim() } : i));
+      toast({ title: "עודכן", description: "שם פסק הדין עודכן" });
+    } catch {
+      toast({ title: "שגיאה", description: "שגיאה בעדכון השם", variant: "destructive" });
+    }
+    setEditingItemId(null);
+  }, [toast]);
+
+  const handleDeleteItem = useCallback(async (id: string) => {
+    if (!confirm("למחוק פסק דין זה?")) return;
+    try {
+      const { error } = await supabase.from("psakei_din").delete().eq("id", id);
+      if (error) throw error;
+      setDbItems(prev => prev.filter(i => i.id !== id));
+      setSelectedIds(prev => { const n = new Set(prev); n.delete(id); return n; });
+      toast({ title: "נמחק", description: "פסק הדין נמחק" });
+    } catch {
+      toast({ title: "שגיאה", description: "שגיאה במחיקה", variant: "destructive" });
+    }
+  }, [toast]);
 
   // ===== LOAD SINGLE FROM DB =====
   const handleLoadSingle = useCallback(async (item: DbPsakItem) => {
@@ -1048,9 +1078,9 @@ const BeautifyPsakDinTab = () => {
             ) : (
               <div className="divide-y">
                 {dbItems.map((item) => (
-                  <label
+                  <div
                     key={item.id}
-                    className={`flex items-start gap-3 p-3 cursor-pointer transition-colors hover:bg-accent/50
+                    className={`group flex items-start gap-3 p-3 transition-colors hover:bg-accent/50 relative
                       ${selectedIds.has(item.id) ? "bg-primary/5" : ""}`}
                   >
                     <Checkbox
@@ -1058,16 +1088,31 @@ const BeautifyPsakDinTab = () => {
                       onCheckedChange={() => toggleSelect(item.id)}
                       className="mt-1 shrink-0"
                     />
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm truncate flex items-center gap-2">
-                        {item.title}
-                        {(item.beautify_count || 0) > 0 && (
-                          <Badge className="gap-1 text-[10px] px-1.5 py-0 bg-amber-500/15 text-amber-600 border border-amber-500/30 dark:text-amber-400 shrink-0">
-                            <Paintbrush className="w-2.5 h-2.5" />
-                            עוצב {item.beautify_count}
-                          </Badge>
-                        )}
-                      </div>
+                    <div className="flex-1 min-w-0 cursor-pointer" onClick={() => handleLoadSingle(item)}>
+                      {editingItemId === item.id ? (
+                        <Input
+                          autoFocus
+                          value={editingTitle}
+                          onChange={(e) => setEditingTitle(e.target.value)}
+                          onBlur={() => handleRenameItem(item.id, editingTitle)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleRenameItem(item.id, editingTitle);
+                            if (e.key === "Escape") setEditingItemId(null);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="h-7 text-sm"
+                        />
+                      ) : (
+                        <div className="font-medium text-sm truncate flex items-center gap-2">
+                          {item.title}
+                          {(item.beautify_count || 0) > 0 && (
+                            <Badge className="gap-1 text-[10px] px-1.5 py-0 bg-amber-500/15 text-amber-600 border border-amber-500/30 dark:text-amber-400 shrink-0">
+                              <Paintbrush className="w-2.5 h-2.5" />
+                              עוצב {item.beautify_count}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
                       <div className="text-xs text-muted-foreground mt-0.5 flex gap-2 flex-wrap">
                         <span>{item.court}</span>
                         <span>•</span>
@@ -1077,7 +1122,35 @@ const BeautifyPsakDinTab = () => {
                         <div className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.summary}</div>
                       )}
                     </div>
-                  </label>
+                    {/* Hover action icons */}
+                    <div className="hidden group-hover:flex items-center gap-1 shrink-0 mt-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        title="ערוך שם"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingItemId(item.id);
+                          setEditingTitle(item.title);
+                        }}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-destructive hover:text-destructive"
+                        title="מחק"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteItem(item.id);
+                        }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
                 ))}
                 {/* Infinite scroll sentinel */}
                 <div ref={scrollSentinelRef} className="h-4" />
