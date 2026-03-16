@@ -75,7 +75,9 @@ export function useDownloadController() {
     const htmlBody = buildHtmlContent(data, textContent);
 
     if (format === 'docx') {
-      return { title: data.title, content: htmlBody, ext: '.doc' };
+      const { generateDocx } = await import('@/lib/docxGenerator');
+      const docxBlob = await generateDocx(data);
+      return { title: data.title, content: docxBlob, ext: '.docx' };
     }
 
     return { title: data.title, content: htmlBody, ext: '.html' };
