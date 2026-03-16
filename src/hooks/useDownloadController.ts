@@ -54,17 +54,21 @@ export function useDownloadController() {
 
     if (error || !data) throw new Error(error?.message || 'Not found');
 
-    // PDF format: try to fetch original file from storage
-    if (format === 'pdf' && data.source_url) {
-      try {
-        const res = await fetch(data.source_url);
-        if (res.ok) {
-          const blob = await res.blob();
-          return { title: data.title, content: blob, ext: '.pdf' };
-        }
-      } catch {
-        // fallback to HTML
+    // PDF format: try original file first, then generate real PDF
+    if (format === 'pdf') {
+      if (data.source_url) {
+        try {
+          const res = await fetch(data.source_url);
+          if (res.ok) {
+            const blob = await res.blob();
+            return { title: data.title, content: blob, ext: '.pdf' };
+          }
+        } catch { /* fallback to generated PDF */ }
       }
+
+      // Generate real PDF with jsPDF
+      const pdfBlob = await generatePdf(data);
+      return { title: data.title, content: pdfBlob, ext: '.pdf' };
     }
 
     const textContent = data.full_text || data.summary || '';
