@@ -1039,8 +1039,19 @@ const BeautifyPsakDinTab = () => {
               />
             </div>
             <div className="flex gap-2 flex-wrap items-center">
+              <Select value={dbMasechetFilter} onValueChange={(v) => setDbMasechetFilter(v)}>
+                <SelectTrigger className="w-[150px] h-8 text-xs">
+                  <SelectValue placeholder="לפי מסכת" />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  <SelectItem value="all">כל המסכתות</SelectItem>
+                  {MASECHTOT.map(m => (
+                    <SelectItem key={m.sefariaName} value={m.sefariaName}>{m.hebrewName}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Select value={dbBeautifyFilter} onValueChange={(v) => setDbBeautifyFilter(v as any)}>
-                <SelectTrigger className="w-[140px] h-8 text-xs">
+                <SelectTrigger className="w-[120px] h-8 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -1050,7 +1061,7 @@ const BeautifyPsakDinTab = () => {
                 </SelectContent>
               </Select>
               <Select value={dbSortBy} onValueChange={(v) => setDbSortBy(v as any)}>
-                <SelectTrigger className="w-[120px] h-8 text-xs">
+                <SelectTrigger className="w-[110px] h-8 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -1072,6 +1083,11 @@ const BeautifyPsakDinTab = () => {
                   className="w-[70px] h-8 text-xs text-center"
                 />
               </div>
+              {masechetPsakIds !== null && (
+                <Badge variant="outline" className="text-xs">
+                  {masechetPsakIds.size} פסקי דין למסכת
+                </Badge>
+              )}
             </div>
           </div>
 
