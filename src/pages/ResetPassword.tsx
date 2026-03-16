@@ -80,7 +80,7 @@ export default function ResetPassword() {
         <CardContent>
           {isDone ? (
             <div className="flex flex-col items-center gap-3 py-4">
-              <CheckCircle className="h-12 w-12 text-green-500" />
+              <CheckCircle className="h-12 w-12 text-primary" />
               <p className="text-sm text-muted-foreground">מעביר לעמוד הראשי...</p>
             </div>
           ) : !isReady ? (
