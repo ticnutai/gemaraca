@@ -8,16 +8,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const BATCH_SIZE = 15;
-const DELAY_MS = 300;
-const FETCH_TIMEOUT_MS = 15000;
+// ─── TUNING ───
+const BATCH_SIZE = 20;          // dafim per call (was 15)
+const PARALLEL_FETCHES = 5;     // concurrent Sefaria requests (was 1 = sequential!)
+const DELAY_BETWEEN_GROUPS = 150; // ms between parallel groups (was 300 per page)
+const FETCH_TIMEOUT_MS = 12000;
 
-// Shekalim is Yerushalmi — Sefaria uses "Jerusalem_Talmud_Shekalim" with a different chapter/halakha format.
-// Mapping from Vilna daf numbers to Yerushalmi chapter references.
+// Shekalim Yerushalmi mapping
 const SHEKALIM_DAF_MAP: Record<string, string> = {};
-// Build Shekalim mapping: daf 2-22, amudim a/b → Yerushalmi chapter.halakha
-// Shekalim has 8 chapters. Approximate mapping based on Vilna Shas printing:
-// Ch1: 2a-5a, Ch2: 5a-7a, Ch3: 7a-9b, Ch4: 9b-12a, Ch5: 12a-14b, Ch6: 14b-17a, Ch7: 17a-19b, Ch8: 19b-22a
 const _buildShekalimMap = () => {
   const chapters = [
     { ch: 1, fromDaf: 2, fromAmud: 'a', toDaf: 5, toAmud: 'a' },
@@ -29,7 +27,7 @@ const _buildShekalimMap = () => {
     { ch: 7, fromDaf: 17, fromAmud: 'a', toDaf: 19, toAmud: 'b' },
     { ch: 8, fromDaf: 19, fromAmud: 'b', toDaf: 22, toAmud: 'a' },
   ];
-  let halakhaCounts: Record<number, number> = {};
+  const halakhaCounts: Record<number, number> = {};
   for (let daf = 2; daf <= 22; daf++) {
     for (const amud of ['a', 'b']) {
       const key = `${daf}${amud}`;
@@ -65,6 +63,41 @@ const toHebrewNumeral = (num: number): string => {
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
+// Fetch a single page from Sefaria with timeout
+async function fetchSefariaPage(sefariaRef: string, isYerushalmi: boolean, dafAmudKey: string): Promise<any | null> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+  try {
+    const resp = await fetch(
+      `https://www.sefaria.org/api/texts/${sefariaRef}?commentary=0&context=0`,
+      { signal: controller.signal }
+    );
+    clearTimeout(timeoutId);
+    if (!resp.ok) {
+      // Fallback for Yerushalmi
+      if (isYerushalmi) {
+        const fallbackController = new AbortController();
+        const fallbackTimeout = setTimeout(() => fallbackController.abort(), FETCH_TIMEOUT_MS);
+        try {
+          const fallbackResp = await fetch(
+            `https://www.sefaria.org/api/texts/Shekalim.${dafAmudKey}?commentary=0&context=0`,
+            { signal: fallbackController.signal }
+          );
+          clearTimeout(fallbackTimeout);
+          if (fallbackResp.ok) return await fallbackResp.json();
+        } catch { /* ignore */ }
+        finally { clearTimeout(fallbackTimeout); }
+      }
+      return null;
+    }
+    return await resp.json();
+  } catch {
+    clearTimeout(timeoutId);
+    return null;
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -85,8 +118,7 @@ serve(async (req) => {
       const statusMap: Record<string, { total: number; withText: number }> = {};
       const PAGE = 1000;
       let offset = 0;
-      let fetchMore = true;
-      while (fetchMore) {
+      while (true) {
         const { data: rows } = await supabaseClient
           .from('gemara_pages')
           .select('masechet, text_he')
@@ -101,7 +133,6 @@ serve(async (req) => {
         offset += PAGE;
       }
 
-      // Also fetch download progress
       const { data: progress } = await supabaseClient
         .from('shas_download_progress')
         .select('*');
@@ -112,7 +143,7 @@ serve(async (req) => {
       );
     }
 
-    // ─── INIT MODE — initialize all masechet rows for tracking ───
+    // ─── INIT MODE ───
     if (mode === 'init') {
       for (const m of MASECHTOT_LIST) {
         const totalPages = (m.maxDaf - 1) * 2;
@@ -151,6 +182,7 @@ serve(async (req) => {
     const maxDaf = masechetInfo.maxDaf;
     const fromDaf = startDaf || 2;
     const toDaf = Math.min(fromDaf + BATCH_SIZE - 1, maxDaf);
+    const isYerushalmi = sefariaName === 'Shekalim';
 
     // Update progress to "downloading"
     await supabaseClient
@@ -165,167 +197,166 @@ serve(async (req) => {
         started_at: fromDaf === 2 ? new Date().toISOString() : undefined,
       }, { onConflict: 'masechet' });
 
-    let loaded = 0;
-    let skipped = 0;
-    let errors: string[] = [];
-    let pagesAttempted = 0;
-    let pagesWithText = 0;
+    // Build list of all pages to fetch in this batch
+    interface PageInfo {
+      daf: number;
+      amud: 'a' | 'b';
+      sugyaId: string;
+      sefariaRef: string;
+      dafAmudKey: string;
+      dafYomi: string;
+    }
 
+    const pages: PageInfo[] = [];
     for (let daf = fromDaf; daf <= toDaf; daf++) {
       for (const amud of ['a', 'b'] as const) {
-        pagesAttempted++;
-        const sugyaId = `${sefariaName.toLowerCase()}_${daf}${amud}`;
         const dafAmudKey = `${daf}${amud}`;
-        
-        // For Shekalim, try the Yerushalmi reference format
-        const isYerushalmi = sefariaName === 'Shekalim';
+        const sugyaId = `${sefariaName.toLowerCase()}_${dafAmudKey}`;
         const sefariaRef = isYerushalmi && SHEKALIM_DAF_MAP[dafAmudKey]
           ? SHEKALIM_DAF_MAP[dafAmudKey]
           : `${sefariaName}.${dafAmudKey}`;
-        
         const amudLabel = amud === 'a' ? 'ע״א' : 'ע״ב';
         const dafYomi = `${hebrewName} ${toHebrewNumeral(daf)} ${amudLabel}`;
+        pages.push({ daf, amud, sugyaId, sefariaRef, dafAmudKey, dafYomi });
+      }
+    }
 
-        // Check if already has text
-        const { data: existing } = await supabaseClient
-          .from('gemara_pages')
-          .select('id, text_he')
-          .eq('sugya_id', sugyaId)
-          .maybeSingle();
+    // ── BATCH CHECK: which pages already have text ──
+    const sugyaIds = pages.map(p => p.sugyaId);
+    const existingMap: Map<string, { id: string; hasText: boolean }> = new Map();
+    
+    // Fetch in chunks of 50 to stay within query limits
+    for (let i = 0; i < sugyaIds.length; i += 50) {
+      const chunk = sugyaIds.slice(i, i + 50);
+      const { data: existing } = await supabaseClient
+        .from('gemara_pages')
+        .select('id, sugya_id, text_he')
+        .in('sugya_id', chunk);
+      if (existing) {
+        for (const row of existing) {
+          existingMap.set(row.sugya_id, { id: row.id, hasText: !!row.text_he });
+        }
+      }
+    }
 
-        if (existing?.text_he) { skipped++; pagesWithText++; continue; }
+    // Filter out pages that already have text
+    const pagesToFetch = pages.filter(p => {
+      const ex = existingMap.get(p.sugyaId);
+      return !ex?.hasText;
+    });
 
-        try {
-          await sleep(DELAY_MS);
-          
-          // Fetch with timeout to prevent hanging
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-          
-          let resp: Response;
-          let data: any;
-          
-          try {
-            resp = await fetch(
-              `https://www.sefaria.org/api/texts/${sefariaRef}?commentary=0&context=1`,
-              { signal: controller.signal }
-            );
-            clearTimeout(timeoutId);
-          } catch (fetchErr) {
-            clearTimeout(timeoutId);
-            // If Yerushalmi ref failed, try standard ref as fallback
-            if (isYerushalmi) {
-              try {
-                const fallbackController = new AbortController();
-                const fallbackTimeoutId = setTimeout(() => fallbackController.abort(), FETCH_TIMEOUT_MS);
-                const fallbackResp = await fetch(
-                  `https://www.sefaria.org/api/texts/Shekalim.${dafAmudKey}?commentary=0&context=1`,
-                  { signal: fallbackController.signal }
-                );
-                clearTimeout(fallbackTimeoutId);
-                if (fallbackResp.ok) {
-                  resp = fallbackResp;
-                } else {
-                  errors.push(`${sefariaRef}: timeout/network error`);
-                  continue;
-                }
-              } catch {
-                errors.push(`${sefariaRef}: timeout/network error`);
-                continue;
-              }
-            } else {
-              errors.push(`${sefariaRef}: timeout/network error`);
-              continue;
-            }
+    const skipped = pages.length - pagesToFetch.length;
+    let loaded = 0;
+    let pagesWithText = skipped; // count existing text pages
+    const errors: string[] = [];
+
+    // ── PARALLEL FETCH in groups of PARALLEL_FETCHES ──
+    for (let i = 0; i < pagesToFetch.length; i += PARALLEL_FETCHES) {
+      const group = pagesToFetch.slice(i, i + PARALLEL_FETCHES);
+
+      const results = await Promise.allSettled(
+        group.map(async (page) => {
+          const data = await fetchSefariaPage(page.sefariaRef, isYerushalmi, page.dafAmudKey);
+          if (!data || !data.he || data.he.length === 0) {
+            return { page, data: null };
           }
-          
-          if (!resp!.ok) { errors.push(`${sefariaRef}: HTTP ${resp!.status}`); continue; }
+          return { page, data };
+        })
+      );
 
-          data = await resp!.json();
-          if (!data.he || data.he.length === 0) { errors.push(`${sefariaRef}: אין טקסט`); continue; }
-          
-          pagesWithText++;
+      // Process results - batch upsert
+      const inserts: any[] = [];
+      const updates: Array<{ id: string; data: any }> = [];
 
-          const row = {
-            daf_number: daf,
-            sugya_id: sugyaId,
-            title: dafYomi,
-            daf_yomi: dafYomi,
-            sefaria_ref: sefariaRef,
+      for (const result of results) {
+        if (result.status === 'rejected') {
+          errors.push(`fetch error: ${result.reason}`);
+          continue;
+        }
+        const { page, data } = result.value;
+        if (!data) {
+          errors.push(`${page.sefariaRef}: אין טקסט`);
+          continue;
+        }
+
+        pagesWithText++;
+        loaded++;
+
+        const existing = existingMap.get(page.sugyaId);
+        const rowData = {
+          text_he: data.he,
+          text_en: data.text || null,
+          he_ref: data.heRef || null,
+          book: data.book || null,
+          categories: data.categories || null,
+          section_ref: data.sectionRef || null,
+        };
+
+        if (existing) {
+          updates.push({ id: existing.id, data: rowData });
+        } else {
+          inserts.push({
+            daf_number: page.daf,
+            sugya_id: page.sugyaId,
+            title: page.dafYomi,
+            daf_yomi: page.dafYomi,
+            sefaria_ref: page.sefariaRef,
             masechet: sefariaName,
-            text_he: data.he,
-            text_en: data.text || null,
-            he_ref: data.heRef || null,
-            book: data.book || null,
-            categories: data.categories || null,
-            section_ref: data.sectionRef || null,
-          };
-
-          if (existing) {
-            await supabaseClient.from('gemara_pages').update({
-              text_he: data.he, text_en: data.text || null,
-              he_ref: data.heRef || null, book: data.book || null,
-              categories: data.categories || null, section_ref: data.sectionRef || null,
-            }).eq('id', existing.id);
-          } else {
-            await supabaseClient.from('gemara_pages').insert(row);
-          }
-          loaded++;
-        } catch (e) {
-          errors.push(`${sefariaRef}: ${e instanceof Error ? e.message : String(e)}`);
+            ...rowData,
+          });
         }
       }
 
-      // Update progress after each daf
-      const { data: currentProgress } = await supabaseClient
-        .from('shas_download_progress')
-        .select('loaded_pages, errors')
-        .eq('masechet', sefariaName)
-        .maybeSingle();
+      // Batch insert new rows
+      if (inserts.length > 0) {
+        const { error: insertError } = await supabaseClient
+          .from('gemara_pages')
+          .insert(inserts);
+        if (insertError) {
+          errors.push(`batch insert error: ${insertError.message}`);
+        }
+      }
 
-      const prevLoaded = currentProgress?.loaded_pages || 0;
-      const prevErrors = (currentProgress?.errors as string[]) || [];
+      // Batch update existing rows
+      for (const upd of updates) {
+        await supabaseClient
+          .from('gemara_pages')
+          .update(upd.data)
+          .eq('id', upd.id);
+      }
 
-      await supabaseClient
-        .from('shas_download_progress')
-        .update({
-          current_daf: daf + 1,
-          loaded_pages: prevLoaded + loaded,
-          errors: [...prevErrors, ...errors].slice(-50), // keep last 50
-        })
-        .eq('masechet', sefariaName);
-      
-      // Reset for next daf iteration count
-      loaded = 0;
-      skipped = 0;
-      errors = [];
+      // Small delay between groups to avoid Sefaria rate limiting
+      if (i + PARALLEL_FETCHES < pagesToFetch.length) {
+        await sleep(DELAY_BETWEEN_GROUPS);
+      }
     }
+
+    // ── Single progress update at end of batch ──
+    const { data: currentProgress } = await supabaseClient
+      .from('shas_download_progress')
+      .select('loaded_pages, errors')
+      .eq('masechet', sefariaName)
+      .maybeSingle();
+
+    const prevLoaded = currentProgress?.loaded_pages || 0;
+    const prevErrors = (currentProgress?.errors as string[]) || [];
 
     const hasMore = toDaf < maxDaf;
     const nextDaf = hasMore ? toDaf + 1 : null;
-    // allFailed = true when we attempted pages but NONE had text (skip/existing don't count as failure)
-    const newPagesAttempted = pagesAttempted - skipped;
-    const allFailed = newPagesAttempted > 0 && pagesWithText === 0;
+    const newPagesAttempted = pagesToFetch.length;
+    const allFailed = newPagesAttempted > 0 && loaded === 0;
+    const totalLoaded = prevLoaded + loaded + skipped;
 
-    // Get total loaded count from DB for the response
-    const { data: finalProgress } = await supabaseClient
+    await supabaseClient
       .from('shas_download_progress')
-      .select('loaded_pages')
-      .eq('masechet', sefariaName)
-      .maybeSingle();
-    const totalLoaded = finalProgress?.loaded_pages || 0;
-
-    // Update final status for this batch
-    if (!hasMore) {
-      await supabaseClient
-        .from('shas_download_progress')
-        .update({
-          status: 'completed',
-          completed_at: new Date().toISOString(),
-          current_daf: maxDaf,
-        })
-        .eq('masechet', sefariaName);
-    }
+      .update({
+        current_daf: hasMore ? toDaf + 1 : maxDaf,
+        loaded_pages: totalLoaded,
+        errors: [...prevErrors, ...errors].slice(-50),
+        status: hasMore ? 'downloading' : 'completed',
+        ...(hasMore ? {} : { completed_at: new Date().toISOString() }),
+      })
+      .eq('masechet', sefariaName);
 
     return new Response(
       JSON.stringify({
@@ -336,6 +367,7 @@ serve(async (req) => {
         hasMore, nextDaf,
         allFailed,
         totalLoaded,
+        batchStats: { fetched: loaded, skipped, errors: errors.length, totalPages: pages.length },
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
