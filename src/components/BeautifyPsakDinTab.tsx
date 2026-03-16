@@ -112,6 +112,10 @@ const BeautifyPsakDinTab = () => {
   const [previewJobId, setPreviewJobId] = useState<string | null>(null);
   const batchAbortRef = useRef(false);
 
+  // --- Inline edit/delete state ---
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState("");
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollSentinelRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
