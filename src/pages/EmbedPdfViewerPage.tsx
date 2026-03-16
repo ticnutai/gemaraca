@@ -387,7 +387,7 @@ export default function EmbedPdfViewerPage() {
   const rightSourceUrl = compareManualUrl.trim() || comparePdf?.file_url || "";
 
   // Smart viewer strategy: detect if URL is a direct file (PDF/TXT/DOCX) or an HTML page
-  type ContentViewType = 'pdf' | 'text' | 'docx' | 'image' | 'html-page';
+  type ContentViewType = 'pdf' | 'text' | 'docx' | 'image' | 'html-embed' | 'html-page';
 
   const detectContentType = useCallback((url: string): ContentViewType => {
     if (!url) return 'html-page';
@@ -396,6 +396,9 @@ export default function EmbedPdfViewerPage() {
     if (/\.(txt|text|log|csv|md)(\?|#|$)/.test(lower)) return 'text';
     if (/\.(docx?|rtf|odt|xls|xlsx|ppt|pptx)(\?|#|$)/.test(lower)) return 'docx';
     if (/\.(png|jpg|jpeg|gif|svg|webp|bmp)(\?|#|$)/.test(lower)) return 'image';
+    if (/\.(html?|htm)(\?|#|$)/.test(lower)) return 'html-embed';
+    // Check if it's a known storage URL with html in path (beautified files)
+    if (lower.includes('supabase.co/storage') && lower.includes('.html')) return 'html-embed';
     return 'html-page';
   }, []);
 
@@ -404,13 +407,12 @@ export default function EmbedPdfViewerPage() {
     switch (type) {
       case 'pdf':
       case 'image':
+      case 'html-embed':
         return url;
       case 'text':
       case 'html-page':
-        // Text: fetched via JS. HTML pages: show open-in-new-tab UI
         return "";
       case 'docx':
-        // Use Google Docs Viewer for office documents
         return `https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`;
     }
   }, []);
@@ -1681,8 +1683,8 @@ export default function EmbedPdfViewerPage() {
                   </div>
                 )}
 
-                {/* PDF / DOCX */}
-                {(leftContentType === 'pdf' || leftContentType === 'docx') && (
+                {/* PDF / DOCX / HTML-EMBED */}
+                {(leftContentType === 'pdf' || leftContentType === 'docx' || leftContentType === 'html-embed') && (
                   <>
                     {!iframeLoaded && !iframeError && (
                       <div className="absolute inset-0 flex items-center justify-center z-10">
