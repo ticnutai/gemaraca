@@ -5,10 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Calendar, Building2, FileText, List, BookOpen, Sparkles, Brain, Loader2,
-  Link, Plus, Pencil, Trash2, Download,
+  Link, Plus, Pencil, Trash2, Download, Search, Filter, ArrowUpDown, FileSpreadsheet,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -19,6 +23,7 @@ import FileTypeBadge from "./FileTypeBadge";
 import GemaraPsakDinIndex from "./GemaraPsakDinIndex";
 import { useToast } from "@/hooks/use-toast";
 import { cachePsakim, getAllCachedPsakim, type CachedPsak } from "@/lib/psakCache";
+import { exportPsakimToCsv } from "@/lib/csvExporter";
 import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 50;
@@ -42,15 +47,44 @@ const PsakDinTab = () => {
   const [isNewPsak, setIsNewPsak] = useState(false);
   const [selectedForBulk, setSelectedForBulk] = useState<Set<string>>(new Set());
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [courtFilter, setCourtFilter] = useState<string>("all");
+  const [sortOrder, setSortOrder] = useState<string>("year-desc");
+  const [courts, setCourts] = useState<string[]>([]);
   const { toast } = useToast();
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setPsakim([]);
+      setHasMore(true);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Reset on filter/sort change
+  useEffect(() => {
+    setPsakim([]);
+    setHasMore(true);
+  }, [courtFilter, sortOrder]);
+
+  // Load courts for filter
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from('psakei_din').select('court').order('court');
+      if (data) setCourts([...new Set(data.map(r => r.court).filter(Boolean))].sort());
+    })();
+  }, []);
+
   useEffect(() => {
     loadPsakim(0, true);
     loadTotalUnlinkedCount();
-  }, []);
+  }, [debouncedSearch, courtFilter, sortOrder]);
 
   // React Query for link counts
   const psakIds = psakim.map(p => p.id);
@@ -88,8 +122,8 @@ const PsakDinTab = () => {
     else setLoadingMore(true);
 
     try {
-      // Show cached data on first load
-      if (isInitial && offset === 0) {
+      // Show cached data on first load (only without filters)
+      if (isInitial && offset === 0 && !debouncedSearch && courtFilter === 'all') {
         const cached = await getAllCachedPsakim();
         if (cached.length > 0) {
           const sorted = cached.sort((a, b) => (b.year || 0) - (a.year || 0)).slice(0, PAGE_SIZE);
@@ -98,11 +132,22 @@ const PsakDinTab = () => {
         }
       }
 
-      const { data, error, count } = await supabase
+      const ascending = sortOrder === 'year-asc' || sortOrder === 'title-asc';
+      const orderCol = sortOrder.startsWith('title') ? 'title' : 'year';
+
+      let query = supabase
         .from('psakei_din')
         .select('*', { count: 'exact' })
-        .order('year', { ascending: false })
-        .range(offset, offset + PAGE_SIZE - 1);
+        .order(orderCol, { ascending });
+
+      if (debouncedSearch) {
+        query = query.or(`title.ilike.%${debouncedSearch}%,court.ilike.%${debouncedSearch}%,summary.ilike.%${debouncedSearch}%`);
+      }
+      if (courtFilter !== 'all') {
+        query = query.eq('court', courtFilter);
+      }
+
+      const { data, error, count } = await query.range(offset, offset + PAGE_SIZE - 1);
 
       if (error) throw error;
 
@@ -136,7 +181,7 @@ const PsakDinTab = () => {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, []);
+  }, [debouncedSearch, courtFilter, sortOrder]);
 
   // Infinite scroll
   useEffect(() => {
@@ -324,12 +369,23 @@ const PsakDinTab = () => {
             ) : (
               <div className="max-w-4xl mx-auto space-y-4">
                 {/* Header */}
-                <div className="flex items-center justify-between mb-6 flex-row-reverse">
+                <div className="flex items-center justify-between mb-4 flex-row-reverse">
                   <div className="flex items-center gap-3">
-                    <h2 className="text-2xl font-bold text-foreground">פסקי דין אחרונים</h2>
+                    <h2 className="text-2xl font-bold text-foreground">פסקי דין</h2>
+                    <Badge variant="secondary">{totalCount.toLocaleString()} פסקים</Badge>
                     <Button size="sm" onClick={handleAddNew} className="gap-2">
                       <Plus className="w-4 h-4" />
-                      הוסף פסק דין
+                      הוסף
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => exportPsakimToCsv(psakim)}
+                      disabled={psakim.length === 0}
+                      className="gap-2"
+                    >
+                      <FileSpreadsheet className="w-4 h-4" />
+                      ייצא CSV
                     </Button>
                   </div>
                   {totalUnlinkedCount > 0 && (
@@ -344,6 +400,43 @@ const PsakDinTab = () => {
                       )}
                     </div>
                   )}
+                </div>
+
+                {/* Search & Filter Bar */}
+                <div className="flex flex-wrap gap-3 items-center bg-muted/30 rounded-lg p-3">
+                  <div className="relative flex-1 min-w-[200px]">
+                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      placeholder="חיפוש לפי כותרת, בית דין, תקציר..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pr-9"
+                    />
+                  </div>
+                  <Select value={courtFilter} onValueChange={setCourtFilter}>
+                    <SelectTrigger className="w-[170px]">
+                      <Filter className="w-4 h-4 ml-2" />
+                      <SelectValue placeholder="בית דין" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">כל בתי הדין</SelectItem>
+                      {courts.map((c) => (
+                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={sortOrder} onValueChange={setSortOrder}>
+                    <SelectTrigger className="w-[140px]">
+                      <ArrowUpDown className="w-4 h-4 ml-2" />
+                      <SelectValue placeholder="מיון" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="year-desc">שנה (חדש→ישן)</SelectItem>
+                      <SelectItem value="year-asc">שנה (ישן→חדש)</SelectItem>
+                      <SelectItem value="title-asc">שם (א-ת)</SelectItem>
+                      <SelectItem value="title-desc">שם (ת-א)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* Bulk Actions Bar */}

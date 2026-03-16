@@ -75,7 +75,9 @@ export function useDownloadController() {
     const htmlBody = buildHtmlContent(data, textContent);
 
     if (format === 'docx') {
-      return { title: data.title, content: htmlBody, ext: '.doc' };
+      const { generateDocx } = await import('@/lib/docxGenerator');
+      const docxBlob = await generateDocx(data);
+      return { title: data.title, content: docxBlob, ext: '.docx' };
     }
 
     return { title: data.title, content: htmlBody, ext: '.html' };
@@ -236,13 +238,18 @@ export function useDownloadController() {
 
       setSessionStatus(sessionId, 'completed');
       toast({
-        title: 'ההורדה הושלמה!',
-        description: `הורדו ${downloadedContents.size} פסקי דין${errors.length > 0 ? ` (${errors.length} שגיאות)` : ''}`,
+        title: '✅ ההורדה הושלמה!',
+        description: `הורדו ${downloadedContents.size} פסקי דין בפורמט ${format.toUpperCase()}${errors.length > 0 ? ` (${errors.length} שגיאות)` : ''}`,
       });
     } catch (err) {
       if ((err as Error).message !== 'aborted') {
         setSessionStatus(sessionId, 'error');
-        toast({ title: 'שגיאה בהורדה', description: (err as Error).message, variant: 'destructive' });
+        toast({
+          title: '❌ שגיאה בהורדה',
+          description: `${(err as Error).message} — ניתן להמשיך מאותה נקודה`,
+          variant: 'destructive',
+          duration: 8000,
+        });
       }
     } finally {
       activeRef.current = false;

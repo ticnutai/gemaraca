@@ -19,6 +19,8 @@ import {
   FileCode,
   FileType,
   File,
+  BarChart3,
+  TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -203,6 +205,46 @@ const DownloadManagerTab = () => {
 
   return (
     <div className="p-4 md:p-6 space-y-4" dir="rtl">
+      {/* Stats Mini Dashboard */}
+      {(() => {
+        const allSessions = Object.values(useDownloadStore.getState().sessions);
+        const completedSessions = allSessions.filter(s => s.status === 'completed');
+        const totalDownloaded = completedSessions.reduce((sum, s) => sum + s.completedIds.length, 0);
+        const formats = completedSessions.reduce((acc, s) => {
+          acc[s.format] = (acc[s.format] || 0) + s.completedIds.length;
+          return acc;
+        }, {} as Record<string, number>);
+        const topFormat = Object.entries(formats).sort((a, b) => b[1] - a[1])[0];
+
+        if (completedSessions.length === 0) return null;
+
+        return (
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-muted/30 rounded-lg p-3 flex items-center gap-3">
+              <BarChart3 className="w-5 h-5 text-primary" />
+              <div>
+                <p className="text-lg font-bold text-foreground">{completedSessions.length}</p>
+                <p className="text-xs text-muted-foreground">הורדות שהושלמו</p>
+              </div>
+            </div>
+            <div className="bg-muted/30 rounded-lg p-3 flex items-center gap-3">
+              <TrendingUp className="w-5 h-5 text-primary" />
+              <div>
+                <p className="text-lg font-bold text-foreground">{totalDownloaded.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">פסקים הורדו</p>
+              </div>
+            </div>
+            <div className="bg-muted/30 rounded-lg p-3 flex items-center gap-3">
+              <Package className="w-5 h-5 text-primary" />
+              <div>
+                <p className="text-lg font-bold text-foreground">{topFormat ? topFormat[0].toUpperCase() : '-'}</p>
+                <p className="text-xs text-muted-foreground">פורמט פופולרי</p>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-2">
