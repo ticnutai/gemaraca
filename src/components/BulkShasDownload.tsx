@@ -157,21 +157,19 @@ const BulkShasDownload = () => {
           <div className="flex gap-2 flex-wrap">
             {!isRunning ? (
               <>
-                <Button onClick={handleStart} className="gap-2">
+                <Button onClick={handleStart} className="gap-2" disabled={syncing}>
                   <Download className="h-4 w-4" />
                   {masechtot.some(m => m.status === 'paused' || m.status === 'pending')
                     ? 'המשך הורדה'
                     : 'הורד את כל הש"ס'}
                 </Button>
-                {totalMissing > 0 && (
-                  <Button variant="secondary" onClick={handleCompleteMissing} className="gap-2">
-                    <Zap className="h-4 w-4" />
-                    השלם חסרים ({totalMissing})
-                  </Button>
-                )}
-                <Button variant="outline" onClick={_refreshFromServer} className="gap-2">
-                  <RefreshCw className="h-4 w-4" />
-                  רענן סטטוס
+                <Button variant="secondary" onClick={handleCompleteMissing} className="gap-2" disabled={syncing}>
+                  {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
+                  {syncing ? 'מסנכרן...' : `סנכרן והשלם חסרים${totalMissing > 0 ? ` (${totalMissing})` : ''}`}
+                </Button>
+                <Button variant="outline" onClick={handleSyncOnly} className="gap-2" disabled={syncing}>
+                  {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                  סנכרן סטטוס
                 </Button>
               </>
             ) : (
