@@ -35,6 +35,7 @@ interface ShasDownloadStore {
   resume: () => void;
   stop: () => void;
   setConcurrency: (n: number) => void;
+  syncAndRefresh: () => Promise<void>;
   _refreshFromServer: () => Promise<void>;
   _processQueue: () => void;
   _downloadMasechet: (masechet: string) => Promise<void>;
@@ -59,6 +60,17 @@ export const useShasDownloadStore = create<ShasDownloadStore>()(
       lastUpdated: 0,
 
       setConcurrency: (n) => set({ concurrency: Math.max(1, Math.min(6, n)) }),
+
+      syncAndRefresh: async () => {
+        try {
+          // First sync actual page counts on server
+          await supabase.functions.invoke('bulk-load-shas', { body: { mode: 'sync' } });
+          // Then refresh local state
+          await get()._refreshFromServer();
+        } catch (e) {
+          console.error('Failed to sync:', e);
+        }
+      },
 
       _refreshFromServer: async () => {
         try {

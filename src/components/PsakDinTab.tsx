@@ -17,6 +17,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
 import PsakDinViewDialog from "./PsakDinViewDialog";
+import PsakPreviewPopover from "./PsakPreviewPopover";
 import PsakDinEditDialog from "./PsakDinEditDialog";
 import BulkActionsBar from "./BulkActionsBar";
 import FileTypeBadge from "./FileTypeBadge";
@@ -626,6 +627,8 @@ const PsakDinTab = () => {
                                 )}
                               </div>
                               <div className="flex items-center gap-2 shrink-0">
+                                <PsakPreviewPopover psakDinId={psak.id} psakTitle={psak.title} mode="facts" />
+                                <PsakPreviewPopover psakDinId={psak.id} psakTitle={psak.title} mode="summary" />
                                 {hasLinks ? (
                                   <Badge className="gap-1.5 text-xs px-2.5 py-1 bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20">
                                     <Link className="w-3 h-3" />
