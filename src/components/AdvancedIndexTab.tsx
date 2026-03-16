@@ -409,6 +409,18 @@ export default function AdvancedIndexTab() {
         />
       )}
 
+      {/* Viewer Preference Dialog */}
+      <ViewerPreferenceDialog
+        open={prefDialogOpen}
+        onOpenChange={setPrefDialogOpen}
+        onSelect={(mode) => {
+          if (pendingRef) {
+            openWithMode(pendingRef, mode);
+            setPendingRef(null);
+          }
+        }}
+      />
+
       {/* Correction Dialog */}
       {correctionRef && (
         <RefCorrectionDialog
