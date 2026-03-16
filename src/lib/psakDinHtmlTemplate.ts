@@ -27,11 +27,20 @@ export function generatePsakDinHtml(data: ParsedPsakDin): string {
       : section.type === 'decision' ? '✅'
       : section.type === 'summary' ? '📝'
       : section.type === 'facts' ? '📋'
+      : section.type === 'discussion' ? '💬'
+      : section.type === 'reasoning' ? '⚖️'
+      : section.type === 'chapters' ? '📑'
+      : section.type === 'law-sources' ? '📚'
+      : section.type === 'conclusion' ? '🏁'
       : '📜';
     
+    // Use smart formatter for section content
+    const classified = classifyLines(section.content);
+    const contentHtml = classifiedLinesToHtml(classified);
+
     return `
         <h3 class="subsection-title"><span class="icon">${icon}</span> ${esc(section.title)}</h3>
-        ${nl2p(section.content)}`;
+        ${contentHtml}`;
   }).join('\n');
 
   return `<!DOCTYPE html>
