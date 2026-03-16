@@ -16,6 +16,7 @@ import BulkActionsBar from "./BulkActionsBar";
 import FileTypeBadge from "./FileTypeBadge";
 import GemaraPsakDinIndex from "./GemaraPsakDinIndex";
 import { useToast } from "@/hooks/use-toast";
+import { cachePsakim, getAllCachedPsakim, type CachedPsak } from "@/lib/psakCache";
 
 const ITEMS_PER_PAGE = 50;
 
@@ -79,6 +80,16 @@ const PsakDinTab = () => {
   const loadPsakim = async (page: number) => {
     setLoading(true);
     try {
+      // Show cached data instantly while cloud loads
+      if (page === 1 && psakim.length === 0) {
+        const cached = await getAllCachedPsakim();
+        if (cached.length > 0) {
+          const sorted = cached.sort((a, b) => (b.year || 0) - (a.year || 0)).slice(0, ITEMS_PER_PAGE);
+          setPsakim(sorted);
+          setLoading(false);
+        }
+      }
+
       const from = (page - 1) * ITEMS_PER_PAGE;
       const to = from + ITEMS_PER_PAGE - 1;
 
@@ -91,6 +102,23 @@ const PsakDinTab = () => {
       if (error) throw error;
       setPsakim(data || []);
       setTotalCount(count || 0);
+
+      // Cache fetched psakim in IndexedDB for next time
+      if (data && data.length > 0) {
+        const toCache: CachedPsak[] = data.map((p: any) => ({
+          id: p.id,
+          title: p.title,
+          court: p.court || '',
+          year: p.year || 0,
+          summary: p.summary || '',
+          full_text: p.full_text || null,
+          source_url: p.source_url || null,
+          case_number: p.case_number || null,
+          tags: p.tags || [],
+          _cachedAt: Date.now(),
+        }));
+        cachePsakim(toCache);
+      }
     } catch (error) {
       console.error('Error loading psakim:', error);
     } finally {

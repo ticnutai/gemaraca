@@ -29,6 +29,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getCachedBeautified, cacheBeautified, cachePsak } from "@/lib/psakCache";
 
 const VIEWER_TEXT_SETTINGS_KEY = 'psak-din-viewer-text-settings';
 
@@ -168,7 +169,26 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
       const sourceUrl = psak.source_url || psak.sourceUrl;
       setActiveTab(sourceUrl ? "preview" : "info");
       setIsEditing(false);
+      // Try loading cached beautified HTML
       setBeautifiedHtml(null);
+      if (psak.id) {
+        getCachedBeautified(psak.id).then(cached => {
+          if (cached) setBeautifiedHtml(cached);
+        });
+        // Cache the psak itself for faster future loads
+        cachePsak({
+          id: psak.id,
+          title: psak.title,
+          court: psak.court || '',
+          year: psak.year || 0,
+          summary: psak.summary,
+          full_text: psak.full_text || psak.fullText || null,
+          source_url: psak.source_url || psak.sourceUrl || null,
+          case_number: psak.case_number || psak.caseNumber || null,
+          tags: psak.tags,
+          _cachedAt: Date.now(),
+        });
+      }
       // Initialize edit fields
       setEditTitle(psak.title || "");
       setEditCourt(psak.court || "");
@@ -321,6 +341,8 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
       if (!data?.success) throw new Error(data?.error || "שגיאה בעיצוב");
       setBeautifiedHtml(data.html);
       setActiveTab("beautified");
+      // Cache beautified HTML in IndexedDB for instant future loads
+      if (psak.id) cacheBeautified(psak.id, data.html);
       toast.success("פסק הדין עוצב בהצלחה!");
     } catch (err: any) {
       console.error("Beautify error:", err);

@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import PsakDinViewDialog from "./PsakDinViewDialog";
 import ViewerPreferenceDialog, { getViewerPreference, type ViewerMode } from "./ViewerPreferenceDialog";
+import { getMeta, setMeta } from "@/lib/psakCache";
 
 interface PsakLink {
   id: string;
@@ -131,6 +132,15 @@ const GemaraPsakDinIndex = () => {
 
   const loadIndexData = async () => {
     try {
+      // Try loading from IndexedDB cache first for instant display
+      const cachedIndex = await getMeta('indexData') as IndexEntry[] | undefined;
+      const cachedLinks = await getMeta('allLinks') as PsakLink[] | undefined;
+      if (cachedIndex && cachedLinks && cachedIndex.length > 0) {
+        setIndexData(cachedIndex);
+        setAllLinks(cachedLinks);
+        setLoading(false);
+      }
+
       // Load from both tables: sugya_psak_links (AI-based) and pattern_sugya_links (pattern-based)
       const [sugyaLinksResult, patternLinksResult] = await Promise.all([
         supabase
@@ -315,6 +325,10 @@ const GemaraPsakDinIndex = () => {
         index.reduce((sum, e) => sum + e.totalPsakim, 0), 'total links');
       
       setIndexData(index);
+      
+      // Cache the built index and links to IndexedDB for fast next load
+      setMeta('indexData', index);
+      setMeta('allLinks', combinedLinks);
     } catch (error) {
       console.error('Error loading index:', error);
     } finally {
@@ -324,6 +338,20 @@ const GemaraPsakDinIndex = () => {
 
   const loadDafPsakim = async (sugyaId: string, masechet: string, daf: number) => {
     try {
+      // Try loading from cache first
+      const cacheKey = `dafPsakim::${masechet}::${daf}`;
+      const cachedData = await getMeta(cacheKey) as PsakLink[] | undefined;
+      if (cachedData && cachedData.length > 0) {
+        let filteredCached = cachedData;
+        if (selectedTag !== "all") {
+          filteredCached = filteredCached.filter((link: any) => 
+            link.psakei_din?.tags?.includes(selectedTag)
+          );
+        }
+        setSelectedDafPsakim(filteredCached);
+        setSelectedDafInfo({ masechet, daf });
+      }
+
       // מציאת שם המסכת ב-sefaria format
       const masechetObj = MASECHTOT.find(m => m.hebrewName === masechet);
       const sefariaName = masechetObj?.sefariaName || '';
@@ -411,6 +439,10 @@ const GemaraPsakDinIndex = () => {
 
       setSelectedDafPsakim(filteredData);
       setSelectedDafInfo({ masechet, daf });
+
+      // Cache the unfiltered combined result for next time
+      const dafCacheKey = `dafPsakim::${masechet}::${daf}`;
+      setMeta(dafCacheKey, combined);
     } catch (error) {
       console.error('Error loading daf psakim:', error);
     }
