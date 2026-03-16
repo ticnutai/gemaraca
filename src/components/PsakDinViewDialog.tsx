@@ -931,8 +931,9 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
             </TabsTrigger>
           </TabsList>
 
+          {renderSearchBar()}
+
           <TabsContent value="info" className="flex-1 min-h-0 mt-4">
-            {renderSearchBar()}
             <div className="flex items-center justify-between mb-2">
               {!isEditing ? renderTextToolbar() : <div />}
               <div className="flex gap-2">
