@@ -17,6 +17,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import PsakDinViewDialog from "./PsakDinViewDialog";
+import PsakPreviewPopover from "./PsakPreviewPopover";
 import PsakDinEditDialog from "./PsakDinEditDialog";
 import BulkActionsBar from "./BulkActionsBar";
 import FileTypeBadge from "./FileTypeBadge";
