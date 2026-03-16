@@ -420,12 +420,12 @@ export default function DevMigrationsPanel({ open, onClose }: { open: boolean; o
                       {lastResult.success ? 'הצליחה' : 'נכשלה'}
                     </span>
                     <span className="text-muted-foreground">
-                      ({lastResult.executionTime}ms)
+                      ({String(lastResult.executionTime)}ms)
                     </span>
                   </div>
                   {lastResult.error && (
                     <pre className="mt-2 text-xs text-destructive bg-destructive/5 p-2 rounded overflow-x-auto" dir="ltr">
-                      {lastResult.error}
+                      {String(lastResult.error)}
                     </pre>
                   )}
                 </CardContent>

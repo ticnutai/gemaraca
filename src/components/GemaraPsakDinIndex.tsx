@@ -426,7 +426,7 @@ const GemaraPsakDinIndex = () => {
       });
 
       // Add pattern_sugya_links, converting format
-      (patternLinksResult.data || []).forEach((link: PatternLink) => {
+      (patternLinksResult.data || []).forEach((link: any) => {
         if (link.psakei_din && !seenPsakIds.has(link.psak_din_id)) {
           seenPsakIds.add(link.psak_din_id);
           combined.push({
@@ -460,7 +460,7 @@ const GemaraPsakDinIndex = () => {
   };
 
   const openWithMode = useCallback((psak: PsakLink, mode: ViewerMode) => {
-    const sourceUrl = psak?.source_url || psak?.sourceUrl || psak?.psakei_din?.source_url;
+    const sourceUrl = (psak as any)?.source_url || (psak as any)?.sourceUrl || psak?.psakei_din?.source_url;
     switch (mode) {
       case "embedpdf":
         if (sourceUrl) {
@@ -484,13 +484,22 @@ const GemaraPsakDinIndex = () => {
     }
   }, [navigate]);
 
-  const handlePsakClick = useCallback((psak: PsakLink) => {
+  const handlePsakClick = useCallback((psak: any) => {
     if (!psak) return;
+    // Wrap psakei_din data into PsakLink shape if needed
+    const psakLink: PsakLink = psak.psak_din_id ? psak : {
+      id: psak.id || '',
+      psak_din_id: psak.id || '',
+      sugya_id: '',
+      connection_explanation: '',
+      relevance_score: 0,
+      psakei_din: psak,
+    };
     const saved = getViewerPreference();
     if (saved) {
-      openWithMode(psak, saved);
+      openWithMode(psakLink, saved);
     } else {
-      setPendingPsak(psak);
+      setPendingPsak(psakLink);
       setPrefDialogOpen(true);
     }
   }, [openWithMode]);
@@ -1035,7 +1044,16 @@ return (
       )}
 
       <PsakDinViewDialog
-        psak={dialogPsak}
+        psak={dialogPsak ? {
+          id: dialogPsak.psakei_din?.id || dialogPsak.id,
+          title: dialogPsak.psakei_din?.title || '',
+          court: dialogPsak.psakei_din?.court,
+          year: dialogPsak.psakei_din?.year,
+          summary: dialogPsak.psakei_din?.summary || '',
+          tags: dialogPsak.psakei_din?.tags,
+          source_url: dialogPsak.psakei_din?.source_url,
+          connection: dialogPsak.connection_explanation,
+        } : null}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
       />

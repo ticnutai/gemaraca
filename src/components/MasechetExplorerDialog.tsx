@@ -209,7 +209,7 @@ const MasechetExplorerDialog = ({ open, onOpenChange }: MasechetExplorerDialogPr
       const seen = new Set<string>();
       const result: DafPsak[] = [];
 
-      (sugyaRes.data || []).forEach((link: { psak_din_id: string; psakei_din?: { title: string; court: string; year: number; summary: string; tags?: string[]; source_url?: string }; id: string; relevance_score?: number; connection_explanation?: string }) => {
+      (sugyaRes.data || []).forEach((link: any) => {
         if (link.psakei_din && !seen.has(link.psak_din_id)) {
           seen.add(link.psak_din_id);
           result.push({
@@ -220,8 +220,8 @@ const MasechetExplorerDialog = ({ open, onOpenChange }: MasechetExplorerDialogPr
             year: link.psakei_din.year,
             summary: link.psakei_din.summary,
             tags: link.psakei_din.tags || [],
-            relevance_score: link.confidence === "high" ? 8 : link.confidence === "medium" ? 6 : 4,
-            connection: link.source_text || "",
+            relevance_score: link.relevance_score ?? (link.confidence === "high" ? 8 : link.confidence === "medium" ? 6 : 4),
+            connection: link.connection_explanation || link.source_text || "",
             source_url: link.psakei_din.source_url,
           });
         }
@@ -548,12 +548,15 @@ const MasechetExplorerDialog = ({ open, onOpenChange }: MasechetExplorerDialogPr
                         key={psak.id}
                         onClick={() => {
                           setViewPsak({
-                            id: psak.psak_din_id,
+                            id: psak.id,
+                            psak_din_id: psak.psak_din_id,
                             title: psak.title,
                             court: psak.court,
                             year: psak.year,
                             summary: psak.summary,
                             tags: psak.tags,
+                            relevance_score: psak.relevance_score,
+                            connection: psak.connection,
                           });
                           setViewPsakOpen(true);
                         }}

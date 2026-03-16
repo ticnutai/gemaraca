@@ -64,6 +64,7 @@ interface RealCaseLink {
   id: string;
   psak_din_id: string;
   relevance_score: number;
+  connection_explanation?: string;
   psakei_din: {
     id: string;
     title: string;
@@ -81,6 +82,7 @@ interface FaqItem {
   psak_din_id: string;
   question: string;
   answer: string;
+  order_index?: number;
 }
 
 // Helper function to get Hebrew name from Sefaria name
@@ -152,7 +154,7 @@ const SugyaDetail = () => {
     const cached = getCachedPage(id);
     if (cached) {
       console.log('Using cached page for:', id);
-      setLoadedPage(cached);
+      setLoadedPage(cached as LoadedPageData);
       setIsPageLoading(false);
       return;
     }
@@ -582,14 +584,14 @@ const SugyaDetail = () => {
                         <div className="pt-2 border-t border-border">
                           <p className="text-xs font-medium text-primary">
                             <span className="text-muted-foreground">קשר לגמרא: </span>
-                            {link.connection_explanation}
+                            {link.connection_explanation || ''}
                           </p>
                         </div>
 
                         {caseFaqItems.length > 0 && (
                           <div className="pt-2 border-t border-border">
                             <FAQSection 
-                              items={caseFaqItems} 
+                              items={caseFaqItems.map(f => ({ ...f, order_index: f.order_index ?? 0 }))} 
                               title="שאלות ותשובות"
                             />
                           </div>
@@ -654,7 +656,7 @@ const SugyaDetail = () => {
                   <HelpCircle className="w-5 h-5 text-primary" />
                   שאלות נפוצות
                 </h3>
-                <FAQSection items={faqItems} />
+                <FAQSection items={faqItems.map(f => ({ ...f, order_index: f.order_index ?? 0 }))} />
               </div>
             )}
           </TabsContent>

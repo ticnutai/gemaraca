@@ -23,7 +23,7 @@ async function getFromIDB<T>(store: ReturnType<typeof createStore>, key: string)
   const memKey = key;
   const memEntry = memoryCache.get(memKey);
   if (memEntry && Date.now() - memEntry.timestamp < CACHE_DURATION) {
-    return memEntry.data;
+    return memEntry.data as T;
   }
 
   try {

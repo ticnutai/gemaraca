@@ -198,7 +198,7 @@ const RelatedPsakimSidebar = ({ sugyaId }: RelatedPsakimSidebarProps) => {
                 <div
                   key={link.id}
                   className="p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors cursor-pointer text-right"
-                  onClick={() => handlePsakClick(link.psakei_din)}
+                  onClick={() => handlePsakClick(link.psakei_din as any)}
                 >
                   <div className="flex items-start justify-between gap-2 flex-row-reverse">
                     <div className="flex-1 min-w-0 text-right">
