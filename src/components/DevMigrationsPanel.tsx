@@ -425,7 +425,7 @@ export default function DevMigrationsPanel({ open, onClose }: { open: boolean; o
                   </div>
                   {lastResult.error && (
                     <pre className="mt-2 text-xs text-destructive bg-destructive/5 p-2 rounded overflow-x-auto" dir="ltr">
-                      {lastResult.error}
+                      {String(lastResult.error)}
                     </pre>
                   )}
                 </CardContent>

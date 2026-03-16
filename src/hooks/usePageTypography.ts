@@ -58,7 +58,7 @@ export function usePageTypography() {
       .eq("user_id", userId)
       .eq("page_key", pageKey)
       .maybeSingle()
-      .then(({ data }: { data: { font_family?: string; font_size?: number; line_height?: number } | null }) => {
+      .then((result: any) => { const data = result?.data as { font_family?: string; font_size?: number; line_height?: number } | null;
         if (data) {
           const s: TypographySettings = {
             fontFamily: data.font_family,

@@ -460,7 +460,7 @@ const GemaraPsakDinIndex = () => {
   };
 
   const openWithMode = useCallback((psak: PsakLink, mode: ViewerMode) => {
-    const sourceUrl = psak?.source_url || psak?.sourceUrl || psak?.psakei_din?.source_url;
+    const sourceUrl = (psak as any)?.source_url || (psak as any)?.sourceUrl || psak?.psakei_din?.source_url;
     switch (mode) {
       case "embedpdf":
         if (sourceUrl) {

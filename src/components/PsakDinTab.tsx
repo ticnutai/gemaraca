@@ -132,7 +132,7 @@ const PsakDinTab = () => {
         const cached = await getAllCachedPsakim();
         if (cached.length > 0) {
           const sorted = cached.sort((a, b) => (b.year || 0) - (a.year || 0)).slice(0, PAGE_SIZE);
-          setPsakim(sorted);
+          setPsakim(sorted as unknown as PsakDinRow[]);
           setLoading(false);
         }
       }

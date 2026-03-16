@@ -109,7 +109,7 @@ export default function LexiconSearch({ dafYomi }: LexiconSearchProps) {
                   <ul className="list-disc list-inside space-y-1">
                     {result.definitions.map((def: { definition: string; pos?: string }, index: number) => (
                       <li key={index} className="text-sm">
-                        {typeof def === 'string' ? def : def.definition || def.text}
+                        {typeof def === 'string' ? def : def.definition || (def as any).text}
                       </li>
                     ))}
                   </ul>
