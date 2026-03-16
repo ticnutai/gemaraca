@@ -137,6 +137,12 @@ const BulkShasDownload = () => {
                     ? 'המשך הורדה'
                     : 'הורד את כל הש"ס'}
                 </Button>
+                {totalMissing > 0 && (
+                  <Button variant="secondary" onClick={handleCompleteMissing} className="gap-2">
+                    <Zap className="h-4 w-4" />
+                    השלם חסרים ({totalMissing})
+                  </Button>
+                )}
                 <Button variant="outline" onClick={_refreshFromServer} className="gap-2">
                   <RefreshCw className="h-4 w-4" />
                   רענן סטטוס
