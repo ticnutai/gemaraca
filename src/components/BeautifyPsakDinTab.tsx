@@ -525,7 +525,8 @@ const BeautifyPsakDinTab = () => {
         full_text: htmlResult,
         source_url: urlData?.publicUrl || null,
         tags: ["מעוצב"],
-      });
+        beautify_count: 1,
+      } as Record<string, unknown>);
       if (error) throw error;
 
       setLoadedPsakId(newId);
