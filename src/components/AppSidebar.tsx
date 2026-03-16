@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { BookOpen, Scale, Search, Upload, Pin, PinOff, ChevronDown, ChevronLeft, ArrowDownToLine, BookMarked, FileText, Database, FileType, Calendar, BookA, Map, Layers, GraduationCap, BarChart3, Compass, Paintbrush } from "lucide-react";
+import { BookOpen, Scale, Search, Upload, Pin, PinOff, ChevronDown, ChevronLeft, ArrowDownToLine, BookMarked, FileText, Database, FileType, Calendar, BookA, Map, Layers, GraduationCap, BarChart3, Compass, Paintbrush, Brain, Globe, History, CalendarCheck, GitCompareArrows, Share2 } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -136,6 +136,42 @@ const menuItems = [
     icon: Paintbrush,
     description: "עיצוב מתקדם של פסקי דין מטקסט",
     badge: "חדש",
+  },
+  {
+    id: "smart-index",
+    title: "אינדקס חכם",
+    icon: Brain,
+    description: "ניתוח והצלבה אוטומטית של פסקי דין",
+  },
+  {
+    id: "global-search",
+    title: "חיפוש גלובלי",
+    icon: Globe,
+    description: "חיפוש בכל המקורות",
+  },
+  {
+    id: "learning-history",
+    title: "היסטוריית למידה",
+    icon: History,
+    description: "מעקב אחר דפים שנלמדו",
+  },
+  {
+    id: "daf-yomi",
+    title: "דף יומי",
+    icon: CalendarCheck,
+    description: "מעקב דף יומי",
+  },
+  {
+    id: "compare",
+    title: "השוואת פסקים",
+    icon: GitCompareArrows,
+    description: "השוואה בין פסקי דין",
+  },
+  {
+    id: "knowledge-graph",
+    title: "גרף ידע",
+    icon: Share2,
+    description: "ויזואליזציה של קשרים בין סוגיות",
   },
 ];
 

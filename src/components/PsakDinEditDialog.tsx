@@ -15,11 +15,11 @@ interface PsakDinData {
   title: string;
   court: string;
   year: number;
-  case_number?: string;
+  case_number?: string | null;
   summary: string;
-  full_text?: string;
-  tags?: string[];
-  source_url?: string;
+  full_text?: string | null;
+  tags?: string[] | null;
+  source_url?: string | null;
 }
 
 interface PsakDinEditDialogProps {
@@ -68,7 +68,7 @@ const PsakDinEditDialog = ({ psak, open, onOpenChange, onSaved, isNew = false }:
     }
   }, [psak, open, isNew]);
 
-  const handleChange = (field: keyof PsakDinData, value: any) => {
+  const handleChange = (field: keyof PsakDinData, value: string | number | string[] | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 

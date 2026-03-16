@@ -26,6 +26,7 @@ import { useToast } from "@/hooks/use-toast";
 import { cachePsakim, getAllCachedPsakim, type CachedPsak } from "@/lib/psakCache";
 import { exportPsakimToCsv } from "@/lib/csvExporter";
 import { cn } from "@/lib/utils";
+import type { PsakDinRow } from "@/types/psakDin";
 
 function escapeHtml(str: string): string {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -34,11 +35,11 @@ function escapeHtml(str: string): string {
 const PAGE_SIZE = 50;
 
 const PsakDinTab = () => {
-  const [psakim, setPsakim] = useState<any[]>([]);
+  const [psakim, setPsakim] = useState<PsakDinRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [selectedPsak, setSelectedPsak] = useState<any | null>(null);
+  const [selectedPsak, setSelectedPsak] = useState<PsakDinRow | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedForAnalysis, setSelectedForAnalysis] = useState<Set<string>>(new Set());
   const [analyzing, setAnalyzing] = useState(false);
@@ -47,7 +48,7 @@ const PsakDinTab = () => {
   const [totalUnlinkedCount, setTotalUnlinkedCount] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [editingPsak, setEditingPsak] = useState<any | null>(null);
+  const [editingPsak, setEditingPsak] = useState<PsakDinRow | null>(null);
   const [isNewPsak, setIsNewPsak] = useState(false);
   const [selectedForBulk, setSelectedForBulk] = useState<Set<string>>(new Set());
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -171,7 +172,7 @@ const PsakDinTab = () => {
 
       // Cache
       if (newData.length > 0) {
-        const toCache: CachedPsak[] = newData.map((p: any) => ({
+        const toCache: CachedPsak[] = newData.map((p) => ({
           id: p.id, title: p.title, court: p.court || '', year: p.year || 0,
           summary: p.summary || '', full_text: p.full_text || null,
           source_url: p.source_url || null, case_number: p.case_number || null,
@@ -217,7 +218,7 @@ const PsakDinTab = () => {
     }
   };
 
-  const handlePsakClick = (psak: any) => {
+  const handlePsakClick = (psak: PsakDinRow) => {
     setSelectedPsak(psak);
     setDialogOpen(true);
   };
@@ -261,7 +262,7 @@ const PsakDinTab = () => {
     }
   };
 
-  const handleDownloadSingle = (psak: any) => {
+  const handleDownloadSingle = (psak: PsakDinRow) => {
     const content = psak.full_text || psak.summary || '';
     const html = `<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="UTF-8"><title>${escapeHtml(psak.title)}</title>
 <style>body{font-family:'David',serif;max-width:800px;margin:0 auto;padding:20px;direction:rtl;line-height:1.8}h1{color:#1a365d;border-bottom:2px solid #2b6cb0;padding-bottom:10px}.meta{background:#f7fafc;padding:12px;border-radius:8px;margin-bottom:20px;color:#4a5568}.content{white-space:pre-wrap}</style>
