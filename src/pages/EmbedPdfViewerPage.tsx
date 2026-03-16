@@ -209,8 +209,7 @@ function downloadBlob(content: string, filename: string, mime: string) {
 
 export default function EmbedPdfViewerPage() {
   const [searchParams] = useSearchParams();
-
-  // PDF selection
+  const navigate = useNavigate();
   const [selectedPdfId, setSelectedPdfId] = useState<string | null>(null);
   const [comparePdfId, setComparePdfId] = useState<string | null>(null);
   const [manualUrl, setManualUrl] = useState(() => searchParams.get("url") || "");
