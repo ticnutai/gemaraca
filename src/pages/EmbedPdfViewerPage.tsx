@@ -938,7 +938,22 @@ export default function EmbedPdfViewerPage() {
   }, []);
 
   return (
-    <div dir="rtl" className="min-h-screen bg-white text-[#0B1F5B] flex flex-col">
+    <div dir="rtl" className="min-h-screen bg-white text-[#0B1F5B] flex flex-col relative"
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
+      {/* ── Drag & Drop Overlay ── */}
+      {isDragging && (
+        <div className="absolute inset-0 z-50 bg-[#0B1F5B]/80 backdrop-blur-sm flex items-center justify-center pointer-events-none">
+          <div className="border-4 border-dashed border-[#D4AF37] rounded-3xl p-16 text-center space-y-4 animate-pulse">
+            <Upload className="h-20 w-20 mx-auto text-[#D4AF37]" />
+            <p className="text-2xl font-bold text-white">שחרר כאן להעלאה</p>
+            <p className="text-sm text-white/60">PDF, TXT, תמונות, DOCX</p>
+          </div>
+        </div>
+      )}
       {/* ── Compact Header ── */}
       <header className="border-b-2 border-[#D4AF37] bg-white px-3 py-2 shadow-sm flex-shrink-0">
         <div className="flex items-center gap-2 max-w-[1800px] mx-auto">
