@@ -197,7 +197,13 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
       setEditCaseNumber(psak.case_number || psak.caseNumber || "");
       setEditSummary(psak.summary || "");
       setEditFullText(psak.full_text || psak.fullText || "");
-      setRichHtml(plainTextToHtml(psak.full_text || psak.fullText || ""));
+      const ft = psak.full_text || psak.fullText || "";
+      const isHtmlContent = /<[a-z][\s\S]*>/i.test(ft);
+      setRichHtml(isHtmlContent ? ft : plainTextToHtml(ft));
+      // If full_text already contains beautified HTML, auto-load it
+      if (isHtmlContent && !beautifiedHtml) {
+        setBeautifiedHtml(ft);
+      }
       setEditTags((psak.tags || []).join(", "));
     }
   }, [open, psak]);
