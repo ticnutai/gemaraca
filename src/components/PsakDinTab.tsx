@@ -181,7 +181,7 @@ const PsakDinTab = () => {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, []);
+  }, [debouncedSearch, courtFilter, sortOrder]);
 
   // Infinite scroll
   useEffect(() => {
