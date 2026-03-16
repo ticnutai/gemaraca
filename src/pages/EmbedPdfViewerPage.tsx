@@ -828,6 +828,7 @@ export default function EmbedPdfViewerPage() {
     { id: "annotations", icon: Palette, label: "אנוטציות", badge: annotations.length > 0 ? annotations.length : undefined },
     { id: "bookmarks", icon: Bookmark, label: `סימניות (${bookmarks.length})`, badge: bookmarks.length > 0 ? bookmarks.length : undefined },
     { id: "stats", icon: BarChart3, label: "סטטיסטיקות", badge: undefined },
+    ...(psakIdParam ? [{ id: "beautify", icon: Sparkles, label: "עצב פסק דין", badge: beautifiedHtml ? 1 : undefined }] : []),
   ];
 
   return (
