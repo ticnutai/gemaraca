@@ -38,8 +38,10 @@ const BulkShasDownload = () => {
     resume,
     stop,
     setConcurrency,
+    syncAndRefresh,
     _refreshFromServer,
   } = store;
+  const [syncing, setSyncing] = useState(false);
 
   // Refresh from server on mount
   useEffect(() => {
