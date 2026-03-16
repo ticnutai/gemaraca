@@ -900,6 +900,9 @@ export default function EmbedPdfViewerPage() {
   // ── Cloud documents (from psakei_din with source_url) ──
   const [cloudDocs, setCloudDocs] = useState<any[]>([]);
   const [loadingCloudDocs, setLoadingCloudDocs] = useState(false);
+  const [cloudSearch, setCloudSearch] = useState("");
+  const [cloudCourtFilter, setCloudCourtFilter] = useState("all");
+  const [cloudYearFilter, setCloudYearFilter] = useState("all");
 
   const loadCloudDocs = useCallback(async () => {
     setLoadingCloudDocs(true);
@@ -909,7 +912,7 @@ export default function EmbedPdfViewerPage() {
         .select('id, title, source_url, court, year')
         .not('source_url', 'is', null)
         .order('created_at', { ascending: false })
-        .limit(100);
+        .limit(200);
       if (error) throw error;
       setCloudDocs(data || []);
     } catch (err) {
@@ -918,6 +921,30 @@ export default function EmbedPdfViewerPage() {
       setLoadingCloudDocs(false);
     }
   }, []);
+
+  // Derived: unique courts and years for filters
+  const cloudCourts = useMemo(() => {
+    const courts = new Set<string>();
+    cloudDocs.forEach(d => { if (d.court) courts.add(d.court); });
+    return Array.from(courts).sort();
+  }, [cloudDocs]);
+
+  const cloudYears = useMemo(() => {
+    const years = new Set<number>();
+    cloudDocs.forEach(d => { if (d.year) years.add(d.year); });
+    return Array.from(years).sort((a, b) => b - a);
+  }, [cloudDocs]);
+
+  // Filtered cloud docs
+  const filteredCloudDocs = useMemo(() => {
+    return cloudDocs.filter(doc => {
+      const matchesSearch = !cloudSearch.trim() || 
+        doc.title?.toLowerCase().includes(cloudSearch.toLowerCase());
+      const matchesCourt = cloudCourtFilter === "all" || doc.court === cloudCourtFilter;
+      const matchesYear = cloudYearFilter === "all" || String(doc.year) === cloudYearFilter;
+      return matchesSearch && matchesCourt && matchesYear;
+    });
+  }, [cloudDocs, cloudSearch, cloudCourtFilter, cloudYearFilter]);
 
   // Icon toolbar items
   const toolbarItems = [
