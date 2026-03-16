@@ -232,6 +232,39 @@ export type Database = {
         }
         Relationships: []
       }
+      page_typography_settings: {
+        Row: {
+          created_at: string
+          font_family: string
+          font_size: number
+          id: string
+          line_height: number
+          page_key: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          font_family?: string
+          font_size?: number
+          id?: string
+          line_height?: number
+          page_key: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          font_family?: string
+          font_size?: number
+          id?: string
+          line_height?: number
+          page_key?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pattern_sugya_links: {
         Row: {
           amud: string | null

@@ -11,6 +11,7 @@ import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 
 const FloatingGemaraNav = lazy(() => import("./FloatingGemaraNav"));
 const GemaraDownloadFloat = lazy(() => import("./GemaraDownloadFloat"));
+const FloatingTypography = lazy(() => import("./FloatingTypography"));
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -86,7 +87,11 @@ const AppLayoutInner = ({ children }: AppLayoutProps) => {
           "flex-1 flex flex-col min-w-0 transition-all duration-300",
           shouldReserveSpace ? "md:mr-[--sidebar-width]" : ""
         )}>
-          <main className="flex-1">
+          <main className="flex-1" style={{
+            fontFamily: 'var(--page-font-family, inherit)',
+            fontSize: 'var(--page-font-size, inherit)',
+            lineHeight: 'var(--page-line-height, inherit)',
+          }}>
             {children}
           </main>
         </div>
@@ -110,6 +115,11 @@ const AppLayoutInner = ({ children }: AppLayoutProps) => {
       {/* Gemara Download Progress Float */}
       <Suspense fallback={null}>
         <GemaraDownloadFloat />
+      </Suspense>
+
+      {/* Typography Settings Float */}
+      <Suspense fallback={null}>
+        <FloatingTypography />
       </Suspense>
     </div>
   );
