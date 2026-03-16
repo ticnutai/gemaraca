@@ -284,14 +284,19 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
   }, []);
 
   // Auto-save full text on blur (works in both edit and view modes)
+  // Preserves HTML formatting if the content was beautified
   const autoSaveFullText = useCallback(async () => {
     if (!richEditorRef.current || !psak?.id) return;
-    const text = richEditorRef.current.innerText;
-    if (text === (psak?.full_text || psak?.fullText || "")) return;
+    const html = richEditorRef.current.innerHTML;
+    const originalFt = psak?.full_text || psak?.fullText || "";
+    // If content hasn't changed, skip
+    const isOriginalHtml = /<[a-z][\s\S]*>/i.test(originalFt);
+    const currentContent = isOriginalHtml ? html : richEditorRef.current.innerText;
+    if (currentContent === originalFt) return;
     try {
       await supabase
         .from("psakei_din")
-        .update({ full_text: text.trim() || null })
+        .update({ full_text: currentContent.trim() || null })
         .eq("id", psak.id);
       toast.success("הטקסט נשמר אוטומטית");
       onSave?.();
