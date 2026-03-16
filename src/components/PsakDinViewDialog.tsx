@@ -1354,7 +1354,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
                     העתק ושמור
                   </Button>
                 </div>
-                {/* Rendered HTML */}
+                {/* Rendered HTML — editable */}
                 <div className="flex-1 border border-border rounded-lg overflow-hidden bg-white">
                   <iframe
                     ref={beautifyIframeRef}
@@ -1362,6 +1362,12 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
                     className="w-full h-full min-h-[500px]"
                     title="פסק דין מעוצב"
                     sandbox="allow-same-origin allow-popups"
+                    onLoad={() => {
+                      const doc = beautifyIframeRef.current?.contentDocument;
+                      if (doc?.body) {
+                        doc.designMode = "on";
+                      }
+                    }}
                   />
                 </div>
               </div>
