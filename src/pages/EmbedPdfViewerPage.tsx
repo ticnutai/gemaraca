@@ -1159,120 +1159,115 @@ export default function EmbedPdfViewerPage() {
                 </Button>
               </div>
 
-              {/* UPLOAD FROM COMPUTER (panel info) */}
-              {activePanel === "upload" && (
-                <div className="space-y-3 text-center py-4">
-                  <Upload className="h-10 w-10 mx-auto text-[#D4AF37]" />
-                  <p className="text-xs text-[#0B1F5B]/60">העלה קובץ מהמחשב</p>
-                  <p className="text-[10px] text-[#0B1F5B]/40">נתמכים: PDF, TXT, תמונות, DOCX</p>
-                  <Button size="sm" className="w-full bg-[#0B1F5B] text-white border-2 border-[#D4AF37] gap-2" onClick={triggerFileUpload} disabled={isUploading}>
-                    {isUploading ? <><Loader2Icon className="h-4 w-4 animate-spin" /> מעלה...</> : <><Upload className="h-4 w-4" /> בחר קובץ</>}
-                  </Button>
-                </div>
-              )}
-
-              {/* CLOUD DOCUMENTS */}
-              {activePanel === "cloud" && (
-                <div className="space-y-2">
-                  <p className="text-[10px] text-[#0B1F5B]/50">מסמכים מפסקי דין שהועלו למערכת:</p>
-                  
-                  {/* Search */}
-                  <div className="relative">
-                    <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-[#0B1F5B]/40" />
-                    <Input
-                      placeholder="חפש לפי שם..."
-                      value={cloudSearch}
-                      onChange={(e) => setCloudSearch(e.target.value)}
-                      className="h-7 text-xs pr-7 border-[#D4AF37]/30 focus-visible:ring-[#D4AF37]"
-                    />
-                  </div>
-
-                  {/* Filters row */}
-                  <div className="flex gap-1">
-                    <select
-                      value={cloudCourtFilter}
-                      onChange={(e) => setCloudCourtFilter(e.target.value)}
-                      className="flex-1 h-6 text-[10px] rounded border border-[#D4AF37]/30 bg-white text-[#0B1F5B] px-1"
-                    >
-                      <option value="all">כל בתי הדין</option>
-                      {cloudCourts.map(c => (
-                        <option key={c} value={c}>{c}</option>
-                      ))}
-                    </select>
-                    <select
-                      value={cloudYearFilter}
-                      onChange={(e) => setCloudYearFilter(e.target.value)}
-                      className="w-16 h-6 text-[10px] rounded border border-[#D4AF37]/30 bg-white text-[#0B1F5B] px-1"
-                    >
-                      <option value="all">שנה</option>
-                      {cloudYears.map(y => (
-                        <option key={y} value={String(y)}>{y}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Results count */}
-                  {cloudDocs.length > 0 && (
-                    <p className="text-[10px] text-[#0B1F5B]/40">
-                      {filteredCloudDocs.length} מתוך {cloudDocs.length} מסמכים
-                    </p>
-                  )}
-
-                  {loadingCloudDocs ? (
-                    <div className="flex items-center justify-center py-6">
-                      <Loader2Icon className="h-6 w-6 animate-spin text-[#D4AF37]" />
-                    </div>
-                  ) : filteredCloudDocs.length === 0 ? (
-                    <p className="text-xs text-[#0B1F5B]/40 text-center py-4">
-                      {cloudDocs.length === 0 ? "אין מסמכים זמינים" : "לא נמצאו תוצאות"}
-                    </p>
-                  ) : (
-                    <ScrollArea className="max-h-[350px]">
-                      <div className="space-y-1">
-                        {filteredCloudDocs.map((doc) => (
-                          <div
-                            key={doc.id}
-                            className="flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer text-sm hover:bg-[#D4AF37]/10 transition-colors"
-                            onClick={() => {
-                              setManualUrl(doc.source_url);
-                              setActivePanel(null);
-                              toast.success(`נטען: ${doc.title}`);
-                            }}
-                          >
-                            <FileText className="h-3.5 w-3.5 text-[#D4AF37] shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs truncate font-medium text-[#0B1F5B]">{doc.title}</p>
-                              <p className="text-[10px] text-[#0B1F5B]/40">{doc.court} · {doc.year}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </ScrollArea>
-                  )}
-                  <Button size="sm" variant="outline" className="w-full text-xs border-[#D4AF37] gap-1" onClick={loadCloudDocs} disabled={loadingCloudDocs}>
-                    <RefreshCw className={`h-3 w-3 ${loadingCloudDocs ? "animate-spin" : ""}`} /> רענן
-                  </Button>
-                </div>
-              )}
-
-              {/* ADD DOC (URL) */}
+              {/* ADD DOCUMENT (unified panel) */}
               {activePanel === "add" && (
-                <div className="space-y-2">
-                  <Input placeholder="שם המסמך" value={newBookTitle} onChange={(e) => setNewBookTitle(e.target.value)} className="text-sm border-[#D4AF37]/30 focus-visible:ring-[#D4AF37]" />
-                  <Input placeholder="קישור PDF (URL)" value={newBookUrl} onChange={(e) => setNewBookUrl(e.target.value)} className="text-sm border-[#D4AF37]/30 focus-visible:ring-[#D4AF37]" dir="ltr" />
-                  <Button size="sm" className="w-full bg-[#0B1F5B] text-white border-2 border-[#D4AF37]" onClick={handleAddBook} disabled={addBook.isPending}>
-                    {addBook.isPending ? "שומר..." : "הוסף"}
-                  </Button>
-                </div>
-              )}
+                <div className="space-y-3">
+                  {/* Upload from computer */}
+                  <div className="border border-[#D4AF37]/30 rounded-lg p-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Upload className="h-4 w-4 text-[#D4AF37]" />
+                      <p className="text-xs font-semibold text-[#0B1F5B]">העלה מהמחשב</p>
+                    </div>
+                    <p className="text-[10px] text-[#0B1F5B]/40">PDF, TXT, תמונות, DOCX</p>
+                    <Button size="sm" className="w-full bg-[#0B1F5B] text-white border-2 border-[#D4AF37] gap-2" onClick={triggerFileUpload} disabled={isUploading}>
+                      {isUploading ? <><Loader2Icon className="h-4 w-4 animate-spin" /> מעלה...</> : <><Upload className="h-4 w-4" /> בחר קובץ</>}
+                    </Button>
+                  </div>
 
-              {/* MANUAL URL */}
-              {activePanel === "url" && (
-                <div className="space-y-2">
-                  <Input placeholder="הדבק URL..." value={manualUrl} onChange={(e) => setManualUrl(e.target.value)} className="text-sm border-[#D4AF37]/30 focus-visible:ring-[#D4AF37]" dir="ltr" />
-                  {viewMode !== "single" && (
-                    <Input placeholder="URL להשוואה..." value={compareManualUrl} onChange={(e) => setCompareManualUrl(e.target.value)} className="text-sm border-[#D4AF37]/30 focus-visible:ring-[#D4AF37]" dir="ltr" />
-                  )}
+                  {/* From cloud/database */}
+                  <div className="border border-[#D4AF37]/30 rounded-lg p-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Database className="h-4 w-4 text-[#D4AF37]" />
+                      <p className="text-xs font-semibold text-[#0B1F5B]">מהמאגר</p>
+                    </div>
+
+                    <div className="relative">
+                      <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-[#0B1F5B]/40" />
+                      <Input
+                        placeholder="חפש לפי שם..."
+                        value={cloudSearch}
+                        onChange={(e) => setCloudSearch(e.target.value)}
+                        className="h-7 text-xs pr-7 border-[#D4AF37]/30 focus-visible:ring-[#D4AF37]"
+                      />
+                    </div>
+
+                    <div className="flex gap-1">
+                      <select
+                        value={cloudCourtFilter}
+                        onChange={(e) => setCloudCourtFilter(e.target.value)}
+                        className="flex-1 h-6 text-[10px] rounded border border-[#D4AF37]/30 bg-white text-[#0B1F5B] px-1"
+                      >
+                        <option value="all">כל בתי הדין</option>
+                        {cloudCourts.map(c => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                      <select
+                        value={cloudYearFilter}
+                        onChange={(e) => setCloudYearFilter(e.target.value)}
+                        className="w-16 h-6 text-[10px] rounded border border-[#D4AF37]/30 bg-white text-[#0B1F5B] px-1"
+                      >
+                        <option value="all">שנה</option>
+                        {cloudYears.map(y => (
+                          <option key={y} value={String(y)}>{y}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {cloudDocs.length > 0 && (
+                      <p className="text-[10px] text-[#0B1F5B]/40">
+                        {filteredCloudDocs.length} מתוך {cloudDocs.length} מסמכים
+                      </p>
+                    )}
+
+                    {loadingCloudDocs ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2Icon className="h-5 w-5 animate-spin text-[#D4AF37]" />
+                      </div>
+                    ) : filteredCloudDocs.length === 0 ? (
+                      <p className="text-[10px] text-[#0B1F5B]/40 text-center py-3">
+                        {cloudDocs.length === 0 ? "אין מסמכים זמינים" : "לא נמצאו תוצאות"}
+                      </p>
+                    ) : (
+                      <ScrollArea className="max-h-[250px]">
+                        <div className="space-y-1">
+                          {filteredCloudDocs.map((doc) => (
+                            <div
+                              key={doc.id}
+                              className="flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer text-sm hover:bg-[#D4AF37]/10 transition-colors"
+                              onClick={() => {
+                                setManualUrl(doc.source_url);
+                                setActivePanel(null);
+                                toast.success(`נטען: ${doc.title}`);
+                              }}
+                            >
+                              <FileText className="h-3.5 w-3.5 text-[#D4AF37] shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs truncate font-medium text-[#0B1F5B]">{doc.title}</p>
+                                <p className="text-[10px] text-[#0B1F5B]/40">{doc.court} · {doc.year}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    )}
+                    <Button size="sm" variant="outline" className="w-full text-xs border-[#D4AF37] gap-1" onClick={loadCloudDocs} disabled={loadingCloudDocs}>
+                      <RefreshCw className={`h-3 w-3 ${loadingCloudDocs ? "animate-spin" : ""}`} /> רענן
+                    </Button>
+                  </div>
+
+                  {/* Manual URL */}
+                  <div className="border border-[#D4AF37]/30 rounded-lg p-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Link className="h-4 w-4 text-[#D4AF37]" />
+                      <p className="text-xs font-semibold text-[#0B1F5B]">קישור ידני</p>
+                    </div>
+                    <Input placeholder="שם המסמך" value={newBookTitle} onChange={(e) => setNewBookTitle(e.target.value)} className="h-7 text-xs border-[#D4AF37]/30 focus-visible:ring-[#D4AF37]" />
+                    <Input placeholder="הדבק URL..." value={newBookUrl} onChange={(e) => setNewBookUrl(e.target.value)} className="h-7 text-xs border-[#D4AF37]/30 focus-visible:ring-[#D4AF37]" dir="ltr" />
+                    <Button size="sm" className="w-full bg-[#0B1F5B] text-white border-2 border-[#D4AF37] text-xs" onClick={handleAddBook} disabled={addBook.isPending}>
+                      {addBook.isPending ? "שומר..." : "הוסף"}
+                    </Button>
+                  </div>
                 </div>
               )}
 
