@@ -94,22 +94,20 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Load loaded pages map with caching — single query with aggregation
+  // Load loaded pages counts from shas_download_progress (accurate, no row limit issues)
   const { data: loadedPagesMap = {} } = useQuery({
     queryKey: ['sedarim-loaded-pages'],
     queryFn: async () => {
       const map: LoadedPagesMap = {};
-      const { data: pagesData } = await supabase
-        .from('gemara_pages')
-        .select('masechet, daf_number, sugya_id');      if (pagesData) {
-        pagesData.forEach(page => {
-          if (!map[page.masechet]) map[page.masechet] = [];
-          // Extract amud from sugya_id (format: "berakhot_2a") or default to 'a'
-          const amudMatch = (page.sugya_id || '').match(/(\d+)([ab])$/);
-          const amudKey = amudMatch
-            ? `${amudMatch[1]}${amudMatch[2]}`
-            : `${page.daf_number}a`;
-          map[page.masechet].push(amudKey);
+      const { data } = await supabase
+        .from('shas_download_progress')
+        .select('masechet, hebrew_name, loaded_pages, total_pages');
+      if (data) {
+        data.forEach((row: any) => {
+          // Store under both keys for lookup
+          const entry = { loaded: row.loaded_pages || 0, total: row.total_pages || 0 };
+          map[row.masechet] = entry;
+          if (row.hebrew_name) map[row.hebrew_name] = entry;
         });
       }
       return map;
@@ -118,13 +116,12 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
   });
 
   const getLoadStatus = (masechet: Masechet) => {
-    // Merge pages stored under both sefariaName and hebrewName using a Set to avoid double-counting
-    const loadedBySefaria = loadedPagesMap[masechet.sefariaName] || [];
-    const loadedByHebrew = loadedPagesMap[masechet.hebrewName] || [];
-    const allLoaded = new Set([...loadedBySefaria, ...loadedByHebrew]);
-    const loaded = allLoaded.size;
-    const total = (masechet.maxDaf - 1) * 2; // Both amud a and amud b
-    return { loaded, total, percent: total > 0 ? Math.round((loaded / total) * 100) : 0 };
+    const fromMap = loadedPagesMap[masechet.sefariaName] || loadedPagesMap[masechet.hebrewName];
+    if (fromMap) {
+      return { loaded: fromMap.loaded, total: fromMap.total, percent: fromMap.total > 0 ? Math.round((fromMap.loaded / fromMap.total) * 100) : 0 };
+    }
+    const total = (masechet.maxDaf - 1) * 2;
+    return { loaded: 0, total, percent: 0 };
   };
 
   // Delete all downloaded pages for a masechet
