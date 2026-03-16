@@ -1328,7 +1328,7 @@ export default function EmbedPdfViewerPage() {
                     srcDoc={beautifiedHtml}
                     className="absolute inset-0 w-full h-full border-0"
                     title="Beautified Psak Din"
-                    sandbox="allow-same-origin allow-popups"
+                    sandbox="allow-same-origin allow-popups allow-scripts"
                     onLoad={() => {
                       const doc = beautifyIframeRef.current?.contentDocument;
                       if (doc?.body) doc.designMode = "on";
