@@ -215,8 +215,14 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
   };
 
   const handlePsakDinClick = (id: string) => {
+    // Track recently viewed
+    try {
+      const recent: string[] = JSON.parse(localStorage.getItem(RECENT_PSAKIM_KEY) || '[]');
+      const updated = [id, ...recent.filter(r => r !== id)].slice(0, 20);
+      localStorage.setItem(RECENT_PSAKIM_KEY, JSON.stringify(updated));
+      queryClient.invalidateQueries({ queryKey: ['recently-viewed-psakim'] });
+    } catch { /* ignore */ }
     setActiveTab("psak-din");
-    // Could navigate to specific psak din view
   };
 
   const getMasechetCount = (seder: string) => {
