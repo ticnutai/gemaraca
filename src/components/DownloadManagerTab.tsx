@@ -53,6 +53,7 @@ const DownloadManagerTab = () => {
   const [years, setYears] = useState<number[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [downloadCount, setDownloadCount] = useState<string>("all");
+  const [downloadFormat, setDownloadFormat] = useState<DownloadFormat>("html");
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
