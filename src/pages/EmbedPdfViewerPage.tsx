@@ -821,9 +821,71 @@ export default function EmbedPdfViewerPage() {
     } catch { return "מסמך"; }
   }, [leftSourceUrl]);
 
+  // ── File upload state ──
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const allowedTypes = ['application/pdf', 'text/plain', 'image/png', 'image/jpeg', 'image/webp', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (!allowedTypes.includes(file.type) && !file.name.match(/\.(pdf|txt|png|jpg|jpeg|webp|docx)$/i)) {
+      toast.error("סוג קובץ לא נתמך. נתמכים: PDF, TXT, תמונות, DOCX");
+      return;
+    }
+    setIsUploading(true);
+    try {
+      const filePath = `uploads/${Date.now()}-${file.name}`;
+      const { error: uploadError } = await supabase.storage.from('user-books').upload(filePath, file, { contentType: file.type, upsert: false });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from('user-books').getPublicUrl(filePath);
+      const publicUrl = urlData?.publicUrl;
+      if (!publicUrl) throw new Error("Failed to get public URL");
+      const result = await addBook.mutateAsync({
+        title: file.name.replace(/\.[^.]+$/, ''),
+        fileName: file.name,
+        fileUrl: publicUrl,
+      });
+      setSelectedPdfId(result.id);
+      setManualUrl("");
+      setActivePanel(null);
+      toast.success(`הקובץ "${file.name}" הועלה בהצלחה`);
+    } catch (err: any) {
+      console.error("Upload error:", err);
+      toast.error(`שגיאה בהעלאה: ${err.message}`);
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  }, [addBook]);
+
+  // ── Cloud documents (from psakei_din with source_url) ──
+  const [cloudDocs, setCloudDocs] = useState<any[]>([]);
+  const [loadingCloudDocs, setLoadingCloudDocs] = useState(false);
+
+  const loadCloudDocs = useCallback(async () => {
+    setLoadingCloudDocs(true);
+    try {
+      const { data, error } = await supabase
+        .from('psakei_din')
+        .select('id, title, source_url, court, year')
+        .not('source_url', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      setCloudDocs(data || []);
+    } catch (err) {
+      toast.error("שגיאה בטעינת מסמכים מהענן");
+    } finally {
+      setLoadingCloudDocs(false);
+    }
+  }, []);
+
   // Icon toolbar items
   const toolbarItems = [
-    { id: "add", icon: Plus, label: "הוסף מסמך", badge: undefined },
+    { id: "upload", icon: Upload, label: "העלה קובץ מהמחשב", badge: undefined },
+    { id: "cloud", icon: Database, label: "מסמכים מהענן", badge: undefined },
+    { id: "add", icon: Plus, label: "הוסף קישור", badge: undefined },
     { id: "url", icon: Link, label: "קישור ידני", badge: undefined },
     { id: "docs", icon: BookOpen, label: `מסמכים (${books.length})`, badge: books.length > 0 ? books.length : undefined },
     { id: "annotations", icon: Palette, label: "אנוטציות", badge: annotations.length > 0 ? annotations.length : undefined },
@@ -831,6 +893,11 @@ export default function EmbedPdfViewerPage() {
     { id: "stats", icon: BarChart3, label: "סטטיסטיקות", badge: undefined },
     ...(psakIdParam ? [{ id: "beautify", icon: Sparkles, label: "עצב פסק דין", badge: beautifiedHtml ? 1 : undefined }] : []),
   ];
+
+  // Hidden file input
+  const triggerFileUpload = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
 
   return (
     <div dir="rtl" className="min-h-screen bg-white text-[#0B1F5B] flex flex-col">
