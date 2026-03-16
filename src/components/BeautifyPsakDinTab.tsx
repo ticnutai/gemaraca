@@ -193,7 +193,7 @@ const BeautifyPsakDinTab = () => {
     loadDbItems("", 0, false);
   }, [loadDbItems]);
 
-  // Debounced search
+  // Debounced search + filter/sort change
   useEffect(() => {
     if (!showDbPicker) return;
     const timer = setTimeout(() => {
@@ -201,7 +201,7 @@ const BeautifyPsakDinTab = () => {
       loadDbItems(dbSearch, 0, false);
     }, 300);
     return () => clearTimeout(timer);
-  }, [dbSearch, showDbPicker, loadDbItems]);
+  }, [dbSearch, showDbPicker, loadDbItems, dbBeautifyFilter, dbSortBy]);
 
   // Lazy loading with IntersectionObserver
   useEffect(() => {
