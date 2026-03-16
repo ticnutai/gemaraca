@@ -392,13 +392,25 @@ export default function EmbedPdfViewerPage() {
   const detectContentType = useCallback((url: string): ContentViewType => {
     if (!url) return 'html-page';
     const lower = url.toLowerCase();
-    if (/\.(pdf)(\?|#|$)/.test(lower)) return 'pdf';
-    if (/\.(txt|text|log|csv|md)(\?|#|$)/.test(lower)) return 'text';
-    if (/\.(docx?|rtf|odt|xls|xlsx|ppt|pptx)(\?|#|$)/.test(lower)) return 'docx';
-    if (/\.(png|jpg|jpeg|gif|svg|webp|bmp)(\?|#|$)/.test(lower)) return 'image';
-    if (/\.(html?|htm)(\?|#|$)/.test(lower)) return 'html-embed';
-    // Check if it's a known storage URL with html in path (beautified files)
-    if (lower.includes('supabase.co/storage') && lower.includes('.html')) return 'html-embed';
+    // Decode URL to catch encoded extensions in storage paths
+    let decoded = lower;
+    try { decoded = decodeURIComponent(lower); } catch {}
+    if (/\.(pdf)(\?|#|$)/.test(decoded) || /\.(pdf)(\?|#|$)/.test(lower)) return 'pdf';
+    if (/\.(txt|text|log|csv|md)(\?|#|$)/.test(decoded) || /\.(txt|text|log|csv|md)(\?|#|$)/.test(lower)) return 'text';
+    if (/\.(docx?|rtf|odt|xls|xlsx|ppt|pptx)(\?|#|$)/.test(decoded) || /\.(docx?|rtf|odt|xls|xlsx|ppt|pptx)(\?|#|$)/.test(lower)) return 'docx';
+    if (/\.(png|jpg|jpeg|gif|svg|webp|bmp)(\?|#|$)/.test(decoded) || /\.(png|jpg|jpeg|gif|svg|webp|bmp)(\?|#|$)/.test(lower)) return 'image';
+    if (/\.(html?|htm)(\?|#|$)/.test(decoded) || /\.(html?|htm)(\?|#|$)/.test(lower)) return 'html-embed';
+    // Check if it's a known storage URL with html/pdf in path (beautified files etc.)
+    if (lower.includes('supabase.co/storage') && decoded.includes('.html')) return 'html-embed';
+    if (lower.includes('supabase.co/storage') && decoded.includes('.pdf')) return 'pdf';
+    // Supabase storage URLs that contain known file names in path
+    if (lower.includes('supabase.co/storage')) {
+      // Try to detect from the path segments
+      if (/\bpdf\b/.test(decoded)) return 'pdf';
+      if (/\b(docx?|rtf)\b/.test(decoded)) return 'docx';
+      if (/\b(txt|text)\b/.test(decoded)) return 'text';
+      if (/\b(png|jpg|jpeg|webp)\b/.test(decoded)) return 'image';
+    }
     return 'html-page';
   }, []);
 
