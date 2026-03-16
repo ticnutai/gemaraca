@@ -47,6 +47,11 @@ const PsakDinTab = () => {
   const [isNewPsak, setIsNewPsak] = useState(false);
   const [selectedForBulk, setSelectedForBulk] = useState<Set<string>>(new Set());
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [courtFilter, setCourtFilter] = useState<string>("all");
+  const [sortOrder, setSortOrder] = useState<string>("year-desc");
+  const [courts, setCourts] = useState<string[]>([]);
   const { toast } = useToast();
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
