@@ -1046,7 +1046,7 @@ const BeautifyPsakDinTab = () => {
                 <SelectContent className="max-h-60">
                   <SelectItem value="all">כל המסכתות</SelectItem>
                   {MASECHTOT.map(m => (
-                    <SelectItem key={m.sefariaName} value={m.sefariaName}>{m.hebrewName}</SelectItem>
+                    <SelectItem key={m.hebrewName} value={m.hebrewName}>{m.hebrewName}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
