@@ -371,22 +371,20 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
                     )}
                   >
                     {masechet.hebrewName}
-                    {status.loaded > 0 && (
-                      <span className={cn(
-                        "text-[10px] md:text-xs mr-0.5 md:mr-1",
-                        status.percent === 100 ? "text-green-500" : "opacity-70"
-                      )}>
-                        {status.percent === 100 ? (
-                          <Check className="h-3 w-3 inline" />
-                        ) : (
-                          `${status.loaded}/${status.total}`
-                        )}
-                      </span>
-                    )}
+                    <span className={cn(
+                      "text-[10px] md:text-xs mr-0.5 md:mr-1",
+                      status.percent === 100 ? "text-green-600 font-semibold" : "opacity-70"
+                    )}>
+                      {status.loaded}/{status.total}
+                    </span>
                   </Button>
                   
-                  {/* Download button */}
-                  {status.percent < 100 && (
+                  {/* Download button or green checkmark */}
+                  {status.percent === 100 ? (
+                    <div className="p-1 md:p-1.5 rounded-full bg-green-100 dark:bg-green-900/30 border border-green-400/50">
+                      <Check className="h-3.5 w-3.5 md:h-4 md:w-4 text-green-600 dark:text-green-400" />
+                    </div>
+                  ) : (
                     <button
                       type="button"
                       onClick={(e) => {
