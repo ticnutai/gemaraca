@@ -1402,7 +1402,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
                 className="gap-2 bg-[#D4AF37]/10 border-[#D4AF37]/40 text-[#0B1F5B] hover:bg-[#D4AF37]/20"
                 onClick={() => {
                   onOpenChange(false);
-                  navigate(`/embedpdf-viewer?url=${encodeURIComponent(sourceUrl)}`);
+                  navigate(`/embedpdf-viewer?url=${encodeURIComponent(sourceUrl)}${psak?.id ? `&psakId=${psak.id}` : ''}`);
                 }}
               >
                 <FileText className="w-4 h-4" />
