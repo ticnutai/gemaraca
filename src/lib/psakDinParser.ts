@@ -19,7 +19,7 @@ export interface ParsedPsakDin {
 }
 
 export interface PsakSection {
-  type: 'plaintiff-claims' | 'defendant-claims' | 'ruling' | 'decision' | 'summary' | 'facts' | 'general';
+  type: 'plaintiff-claims' | 'defendant-claims' | 'ruling' | 'decision' | 'summary' | 'facts' | 'discussion' | 'reasoning' | 'conclusion' | 'chapters' | 'law-sources' | 'general';
   title: string;
   content: string;
 }
