@@ -430,6 +430,9 @@ export default function EmbedPdfViewerPage() {
   const [fetchedText, setFetchedText] = useState<string | null>(null);
   const [fetchingText, setFetchingText] = useState(false);
   const [fetchTextError, setFetchTextError] = useState<string | null>(null);
+  const [fetchedHtml, setFetchedHtml] = useState<string | null>(null);
+  const [fetchingHtml, setFetchingHtml] = useState(false);
+  const [fetchHtmlError, setFetchHtmlError] = useState<string | null>(null);
   const [isTextEditing, setIsTextEditing] = useState(false);
   const [textEditBuffer, setTextEditBuffer] = useState("");
 
@@ -444,6 +447,8 @@ export default function EmbedPdfViewerPage() {
     setIframeError(false);
     setFetchedText(null);
     setFetchTextError(null);
+    setFetchedHtml(null);
+    setFetchHtmlError(null);
     setIsTextEditing(false);
     setTextEditBuffer("");
   }, [leftSourceUrl]);
@@ -492,6 +497,33 @@ export default function EmbedPdfViewerPage() {
       });
     return () => { cancelled = true; };
   }, [leftSourceUrl, leftContentType, currentTextStorageKey, canPersist, selectedPdf?.edited_text]);
+
+  // Fetch HTML content for beautified .html files and render via srcDoc
+  useEffect(() => {
+    if (leftContentType !== 'html-embed' || !leftSourceUrl) return;
+    let cancelled = false;
+    setFetchingHtml(true);
+    setFetchHtmlError(null);
+
+    fetch(leftSourceUrl)
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const buffer = await r.arrayBuffer();
+        return new TextDecoder('utf-8').decode(buffer);
+      })
+      .then((html) => {
+        if (cancelled) return;
+        setFetchedHtml(html);
+        setFetchingHtml(false);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setFetchHtmlError(err.message);
+        setFetchingHtml(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [leftSourceUrl, leftContentType]);
 
   const startTextEdit = useCallback(() => {
     if (fetchedText === null) return;
@@ -1670,6 +1702,43 @@ export default function EmbedPdfViewerPage() {
                   </div>
                 )}
 
+                {/* HTML-EMBED */}
+                {leftContentType === 'html-embed' && (
+                  <>
+                    {fetchingHtml && (
+                      <div className="absolute inset-0 flex items-center justify-center z-10">
+                        <div className="text-center space-y-2">
+                          <div className="w-8 h-8 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin mx-auto" />
+                          <p className="text-xs text-[#0B1F5B]/50">טוען HTML...</p>
+                        </div>
+                      </div>
+                    )}
+                    {fetchHtmlError && (
+                      <div className="absolute inset-0 flex items-center justify-center z-10 bg-white">
+                        <div className="text-center space-y-3 p-6">
+                          <FileText className="h-12 w-12 mx-auto text-[#D4AF37]/40" />
+                          <p className="text-sm text-[#0B1F5B]/70">לא ניתן לטעון את קובץ ה-HTML</p>
+                          <p className="text-xs text-[#0B1F5B]/50">{fetchHtmlError}</p>
+                          <div className="flex gap-2 justify-center flex-wrap">
+                            <Button size="sm" variant="outline" className="border-[#D4AF37]" onClick={() => { setFetchHtmlError(null); setFetchedHtml(null); const url = leftSourceUrl; setManualUrl(""); setTimeout(() => setManualUrl(url), 50); }}><RefreshCw className="h-3.5 w-3.5 ml-1" /> נסה שוב</Button>
+                            <a href={leftSourceUrl} target="_blank" rel="noopener noreferrer"><Button size="sm" className="bg-[#0B1F5B] text-white border-2 border-[#D4AF37]"><ExternalLink className="h-3.5 w-3.5 ml-1" /> חלון חדש</Button></a>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {fetchedHtml && (
+                      <iframe
+                        key={leftSourceUrl}
+                        srcDoc={fetchedHtml}
+                        className="absolute inset-0 w-full h-full border-0 bg-white"
+                        title="HTML Viewer"
+                        sandbox="allow-same-origin allow-scripts allow-popups"
+                        onLoad={() => setIframeLoaded(true)}
+                      />
+                    )}
+                  </>
+                )}
+
                 {/* HTML-PAGE */}
                 {leftContentType === 'html-page' && (
                   <div className="absolute inset-0 flex items-center justify-center bg-white">
@@ -1683,8 +1752,8 @@ export default function EmbedPdfViewerPage() {
                   </div>
                 )}
 
-                {/* PDF / DOCX / HTML-EMBED */}
-                {(leftContentType === 'pdf' || leftContentType === 'docx' || leftContentType === 'html-embed') && (
+                {/* PDF / DOCX */}
+                {(leftContentType === 'pdf' || leftContentType === 'docx') && (
                   <>
                     {!iframeLoaded && !iframeError && (
                       <div className="absolute inset-0 flex items-center justify-center z-10">
