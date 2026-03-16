@@ -360,7 +360,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
       const { error } = await supabase
         .from("psakei_din")
         .update({
-          full_text: beautifiedHtml,
+          full_text: currentHtml,
           source_url: urlData?.publicUrl || undefined,
         })
         .eq("id", psak.id);
