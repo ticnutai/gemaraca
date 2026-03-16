@@ -52,6 +52,7 @@ const App = () => (
             <OfflineIndicator />
             <Routes>
               <Route path="/auth" element={<Auth />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/" element={<AppLayout><Index /></AppLayout>} />
               <Route path="/sugya/:id" element={<AppLayout><SugyaDetail /></AppLayout>} />
               <Route path="/embedpdf-viewer" element={<EmbedPdfViewerPage />} />
