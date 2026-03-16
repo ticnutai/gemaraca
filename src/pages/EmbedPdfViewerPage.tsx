@@ -824,10 +824,10 @@ export default function EmbedPdfViewerPage() {
   // ── File upload state ──
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragCounterRef = useRef(0);
 
-  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const processFileUpload = useCallback(async (file: File) => {
     const allowedTypes = ['application/pdf', 'text/plain', 'image/png', 'image/jpeg', 'image/webp', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
     if (!allowedTypes.includes(file.type) && !file.name.match(/\.(pdf|txt|png|jpg|jpeg|webp|docx)$/i)) {
       toast.error("סוג קובץ לא נתמך. נתמכים: PDF, TXT, תמונות, DOCX");
@@ -858,6 +858,44 @@ export default function EmbedPdfViewerPage() {
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   }, [addBook]);
+
+  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processFileUpload(file);
+  }, [processFileUpload]);
+
+  // ── Drag & Drop handlers ──
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current++;
+    if (e.dataTransfer.types.includes('Files')) {
+      setIsDragging(true);
+    }
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current--;
+    if (dragCounterRef.current === 0) {
+      setIsDragging(false);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current = 0;
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) processFileUpload(file);
+  }, [processFileUpload]);
 
   // ── Cloud documents (from psakei_din with source_url) ──
   const [cloudDocs, setCloudDocs] = useState<any[]>([]);
@@ -900,7 +938,22 @@ export default function EmbedPdfViewerPage() {
   }, []);
 
   return (
-    <div dir="rtl" className="min-h-screen bg-white text-[#0B1F5B] flex flex-col">
+    <div dir="rtl" className="min-h-screen bg-white text-[#0B1F5B] flex flex-col relative"
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
+      {/* ── Drag & Drop Overlay ── */}
+      {isDragging && (
+        <div className="absolute inset-0 z-50 bg-[#0B1F5B]/80 backdrop-blur-sm flex items-center justify-center pointer-events-none">
+          <div className="border-4 border-dashed border-[#D4AF37] rounded-3xl p-16 text-center space-y-4 animate-pulse">
+            <Upload className="h-20 w-20 mx-auto text-[#D4AF37]" />
+            <p className="text-2xl font-bold text-white">שחרר כאן להעלאה</p>
+            <p className="text-sm text-white/60">PDF, TXT, תמונות, DOCX</p>
+          </div>
+        </div>
+      )}
       {/* ── Compact Header ── */}
       <header className="border-b-2 border-[#D4AF37] bg-white px-3 py-2 shadow-sm flex-shrink-0">
         <div className="flex items-center gap-2 max-w-[1800px] mx-auto">
@@ -1589,18 +1642,21 @@ export default function EmbedPdfViewerPage() {
           ) : (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center space-y-4 p-8">
-                <FileText className="h-16 w-16 mx-auto text-[#D4AF37]/30" />
-                <p className="text-[#0B1F5B]/50 text-sm">בחר מסמך מהרשימה או העלה קובץ</p>
-                <div className="flex flex-col sm:flex-row gap-2 justify-center">
-                  <Button size="sm" className="bg-[#0B1F5B] text-white border-2 border-[#D4AF37] gap-1" onClick={triggerFileUpload} disabled={isUploading}>
-                    {isUploading ? <Loader2Icon className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} העלה מהמחשב
-                  </Button>
-                  <Button size="sm" variant="outline" className="border-[#D4AF37] text-[#0B1F5B] gap-1" onClick={() => { loadCloudDocs(); togglePanel("cloud"); }}>
-                    <Database className="h-4 w-4" /> מסמכים מהענן
-                  </Button>
-                  <Button size="sm" variant="outline" className="border-[#D4AF37] text-[#0B1F5B] gap-1" onClick={() => togglePanel("add")}>
-                    <Plus className="h-4 w-4" /> הוסף קישור
-                  </Button>
+                <div className="border-2 border-dashed border-[#D4AF37]/40 rounded-2xl p-10 hover:border-[#D4AF37] transition-colors">
+                  <FileText className="h-16 w-16 mx-auto text-[#D4AF37]/30 mb-4" />
+                  <p className="text-[#0B1F5B]/50 text-sm mb-1">גרור קובץ לכאן או בחר מסמך</p>
+                  <p className="text-[10px] text-[#0B1F5B]/30 mb-4">PDF, TXT, תמונות, DOCX</p>
+                  <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                    <Button size="sm" className="bg-[#0B1F5B] text-white border-2 border-[#D4AF37] gap-1" onClick={triggerFileUpload} disabled={isUploading}>
+                      {isUploading ? <Loader2Icon className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} העלה מהמחשב
+                    </Button>
+                    <Button size="sm" variant="outline" className="border-[#D4AF37] text-[#0B1F5B] gap-1" onClick={() => { loadCloudDocs(); togglePanel("cloud"); }}>
+                      <Database className="h-4 w-4" /> מסמכים מהענן
+                    </Button>
+                    <Button size="sm" variant="outline" className="border-[#D4AF37] text-[#0B1F5B] gap-1" onClick={() => togglePanel("add")}>
+                      <Plus className="h-4 w-4" /> הוסף קישור
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
