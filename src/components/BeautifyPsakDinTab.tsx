@@ -334,9 +334,11 @@ const BeautifyPsakDinTab = () => {
           .getPublicUrl(fileName);
 
         if (mode === "save") {
+          const { data: current } = await supabase.from("psakei_din").select("beautify_count").eq("id", job.id).single();
+          const newCount = ((current?.beautify_count as number) || 0) + 1;
           const { error } = await supabase
             .from("psakei_din")
-            .update({ full_text: job.html, source_url: urlData?.publicUrl || undefined })
+            .update({ full_text: job.html, source_url: urlData?.publicUrl || undefined, beautify_count: newCount } as Record<string, unknown>)
             .eq("id", job.id);
           if (error) throw error;
         } else {
@@ -353,7 +355,8 @@ const BeautifyPsakDinTab = () => {
               full_text: job.html,
               source_url: urlData?.publicUrl || null,
               tags: ["מעוצב"],
-            });
+              beautify_count: 1,
+            } as Record<string, unknown>);
           if (error) throw error;
         }
         successCount++;
