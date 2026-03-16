@@ -392,13 +392,25 @@ export default function EmbedPdfViewerPage() {
   const detectContentType = useCallback((url: string): ContentViewType => {
     if (!url) return 'html-page';
     const lower = url.toLowerCase();
-    if (/\.(pdf)(\?|#|$)/.test(lower)) return 'pdf';
-    if (/\.(txt|text|log|csv|md)(\?|#|$)/.test(lower)) return 'text';
-    if (/\.(docx?|rtf|odt|xls|xlsx|ppt|pptx)(\?|#|$)/.test(lower)) return 'docx';
-    if (/\.(png|jpg|jpeg|gif|svg|webp|bmp)(\?|#|$)/.test(lower)) return 'image';
-    if (/\.(html?|htm)(\?|#|$)/.test(lower)) return 'html-embed';
-    // Check if it's a known storage URL with html in path (beautified files)
-    if (lower.includes('supabase.co/storage') && lower.includes('.html')) return 'html-embed';
+    // Decode URL to catch encoded extensions in storage paths
+    let decoded = lower;
+    try { decoded = decodeURIComponent(lower); } catch {}
+    if (/\.(pdf)(\?|#|$)/.test(decoded) || /\.(pdf)(\?|#|$)/.test(lower)) return 'pdf';
+    if (/\.(txt|text|log|csv|md)(\?|#|$)/.test(decoded) || /\.(txt|text|log|csv|md)(\?|#|$)/.test(lower)) return 'text';
+    if (/\.(docx?|rtf|odt|xls|xlsx|ppt|pptx)(\?|#|$)/.test(decoded) || /\.(docx?|rtf|odt|xls|xlsx|ppt|pptx)(\?|#|$)/.test(lower)) return 'docx';
+    if (/\.(png|jpg|jpeg|gif|svg|webp|bmp)(\?|#|$)/.test(decoded) || /\.(png|jpg|jpeg|gif|svg|webp|bmp)(\?|#|$)/.test(lower)) return 'image';
+    if (/\.(html?|htm)(\?|#|$)/.test(decoded) || /\.(html?|htm)(\?|#|$)/.test(lower)) return 'html-embed';
+    // Check if it's a known storage URL with html/pdf in path (beautified files etc.)
+    if (lower.includes('supabase.co/storage') && decoded.includes('.html')) return 'html-embed';
+    if (lower.includes('supabase.co/storage') && decoded.includes('.pdf')) return 'pdf';
+    // Supabase storage URLs that contain known file names in path
+    if (lower.includes('supabase.co/storage')) {
+      // Try to detect from the path segments
+      if (/\bpdf\b/.test(decoded)) return 'pdf';
+      if (/\b(docx?|rtf)\b/.test(decoded)) return 'docx';
+      if (/\b(txt|text)\b/.test(decoded)) return 'text';
+      if (/\b(png|jpg|jpeg|webp)\b/.test(decoded)) return 'image';
+    }
     return 'html-page';
   }, []);
 
@@ -1162,13 +1174,27 @@ export default function EmbedPdfViewerPage() {
               {/* ADD DOCUMENT (unified panel) */}
               {activePanel === "add" && (
                 <div className="space-y-3">
-                  {/* Upload from computer */}
-                  <div className="border border-[#D4AF37]/30 rounded-lg p-3 space-y-2">
+                  {/* Upload from computer with drag & drop */}
+                  <div
+                    className={`border-2 border-dashed rounded-lg p-3 space-y-2 transition-colors ${
+                      isDragging ? "border-[#D4AF37] bg-[#D4AF37]/10" : "border-[#D4AF37]/30"
+                    }`}
+                    onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      dragCounterRef.current = 0;
+                      setIsDragging(false);
+                      const file = e.dataTransfer.files?.[0];
+                      if (file) processFileUpload(file);
+                    }}
+                  >
                     <div className="flex items-center gap-2">
                       <Upload className="h-4 w-4 text-[#D4AF37]" />
                       <p className="text-xs font-semibold text-[#0B1F5B]">העלה מהמחשב</p>
                     </div>
-                    <p className="text-[10px] text-[#0B1F5B]/40">PDF, TXT, תמונות, DOCX</p>
+                    <p className="text-[10px] text-[#0B1F5B]/40">PDF, TXT, תמונות, DOCX — גרור לכאן או לחץ</p>
                     <Button size="sm" className="w-full bg-[#0B1F5B] text-white border-2 border-[#D4AF37] gap-2" onClick={triggerFileUpload} disabled={isUploading}>
                       {isUploading ? <><Loader2Icon className="h-4 w-4 animate-spin" /> מעלה...</> : <><Upload className="h-4 w-4" /> בחר קובץ</>}
                     </Button>
@@ -1243,8 +1269,8 @@ export default function EmbedPdfViewerPage() {
                             >
                               <FileText className="h-3.5 w-3.5 text-[#D4AF37] shrink-0" />
                               <div className="flex-1 min-w-0">
-                                <p className="text-xs truncate font-medium text-[#0B1F5B]">{doc.title}</p>
-                                <p className="text-[10px] text-[#0B1F5B]/40">{doc.court} · {doc.year}</p>
+                                <p className="text-xs truncate font-medium text-[#0B1F5B]">{doc.title || "ללא כותרת"}</p>
+                                <p className="text-[10px] text-[#0B1F5B]/40">{doc.court || "—"} · {doc.year || "—"}</p>
                               </div>
                             </div>
                           ))}
@@ -1744,16 +1770,30 @@ export default function EmbedPdfViewerPage() {
                   </>
                 )}
 
-                {/* HTML-PAGE */}
+                {/* HTML-PAGE — try to embed, with fallback */}
                 {leftContentType === 'html-page' && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-white">
-                    <div className="text-center space-y-4 p-8 max-w-md">
-                      <ExternalLink className="h-16 w-16 mx-auto text-[#D4AF37]" />
-                      <h3 className="text-lg font-semibold">דף אינטרנט חיצוני</h3>
-                      <a href={leftSourceUrl} target="_blank" rel="noopener noreferrer">
-                        <Button size="lg" className="bg-[#0B1F5B] text-white border-2 border-[#D4AF37]"><ExternalLink className="h-5 w-5 ml-2" /> פתח בחלון חדש</Button>
-                      </a>
-                    </div>
+                  <div className="absolute inset-0">
+                    <iframe
+                      key={leftSourceUrl}
+                      src={leftSourceUrl}
+                      className="absolute inset-0 w-full h-full border-0"
+                      title="External Viewer"
+                      allow="fullscreen"
+                      sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                      onLoad={() => setIframeLoaded(true)}
+                      onError={() => setIframeError(true)}
+                    />
+                    {iframeError && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-white">
+                        <div className="text-center space-y-4 p-8 max-w-md">
+                          <ExternalLink className="h-16 w-16 mx-auto text-[#D4AF37]" />
+                          <h3 className="text-lg font-semibold">לא ניתן להטמיע את הדף</h3>
+                          <a href={leftSourceUrl} target="_blank" rel="noopener noreferrer">
+                            <Button size="lg" className="bg-[#0B1F5B] text-white border-2 border-[#D4AF37]"><ExternalLink className="h-5 w-5 ml-2" /> פתח בחלון חדש</Button>
+                          </a>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1798,7 +1838,7 @@ export default function EmbedPdfViewerPage() {
                     <Button size="sm" className="bg-[#0B1F5B] text-white border-2 border-[#D4AF37] gap-1" onClick={triggerFileUpload} disabled={isUploading}>
                       {isUploading ? <Loader2Icon className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} העלה מהמחשב
                     </Button>
-                    <Button size="sm" variant="outline" className="border-[#D4AF37] text-[#0B1F5B] gap-1" onClick={() => { loadCloudDocs(); togglePanel("cloud"); }}>
+                    <Button size="sm" variant="outline" className="border-[#D4AF37] text-[#0B1F5B] gap-1" onClick={() => { loadCloudDocs(); togglePanel("add"); }}>
                       <Database className="h-4 w-4" /> מסמכים מהענן
                     </Button>
                     <Button size="sm" variant="outline" className="border-[#D4AF37] text-[#0B1F5B] gap-1" onClick={() => togglePanel("add")}>
