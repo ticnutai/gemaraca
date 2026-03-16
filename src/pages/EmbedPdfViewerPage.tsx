@@ -1240,6 +1240,20 @@ export default function EmbedPdfViewerPage() {
 
               {/* Document Viewer */}
               <div className="flex-1 relative bg-[#f8f8f6]">
+                {/* BEAUTIFIED VIEW */}
+                {beautifiedHtml && activePanel === "beautify" ? (
+                  <iframe
+                    ref={beautifyIframeRef}
+                    srcDoc={beautifiedHtml}
+                    className="absolute inset-0 w-full h-full border-0"
+                    title="Beautified Psak Din"
+                    sandbox="allow-same-origin allow-popups"
+                    onLoad={() => {
+                      const doc = beautifyIframeRef.current?.contentDocument;
+                      if (doc?.body) doc.designMode = "on";
+                    }}
+                  />
+                ) : (
                 {/* TEXT */}
                 {leftContentType === 'text' && (
                   <>
