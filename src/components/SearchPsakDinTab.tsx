@@ -152,8 +152,12 @@ const SearchPsakDinTab = () => {
   };
 
   const handlePsakClick = (psak: SearchResult) => {
-    setSelectedPsak(psak);
-    setDialogOpen(true);
+    if (psak.sourceUrl) {
+      navigate(`/embedpdf-viewer?url=${encodeURIComponent(psak.sourceUrl)}&psakId=${psak.id}`);
+    } else {
+      setSelectedPsak(psak);
+      setDialogOpen(true);
+    }
   };
 
   return (

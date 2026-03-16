@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,7 @@ function escapeHtml(str: string): string {
 const PAGE_SIZE = 50;
 
 const PsakDinTab = () => {
+  const navigate = useNavigate();
   const [psakim, setPsakim] = useState<PsakDinRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -220,8 +222,12 @@ const PsakDinTab = () => {
   };
 
   const handlePsakClick = (psak: PsakDinRow) => {
-    setSelectedPsak(psak);
-    setDialogOpen(true);
+    if (psak.source_url) {
+      navigate(`/embedpdf-viewer?url=${encodeURIComponent(psak.source_url)}&psakId=${psak.id}`);
+    } else {
+      setSelectedPsak(psak);
+      setDialogOpen(true);
+    }
   };
 
   const handleEditPsak = (psakId: string) => {

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -33,6 +34,7 @@ interface PsakLink {
 }
 
 const RelatedPsakimSidebar = ({ sugyaId }: RelatedPsakimSidebarProps) => {
+  const navigate = useNavigate();
   const [psakim, setPsakim] = useState<PsakLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPsak, setSelectedPsak] = useState<any | null>(null);
@@ -116,9 +118,13 @@ const RelatedPsakimSidebar = ({ sugyaId }: RelatedPsakimSidebarProps) => {
   }, [sugyaId]);
 
   const handlePsakClick = useCallback((psak: typeof psakim[number]) => {
-    setSelectedPsak(psak);
-    setDialogOpen(true);
-  }, []);
+    if ((psak as any).source_url) {
+      navigate(`/embedpdf-viewer?url=${encodeURIComponent((psak as any).source_url)}&psakId=${psak.id}`);
+    } else {
+      setSelectedPsak(psak);
+      setDialogOpen(true);
+    }
+  }, [navigate]);
 
   const handleEditPsak = useCallback(async (psakId: string) => {
     const { data } = await supabase

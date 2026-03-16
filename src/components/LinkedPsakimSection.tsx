@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,6 +34,7 @@ interface LinkedPsak {
 }
 
 const LinkedPsakimSection = ({ sugyaId, masechet, dafNumber }: LinkedPsakimSectionProps) => {
+  const navigate = useNavigate();
   const [psakim, setPsakim] = useState<LinkedPsak[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
@@ -170,8 +172,12 @@ const LinkedPsakimSection = ({ sugyaId, masechet, dafNumber }: LinkedPsakimSecti
       .maybeSingle();
     
     if (data) {
-      setSelectedPsak(data);
-      setDialogOpen(true);
+      if (data.source_url) {
+        navigate(`/embedpdf-viewer?url=${encodeURIComponent(data.source_url)}&psakId=${data.id}`);
+      } else {
+        setSelectedPsak(data);
+        setDialogOpen(true);
+      }
     }
   };
 
