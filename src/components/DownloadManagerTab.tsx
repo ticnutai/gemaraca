@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useDownloadController } from "@/hooks/useDownloadController";
+import { useDownloadController, DownloadFormat } from "@/hooks/useDownloadController";
 import { useDownloadStore } from "@/stores/downloadStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,9 @@ import {
   Package,
   Filter,
   ArrowDownToLine,
+  FileCode,
+  FileType,
+  File,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -50,6 +53,7 @@ const DownloadManagerTab = () => {
   const [years, setYears] = useState<number[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [downloadCount, setDownloadCount] = useState<string>("all");
+  const [downloadFormat, setDownloadFormat] = useState<DownloadFormat>("html");
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -175,11 +179,10 @@ const DownloadManagerTab = () => {
   }, []);
 
   const handleDownload = useCallback(
-    async (format: "zip" | "html") => {
+    async () => {
       let selected = items.filter((i) => selectedIds.has(i.id));
       if (selected.length === 0) return;
 
-      // Limit by downloadCount
       if (downloadCount !== "all") {
         const limit = parseInt(downloadCount);
         if (!isNaN(limit) && limit > 0) {
@@ -187,9 +190,9 @@ const DownloadManagerTab = () => {
         }
       }
 
-      await startDownload(selected, format);
+      await startDownload(selected, downloadFormat);
     },
-    [items, selectedIds, startDownload, downloadCount]
+    [items, selectedIds, startDownload, downloadCount, downloadFormat]
   );
 
   const allLoaded = items.length > 0 && items.every((i) => selectedIds.has(i.id));
@@ -285,8 +288,25 @@ const DownloadManagerTab = () => {
             </SelectContent>
           </Select>
 
+          <Select value={downloadFormat} onValueChange={(v) => setDownloadFormat(v as DownloadFormat)}>
+            <SelectTrigger className="w-[120px]">
+              <SelectValue placeholder="פורמט" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="html">
+                <span className="flex items-center gap-1"><FileCode className="w-3 h-3" /> HTML</span>
+              </SelectItem>
+              <SelectItem value="pdf">
+                <span className="flex items-center gap-1"><FileType className="w-3 h-3" /> PDF</span>
+              </SelectItem>
+              <SelectItem value="docx">
+                <span className="flex items-center gap-1"><File className="w-3 h-3" /> Word</span>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+
           <Button
-            onClick={() => handleDownload("zip")}
+            onClick={() => handleDownload()}
             disabled={selectedIds.size === 0 || !!activeSession}
             className="gap-2"
           >

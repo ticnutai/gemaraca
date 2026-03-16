@@ -2,16 +2,18 @@ import { useRef, useCallback, useEffect } from 'react';
 import { useDownloadStore, DownloadItem } from '@/stores/downloadStore';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import type JSZip from 'jszip';
 
-const DEFAULT_CONCURRENCY = 3;
-const RETRY_DELAYS = [1000, 3000, 5000];
-const ITEM_TIMEOUT = 30000;
+const DEFAULT_CONCURRENCY = 6;
+const RETRY_DELAYS = [500, 1500, 3000];
+const ITEM_TIMEOUT = 20000;
+
+export type DownloadFormat = 'html' | 'pdf' | 'docx';
 
 export function useDownloadController() {
   const abortRef = useRef<AbortController | null>(null);
   const pausedRef = useRef(false);
   const activeRef = useRef(false);
+  const speedRef = useRef({ startTime: 0, completedCount: 0 });
 
   const {
     sessions,
@@ -43,60 +45,53 @@ export function useDownloadController() {
     }
   };
 
-  const fetchPsakContent = async (id: string, signal: AbortSignal): Promise<{ title: string; content: string }> => {
+  const fetchPsakContent = async (id: string, format: DownloadFormat): Promise<{ title: string; content: string | Blob; ext: string }> => {
     const { data, error } = await supabase
       .from('psakei_din')
-      .select('title, full_text, summary, court, year, case_number')
+      .select('title, full_text, summary, court, year, case_number, source_url')
       .eq('id', id)
       .single();
 
     if (error || !data) throw new Error(error?.message || 'Not found');
 
-    const content = data.full_text || data.summary || '';
-    const html = `<!DOCTYPE html>
-<html dir="rtl" lang="he">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${escapeHtml(data.title)}</title>
-<style>
-  body { font-family: 'David', 'Times New Roman', serif; max-width: 800px; margin: 0 auto; padding: 20px; direction: rtl; line-height: 1.8; }
-  h1 { color: #1a365d; border-bottom: 2px solid #2b6cb0; padding-bottom: 10px; }
-  .meta { background: #f7fafc; padding: 12px; border-radius: 8px; margin-bottom: 20px; color: #4a5568; }
-  .meta span { margin-left: 20px; }
-  .content { white-space: pre-wrap; }
-</style>
-</head>
-<body>
-<h1>${escapeHtml(data.title)}</h1>
-<div class="meta">
-  <span>בית דין: ${escapeHtml(data.court)}</span>
-  <span>שנה: ${data.year}</span>
-  ${data.case_number ? `<span>תיק: ${escapeHtml(data.case_number)}</span>` : ''}
-</div>
-<div class="content">${escapeHtml(content)}</div>
-</body>
-</html>`;
+    // PDF format: try to fetch original file from storage
+    if (format === 'pdf' && data.source_url) {
+      try {
+        const res = await fetch(data.source_url);
+        if (res.ok) {
+          const blob = await res.blob();
+          return { title: data.title, content: blob, ext: '.pdf' };
+        }
+      } catch {
+        // fallback to HTML
+      }
+    }
 
-    return { title: data.title, content: html };
+    const textContent = data.full_text || data.summary || '';
+    const htmlBody = buildHtmlContent(data, textContent);
+
+    if (format === 'docx') {
+      return { title: data.title, content: htmlBody, ext: '.doc' };
+    }
+
+    return { title: data.title, content: htmlBody, ext: '.html' };
   };
 
   const downloadWithRetry = async (
     id: string,
+    format: DownloadFormat,
     signal: AbortSignal
-  ): Promise<{ title: string; content: string }> => {
+  ): Promise<{ title: string; content: string | Blob; ext: string }> => {
     let lastError: Error | null = null;
     for (let attempt = 0; attempt <= RETRY_DELAYS.length; attempt++) {
       if (signal.aborted) throw new Error('aborted');
       try {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), ITEM_TIMEOUT);
-        
-        // Combine with parent signal
         signal.addEventListener('abort', () => controller.abort(), { once: true });
-        
+
         try {
-          return await fetchPsakContent(id, controller.signal);
+          return await fetchPsakContent(id, format);
         } finally {
           clearTimeout(timeout);
         }
@@ -113,7 +108,7 @@ export function useDownloadController() {
 
   const startDownload = useCallback(async (
     items: Array<{ id: string; title: string; court: string; year: number }>,
-    format: 'html' | 'zip' = 'zip',
+    format: DownloadFormat = 'html',
     sessionName?: string
   ) => {
     if (items.length === 0) return;
@@ -124,6 +119,7 @@ export function useDownloadController() {
 
     activeRef.current = true;
     pausedRef.current = false;
+    speedRef.current = { startTime: Date.now(), completedCount: 0 };
     const sessionId = crypto.randomUUID();
     const name = sessionName || `הורדת ${items.length} פסקי דין`;
 
@@ -131,9 +127,9 @@ export function useDownloadController() {
     abortRef.current = abortController;
     const signal = abortController.signal;
 
-    // Check which items were already completed (resume support)
+    // Check for resumable session
     const existingSession = Object.values(sessions).find(
-      s => s.status === 'paused' || s.status === 'error'
+      s => (s.status === 'paused' || s.status === 'error') && s.format === format
     );
     const alreadyDone = new Set(existingSession?.completedIds || []);
 
@@ -145,7 +141,6 @@ export function useDownloadController() {
       status: alreadyDone.has(item.id) ? 'done' : 'pending',
     }));
 
-    // Clean old session if resuming
     if (existingSession) {
       clearSession(existingSession.id);
     }
@@ -161,10 +156,8 @@ export function useDownloadController() {
     });
 
     const pendingItems = downloadItems.filter((i) => i.status === 'pending');
-    const downloadedContents: Map<string, { title: string; content: string }> = new Map();
+    const downloadedContents: Map<string, { title: string; content: string | Blob; ext: string }> = new Map();
 
-    // Concurrent download with semaphore
-    let activeCount = 0;
     let itemIndex = 0;
     const errors: string[] = [];
 
@@ -176,30 +169,27 @@ export function useDownloadController() {
         const currentIndex = itemIndex++;
         const item = pendingItems[currentIndex];
 
-        activeCount++;
         updateItemStatus(sessionId, item.id, 'downloading');
 
         try {
-          const result = await downloadWithRetry(item.id, signal);
+          const result = await downloadWithRetry(item.id, format, signal);
           downloadedContents.set(item.id, result);
           markItemDone(sessionId, item.id);
+          speedRef.current.completedCount++;
         } catch (err) {
           if ((err as Error).message === 'aborted') return;
           updateItemStatus(sessionId, item.id, 'error', (err as Error).message);
           errors.push(`${item.title}: ${(err as Error).message}`);
-        } finally {
-          activeCount--;
         }
 
-        // Throttle to avoid overload
-        if (currentIndex % 50 === 0 && currentIndex > 0) {
-          await sleep(500, signal);
+        // Throttle every 100 items
+        if (currentIndex % 100 === 0 && currentIndex > 0) {
+          await sleep(300, signal);
         }
       }
     };
 
     try {
-      // Launch concurrent workers
       const workers = Array.from(
         { length: Math.min(DEFAULT_CONCURRENCY, pendingItems.length) },
         () => processNext()
@@ -212,36 +202,33 @@ export function useDownloadController() {
       }
 
       // Package as ZIP
-      if (format === 'zip') {
-        setSessionStatus(sessionId, 'packaging');
-        
-        const { default: JSZipLib } = await import('jszip');
-        const zip = new JSZipLib();
-        downloadedContents.forEach((data, _id) => {
-          const safeName = data.title.replace(/[\\/:*?"<>|]/g, '_').substring(0, 100);
-          zip.file(`${safeName}.html`, data.content);
-        });
+      setSessionStatus(sessionId, 'packaging');
 
-        // Also add previously completed items if resuming
-        // (they won't be in downloadedContents since we just fetched pending ones)
+      const { default: JSZipLib } = await import('jszip');
+      const zip = new JSZipLib();
+      downloadedContents.forEach((data) => {
+        const safeName = data.title.replace(/[\\/:*?"<>|]/g, '_').substring(0, 100);
+        if (data.content instanceof Blob) {
+          zip.file(`${safeName}${data.ext}`, data.content);
+        } else {
+          zip.file(`${safeName}${data.ext}`, data.content);
+        }
+      });
 
-        const blob = await zip.generateAsync(
-          { type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } },
-          (meta) => {
-            // Progress callback for ZIP generation
-          }
-        );
+      const blob = await zip.generateAsync(
+        { type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } }
+      );
 
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `psakei-din-${new Date().toISOString().slice(0, 10)}.zip`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        
-        setTimeout(() => URL.revokeObjectURL(url), 60000);
-      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const formatLabel = format === 'pdf' ? 'pdf' : format === 'docx' ? 'doc' : 'html';
+      a.download = `psakei-din-${formatLabel}-${new Date().toISOString().slice(0, 10)}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
 
       setSessionStatus(sessionId, 'completed');
       toast({
@@ -280,6 +267,13 @@ export function useDownloadController() {
     toast({ title: 'ההורדה בוטלה', variant: 'destructive' });
   }, [clearSession]);
 
+  const getSpeed = useCallback(() => {
+    const { startTime, completedCount } = speedRef.current;
+    if (!startTime || completedCount === 0) return 0;
+    const elapsed = (Date.now() - startTime) / 1000;
+    return elapsed > 0 ? Math.round((completedCount / elapsed) * 10) / 10 : 0;
+  }, []);
+
   return {
     sessions,
     startDownload,
@@ -288,6 +282,7 @@ export function useDownloadController() {
     cancel,
     clearSession,
     getProgress,
+    getSpeed,
   };
 }
 
@@ -297,4 +292,32 @@ function escapeHtml(str: string): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+function buildHtmlContent(data: { title: string; court: string; year: number; case_number?: string | null }, textContent: string): string {
+  return `<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${escapeHtml(data.title)}</title>
+<style>
+  @page { size: A4; margin: 2cm; }
+  body { font-family: 'David', 'Times New Roman', serif; max-width: 800px; margin: 0 auto; padding: 20px; direction: rtl; line-height: 1.8; }
+  h1 { color: #1a365d; border-bottom: 2px solid #2b6cb0; padding-bottom: 10px; }
+  .meta { background: #f7fafc; padding: 12px; border-radius: 8px; margin-bottom: 20px; color: #4a5568; }
+  .meta span { margin-left: 20px; }
+  .content { white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<h1>${escapeHtml(data.title)}</h1>
+<div class="meta">
+  <span>בית דין: ${escapeHtml(data.court)}</span>
+  <span>שנה: ${data.year}</span>
+  ${data.case_number ? `<span>תיק: ${escapeHtml(data.case_number)}</span>` : ''}
+</div>
+<div class="content">${escapeHtml(textContent)}</div>
+</body>
+</html>`;
 }

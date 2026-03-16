@@ -10,23 +10,33 @@ import {
   Package,
   CheckCircle,
   AlertCircle,
+  Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
 
 const GlobalDownloadProgress = () => {
   const { sessions } = useDownloadStore();
-  const { pause, resume, cancel, clearSession, getProgress } = useDownloadController();
+  const { pause, resume, cancel, clearSession, getProgress, getSpeed } = useDownloadController();
+  const [speed, setSpeed] = useState(0);
 
   const activeSessions = Object.values(sessions).filter((s) =>
     ["downloading", "paused", "packaging"].includes(s.status)
   );
+
+  // Update speed every second
+  useEffect(() => {
+    if (activeSessions.length === 0) return;
+    const interval = setInterval(() => setSpeed(getSpeed()), 1000);
+    return () => clearInterval(interval);
+  }, [activeSessions.length, getSpeed]);
 
   if (activeSessions.length === 0) return null;
 
   return (
     <div
       className={cn(
-        "fixed bottom-4 left-4 right-4 md:left-auto md:left-4 md:w-96 z-50",
+        "fixed bottom-4 left-4 right-4 md:right-auto md:left-4 md:w-96 z-50",
         "bg-card border border-border rounded-lg shadow-lg p-4",
         "animate-in slide-in-from-bottom-4 duration-300"
       )}
@@ -34,9 +44,9 @@ const GlobalDownloadProgress = () => {
     >
       {activeSessions.map((session) => {
         const progress = getProgress(session.id);
-        const isDownloading = session.status === "downloading";
         const isPaused = session.status === "paused";
         const isPackaging = session.status === "packaging";
+        const formatLabel = session.format === 'pdf' ? 'PDF' : session.format === 'docx' ? 'Word' : 'HTML';
 
         return (
           <div key={session.id} className="space-y-2">
@@ -49,6 +59,9 @@ const GlobalDownloadProgress = () => {
                 )}
                 <span className="font-medium text-sm">
                   {isPackaging ? "אורז קובץ ZIP..." : session.name}
+                </span>
+                <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                  {formatLabel}
                 </span>
               </div>
               <div className="flex items-center gap-1">
@@ -94,6 +107,12 @@ const GlobalDownloadProgress = () => {
                   <span className="text-destructive flex items-center gap-1">
                     <AlertCircle className="w-3 h-3" />
                     {progress.failed}
+                  </span>
+                )}
+                {speed > 0 && !isPaused && !isPackaging && (
+                  <span className="flex items-center gap-1 text-primary">
+                    <Zap className="w-3 h-3" />
+                    {speed}/שנ
                   </span>
                 )}
               </div>
