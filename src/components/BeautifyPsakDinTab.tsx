@@ -518,7 +518,7 @@ const BeautifyPsakDinTab = () => {
       const { data: urlData } = supabase.storage.from("psakei-din-files").getPublicUrl(fileName);
 
       const parsed = parsePsakDinText(rawText);
-      const { error } = await supabase.from("psakei_din").insert({
+      const { error } = await (supabase.from("psakei_din") as any).insert({
         id: newId,
         title: `${loadedPsakTitle || parsed.title} (מעוצב)`,
         court: parsed.court || "לא ידוע",
@@ -529,7 +529,7 @@ const BeautifyPsakDinTab = () => {
         source_url: urlData?.publicUrl || null,
         tags: ["מעוצב"],
         beautify_count: 1,
-      } as Record<string, unknown>);
+      });
       if (error) throw error;
 
       setLoadedPsakId(newId);
