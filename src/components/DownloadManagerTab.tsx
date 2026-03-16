@@ -288,8 +288,25 @@ const DownloadManagerTab = () => {
             </SelectContent>
           </Select>
 
+          <Select value={downloadFormat} onValueChange={(v) => setDownloadFormat(v as DownloadFormat)}>
+            <SelectTrigger className="w-[120px]">
+              <SelectValue placeholder="פורמט" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="html">
+                <span className="flex items-center gap-1"><FileCode className="w-3 h-3" /> HTML</span>
+              </SelectItem>
+              <SelectItem value="pdf">
+                <span className="flex items-center gap-1"><FileType className="w-3 h-3" /> PDF</span>
+              </SelectItem>
+              <SelectItem value="docx">
+                <span className="flex items-center gap-1"><File className="w-3 h-3" /> Word</span>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+
           <Button
-            onClick={() => handleDownload("zip")}
+            onClick={() => handleDownload()}
             disabled={selectedIds.size === 0 || !!activeSession}
             className="gap-2"
           >
