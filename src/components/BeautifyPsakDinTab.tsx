@@ -241,6 +241,32 @@ const BeautifyPsakDinTab = () => {
     });
   }, [dbItems]);
 
+  const handleRenameItem = useCallback(async (id: string, newTitle: string) => {
+    if (!newTitle.trim()) return;
+    try {
+      const { error } = await supabase.from("psakei_din").update({ title: newTitle.trim() }).eq("id", id);
+      if (error) throw error;
+      setDbItems(prev => prev.map(i => i.id === id ? { ...i, title: newTitle.trim() } : i));
+      toast({ title: "עודכן", description: "שם פסק הדין עודכן" });
+    } catch {
+      toast({ title: "שגיאה", description: "שגיאה בעדכון השם", variant: "destructive" });
+    }
+    setEditingItemId(null);
+  }, [toast]);
+
+  const handleDeleteItem = useCallback(async (id: string) => {
+    if (!confirm("למחוק פסק דין זה?")) return;
+    try {
+      const { error } = await supabase.from("psakei_din").delete().eq("id", id);
+      if (error) throw error;
+      setDbItems(prev => prev.filter(i => i.id !== id));
+      setSelectedIds(prev => { const n = new Set(prev); n.delete(id); return n; });
+      toast({ title: "נמחק", description: "פסק הדין נמחק" });
+    } catch {
+      toast({ title: "שגיאה", description: "שגיאה במחיקה", variant: "destructive" });
+    }
+  }, [toast]);
+
   // ===== LOAD SINGLE FROM DB =====
   const handleLoadSingle = useCallback(async (item: DbPsakItem) => {
     setShowDbPicker(false);
