@@ -11,7 +11,7 @@ import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 
 const FloatingGemaraNav = lazy(() => import("./FloatingGemaraNav"));
 const GemaraDownloadFloat = lazy(() => import("./GemaraDownloadFloat"));
-const FloatingTypography = lazy(() => import("./FloatingTypography"));
+
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -115,11 +115,6 @@ const AppLayoutInner = ({ children }: AppLayoutProps) => {
       {/* Gemara Download Progress Float */}
       <Suspense fallback={null}>
         <GemaraDownloadFloat />
-      </Suspense>
-
-      {/* Typography Settings Float */}
-      <Suspense fallback={null}>
-        <FloatingTypography />
       </Suspense>
     </div>
   );

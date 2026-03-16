@@ -1,9 +1,10 @@
-import { Info, BookOpen, Scale, Search, Upload, Library, User, LogOut, LogIn, ArrowDownToLine, BookMarked, History, CalendarDays, GitCompareArrows, Share2, MoreHorizontal, Menu } from "lucide-react";
+import { Info, BookOpen, Scale, Search, Upload, Library, User, LogOut, LogIn, ArrowDownToLine, BookMarked, History, CalendarDays, GitCompareArrows, Share2, MoreHorizontal, Menu, Type } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { lazy, Suspense, useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,6 +12,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Slider } from "@/components/ui/slider";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { usePageTypography } from "@/hooks/usePageTypography";
+
+const FONTS = [
+  { value: "Arial", label: "אריאל" },
+  { value: "David", label: "דוד" },
+  { value: "'Frank Ruhl Libre', serif", label: "פרנק רוהל" },
+  { value: "'Heebo', sans-serif", label: "חיבו" },
+  { value: "'Rubik', sans-serif", label: "רוביק" },
+  { value: "'Noto Serif Hebrew', serif", label: "נוטו סריף" },
+  { value: "Georgia, serif", label: "ג'ורג'יה" },
+  { value: "'Times New Roman', serif", label: "טיימס" },
+];
 
 interface AppHeaderProps {
   activeTab: string;
@@ -40,6 +56,8 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
   const { user, isAuthenticated, signOut } = useAuth();
   const navigate = useNavigate();
   const { setOpen } = useSidebar();
+  const { settings, updateSettings } = usePageTypography();
+  const [typoOpen, setTypoOpen] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -151,6 +169,53 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
               <span className="hidden md:inline">התחבר</span>
             </Button>
           )}
+          {/* Typography settings */}
+          <Popover open={typoOpen} onOpenChange={setTypoOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-primary-foreground hover:bg-primary-foreground/10 h-9 w-9"
+                title="הגדרות טקסט"
+              >
+                <Type className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent side="bottom" align="end" className="w-72 p-4 space-y-4" dir="rtl">
+              <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                <Type className="h-4 w-4 text-accent" />
+                הגדרות טקסט
+              </h4>
+              <div className="space-y-1.5">
+                <label className="text-xs text-muted-foreground">גופן</label>
+                <Select value={settings.fontFamily} onValueChange={(v) => updateSettings({ fontFamily: v })}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {FONTS.map((f) => (
+                      <SelectItem key={f.value} value={f.value} style={{ fontFamily: f.value }}>{f.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs text-muted-foreground">גודל גופן</label>
+                  <span className="text-xs font-semibold text-foreground">{settings.fontSize}px</span>
+                </div>
+                <Slider value={[settings.fontSize]} onValueChange={([v]) => updateSettings({ fontSize: v })} min={12} max={28} step={1} />
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs text-muted-foreground">מרווח שורות</label>
+                  <span className="text-xs font-semibold text-foreground">{settings.lineHeight.toFixed(1)}</span>
+                </div>
+                <Slider value={[settings.lineHeight * 10]} onValueChange={([v]) => updateSettings({ lineHeight: v / 10 })} min={10} max={30} step={1} />
+              </div>
+              <div className="p-3 rounded-md border border-border bg-muted/30 text-foreground" style={{ fontFamily: settings.fontFamily, fontSize: `${settings.fontSize}px`, lineHeight: settings.lineHeight }}>
+                דוגמא לטקסט בהגדרות הנבחרות
+              </div>
+            </PopoverContent>
+          </Popover>
           <Button
             variant="ghost"
             size="icon"
