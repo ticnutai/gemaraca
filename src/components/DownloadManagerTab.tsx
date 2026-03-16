@@ -179,11 +179,10 @@ const DownloadManagerTab = () => {
   }, []);
 
   const handleDownload = useCallback(
-    async (format: "zip" | "html") => {
+    async () => {
       let selected = items.filter((i) => selectedIds.has(i.id));
       if (selected.length === 0) return;
 
-      // Limit by downloadCount
       if (downloadCount !== "all") {
         const limit = parseInt(downloadCount);
         if (!isNaN(limit) && limit > 0) {
@@ -191,9 +190,9 @@ const DownloadManagerTab = () => {
         }
       }
 
-      await startDownload(selected, format);
+      await startDownload(selected, downloadFormat);
     },
-    [items, selectedIds, startDownload, downloadCount]
+    [items, selectedIds, startDownload, downloadCount, downloadFormat]
   );
 
   const allLoaded = items.length > 0 && items.every((i) => selectedIds.has(i.id));
