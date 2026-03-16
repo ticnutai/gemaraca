@@ -19,6 +19,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { toast } from "sonner";
 import { usePDFAnnotations, type PDFAnnotation } from "@/hooks/usePDFAnnotations";
 import { useUserBooks, type UserBook } from "@/hooks/useUserBooks";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
 
 // ─── Constants ───────────────────────────────────────────────
 
@@ -215,6 +217,102 @@ export default function EmbedPdfViewerPage() {
   const [manualUrl, setManualUrl] = useState(() => searchParams.get("url") || "");
   const [compareManualUrl, setCompareManualUrl] = useState("");
   const [viewerFullscreen, setViewerFullscreen] = useState(false);
+
+  // ── Psak Din context (for beautify) ──
+  const psakIdParam = searchParams.get("psakId");
+  const [psakData, setPsakData] = useState<any>(null);
+  const [beautifiedHtml, setBeautifiedHtml] = useState<string | null>(null);
+  const [isBeautifying, setIsBeautifying] = useState(false);
+  const [isSavingBeautified, setIsSavingBeautified] = useState(false);
+  const beautifyIframeRef = useRef<HTMLIFrameElement>(null);
+
+  // Fetch psak din data when psakId is provided
+  useEffect(() => {
+    if (!psakIdParam) { setPsakData(null); return; }
+    (async () => {
+      const { data } = await (supabase as any).from("psakei_din").select("*").eq("id", psakIdParam).single();
+      if (data) setPsakData(data);
+    })();
+  }, [psakIdParam]);
+
+  const handleBeautify = useCallback(async () => {
+    if (!psakData) { toast.error("לא נמצא פסק דין לעיצוב"); return; }
+    setIsBeautifying(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("beautify-psak-din", {
+        body: {
+          title: psakData.title,
+          court: psakData.court,
+          year: psakData.year,
+          caseNumber: psakData.case_number,
+          summary: psakData.summary,
+          fullText: psakData.full_text,
+          tags: psakData.tags,
+        },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || "שגיאה בעיצוב");
+      setBeautifiedHtml(data.html);
+      setActivePanel("beautify");
+      toast.success("פסק הדין עוצב בהצלחה!");
+    } catch (err: any) {
+      console.error("Beautify error:", err);
+      toast.error(err.message || "שגיאה בעיצוב פסק הדין");
+    } finally {
+      setIsBeautifying(false);
+    }
+  }, [psakData]);
+
+  const handleSaveBeautified = useCallback(async () => {
+    if (!psakData?.id || !beautifiedHtml) return;
+    setIsSavingBeautified(true);
+    try {
+      const doc = beautifyIframeRef.current?.contentDocument;
+      const currentHtml = doc?.documentElement?.outerHTML || beautifiedHtml;
+      const fileName = `beautified/${psakData.id}-${Date.now()}.html`;
+      const blob = new Blob([currentHtml], { type: "text/html;charset=utf-8" });
+      await supabase.storage.from("psakei-din-files").upload(fileName, blob, { contentType: "text/html", upsert: true });
+      const { data: urlData } = supabase.storage.from("psakei-din-files").getPublicUrl(fileName);
+      const { error } = await supabase.from("psakei_din").update({ full_text: currentHtml, source_url: urlData?.publicUrl || undefined }).eq("id", psakData.id);
+      if (error) throw error;
+      toast.success("פסק הדין המעוצב נשמר בהצלחה");
+    } catch (err: any) {
+      toast.error("שגיאה בשמירת פסק הדין המעוצב");
+    } finally {
+      setIsSavingBeautified(false);
+    }
+  }, [psakData, beautifiedHtml]);
+
+  const handleCopyAndSaveBeautified = useCallback(async () => {
+    if (!psakData || !beautifiedHtml) return;
+    setIsSavingBeautified(true);
+    try {
+      const doc = beautifyIframeRef.current?.contentDocument;
+      const currentHtml = doc?.documentElement?.outerHTML || beautifiedHtml;
+      const newId = crypto.randomUUID();
+      const fileName = `beautified/${newId}.html`;
+      const blob = new Blob([currentHtml], { type: "text/html;charset=utf-8" });
+      await supabase.storage.from("psakei-din-files").upload(fileName, blob, { contentType: "text/html", upsert: true });
+      const { data: urlData } = supabase.storage.from("psakei-din-files").getPublicUrl(fileName);
+      const { error } = await supabase.from("psakei_din").insert({
+        id: newId,
+        title: `${psakData.title} (מעוצב)`,
+        court: psakData.court || "",
+        year: psakData.year || new Date().getFullYear(),
+        case_number: psakData.case_number || null,
+        summary: psakData.summary || "",
+        full_text: currentHtml,
+        source_url: urlData?.publicUrl || null,
+        tags: [...(psakData.tags || []), "מעוצב"],
+      });
+      if (error) throw error;
+      toast.success("פסק הדין המעוצב הועתק ונשמר כפריט חדש");
+    } catch (err: any) {
+      toast.error("שגיאה בהעתקה ושמירה");
+    } finally {
+      setIsSavingBeautified(false);
+    }
+  }, [psakData, beautifiedHtml]);
 
   // Add book form
   const [newBookTitle, setNewBookTitle] = useState("");
@@ -730,6 +828,7 @@ export default function EmbedPdfViewerPage() {
     { id: "annotations", icon: Palette, label: "אנוטציות", badge: annotations.length > 0 ? annotations.length : undefined },
     { id: "bookmarks", icon: Bookmark, label: `סימניות (${bookmarks.length})`, badge: bookmarks.length > 0 ? bookmarks.length : undefined },
     { id: "stats", icon: BarChart3, label: "סטטיסטיקות", badge: undefined },
+    ...(psakIdParam ? [{ id: "beautify", icon: Sparkles, label: "עצב פסק דין", badge: beautifiedHtml ? 1 : undefined }] : []),
   ];
 
   return (
@@ -985,6 +1084,49 @@ export default function EmbedPdfViewerPage() {
                   </div>
                 </div>
               )}
+
+              {/* BEAUTIFY */}
+              {activePanel === "beautify" && (
+                <div className="space-y-3">
+                  {!beautifiedHtml ? (
+                    <div className="text-center py-4 space-y-3">
+                      <Sparkles className="h-8 w-8 mx-auto text-[#D4AF37]" />
+                      <p className="text-xs text-[#0B1F5B]/60">עצב את פסק הדין באמצעות AI</p>
+                      <Button
+                        size="sm"
+                        className="w-full bg-[#0B1F5B] text-white border-2 border-[#D4AF37] gap-2"
+                        onClick={handleBeautify}
+                        disabled={isBeautifying || !psakData}
+                      >
+                        {isBeautifying ? <><Loader2 className="h-4 w-4 animate-spin" /> מעצב...</> : <><Sparkles className="h-4 w-4" /> עצב פסק דין ✨</>}
+                      </Button>
+                      {!psakData && <p className="text-[10px] text-red-500">טוען נתוני פסק דין...</p>}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <p className="text-xs text-green-600 font-semibold">✓ פסק הדין עוצב בהצלחה</p>
+                      <Button size="sm" variant="outline" className="w-full text-xs gap-1 border-[#D4AF37]" onClick={handleBeautify} disabled={isBeautifying}>
+                        {isBeautifying ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />} עצב מחדש
+                      </Button>
+                      <Separator className="bg-[#D4AF37]/20" />
+                      <p className="text-[10px] text-[#0B1F5B]/50">שמירה:</p>
+                      <Button size="sm" className="w-full text-xs bg-[#0B1F5B] text-white border-2 border-[#D4AF37] gap-1" onClick={handleSaveBeautified} disabled={isSavingBeautified}>
+                        {isSavingBeautified ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />} שמור (דרוס מקור)
+                      </Button>
+                      <Button size="sm" variant="outline" className="w-full text-xs border-[#D4AF37] gap-1" onClick={handleCopyAndSaveBeautified} disabled={isSavingBeautified}>
+                        {isSavingBeautified ? <Loader2 className="h-3 w-3 animate-spin" /> : <Copy className="h-3 w-3" />} העתק ושמור כחדש
+                      </Button>
+                      <Separator className="bg-[#D4AF37]/20" />
+                      <Button size="sm" variant="ghost" className="w-full text-xs gap-1" onClick={() => {
+                        const win = window.open("", "_blank");
+                        if (win) { win.document.write(beautifiedHtml); win.document.close(); win.print(); }
+                      }}>
+                        <Printer className="h-3 w-3" /> הדפס
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </aside>
         )}
@@ -1098,6 +1240,21 @@ export default function EmbedPdfViewerPage() {
 
               {/* Document Viewer */}
               <div className="flex-1 relative bg-[#f8f8f6]">
+                {/* BEAUTIFIED VIEW */}
+                {beautifiedHtml && activePanel === "beautify" ? (
+                  <iframe
+                    ref={beautifyIframeRef}
+                    srcDoc={beautifiedHtml}
+                    className="absolute inset-0 w-full h-full border-0"
+                    title="Beautified Psak Din"
+                    sandbox="allow-same-origin allow-popups"
+                    onLoad={() => {
+                      const doc = beautifyIframeRef.current?.contentDocument;
+                      if (doc?.body) doc.designMode = "on";
+                    }}
+                  />
+                ) : (
+                <>
                 {/* TEXT */}
                 {leftContentType === 'text' && (
                   <>
@@ -1199,6 +1356,8 @@ export default function EmbedPdfViewerPage() {
                     )}
                     <iframe key={leftViewerUrl} src={leftViewerUrl} className="absolute inset-0 w-full h-full border-0" title="PDF Viewer" allow="fullscreen" onLoad={() => setIframeLoaded(true)} onError={() => setIframeError(true)} />
                   </>
+                )}
+                </>
                 )}
               </div>
             </div>
