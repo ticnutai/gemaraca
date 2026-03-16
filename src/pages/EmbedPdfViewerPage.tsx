@@ -1250,7 +1250,7 @@ export default function EmbedPdfViewerPage() {
                     <div className="space-y-2">
                       <p className="text-xs text-green-600 font-semibold">✓ פסק הדין עוצב בהצלחה</p>
                       <Button size="sm" variant="outline" className="w-full text-xs gap-1 border-[#D4AF37]" onClick={handleBeautify} disabled={isBeautifying}>
-                        {isBeautifying ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />} עצב מחדש
+                        {isBeautifying ? <Loader2Icon className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />} עצב מחדש
                       </Button>
                       <Separator className="bg-[#D4AF37]/20" />
                       <p className="text-[10px] text-[#0B1F5B]/50">שמירה:</p>
