@@ -573,7 +573,7 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
       {/* ──── Tree View ──── */}
       {viewMode === 'tree' && (
         <Suspense fallback={<div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>}>
-          <TalmudTreeView psakCounts={psakCounts} loadedPages={Object.fromEntries(Object.entries(loadedPagesMap).map(([k, v]) => [k, v.map(Number)]))} />
+          <TalmudTreeView psakCounts={psakCounts} loadedPages={Object.fromEntries(Object.entries(loadedPagesMap).map(([k, v]) => [k, Array.from({ length: v.loaded }, (_, i) => i)]))} />
         </Suspense>
       )}
 
