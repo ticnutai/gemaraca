@@ -1588,12 +1588,20 @@ export default function EmbedPdfViewerPage() {
             </div>
           ) : (
             <div className="flex-1 flex items-center justify-center">
-              <div className="text-center space-y-3 p-8">
+              <div className="text-center space-y-4 p-8">
                 <FileText className="h-16 w-16 mx-auto text-[#D4AF37]/30" />
-                <p className="text-[#0B1F5B]/50 text-sm">בחר מסמך מהרשימה או הדבק קישור</p>
-                <Button size="sm" variant="outline" className="border-[#D4AF37] text-[#0B1F5B]" onClick={() => togglePanel("add")}>
-                  <Plus className="h-4 w-4 ml-1" /> הוסף מסמך
-                </Button>
+                <p className="text-[#0B1F5B]/50 text-sm">בחר מסמך מהרשימה או העלה קובץ</p>
+                <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                  <Button size="sm" className="bg-[#0B1F5B] text-white border-2 border-[#D4AF37] gap-1" onClick={triggerFileUpload} disabled={isUploading}>
+                    {isUploading ? <Loader2Icon className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} העלה מהמחשב
+                  </Button>
+                  <Button size="sm" variant="outline" className="border-[#D4AF37] text-[#0B1F5B] gap-1" onClick={() => { loadCloudDocs(); togglePanel("cloud"); }}>
+                    <Database className="h-4 w-4" /> מסמכים מהענן
+                  </Button>
+                  <Button size="sm" variant="outline" className="border-[#D4AF37] text-[#0B1F5B] gap-1" onClick={() => togglePanel("add")}>
+                    <Plus className="h-4 w-4" /> הוסף קישור
+                  </Button>
+                </div>
               </div>
             </div>
           )}
