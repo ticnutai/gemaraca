@@ -704,785 +704,523 @@ export default function EmbedPdfViewerPage() {
     setNewBookUrl("");
   }, [newBookTitle, newBookUrl, addBook]);
 
+  // ─── Active panel state ──
+  const [activePanel, setActivePanel] = useState<string | null>(null);
+  const togglePanel = (id: string) => setActivePanel(prev => prev === id ? null : id);
+
   // ─── Render ────────────────────────────────────────────────
 
   const panelCls = "bg-white border-[#D4AF37]/40";
   const pillCls = "bg-[#D4AF37]/15 border-[#D4AF37]/40 text-[#0B1F5B]";
 
-  return (
-    <div dir="rtl" className="min-h-screen bg-white text-[#0B1F5B]">
-      {/* ── Header ── */}
-      <header className="border-b-2 border-[#D4AF37] bg-white px-4 py-3 shadow-sm">
-        <div className="flex flex-wrap items-center gap-3 max-w-[1600px] mx-auto">
-          <div className="flex items-center gap-2">
-            <FileText className="h-6 w-6 text-[#D4AF37]" />
-            <h1 className="text-xl font-bold text-[#0B1F5B]">EmbedPDF Viewer</h1>
-            <Badge className="text-xs bg-[#D4AF37]/15 text-[#0B1F5B] border-[#D4AF37]/50">חדש</Badge>
-          </div>
+  // File name from URL for tooltip
+  const fileName = useMemo(() => {
+    try {
+      const url = leftSourceUrl || "";
+      const parts = decodeURIComponent(url).split("/");
+      return parts[parts.length - 1]?.split("?")[0] || "מסמך";
+    } catch { return "מסמך"; }
+  }, [leftSourceUrl]);
 
-          <Separator orientation="vertical" className="h-6 bg-[#D4AF37]/30 hidden sm:block" />
+  // Icon toolbar items
+  const toolbarItems = [
+    { id: "add", icon: Plus, label: "הוסף מסמך", badge: undefined },
+    { id: "url", icon: Link, label: "קישור ידני", badge: undefined },
+    { id: "docs", icon: BookOpen, label: `מסמכים (${books.length})`, badge: books.length > 0 ? books.length : undefined },
+    { id: "annotations", icon: Palette, label: "אנוטציות", badge: annotations.length > 0 ? annotations.length : undefined },
+    { id: "bookmarks", icon: Bookmark, label: `סימניות (${bookmarks.length})`, badge: bookmarks.length > 0 ? bookmarks.length : undefined },
+    { id: "stats", icon: BarChart3, label: "סטטיסטיקות", badge: undefined },
+  ];
+
+  return (
+    <div dir="rtl" className="min-h-screen bg-white text-[#0B1F5B] flex flex-col">
+      {/* ── Compact Header ── */}
+      <header className="border-b-2 border-[#D4AF37] bg-white px-3 py-2 shadow-sm flex-shrink-0">
+        <div className="flex items-center gap-2 max-w-[1800px] mx-auto">
+          {/* Back button */}
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8 text-[#0B1F5B] hover:bg-[#D4AF37]/10"
+            onClick={() => navigate(-1)}
+            title="חזור"
+          >
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+
+          <FileText className="h-5 w-5 text-[#D4AF37] shrink-0" />
+          <h1 className="text-base font-bold text-[#0B1F5B] hidden sm:block">EmbedPDF</h1>
+
+          <Separator orientation="vertical" className="h-5 bg-[#D4AF37]/30 hidden sm:block" />
 
           {/* View mode buttons */}
-          <div className="flex gap-1">
+          <div className="flex gap-0.5">
             {(["single", "split", "compare"] as ViewMode[]).map((mode) => (
               <Button
                 key={mode}
                 size="sm"
-                variant={viewMode === mode ? "default" : "outline"}
-                className={viewMode === mode
+                variant={viewMode === mode ? "default" : "ghost"}
+                className={`h-7 text-xs px-2 ${viewMode === mode
                   ? "bg-[#0B1F5B] text-white hover:bg-[#0B1F5B]/90"
-                  : "border-[#D4AF37] text-[#0B1F5B] hover:bg-[#D4AF37]/10"}
+                  : "text-[#0B1F5B]/60 hover:bg-[#D4AF37]/10"}`}
                 onClick={() => setViewMode(mode)}
               >
                 {mode === "single" ? "יחיד" : mode === "split" ? "מפוצל" : "השוואה"}
               </Button>
             ))}
           </div>
+
+          <div className="flex-1" />
+
+          {/* File name tooltip icon */}
+          {leftSourceUrl && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="p-1.5 rounded-md hover:bg-[#D4AF37]/10 text-[#0B1F5B]/50 hover:text-[#0B1F5B]" title={fileName}>
+                  <FileText className="h-4 w-4" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto max-w-[400px] p-2 text-xs" dir="ltr" align="end">
+                <p className="break-all text-[#0B1F5B]/70">{leftSourceUrl}</p>
+              </PopoverContent>
+            </Popover>
+          )}
+
+          {/* Icon toolbar */}
+          <div className="flex items-center gap-0.5 border border-[#D4AF37]/30 rounded-lg px-1 py-0.5 bg-[#D4AF37]/5">
+            {toolbarItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => togglePanel(item.id)}
+                className={`relative p-1.5 rounded-md transition-all ${
+                  activePanel === item.id
+                    ? "bg-[#0B1F5B] text-white"
+                    : "text-[#0B1F5B]/60 hover:bg-[#D4AF37]/15 hover:text-[#0B1F5B]"
+                }`}
+                title={item.label}
+              >
+                <item.icon className="h-4 w-4" />
+                {item.badge && (
+                  <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] flex items-center justify-center rounded-full bg-[#D4AF37] text-[#0B1F5B] text-[8px] font-bold px-0.5">
+                    {item.badge}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Fullscreen toggle */}
+          <button
+            onClick={() => setViewerFullscreen(v => !v)}
+            className="p-1.5 rounded-md text-[#0B1F5B]/50 hover:text-[#0B1F5B] hover:bg-[#D4AF37]/10"
+            title={viewerFullscreen ? "צמצם" : "מסך מלא"}
+          >
+            {viewerFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          </button>
+
+          {/* External link */}
+          {leftSourceUrl && (
+            <a href={leftSourceUrl} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-md text-[#0B1F5B]/50 hover:text-[#0B1F5B] hover:bg-[#D4AF37]/10" title="פתח בחלון חדש">
+              <ExternalLink className="h-4 w-4" />
+            </a>
+          )}
         </div>
       </header>
 
-      {/* ── Body: 3-column grid ── */}
-      <div className={`max-w-[1600px] mx-auto p-4 gap-4 ${viewerFullscreen ? "" : "grid grid-cols-1 xl:grid-cols-12"}`} style={{ minHeight: "calc(100vh - 64px)" }}>
+      {/* ── Main Content ── */}
+      <div className="flex-1 flex min-h-0">
+        {/* Panel overlay (slides from right) */}
+        {activePanel && (
+          <aside className="w-72 xl:w-80 border-l-2 border-[#D4AF37]/30 bg-white flex-shrink-0 overflow-y-auto">
+            <div className="p-3 space-y-3">
+              {/* Close */}
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-[#0B1F5B]">
+                  {toolbarItems.find(t => t.id === activePanel)?.label}
+                </h3>
+                <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setActivePanel(null)}>
+                  <Trash2 className="h-3 w-3 text-[#0B1F5B]/40" />
+                </Button>
+              </div>
 
-        {/* ═══ LEFT SIDEBAR: PDF List ═══ */}
-        {!viewerFullscreen && (
-        <aside className="xl:col-span-3 space-y-4">
-          {/* Add book */}
-          <Card className={`${panelCls} border-2`}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2 text-[#0B1F5B]">
-                <Plus className="h-4 w-4 text-[#D4AF37]" /> הוספת מסמך
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Input
-                placeholder="שם המסמך"
-                value={newBookTitle}
-                onChange={(e) => setNewBookTitle(e.target.value)}
-                className="text-sm border-[#D4AF37]/30 text-[#0B1F5B] focus-visible:ring-[#D4AF37]"
-              />
-              <Input
-                placeholder="קישור PDF (URL)"
-                value={newBookUrl}
-                onChange={(e) => setNewBookUrl(e.target.value)}
-                className="text-sm border-[#D4AF37]/30 text-[#0B1F5B] focus-visible:ring-[#D4AF37]"
-                dir="ltr"
-              />
-              <Button size="sm" className="w-full bg-[#0B1F5B] text-white hover:bg-[#0B1F5B]/90 border-2 border-[#D4AF37]" onClick={handleAddBook} disabled={addBook.isPending}>
-                {addBook.isPending ? "שומר..." : "הוסף"}
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Manual URL */}
-          <Card className={`${panelCls} border-2`}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2 text-[#0B1F5B]">
-                <ExternalLink className="h-4 w-4 text-[#D4AF37]" /> קישור ידני
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Input
-                placeholder="הדבק URL של PDF..."
-                value={manualUrl}
-                onChange={(e) => setManualUrl(e.target.value)}
-                className="text-sm border-[#D4AF37]/30 text-[#0B1F5B] focus-visible:ring-[#D4AF37]"
-                dir="ltr"
-              />
-              {viewMode !== "single" && (
-                <Input
-                  placeholder="URL להשוואה..."
-                  value={compareManualUrl}
-                  onChange={(e) => setCompareManualUrl(e.target.value)}
-                  className="text-sm border-[#D4AF37]/30 text-[#0B1F5B] focus-visible:ring-[#D4AF37]"
-                  dir="ltr"
-                />
+              {/* ADD DOC */}
+              {activePanel === "add" && (
+                <div className="space-y-2">
+                  <Input placeholder="שם המסמך" value={newBookTitle} onChange={(e) => setNewBookTitle(e.target.value)} className="text-sm border-[#D4AF37]/30 focus-visible:ring-[#D4AF37]" />
+                  <Input placeholder="קישור PDF (URL)" value={newBookUrl} onChange={(e) => setNewBookUrl(e.target.value)} className="text-sm border-[#D4AF37]/30 focus-visible:ring-[#D4AF37]" dir="ltr" />
+                  <Button size="sm" className="w-full bg-[#0B1F5B] text-white border-2 border-[#D4AF37]" onClick={handleAddBook} disabled={addBook.isPending}>
+                    {addBook.isPending ? "שומר..." : "הוסף"}
+                  </Button>
+                </div>
               )}
-            </CardContent>
-          </Card>
 
-          {/* Book list */}
-          <Card className={`${panelCls} border-2`}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2 text-[#0B1F5B]">
-                <BookOpen className="h-4 w-4 text-[#D4AF37]" /> מסמכים ({books.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="max-h-[300px]">
-                {books.length === 0 ? (
-                  <p className="text-xs text-[#0B1F5B]/50 text-center py-4">אין מסמכים עדיין</p>
-                ) : (
-                  <div className="space-y-1">
-                    {books.map((book) => (
-                      <div
-                        key={book.id}
-                        className={`flex items-center justify-between px-2 py-1.5 rounded-md cursor-pointer text-sm transition-colors ${
-                          selectedPdfId === book.id ? "bg-[#D4AF37]/20 font-semibold border border-[#D4AF37]/40" : "hover:bg-[#D4AF37]/5"
-                        }`}
-                        onClick={() => setSelectedPdfId(book.id)}
-                      >
-                        <span className="truncate flex-1 text-[#0B1F5B]">{book.title}</span>
-                        <div className="flex items-center gap-1">
-                          {viewMode !== "single" && (
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-6 w-6 text-[#0B1F5B]"
-                              title="בחר להשוואה"
-                              onClick={(e) => { e.stopPropagation(); setComparePdfId(book.id); }}
-                            >
-                              <FileText className="h-3 w-3" />
+              {/* MANUAL URL */}
+              {activePanel === "url" && (
+                <div className="space-y-2">
+                  <Input placeholder="הדבק URL..." value={manualUrl} onChange={(e) => setManualUrl(e.target.value)} className="text-sm border-[#D4AF37]/30 focus-visible:ring-[#D4AF37]" dir="ltr" />
+                  {viewMode !== "single" && (
+                    <Input placeholder="URL להשוואה..." value={compareManualUrl} onChange={(e) => setCompareManualUrl(e.target.value)} className="text-sm border-[#D4AF37]/30 focus-visible:ring-[#D4AF37]" dir="ltr" />
+                  )}
+                </div>
+              )}
+
+              {/* DOCS LIST */}
+              {activePanel === "docs" && (
+                <ScrollArea className="max-h-[400px]">
+                  {books.length === 0 ? (
+                    <p className="text-xs text-[#0B1F5B]/50 text-center py-4">אין מסמכים עדיין</p>
+                  ) : (
+                    <div className="space-y-1">
+                      {books.map((book) => (
+                        <div
+                          key={book.id}
+                          className={`flex items-center justify-between px-2 py-1.5 rounded-md cursor-pointer text-sm transition-colors ${
+                            selectedPdfId === book.id ? "bg-[#D4AF37]/20 font-semibold border border-[#D4AF37]/40" : "hover:bg-[#D4AF37]/5"
+                          }`}
+                          onClick={() => { setSelectedPdfId(book.id); setActivePanel(null); }}
+                        >
+                          <span className="truncate flex-1 text-[#0B1F5B]">{book.title}</span>
+                          <div className="flex items-center gap-1">
+                            {viewMode !== "single" && (
+                              <Button size="icon" variant="ghost" className="h-6 w-6 text-[#0B1F5B]" title="בחר להשוואה" onClick={(e) => { e.stopPropagation(); setComparePdfId(book.id); }}>
+                                <FileText className="h-3 w-3" />
+                              </Button>
+                            )}
+                            <Button size="icon" variant="ghost" className="h-6 w-6 text-red-600" onClick={(e) => { e.stopPropagation(); deleteBook.mutate(book.id); }}>
+                              <Trash2 className="h-3 w-3" />
                             </Button>
-                          )}
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-6 w-6 text-red-600"
-                            onClick={(e) => { e.stopPropagation(); deleteBook.mutate(book.id); }}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
+                          </div>
                         </div>
-                      </div>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
+              )}
+
+              {/* ANNOTATIONS */}
+              {activePanel === "annotations" && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs whitespace-nowrap">עמוד:</label>
+                    <Input type="number" min={1} value={currentPage} onChange={(e) => setCurrentPage(e.target.value)} className="text-sm w-20 border-[#D4AF37]/30 focus-visible:ring-[#D4AF37]" />
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <label className="text-xs whitespace-nowrap">צבע:</label>
+                    {ANNOTATION_COLORS.map((c) => (
+                      <button key={c.value} className={`w-5 h-5 rounded-full border-2 transition-transform ${annotationColor === c.value ? "border-[#0B1F5B] scale-110" : "border-transparent"}`} style={{ backgroundColor: c.value }} onClick={() => setAnnotationColor(c.value)} />
                     ))}
                   </div>
-                )}
-              </ScrollArea>
-            </CardContent>
-          </Card>
-
-          {/* Stats & Export */}
-          <Card className={`${panelCls} border-2 bg-[#FAFAF5]`}>
-            <CardContent className="pt-4 space-y-2">
-              <div className="flex justify-between text-xs text-[#0B1F5B]">
-                <span>אנוטציות:</span>
-                <Badge variant="secondary" className={pillCls}>{annotations.length}</Badge>
-              </div>
-              <div className="flex justify-between text-xs text-[#0B1F5B]">
-                <span>סימניות:</span>
-                <Badge variant="secondary" className={pillCls}>{bookmarks.length}</Badge>
-              </div>
-              <Separator className="bg-[#D4AF37]/20" />
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" className="flex-1 text-xs border-[#D4AF37] text-[#0B1F5B] hover:bg-[#D4AF37]/10" onClick={handleExportJSON}>
-                  <Download className="h-3 w-3 ml-1" /> JSON
-                </Button>
-                <Button size="sm" variant="outline" className="flex-1 text-xs border-[#D4AF37] text-[#0B1F5B] hover:bg-[#D4AF37]/10" onClick={handleExportCSV}>
-                  <Download className="h-3 w-3 ml-1" /> CSV
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </aside>
-        )}
-
-        {/* ═══ CENTER: PDF Viewer ═══ */}
-        <main className={`${viewerFullscreen ? "" : "xl:col-span-6"} flex flex-col gap-4`}>
-          {leftSourceUrl ? (
-            <Card className={`${panelCls} border-2 flex-1`}>
-              <CardContent className="p-0 h-full flex flex-col" style={{ minHeight: viewerFullscreen ? "calc(100vh - 120px)" : "600px" }}>
-                {/* Viewer URL bar */}
-                <div className="px-3 py-2 border-b-2 border-[#D4AF37]/30 flex items-center gap-2 text-xs text-[#0B1F5B]/60" dir="ltr">
-                  <FileText className="h-3 w-3 text-[#D4AF37]" />
-                  <span className="truncate flex-1">{leftSourceUrl}</span>
-                  <div className="flex items-center gap-1">
-                    <a href={leftSourceUrl} target="_blank" rel="noopener noreferrer" title="פתח בחלון חדש">
-                      <ExternalLink className="h-3.5 w-3.5 text-[#0B1F5B]/50 hover:text-[#0B1F5B]" />
-                    </a>
-                    <button onClick={() => setViewerFullscreen(v => !v)} title={viewerFullscreen ? "צמצם" : "הגדל"}>
-                      {viewerFullscreen ? <Minimize2 className="h-3.5 w-3.5 text-[#0B1F5B]/50 hover:text-[#0B1F5B]" /> : <Maximize2 className="h-3.5 w-3.5 text-[#0B1F5B]/50 hover:text-[#0B1F5B]" />}
-                    </button>
+                  <Input placeholder="טקסט מודגש (אופציונלי)" value={highlightText} onChange={(e) => setHighlightText(e.target.value)} className="text-sm border-[#D4AF37]/30 focus-visible:ring-[#D4AF37]" />
+                  <Textarea placeholder="כתוב הערה..." value={noteText} onChange={(e) => setNoteText(e.target.value)} className="text-sm min-h-[60px] border-[#D4AF37]/30 focus-visible:ring-[#D4AF37]" />
+                  <div className="flex gap-2">
+                    <Button size="sm" className="flex-1 bg-[#0B1F5B] text-white border-2 border-[#D4AF37]" onClick={handleSaveAnnotation} disabled={addAnnotation.isPending}>
+                      {addAnnotation.isPending ? "שומר..." : "שמור"}
+                    </Button>
+                    <Button size="sm" variant="outline" className="border-[#D4AF37]" onClick={handleAddBookmark} disabled={addBookmark.isPending} title="סימניה">
+                      <Bookmark className="h-4 w-4" />
+                    </Button>
                   </div>
-                </div>
-                {/* ═══ TEXT FORMATTING TOOLBAR ═══ */}
-                {leftContentType === 'text' && fetchedText !== null && (
-                  <div className="border-b-2 border-[#D4AF37]/20 bg-white/80 backdrop-blur-sm">
-                    {/* Main toolbar row */}
-                    <div className="px-2 py-1.5 flex items-center gap-1 flex-wrap">
-                      {/* Font selector */}
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button size="sm" variant="outline" className="h-7 text-xs border-[#D4AF37]/40 text-[#0B1F5B] gap-1">
-                            <Type className="h-3 w-3" />
-                            {FONTS.find(f => f.value === textFormat.fontFamily)?.label || "גופן"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-36 p-1" align="start">
-                          {FONTS.map(f => (
-                            <button
-                              key={f.value}
-                              className={`w-full text-right px-2 py-1.5 text-xs rounded hover:bg-[#D4AF37]/10 ${textFormat.fontFamily === f.value ? "bg-[#D4AF37]/20 font-bold" : ""}`}
-                              onClick={() => updateFormat({ fontFamily: f.value })}
-                            >
-                              {f.label}
-                            </button>
-                          ))}
-                        </PopoverContent>
-                      </Popover>
-
-                      <div className="w-px h-5 bg-[#D4AF37]/20" />
-
-                      {/* Font size controls */}
-                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => updateFormat({ fontSize: Math.max(10, textFormat.fontSize - 1) })} title="הקטן גופן">
-                        <AArrowDown className="h-3.5 w-3.5 text-[#0B1F5B]" />
-                      </Button>
-                      <span className="text-xs font-mono min-w-[2rem] text-center text-[#0B1F5B]">{textFormat.fontSize}</span>
-                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => updateFormat({ fontSize: Math.min(36, textFormat.fontSize + 1) })} title="הגדל גופן">
-                        <AArrowUp className="h-3.5 w-3.5 text-[#0B1F5B]" />
-                      </Button>
-
-                      <div className="w-px h-5 bg-[#D4AF37]/20" />
-
-                      {/* Bold / Italic / Underline */}
-                      <Button size="icon" variant="ghost" className={`h-7 w-7 ${textFormat.isBold ? "bg-[#D4AF37]/20" : ""}`} onClick={() => updateFormat({ isBold: !textFormat.isBold })} title="מודגש">
-                        <Bold className="h-3.5 w-3.5 text-[#0B1F5B]" />
-                      </Button>
-                      <Button size="icon" variant="ghost" className={`h-7 w-7 ${textFormat.isItalic ? "bg-[#D4AF37]/20" : ""}`} onClick={() => updateFormat({ isItalic: !textFormat.isItalic })} title="נטוי">
-                        <Italic className="h-3.5 w-3.5 text-[#0B1F5B]" />
-                      </Button>
-                      <Button size="icon" variant="ghost" className={`h-7 w-7 ${textFormat.isUnderline ? "bg-[#D4AF37]/20" : ""}`} onClick={() => updateFormat({ isUnderline: !textFormat.isUnderline })} title="קו תחתון">
-                        <Underline className="h-3.5 w-3.5 text-[#0B1F5B]" />
-                      </Button>
-
-                      <div className="w-px h-5 bg-[#D4AF37]/20" />
-
-                      {/* Text alignment */}
-                      <Button size="icon" variant="ghost" className={`h-7 w-7 ${textFormat.textAlign === "right" ? "bg-[#D4AF37]/20" : ""}`} onClick={() => updateFormat({ textAlign: "right" })} title="ימין">
-                        <AlignRight className="h-3.5 w-3.5 text-[#0B1F5B]" />
-                      </Button>
-                      <Button size="icon" variant="ghost" className={`h-7 w-7 ${textFormat.textAlign === "center" ? "bg-[#D4AF37]/20" : ""}`} onClick={() => updateFormat({ textAlign: "center" })} title="מרכז">
-                        <AlignCenter className="h-3.5 w-3.5 text-[#0B1F5B]" />
-                      </Button>
-                      <Button size="icon" variant="ghost" className={`h-7 w-7 ${textFormat.textAlign === "left" ? "bg-[#D4AF37]/20" : ""}`} onClick={() => updateFormat({ textAlign: "left" })} title="שמאל">
-                        <AlignLeft className="h-3.5 w-3.5 text-[#0B1F5B]" />
-                      </Button>
-                      <Button size="icon" variant="ghost" className={`h-7 w-7 ${textFormat.textAlign === "justify" ? "bg-[#D4AF37]/20" : ""}`} onClick={() => updateFormat({ textAlign: "justify" })} title="מיושר">
-                        <AlignJustify className="h-3.5 w-3.5 text-[#0B1F5B]" />
-                      </Button>
-
-                      <div className="w-px h-5 bg-[#D4AF37]/20" />
-
-                      {/* Line height */}
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button size="sm" variant="ghost" className="h-7 text-xs gap-1" title="מרווח שורות">
-                            <PilcrowSquare className="h-3.5 w-3.5 text-[#0B1F5B]" />
-                            <span className="text-[10px] text-[#0B1F5B]/60">{textFormat.lineHeight}</span>
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-28 p-1" align="start">
-                          {[1.2, 1.5, 1.8, 2.0, 2.5, 3.0].map(lh => (
-                            <button
-                              key={lh}
-                              className={`w-full text-right px-2 py-1 text-xs rounded hover:bg-[#D4AF37]/10 ${textFormat.lineHeight === lh ? "bg-[#D4AF37]/20 font-bold" : ""}`}
-                              onClick={() => updateFormat({ lineHeight: lh })}
-                            >
-                              {lh}
-                            </button>
-                          ))}
-                        </PopoverContent>
-                      </Popover>
-
-                      <div className="w-px h-5 bg-[#D4AF37]/20" />
-
-                      {/* Zoom */}
-                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => updateFormat({ fontSize: Math.max(10, textFormat.fontSize - 2) })} title="הקטן">
-                        <ZoomOut className="h-3.5 w-3.5 text-[#0B1F5B]" />
-                      </Button>
-                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => updateFormat({ fontSize: Math.min(36, textFormat.fontSize + 2) })} title="הגדל">
-                        <ZoomIn className="h-3.5 w-3.5 text-[#0B1F5B]" />
-                      </Button>
-
-                      <div className="w-px h-5 bg-[#D4AF37]/20" />
-
-                      {/* Line numbers toggle */}
-                      <Button size="icon" variant="ghost" className={`h-7 w-7 ${textFormat.showLineNumbers ? "bg-[#D4AF37]/20" : ""}`} onClick={() => updateFormat({ showLineNumbers: !textFormat.showLineNumbers })} title="מספרי שורות">
-                        <ListOrdered className="h-3.5 w-3.5 text-[#0B1F5B]" />
-                      </Button>
-
-                      {/* Word wrap toggle */}
-                      <Button size="icon" variant="ghost" className={`h-7 w-7 ${textFormat.wordWrap ? "bg-[#D4AF37]/20" : ""}`} onClick={() => updateFormat({ wordWrap: !textFormat.wordWrap })} title="גלישת שורות">
-                        <WrapText className="h-3.5 w-3.5 text-[#0B1F5B]" />
-                      </Button>
-
-                      <div className="w-px h-5 bg-[#D4AF37]/20" />
-
-                      {/* Search toggle */}
-                      <Button size="icon" variant="ghost" className={`h-7 w-7 ${showTextSearch ? "bg-[#D4AF37]/20" : ""}`} onClick={() => setShowTextSearch(v => !v)} title="חיפוש בטקסט">
-                        <Search className="h-3.5 w-3.5 text-[#0B1F5B]" />
-                      </Button>
-
-                      {/* Edit mode */}
-                      {!isTextEditing ? (
-                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={startTextEdit} title="עריכת טקסט">
-                          <Scissors className="h-3.5 w-3.5 text-[#0B1F5B]" />
-                        </Button>
-                      ) : (
-                        <>
-                          <Button size="sm" variant="outline" className="h-7 text-xs border-[#D4AF37] text-[#0B1F5B]" onClick={saveTextEdit} title="שמור שינויים (Ctrl+S)">
-                            <ClipboardPaste className="h-3.5 w-3.5 ml-1" /> שמור
-                          </Button>
-                          <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={cancelTextEdit} title="בטל עריכה">
-                            ביטול
-                          </Button>
-                        </>
-                      )}
-
-                      {/* Restore original text */}
-                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={clearTextEdit} title="שחזר טקסט מקורי">
-                        <RefreshCw className="h-3.5 w-3.5 text-[#0B1F5B]" />
-                      </Button>
-
-                      {/* Copy all */}
-                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { navigator.clipboard.writeText(fetchedText); toast.success("כל הטקסט הועתק"); }} title="העתק הכל">
-                        <Copy className="h-3.5 w-3.5 text-[#0B1F5B]" />
-                      </Button>
-
-                      {/* Print */}
-                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
-                        const win = window.open("", "_blank");
-                        if (win) {
-                          win.document.write(`<html dir="rtl"><head><title>הדפסה</title><style>body{font-family:serif;font-size:${textFormat.fontSize}px;line-height:${textFormat.lineHeight};text-align:${textFormat.textAlign};padding:40px;white-space:pre-wrap;}</style></head><body>${fetchedText.replace(/</g,"&lt;").replace(/>/g,"&gt;")}</body></html>`);
-                          win.document.close();
-                          win.print();
-                        }
-                      }} title="הדפסה">
-                        <Printer className="h-3.5 w-3.5 text-[#0B1F5B]" />
-                      </Button>
-
-                      {/* Reset format */}
-                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setTextFormat(DEFAULT_FORMAT)} title="אפס עיצוב">
-                        <RotateCcw className="h-3.5 w-3.5 text-[#0B1F5B]" />
-                      </Button>
-
-                      {/* Spacer + word count */}
-                      <div className="flex-1" />
-                      <span className="text-[10px] text-[#0B1F5B]/40">
-                        {textStats.words} מילים · {textStats.lines} שורות · {textStats.chars} תווים
-                      </span>
-                    </div>
-
-                    {/* Search bar */}
-                    {showTextSearch && (
-                      <div className="px-2 pb-1.5 flex items-center gap-1.5">
-                        <Search className="h-3.5 w-3.5 text-[#D4AF37]" />
-                        <Input
-                          placeholder="חפש בטקסט..."
-                          value={textSearch}
-                          onChange={(e) => setTextSearch(e.target.value)}
-                          className="h-7 text-xs flex-1 border-[#D4AF37]/30 focus-visible:ring-[#D4AF37]"
-                          autoFocus
-                        />
-                        {textSearchResults.length > 0 && (
-                          <>
-                            <span className="text-[10px] text-[#0B1F5B]/60 whitespace-nowrap">
-                              {currentSearchIdx + 1}/{textSearchResults.length}
-                            </span>
-                            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setCurrentSearchIdx(i => (i - 1 + textSearchResults.length) % textSearchResults.length)}>
-                              <ChevronUp className="h-3 w-3" />
-                            </Button>
-                            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setCurrentSearchIdx(i => (i + 1) % textSearchResults.length)}>
-                              <ChevronDown className="h-3 w-3" />
-                            </Button>
-                          </>
-                        )}
-                        {textSearch && textSearchResults.length === 0 && (
-                          <span className="text-[10px] text-red-500">לא נמצא</span>
-                        )}
-                        <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => { setShowTextSearch(false); setTextSearch(""); }}>
-                          <Trash2 className="h-3 w-3 text-[#0B1F5B]/40" />
-                        </Button>
-                      </div>
-                    )}
-
-                    {/* Highlights list */}
-                    {textHighlights.length > 0 && (
-                      <div className="px-2 pb-1.5 flex items-center gap-1 flex-wrap">
-                        <Highlighter className="h-3 w-3 text-[#D4AF37]" />
-                        {textHighlights.map((hl) => (
-                          <Badge
-                            key={hl.id}
-                            variant="secondary"
-                            className="text-[10px] cursor-pointer hover:opacity-70 gap-1"
-                            style={{ backgroundColor: hl.color + "44" }}
-                            onClick={() => setTextHighlights(prev => prev.filter(h => h.id !== hl.id))}
-                          >
-                            "{hl.text.slice(0, 15)}{hl.text.length > 15 ? "..." : ""}" ×
-                          </Badge>
+                  {!canPersist && leftSourceUrl && <p className="text-[10px] text-[#D4AF37]">שמירה זמינה רק למסמך מהרשימה</p>}
+                  {/* Annotations list */}
+                  <Separator className="bg-[#D4AF37]/20" />
+                  <Input placeholder="חיפוש בהערות..." value={annotationSearch} onChange={(e) => setAnnotationSearch(e.target.value)} className="text-xs border-[#D4AF37]/30 focus-visible:ring-[#D4AF37]" />
+                  <ScrollArea className="max-h-[300px]">
+                    {filteredAnnotations.length === 0 ? (
+                      <p className="text-xs text-[#0B1F5B]/40 text-center py-3">{annotationsLoading ? "טוען..." : "אין הערות"}</p>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {filteredAnnotations.map((ann) => (
+                          <div key={ann.id} className="p-2 rounded-md border border-[#D4AF37]/30 text-xs space-y-1" style={{ borderRightColor: ann.color, borderRightWidth: 3 }}>
+                            <div className="flex items-center justify-between">
+                              <Badge variant="secondary" className="text-[10px] bg-[#D4AF37]/15 border-[#D4AF37]/30">עמוד {ann.page_number}</Badge>
+                              <Button size="icon" variant="ghost" className="h-5 w-5 text-red-600" onClick={() => deleteAnnotation.mutate(ann.id)}>
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                            {ann.highlight_text && <p className="text-[#0B1F5B]/70 italic" style={{ backgroundColor: ann.color + "33", padding: "2px 4px", borderRadius: 2 }}>"{ann.highlight_text}"</p>}
+                            <p>{ann.note_text}</p>
+                          </div>
                         ))}
                       </div>
                     )}
+                  </ScrollArea>
+                </div>
+              )}
+
+              {/* BOOKMARKS */}
+              {activePanel === "bookmarks" && (
+                <ScrollArea className="max-h-[300px]">
+                  {bookmarks.length === 0 ? (
+                    <p className="text-xs text-[#0B1F5B]/40 text-center py-4">אין סימניות</p>
+                  ) : (
+                    <div className="space-y-1">
+                      {bookmarks.map((bm) => (
+                        <div key={bm.id} className="flex items-center justify-between text-xs px-2 py-1 rounded hover:bg-[#D4AF37]/5">
+                          <span>🔖 {bm.title}</span>
+                          <Button size="icon" variant="ghost" className="h-5 w-5 text-red-600" onClick={() => deleteBookmark.mutate(bm.id)}>
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
+              )}
+
+              {/* STATS */}
+              {activePanel === "stats" && (
+                <div className="space-y-3">
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between"><span>אנוטציות:</span><Badge variant="secondary" className={pillCls}>{annotations.length}</Badge></div>
+                    <div className="flex justify-between"><span>סימניות:</span><Badge variant="secondary" className={pillCls}>{bookmarks.length}</Badge></div>
+                  </div>
+                  <Separator className="bg-[#D4AF37]/20" />
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" className="flex-1 text-xs border-[#D4AF37]" onClick={handleExportJSON}>
+                      <Download className="h-3 w-3 ml-1" /> JSON
+                    </Button>
+                    <Button size="sm" variant="outline" className="flex-1 text-xs border-[#D4AF37]" onClick={handleExportCSV}>
+                      <Download className="h-3 w-3 ml-1" /> CSV
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </aside>
+        )}
+
+        {/* ═══ VIEWER ═══ */}
+        <main className="flex-1 flex flex-col min-w-0">
+          {leftSourceUrl ? (
+            <div className="flex-1 flex flex-col" style={{ minHeight: viewerFullscreen ? "calc(100vh - 50px)" : "calc(100vh - 50px)" }}>
+              {/* ═══ TEXT FORMATTING TOOLBAR ═══ */}
+              {leftContentType === 'text' && fetchedText !== null && (
+                <div className="border-b-2 border-[#D4AF37]/20 bg-white/80 backdrop-blur-sm flex-shrink-0">
+                  <div className="px-2 py-1.5 flex items-center gap-1 flex-wrap">
+                    {/* Font selector */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button size="sm" variant="outline" className="h-7 text-xs border-[#D4AF37]/40 text-[#0B1F5B] gap-1">
+                          <Type className="h-3 w-3" />
+                          {FONTS.find(f => f.value === textFormat.fontFamily)?.label || "גופן"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-36 p-1" align="start">
+                        {FONTS.map(f => (
+                          <button key={f.value} className={`w-full text-right px-2 py-1.5 text-xs rounded hover:bg-[#D4AF37]/10 ${textFormat.fontFamily === f.value ? "bg-[#D4AF37]/20 font-bold" : ""}`} onClick={() => updateFormat({ fontFamily: f.value })}>
+                            {f.label}
+                          </button>
+                        ))}
+                      </PopoverContent>
+                    </Popover>
+
+                    <div className="w-px h-5 bg-[#D4AF37]/20" />
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => updateFormat({ fontSize: Math.max(10, textFormat.fontSize - 1) })}><AArrowDown className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                    <span className="text-xs font-mono min-w-[2rem] text-center">{textFormat.fontSize}</span>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => updateFormat({ fontSize: Math.min(36, textFormat.fontSize + 1) })}><AArrowUp className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+
+                    <div className="w-px h-5 bg-[#D4AF37]/20" />
+                    <Button size="icon" variant="ghost" className={`h-7 w-7 ${textFormat.isBold ? "bg-[#D4AF37]/20" : ""}`} onClick={() => updateFormat({ isBold: !textFormat.isBold })}><Bold className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                    <Button size="icon" variant="ghost" className={`h-7 w-7 ${textFormat.isItalic ? "bg-[#D4AF37]/20" : ""}`} onClick={() => updateFormat({ isItalic: !textFormat.isItalic })}><Italic className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                    <Button size="icon" variant="ghost" className={`h-7 w-7 ${textFormat.isUnderline ? "bg-[#D4AF37]/20" : ""}`} onClick={() => updateFormat({ isUnderline: !textFormat.isUnderline })}><Underline className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+
+                    <div className="w-px h-5 bg-[#D4AF37]/20" />
+                    <Button size="icon" variant="ghost" className={`h-7 w-7 ${textFormat.textAlign === "right" ? "bg-[#D4AF37]/20" : ""}`} onClick={() => updateFormat({ textAlign: "right" })}><AlignRight className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                    <Button size="icon" variant="ghost" className={`h-7 w-7 ${textFormat.textAlign === "center" ? "bg-[#D4AF37]/20" : ""}`} onClick={() => updateFormat({ textAlign: "center" })}><AlignCenter className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                    <Button size="icon" variant="ghost" className={`h-7 w-7 ${textFormat.textAlign === "left" ? "bg-[#D4AF37]/20" : ""}`} onClick={() => updateFormat({ textAlign: "left" })}><AlignLeft className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                    <Button size="icon" variant="ghost" className={`h-7 w-7 ${textFormat.textAlign === "justify" ? "bg-[#D4AF37]/20" : ""}`} onClick={() => updateFormat({ textAlign: "justify" })}><AlignJustify className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+
+                    <div className="w-px h-5 bg-[#D4AF37]/20" />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button size="sm" variant="ghost" className="h-7 text-xs gap-1"><PilcrowSquare className="h-3.5 w-3.5 text-[#0B1F5B]" /><span className="text-[10px] text-[#0B1F5B]/60">{textFormat.lineHeight}</span></Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-28 p-1" align="start">
+                        {[1.2, 1.5, 1.8, 2.0, 2.5, 3.0].map(lh => (
+                          <button key={lh} className={`w-full text-right px-2 py-1 text-xs rounded hover:bg-[#D4AF37]/10 ${textFormat.lineHeight === lh ? "bg-[#D4AF37]/20 font-bold" : ""}`} onClick={() => updateFormat({ lineHeight: lh })}>{lh}</button>
+                        ))}
+                      </PopoverContent>
+                    </Popover>
+
+                    <div className="w-px h-5 bg-[#D4AF37]/20" />
+                    <Button size="icon" variant="ghost" className={`h-7 w-7 ${textFormat.showLineNumbers ? "bg-[#D4AF37]/20" : ""}`} onClick={() => updateFormat({ showLineNumbers: !textFormat.showLineNumbers })}><ListOrdered className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                    <Button size="icon" variant="ghost" className={`h-7 w-7 ${textFormat.wordWrap ? "bg-[#D4AF37]/20" : ""}`} onClick={() => updateFormat({ wordWrap: !textFormat.wordWrap })}><WrapText className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                    <Button size="icon" variant="ghost" className={`h-7 w-7 ${showTextSearch ? "bg-[#D4AF37]/20" : ""}`} onClick={() => setShowTextSearch(v => !v)}><Search className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+
+                    {!isTextEditing ? (
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={startTextEdit} title="ערוך"><Scissors className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                    ) : (
+                      <>
+                        <Button size="sm" variant="outline" className="h-7 text-xs border-[#D4AF37]" onClick={saveTextEdit}><ClipboardPaste className="h-3.5 w-3.5 ml-1" /> שמור</Button>
+                        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={cancelTextEdit}>ביטול</Button>
+                      </>
+                    )}
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={clearTextEdit} title="שחזר"><RefreshCw className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { navigator.clipboard.writeText(fetchedText); toast.success("הועתק"); }} title="העתק"><Copy className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
+                      const win = window.open("", "_blank");
+                      if (win) { win.document.write(`<html dir="rtl"><head><title>הדפסה</title><style>body{font-family:serif;font-size:${textFormat.fontSize}px;line-height:${textFormat.lineHeight};text-align:${textFormat.textAlign};padding:40px;white-space:pre-wrap;}</style></head><body>${fetchedText.replace(/</g,"&lt;").replace(/>/g,"&gt;")}</body></html>`); win.document.close(); win.print(); }
+                    }} title="הדפסה"><Printer className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setTextFormat(DEFAULT_FORMAT)} title="אפס"><RotateCcw className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+
+                    <div className="flex-1" />
+                    <span className="text-[10px] text-[#0B1F5B]/40">{textStats.words} מילים · {textStats.lines} שורות</span>
+                  </div>
+
+                  {showTextSearch && (
+                    <div className="px-2 pb-1.5 flex items-center gap-1.5">
+                      <Search className="h-3.5 w-3.5 text-[#D4AF37]" />
+                      <Input placeholder="חפש בטקסט..." value={textSearch} onChange={(e) => setTextSearch(e.target.value)} className="h-7 text-xs flex-1 border-[#D4AF37]/30 focus-visible:ring-[#D4AF37]" autoFocus />
+                      {textSearchResults.length > 0 && (
+                        <>
+                          <span className="text-[10px] text-[#0B1F5B]/60 whitespace-nowrap">{currentSearchIdx + 1}/{textSearchResults.length}</span>
+                          <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setCurrentSearchIdx(i => (i - 1 + textSearchResults.length) % textSearchResults.length)}><ChevronUp className="h-3 w-3" /></Button>
+                          <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setCurrentSearchIdx(i => (i + 1) % textSearchResults.length)}><ChevronDown className="h-3 w-3" /></Button>
+                        </>
+                      )}
+                      {textSearch && textSearchResults.length === 0 && <span className="text-[10px] text-red-500">לא נמצא</span>}
+                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => { setShowTextSearch(false); setTextSearch(""); }}><Trash2 className="h-3 w-3 text-[#0B1F5B]/40" /></Button>
+                    </div>
+                  )}
+
+                  {textHighlights.length > 0 && (
+                    <div className="px-2 pb-1.5 flex items-center gap-1 flex-wrap">
+                      <Highlighter className="h-3 w-3 text-[#D4AF37]" />
+                      {textHighlights.map((hl) => (
+                        <Badge key={hl.id} variant="secondary" className="text-[10px] cursor-pointer hover:opacity-70 gap-1" style={{ backgroundColor: hl.color + "44" }} onClick={() => setTextHighlights(prev => prev.filter(h => h.id !== hl.id))}>
+                          "{hl.text.slice(0, 15)}{hl.text.length > 15 ? "..." : ""}" ×
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Document Viewer */}
+              <div className="flex-1 relative bg-[#f8f8f6]">
+                {/* TEXT */}
+                {leftContentType === 'text' && (
+                  <>
+                    {fetchingText && (
+                      <div className="absolute inset-0 flex items-center justify-center z-10">
+                        <div className="text-center space-y-2">
+                          <div className="w-8 h-8 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin mx-auto" />
+                          <p className="text-xs text-[#0B1F5B]/50">טוען...</p>
+                        </div>
+                      </div>
+                    )}
+                    {fetchTextError && (
+                      <div className="absolute inset-0 flex items-center justify-center z-10 bg-white">
+                        <div className="text-center space-y-3 p-6">
+                          <FileText className="h-12 w-12 mx-auto text-[#D4AF37]/40" />
+                          <p className="text-sm text-[#0B1F5B]/70">שגיאה: {fetchTextError}</p>
+                          <div className="flex gap-2 justify-center">
+                            <Button size="sm" variant="outline" className="border-[#D4AF37]" onClick={() => { setFetchTextError(null); setFetchedText(null); const url = leftSourceUrl; setManualUrl(""); setTimeout(() => setManualUrl(url), 50); }}>
+                              <RefreshCw className="h-3.5 w-3.5 ml-1" /> נסה שוב
+                            </Button>
+                            <a href={leftSourceUrl} target="_blank" rel="noopener noreferrer">
+                              <Button size="sm" className="bg-[#0B1F5B] text-white border-2 border-[#D4AF37]"><ExternalLink className="h-3.5 w-3.5 ml-1" /> פתח</Button>
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {fetchedText !== null && (
+                      <ScrollArea className="absolute inset-0">
+                        {isTextEditing ? (
+                          <div className="p-4 h-full">
+                            <Textarea
+                              value={textEditBuffer}
+                              onChange={(e) => setTextEditBuffer(e.target.value)}
+                              className={`h-full min-h-[450px] resize-none text-[#0B1F5B] ${textFormat.fontFamily} border-[#D4AF37]/30 focus-visible:ring-[#D4AF37]`}
+                              dir="rtl"
+                              style={{ fontSize: `${textFormat.fontSize}px`, lineHeight: textFormat.lineHeight, textAlign: textFormat.textAlign, fontWeight: textFormat.isBold ? "bold" : "normal", fontStyle: textFormat.isItalic ? "italic" : "normal", textDecoration: textFormat.isUnderline ? "underline" : "none", whiteSpace: textFormat.wordWrap ? "pre-wrap" : "pre" }}
+                            />
+                          </div>
+                        ) : (
+                          <div ref={textViewerRef} onMouseUp={handleTextSelection} className={`p-4 text-[#0B1F5B] ${textFormat.fontFamily} select-text`} dir="rtl" style={{ fontSize: `${textFormat.fontSize}px`, lineHeight: textFormat.lineHeight, textAlign: textFormat.textAlign, fontWeight: textFormat.isBold ? "bold" : "normal", fontStyle: textFormat.isItalic ? "italic" : "normal", textDecoration: textFormat.isUnderline ? "underline" : "none", whiteSpace: textFormat.wordWrap ? "pre-wrap" : "pre" }}>
+                            {textFormat.showLineNumbers ? (
+                              <div className="flex">
+                                <div className="pr-3 pl-3 border-l-2 border-[#D4AF37]/20 text-[#0B1F5B]/25 text-right select-none" style={{ fontSize: `${Math.max(10, textFormat.fontSize - 2)}px`, minWidth: "3rem" }}>
+                                  {fetchedText.split("\n").map((_, i) => <div key={i}>{i + 1}</div>)}
+                                </div>
+                                <div className="flex-1 pr-3">{renderedText}</div>
+                              </div>
+                            ) : renderedText}
+                          </div>
+                        )}
+                      </ScrollArea>
+                    )}
+                  </>
+                )}
+
+                {/* IMAGE */}
+                {leftContentType === 'image' && (
+                  <div className="absolute inset-0 flex items-center justify-center overflow-auto p-4">
+                    <img src={leftSourceUrl} alt="מסמך" className="max-w-full max-h-full object-contain" onLoad={() => setIframeLoaded(true)} onError={() => setIframeError(true)} />
                   </div>
                 )}
 
-                {/* Document Viewer — smart strategy per file type */}
-                <div className="flex-1 relative bg-[#f8f8f6]">
-                  {/* TEXT files — rendered directly */}
-                  {leftContentType === 'text' && (
-                    <>
-                      {fetchingText && (
-                        <div className="absolute inset-0 flex items-center justify-center z-10">
-                          <div className="text-center space-y-2">
-                            <div className="w-8 h-8 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin mx-auto" />
-                            <p className="text-xs text-[#0B1F5B]/50">טוען מסמך טקסט...</p>
-                          </div>
-                        </div>
-                      )}
-                      {fetchTextError && (
-                        <div className="absolute inset-0 flex items-center justify-center z-10 bg-white">
-                          <div className="text-center space-y-3 p-6">
-                            <FileText className="h-12 w-12 mx-auto text-[#D4AF37]/40" />
-                            <p className="text-sm text-[#0B1F5B]/70">שגיאה בטעינת הטקסט: {fetchTextError}</p>
-                            <div className="flex gap-2 justify-center flex-wrap">
-                              <Button size="sm" variant="outline" className="border-[#D4AF37] text-[#0B1F5B]" onClick={() => {
-                                setFetchTextError(null);
-                                setFetchedText(null);
-                                // Re-trigger fetch by resetting URL
-                                const url = leftSourceUrl;
-                                setManualUrl("");
-                                setTimeout(() => setManualUrl(url), 50);
-                              }}>
-                                <RefreshCw className="h-3.5 w-3.5 ml-1" /> נסה שוב
-                              </Button>
-                              <a href={leftSourceUrl} target="_blank" rel="noopener noreferrer">
-                                <Button size="sm" className="bg-[#0B1F5B] text-white border-2 border-[#D4AF37]">
-                                  <ExternalLink className="h-3.5 w-3.5 ml-1" /> פתח בחלון חדש
-                                </Button>
-                              </a>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      {fetchedText !== null && (
-                        <ScrollArea className="absolute inset-0">
-                          {isTextEditing ? (
-                            <div className="p-4 h-full">
-                              <Textarea
-                                value={textEditBuffer}
-                                onChange={(e) => setTextEditBuffer(e.target.value)}
-                                className={`h-full min-h-[450px] resize-none text-[#0B1F5B] ${textFormat.fontFamily} border-[#D4AF37]/30 focus-visible:ring-[#D4AF37]`}
-                                dir="rtl"
-                                style={{
-                                  fontSize: `${textFormat.fontSize}px`,
-                                  lineHeight: textFormat.lineHeight,
-                                  textAlign: textFormat.textAlign,
-                                  fontWeight: textFormat.isBold ? "bold" : "normal",
-                                  fontStyle: textFormat.isItalic ? "italic" : "normal",
-                                  textDecoration: textFormat.isUnderline ? "underline" : "none",
-                                  whiteSpace: textFormat.wordWrap ? "pre-wrap" : "pre",
-                                }}
-                              />
-                              <p className="text-[11px] text-[#0B1F5B]/45 mt-2">אפשר למחוק, להוסיף ולערוך טקסט חופשי. לשמירה מהירה: Ctrl+S</p>
-                            </div>
-                          ) : (
-                            <div
-                              ref={textViewerRef}
-                              onMouseUp={handleTextSelection}
-                              className={`p-4 text-[#0B1F5B] ${textFormat.fontFamily} select-text`}
-                              dir="rtl"
-                              style={{
-                                fontSize: `${textFormat.fontSize}px`,
-                                lineHeight: textFormat.lineHeight,
-                                textAlign: textFormat.textAlign,
-                                fontWeight: textFormat.isBold ? "bold" : "normal",
-                                fontStyle: textFormat.isItalic ? "italic" : "normal",
-                                textDecoration: textFormat.isUnderline ? "underline" : "none",
-                                whiteSpace: textFormat.wordWrap ? "pre-wrap" : "pre",
-                              }}
-                            >
-                              {textFormat.showLineNumbers ? (
-                                <div className="flex">
-                                  <div className="pr-3 pl-3 border-l-2 border-[#D4AF37]/20 text-[#0B1F5B]/25 text-right select-none" style={{ fontSize: `${Math.max(10, textFormat.fontSize - 2)}px`, minWidth: "3rem" }}>
-                                    {fetchedText.split("\n").map((_, i) => (
-                                      <div key={i}>{i + 1}</div>
-                                    ))}
-                                  </div>
-                                  <div className="flex-1 pr-3">{renderedText}</div>
-                                </div>
-                              ) : (
-                                renderedText
-                              )}
-                            </div>
-                          )}
-                        </ScrollArea>
-                      )}
-                    </>
-                  )}
-
-                  {/* IMAGE files — rendered with img tag */}
-                  {leftContentType === 'image' && (
-                    <div className="absolute inset-0 flex items-center justify-center overflow-auto p-4">
-                      <img
-                        src={leftSourceUrl}
-                        alt="מסמך"
-                        className="max-w-full max-h-full object-contain"
-                        onLoad={() => setIframeLoaded(true)}
-                        onError={() => setIframeError(true)}
-                      />
+                {/* HTML-PAGE */}
+                {leftContentType === 'html-page' && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white">
+                    <div className="text-center space-y-4 p-8 max-w-md">
+                      <ExternalLink className="h-16 w-16 mx-auto text-[#D4AF37]" />
+                      <h3 className="text-lg font-semibold">דף אינטרנט חיצוני</h3>
+                      <a href={leftSourceUrl} target="_blank" rel="noopener noreferrer">
+                        <Button size="lg" className="bg-[#0B1F5B] text-white border-2 border-[#D4AF37]"><ExternalLink className="h-5 w-5 ml-2" /> פתח בחלון חדש</Button>
+                      </a>
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {/* HTML-PAGE — external sites that block iframe embedding */}
-                  {leftContentType === 'html-page' && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-white">
-                      <div className="text-center space-y-4 p-8 max-w-md">
-                        <ExternalLink className="h-16 w-16 mx-auto text-[#D4AF37]" />
-                        <h3 className="text-lg font-semibold text-[#0B1F5B]">דף אינטרנט חיצוני</h3>
-                        <p className="text-sm text-[#0B1F5B]/60">
-                          דף זה מגיע מאתר חיצוני ולא ניתן להציגו במסגרת. לחץ לפתיחה בחלון חדש.
-                        </p>
-                        <a href={leftSourceUrl} target="_blank" rel="noopener noreferrer">
-                          <Button size="lg" className="bg-[#0B1F5B] text-white border-2 border-[#D4AF37] hover:bg-[#0B1F5B]/90 text-base px-8">
-                            <ExternalLink className="h-5 w-5 ml-2" /> פתח בחלון חדש
-                          </Button>
-                        </a>
-                        <p className="text-xs text-[#0B1F5B]/40 break-all" dir="ltr">{leftSourceUrl}</p>
+                {/* PDF / DOCX */}
+                {(leftContentType === 'pdf' || leftContentType === 'docx') && (
+                  <>
+                    {!iframeLoaded && !iframeError && (
+                      <div className="absolute inset-0 flex items-center justify-center z-10">
+                        <div className="w-8 h-8 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin mx-auto" />
                       </div>
-                    </div>
-                  )}
-
-                  {/* PDF / DOCX files — rendered in iframe */}
-                  {(leftContentType === 'pdf' || leftContentType === 'docx') && (
-                    <>
-                      {!iframeLoaded && !iframeError && (
-                        <div className="absolute inset-0 flex items-center justify-center z-10">
-                          <div className="text-center space-y-2">
-                            <div className="w-8 h-8 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin mx-auto" />
-                            <p className="text-xs text-[#0B1F5B]/50">טוען מסמך...</p>
+                    )}
+                    {iframeError && (
+                      <div className="absolute inset-0 flex items-center justify-center z-10 bg-white">
+                        <div className="text-center space-y-3 p-6">
+                          <FileText className="h-12 w-12 mx-auto text-[#D4AF37]/40" />
+                          <p className="text-sm text-[#0B1F5B]/70">לא ניתן לטעון את המסמך</p>
+                          <div className="flex gap-2 justify-center flex-wrap">
+                            <Button size="sm" variant="outline" className="border-[#D4AF37]" onClick={() => { setIframeError(false); setIframeLoaded(false); }}><RefreshCw className="h-3.5 w-3.5 ml-1" /> נסה שוב</Button>
+                            {leftContentType !== 'docx' && (
+                              <Button size="sm" variant="outline" className="border-[#D4AF37]" onClick={() => { setIframeError(false); setIframeLoaded(false); setManualUrl(`https://docs.google.com/gview?url=${encodeURIComponent(leftSourceUrl)}&embedded=true`); }}>Google Viewer</Button>
+                            )}
+                            <a href={leftSourceUrl} target="_blank" rel="noopener noreferrer"><Button size="sm" className="bg-[#0B1F5B] text-white border-2 border-[#D4AF37]"><ExternalLink className="h-3.5 w-3.5 ml-1" /> חלון חדש</Button></a>
                           </div>
                         </div>
-                      )}
-                      {iframeError && (
-                        <div className="absolute inset-0 flex items-center justify-center z-10 bg-white">
-                          <div className="text-center space-y-3 p-6">
-                            <FileText className="h-12 w-12 mx-auto text-[#D4AF37]/40" />
-                            <p className="text-sm text-[#0B1F5B]/70">לא ניתן לטעון את המסמך במסגרת</p>
-                            <div className="flex gap-2 justify-center flex-wrap">
-                              <Button size="sm" variant="outline" className="border-[#D4AF37] text-[#0B1F5B]" onClick={() => { setIframeError(false); setIframeLoaded(false); }}>
-                                <RefreshCw className="h-3.5 w-3.5 ml-1" /> נסה שוב
-                              </Button>
-                              {leftContentType !== 'docx' && (
-                                <Button size="sm" variant="outline" className="border-[#D4AF37] text-[#0B1F5B]" onClick={() => {
-                                  setIframeError(false);
-                                  setIframeLoaded(false);
-                                  setManualUrl(`https://docs.google.com/gview?url=${encodeURIComponent(leftSourceUrl)}&embedded=true`);
-                                }}>
-                                  נסה דרך Google Viewer
-                                </Button>
-                              )}
-                              <a href={leftSourceUrl} target="_blank" rel="noopener noreferrer">
-                                <Button size="sm" className="bg-[#0B1F5B] text-white border-2 border-[#D4AF37]">
-                                  <ExternalLink className="h-3.5 w-3.5 ml-1" /> פתח בחלון חדש
-                                </Button>
-                              </a>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      <iframe
-                        key={leftViewerUrl}
-                        src={leftViewerUrl}
-                        className="absolute inset-0 w-full h-full border-0"
-                        title="PDF Viewer"
-                        allow="fullscreen"
-                        onLoad={() => setIframeLoaded(true)}
-                        onError={() => setIframeError(true)}
-                      />
-                    </>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                      </div>
+                    )}
+                    <iframe key={leftViewerUrl} src={leftViewerUrl} className="absolute inset-0 w-full h-full border-0" title="PDF Viewer" allow="fullscreen" onLoad={() => setIframeLoaded(true)} onError={() => setIframeError(true)} />
+                  </>
+                )}
+              </div>
+            </div>
           ) : (
-            <Card className={`${panelCls} border-2 flex-1 flex items-center justify-center`} style={{ minHeight: "600px" }}>
+            <div className="flex-1 flex items-center justify-center">
               <div className="text-center space-y-3 p-8">
                 <FileText className="h-16 w-16 mx-auto text-[#D4AF37]/30" />
                 <p className="text-[#0B1F5B]/50 text-sm">בחר מסמך מהרשימה או הדבק קישור</p>
+                <Button size="sm" variant="outline" className="border-[#D4AF37] text-[#0B1F5B]" onClick={() => togglePanel("add")}>
+                  <Plus className="h-4 w-4 ml-1" /> הוסף מסמך
+                </Button>
               </div>
-            </Card>
+            </div>
           )}
 
           {/* Second viewer for split/compare */}
           {viewMode !== "single" && rightSourceUrl && (
-            <Card className={`${panelCls} border-2 flex-1`}>
-              <CardContent className="p-0 h-full flex flex-col" style={{ minHeight: "400px" }}>
-                <div className="px-3 py-2 border-b-2 border-[#D4AF37]/30 flex items-center gap-2 text-xs text-[#0B1F5B]/60" dir="ltr">
-                  <FileText className="h-3 w-3 text-[#D4AF37]" />
-                  <span className="truncate flex-1">{rightSourceUrl}</span>
-                </div>
-                <div className="flex-1 relative bg-[#f8f8f6]">
-                  <iframe
-                    src={rightViewerUrl}
-                    className="absolute inset-0 w-full h-full border-0"
-                    title="PDF Viewer (compare)"
-                    allow="fullscreen"
-                  />
-                </div>
-              </CardContent>
-            </Card>
+            <div className="h-[400px] border-t-2 border-[#D4AF37]/30 relative bg-[#f8f8f6]">
+              <iframe src={rightViewerUrl} className="absolute inset-0 w-full h-full border-0" title="PDF Compare" allow="fullscreen" />
+            </div>
           )}
         </main>
-
-        {/* ═══ RIGHT SIDEBAR: Annotation Desk ═══ */}
-        {!viewerFullscreen && (
-        <aside className="xl:col-span-3 space-y-4">
-          {/* Annotation form */}
-          <Card className={`${panelCls} border-2`}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2 text-[#0B1F5B]">
-                <Palette className="h-4 w-4 text-[#D4AF37]" /> שולחן אנוטציות
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {/* Page number */}
-              <div className="flex items-center gap-2">
-                <label className="text-xs whitespace-nowrap text-[#0B1F5B]">עמוד:</label>
-                <Input
-                  type="number"
-                  min={1}
-                  value={currentPage}
-                  onChange={(e) => setCurrentPage(e.target.value)}
-                  className="text-sm w-20 border-[#D4AF37]/30 text-[#0B1F5B] focus-visible:ring-[#D4AF37]"
-                />
-              </div>
-
-              {/* Color picker */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <label className="text-xs whitespace-nowrap text-[#0B1F5B]">צבע:</label>
-                {ANNOTATION_COLORS.map((c) => (
-                  <button
-                    key={c.value}
-                    type="button"
-                    className={`w-6 h-6 rounded-full border-2 transition-transform ${
-                      annotationColor === c.value ? "border-[#0B1F5B] scale-110" : "border-transparent"
-                    }`}
-                    style={{ backgroundColor: c.value }}
-                    title={c.label}
-                    onClick={() => setAnnotationColor(c.value)}
-                  />
-                ))}
-              </div>
-
-              {/* Highlight text */}
-              <Input
-                placeholder="טקסט מודגש (אופציונלי)"
-                value={highlightText}
-                onChange={(e) => setHighlightText(e.target.value)}
-                className="text-sm border-[#D4AF37]/30 text-[#0B1F5B] focus-visible:ring-[#D4AF37]"
-              />
-
-              {/* Note text */}
-              <Textarea
-                placeholder="כתוב הערה..."
-                value={noteText}
-                onChange={(e) => setNoteText(e.target.value)}
-                className="text-sm min-h-[80px] border-[#D4AF37]/30 text-[#0B1F5B] focus-visible:ring-[#D4AF37]"
-              />
-
-              {/* Action buttons */}
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  className="flex-1 bg-[#0B1F5B] text-white hover:bg-[#0B1F5B]/90 border-2 border-[#D4AF37]"
-                  onClick={handleSaveAnnotation}
-                  disabled={addAnnotation.isPending}
-                >
-                  {addAnnotation.isPending ? "שומר..." : "שמור אנוטציה"}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="border-[#D4AF37] text-[#0B1F5B] hover:bg-[#D4AF37]/10"
-                  onClick={handleAddBookmark}
-                  disabled={addBookmark.isPending}
-                  title="הוסף סימניה לעמוד הנוכחי"
-                >
-                  <Bookmark className="h-4 w-4" />
-                </Button>
-              </div>
-
-              {!canPersist && leftSourceUrl && (
-                <p className="text-xs text-[#D4AF37]">
-                  שמירה למסד נתונים זמינה רק למסמך שנבחר מהרשימה
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Bookmarks */}
-          {bookmarks.length > 0 && (
-            <Card className={`${panelCls} border-2`}>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2 text-[#0B1F5B]">
-                  <Bookmark className="h-4 w-4 text-[#D4AF37]" /> סימניות ({bookmarks.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="max-h-[150px]">
-                  <div className="space-y-1">
-                    {bookmarks.map((bm) => (
-                      <div key={bm.id} className="flex items-center justify-between text-xs px-2 py-1 rounded hover:bg-[#D4AF37]/5">
-                        <span className="text-[#0B1F5B]">🔖 {bm.title}</span>
-                        <Button size="icon" variant="ghost" className="h-5 w-5 text-red-600" onClick={() => deleteBookmark.mutate(bm.id)}>
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Annotation search & list */}
-          <Card className={`${panelCls} border-2`}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2 text-[#0B1F5B]">
-                <Search className="h-4 w-4 text-[#D4AF37]" /> הערות ({filteredAnnotations.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Input
-                placeholder="חיפוש בהערות..."
-                value={annotationSearch}
-                onChange={(e) => setAnnotationSearch(e.target.value)}
-                className="text-sm border-[#D4AF37]/30 text-[#0B1F5B] focus-visible:ring-[#D4AF37]"
-              />
-              <ScrollArea className="max-h-[350px]">
-                {filteredAnnotations.length === 0 ? (
-                  <p className="text-xs text-[#0B1F5B]/40 text-center py-4">
-                    {annotationsLoading ? "טוען..." : "אין הערות"}
-                  </p>
-                ) : (
-                  <div className="space-y-2">
-                    {filteredAnnotations.map((ann) => (
-                      <div
-                        key={ann.id}
-                        className="p-2 rounded-md border border-[#D4AF37]/30 text-xs space-y-1 text-[#0B1F5B]"
-                        style={{ borderRightColor: ann.color, borderRightWidth: 3 }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <Badge variant="secondary" className="text-[10px] bg-[#D4AF37]/15 text-[#0B1F5B] border-[#D4AF37]/30">עמוד {ann.page_number}</Badge>
-                          <Button size="icon" variant="ghost" className="h-5 w-5 text-red-600" onClick={() => deleteAnnotation.mutate(ann.id)}>
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                        {ann.highlight_text && (
-                          <p className="text-[#0B1F5B]/70 italic" style={{ backgroundColor: ann.color + "33", padding: "2px 4px", borderRadius: 2 }}>
-                            "{ann.highlight_text}"
-                          </p>
-                        )}
-                        <p className="text-[#0B1F5B]">{ann.note_text}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </ScrollArea>
-            </CardContent>
-          </Card>
-        </aside>
-        )}
       </div>
 
       {/* ═══ SELECTION POPUP ═══ */}
