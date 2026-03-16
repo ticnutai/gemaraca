@@ -102,6 +102,9 @@ const BeautifyPsakDinTab = () => {
   const [dbHasMore, setDbHasMore] = useState(false);
   const [dbOffset, setDbOffset] = useState(0);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [dbBeautifyFilter, setDbBeautifyFilter] = useState<"all" | "beautified" | "not_beautified">("all");
+  const [dbSortBy, setDbSortBy] = useState<"year" | "title">("year");
+  const [dbLoadCount, setDbLoadCount] = useState<number>(DB_PAGE);
 
   // --- Batch state ---
   const [batchJobs, setBatchJobs] = useState<BatchJob[]>([]);
