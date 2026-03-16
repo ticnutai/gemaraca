@@ -247,7 +247,7 @@ export function generatePsakDinHtml(data: ParsedPsakDin): string {
 
         ${data.sections.length === 0 ? `
         <div style="font-size: 1.1em; line-height: 2;">
-            ${nl2p(data.rawText)}
+            ${classifiedLinesToHtml(classifyLines(data.rawText))}
         </div>
         ` : ''}
 
