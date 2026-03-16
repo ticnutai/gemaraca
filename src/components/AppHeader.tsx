@@ -56,6 +56,8 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
   const { user, isAuthenticated, signOut } = useAuth();
   const navigate = useNavigate();
   const { setOpen } = useSidebar();
+  const { settings, updateSettings } = usePageTypography();
+  const [typoOpen, setTypoOpen] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
