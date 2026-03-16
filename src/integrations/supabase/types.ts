@@ -361,6 +361,7 @@ export type Database = {
       }
       psakei_din: {
         Row: {
+          beautify_count: number
           case_number: string | null
           content_hash: string | null
           court: string
@@ -375,6 +376,7 @@ export type Database = {
           year: number
         }
         Insert: {
+          beautify_count?: number
           case_number?: string | null
           content_hash?: string | null
           court: string
@@ -389,6 +391,7 @@ export type Database = {
           year: number
         }
         Update: {
+          beautify_count?: number
           case_number?: string | null
           content_hash?: string | null
           court?: string
