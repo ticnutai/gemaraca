@@ -430,6 +430,9 @@ export default function EmbedPdfViewerPage() {
   const [fetchedText, setFetchedText] = useState<string | null>(null);
   const [fetchingText, setFetchingText] = useState(false);
   const [fetchTextError, setFetchTextError] = useState<string | null>(null);
+  const [fetchedHtml, setFetchedHtml] = useState<string | null>(null);
+  const [fetchingHtml, setFetchingHtml] = useState(false);
+  const [fetchHtmlError, setFetchHtmlError] = useState<string | null>(null);
   const [isTextEditing, setIsTextEditing] = useState(false);
   const [textEditBuffer, setTextEditBuffer] = useState("");
 
