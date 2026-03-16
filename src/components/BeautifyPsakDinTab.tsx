@@ -177,56 +177,76 @@ const BeautifyPsakDinTab = () => {
     else setDbLoading(true);
     const limit = pageSize || dbLoadCount;
     try {
-      // If masechet filter active and we have IDs, use .in() filter
+      // If masechet filter active and we have IDs
       if (masechetPsakIds !== null && masechetPsakIds.size === 0) {
-        // No psakim for this masechet
         setDbItems([]);
         setDbHasMore(false);
         setDbOffset(0);
         return;
       }
 
-      let query = supabase
-        .from("psakei_din")
-        .select("id, title, court, year, summary, beautify_count" as any)
-        .range(offset, offset + limit - 1);
-
-      // Masechet filter
       if (masechetPsakIds !== null) {
-        const idsArr = [...masechetPsakIds];
-        query = query.in("id", idsArr);
-      }
+        // Fetch ALL matching psakim by chunking .in() queries (max ~200 IDs per chunk to avoid URL limit)
+        const allIds = [...masechetPsakIds];
+        const CHUNK = 200;
+        let allItems: DbPsakItem[] = [];
 
-      // Sort
-      if (dbSortBy === "title") {
-        query = query.order("title", { ascending: true });
+        for (let c = 0; c < allIds.length; c += CHUNK) {
+          const chunk = allIds.slice(c, c + CHUNK);
+          let query = supabase
+            .from("psakei_din")
+            .select("id, title, court, year, summary, beautify_count" as any)
+            .in("id", chunk);
+
+          if (dbSortBy === "title") query = query.order("title", { ascending: true });
+          else query = query.order("year", { ascending: false });
+
+          if (search.trim()) {
+            query = query.or(`title.ilike.%${search}%,court.ilike.%${search}%,summary.ilike.%${search}%`);
+          }
+          if (dbBeautifyFilter === "beautified") query = query.gt("beautify_count", 0);
+          else if (dbBeautifyFilter === "not_beautified") query = query.or("beautify_count.is.null,beautify_count.eq.0");
+
+          const { data, error } = await query;
+          if (error) throw error;
+          if (data) allItems = allItems.concat((data as any[]).map(d => ({ ...d, beautify_count: d.beautify_count || 0 })));
+        }
+
+        // Sort combined results
+        if (dbSortBy === "title") allItems.sort((a, b) => a.title.localeCompare(b.title));
+        else allItems.sort((a, b) => b.year - a.year);
+
+        setDbItems(allItems);
+        setDbHasMore(false);
+        setDbOffset(allItems.length);
       } else {
-        query = query.order("year", { ascending: false });
-      }
+        // Normal load (no masechet filter)
+        let query = supabase
+          .from("psakei_din")
+          .select("id, title, court, year, summary, beautify_count" as any)
+          .range(offset, offset + limit - 1);
 
-      // Search
-      if (search.trim()) {
-        query = query.or(`title.ilike.%${search}%,court.ilike.%${search}%,summary.ilike.%${search}%`);
-      }
+        if (dbSortBy === "title") query = query.order("title", { ascending: true });
+        else query = query.order("year", { ascending: false });
 
-      // Beautify filter
-      if (dbBeautifyFilter === "beautified") {
-        query = query.gt("beautify_count", 0);
-      } else if (dbBeautifyFilter === "not_beautified") {
-        query = query.or("beautify_count.is.null,beautify_count.eq.0");
-      }
+        if (search.trim()) {
+          query = query.or(`title.ilike.%${search}%,court.ilike.%${search}%,summary.ilike.%${search}%`);
+        }
+        if (dbBeautifyFilter === "beautified") query = query.gt("beautify_count", 0);
+        else if (dbBeautifyFilter === "not_beautified") query = query.or("beautify_count.is.null,beautify_count.eq.0");
 
-      const { data, error } = await query;
-      if (error) throw error;
+        const { data, error } = await query;
+        if (error) throw error;
 
-      const items = (data || []).map((d: any) => ({ ...d, beautify_count: d.beautify_count || 0 }));
-      setDbHasMore(items.length === limit);
-      if (append) {
-        setDbItems(prev => [...prev, ...items]);
-      } else {
-        setDbItems(items);
+        const items = (data || []).map((d: any) => ({ ...d, beautify_count: d.beautify_count || 0 }));
+        setDbHasMore(items.length === limit);
+        if (append) {
+          setDbItems(prev => [...prev, ...items]);
+        } else {
+          setDbItems(items);
+        }
+        setDbOffset(offset + items.length);
       }
-      setDbOffset(offset + items.length);
     } catch {
       toast({ title: "שגיאה", description: "שגיאה בטעינת פסקי דין מהמאגר", variant: "destructive" });
     } finally {
