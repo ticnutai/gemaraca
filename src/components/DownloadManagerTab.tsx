@@ -16,6 +16,9 @@ import {
   Package,
   Filter,
   ArrowDownToLine,
+  FileCode,
+  FileType,
+  File,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {

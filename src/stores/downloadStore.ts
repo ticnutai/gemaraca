@@ -8,7 +8,7 @@ export interface DownloadItem {
   year: number;
   status: 'pending' | 'downloading' | 'done' | 'error';
   error?: string;
-  blobUrl?: string; // transient, not persisted
+  blobUrl?: string;
 }
 
 export interface DownloadSession {
@@ -17,9 +17,9 @@ export interface DownloadSession {
   startedAt: number;
   items: DownloadItem[];
   status: 'idle' | 'downloading' | 'paused' | 'packaging' | 'completed' | 'error';
-  format: 'html' | 'zip';
+  format: 'html' | 'pdf' | 'docx' | 'zip';
   concurrency: number;
-  completedIds: string[]; // track completed for resume
+  completedIds: string[];
 }
 
 interface DownloadStore {
@@ -33,6 +33,7 @@ interface DownloadStore {
   clearAllSessions: () => void;
   
   getActiveSession: () => DownloadSession | null;
+  getResumableSession: () => DownloadSession | null;
   getProgress: (sessionId: string) => { total: number; completed: number; failed: number; percent: number };
 }
 
@@ -118,6 +119,15 @@ export const useDownloadStore = create<DownloadStore>()(
         );
       },
 
+      getResumableSession: () => {
+        const { sessions } = get();
+        return (
+          Object.values(sessions).find((s) =>
+            ['paused', 'error'].includes(s.status) && s.completedIds.length > 0
+          ) || null
+        );
+      },
+
       getProgress: (sessionId) => {
         const session = get().sessions[sessionId];
         if (!session) return { total: 0, completed: 0, failed: 0, percent: 0 };
@@ -133,9 +143,8 @@ export const useDownloadStore = create<DownloadStore>()(
       },
     }),
     {
-      name: 'download-store-v1',
+      name: 'download-store-v2',
       partialize: (state) => ({
-        // Only persist non-completed sessions to avoid unbounded growth
         sessions: Object.fromEntries(
           Object.entries(state.sessions)
             .filter(([, s]) => s.status !== 'completed')
