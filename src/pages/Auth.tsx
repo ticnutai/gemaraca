@@ -1,30 +1,45 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { z } from "zod";
-import { BookOpen, Loader2 } from "lucide-react";
+import { BookOpen, Loader2, Eye, EyeOff, ArrowRight, ArrowLeft } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const emailSchema = z.string().email("כתובת אימייל לא תקינה");
 const passwordSchema = z.string().min(6, "סיסמה חייבת להכיל לפחות 6 תווים");
 
+const REMEMBER_EMAIL_KEY = "gemara-remember-email";
+
+type AuthMode = "signin" | "signup" | "forgot";
+
 export default function Auth() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState("signin");
-  const [signinEmail, setSigninEmail] = useState("");
-  const [signinPassword, setSigninPassword] = useState("");
-  const [signupEmail, setSignupEmail] = useState("");
-  const [signupPassword, setSignupPassword] = useState("");
+  const [mode, setMode] = useState<AuthMode>("signin");
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+
+  // Load remembered email on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(REMEMBER_EMAIL_KEY);
+    if (saved) {
+      setEmail(saved);
+      setRememberMe(true);
+    }
+  }, []);
 
   useEffect(() => {
-    // Check if user is already logged in
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
         navigate("/");
@@ -40,197 +55,249 @@ export default function Auth() {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const validateInputs = (isSignup: boolean): boolean => {
-    const email = isSignup ? signupEmail : signinEmail;
-    const password = isSignup ? signupPassword : signinPassword;
-    try {
-      emailSchema.parse(email);
-    } catch (e) {
-      if (e instanceof z.ZodError) {
-        toast.error(e.errors[0].message);
-        return false;
-      }
+  const saveOrClearRememberedEmail = useCallback(() => {
+    if (rememberMe && email) {
+      localStorage.setItem(REMEMBER_EMAIL_KEY, email);
+    } else {
+      localStorage.removeItem(REMEMBER_EMAIL_KEY);
     }
+  }, [rememberMe, email]);
 
-    try {
-      passwordSchema.parse(password);
-    } catch (e) {
-      if (e instanceof z.ZodError) {
-        toast.error(e.errors[0].message);
-        return false;
-      }
-    }
-
-    if (isSignup && password !== confirmPassword) {
-      toast.error("הסיסמאות אינן תואמות");
-      return false;
-    }
-
-    return true;
+  const validateEmail = (): boolean => {
+    try { emailSchema.parse(email); return true; }
+    catch (e) { if (e instanceof z.ZodError) toast.error(e.errors[0].message); return false; }
   };
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateInputs(true)) return;
-
-    setIsLoading(true);
-    const redirectUrl = `${window.location.origin}/`;
-
-    const { error } = await supabase.auth.signUp({
-      email: signupEmail,
-      password: signupPassword,
-      options: {
-        emailRedirectTo: redirectUrl,
-      },
-    });
-
-    setIsLoading(false);
-
-    if (error) {
-      if (error.message.includes("User already registered")) {
-        toast.error("משתמש עם אימייל זה כבר קיים במערכת");
-      } else {
-        toast.error(error.message);
-      }
-      return;
-    }
-
-    toast.success("נרשמת בהצלחה! מעביר אותך לאתר...");
+  const validatePassword = (): boolean => {
+    try { passwordSchema.parse(password); return true; }
+    catch (e) { if (e instanceof z.ZodError) toast.error(e.errors[0].message); return false; }
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateInputs(false)) return;
+    if (!validateEmail() || !validatePassword()) return;
 
     setIsLoading(true);
+    saveOrClearRememberedEmail();
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email: signinEmail,
-      password: signinPassword,
-    });
-
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     setIsLoading(false);
 
     if (error) {
-      if (error.message.includes("Invalid login credentials")) {
-        toast.error("אימייל או סיסמה שגויים");
-      } else {
-        toast.error(error.message);
-      }
+      toast.error(error.message.includes("Invalid login credentials")
+        ? "אימייל או סיסמה שגויים" : error.message);
       return;
     }
-
     toast.success("התחברת בהצלחה!");
     navigate("/");
   };
 
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateEmail() || !validatePassword()) return;
+    if (password !== confirmPassword) {
+      toast.error("הסיסמאות אינן תואמות");
+      return;
+    }
+
+    setIsLoading(true);
+    saveOrClearRememberedEmail();
+
+    const { error } = await supabase.auth.signUp({
+      email, password,
+      options: { emailRedirectTo: `${window.location.origin}/` },
+    });
+    setIsLoading(false);
+
+    if (error) {
+      toast.error(error.message.includes("User already registered")
+        ? "משתמש עם אימייל זה כבר קיים במערכת" : error.message);
+      return;
+    }
+    toast.success("נרשמת בהצלחה! מעביר אותך לאתר...");
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateEmail()) return;
+
+    setIsLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setIsLoading(false);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("קישור לאיפוס סיסמה נשלח לאימייל שלך");
+  };
+
+  const switchMode = (newMode: AuthMode) => {
+    setMode(newMode);
+    setShowPassword(false);
+    setShowConfirmPassword(false);
+  };
+
+  const title = mode === "signin" ? "התחברות" : mode === "signup" ? "הרשמה" : "שכחתי סיסמה";
+  const description = mode === "signin"
+    ? "הזן את פרטי ההתחברות שלך"
+    : mode === "signup"
+    ? "צור חשבון חדש כדי לגשת לכל התכונות"
+    : "נשלח לך קישור לאיפוס הסיסמה";
+
+  const PasswordInput = ({
+    id, value, onChange, placeholder, show, onToggle,
+  }: {
+    id: string; value: string; onChange: (v: string) => void;
+    placeholder: string; show: boolean; onToggle: () => void;
+  }) => (
+    <div className="relative">
+      <Input
+        id={id}
+        type={show ? "text" : "password"}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        required
+        disabled={isLoading}
+        className="pe-10"
+      />
+      <button
+        type="button"
+        onClick={onToggle}
+        className="absolute start-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+        tabIndex={-1}
+      >
+        {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+      </button>
+    </div>
+  );
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4" dir="rtl">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md overflow-hidden">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <BookOpen className="h-12 w-12 text-primary" />
           </div>
           <CardTitle className="text-2xl">גמרא להלכה</CardTitle>
-          <CardDescription>התחבר או הירשם כדי לגשת לכל התכונות</CardDescription>
+          <CardDescription>{description}</CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">התחברות</TabsTrigger>
-              <TabsTrigger value="signup">הרשמה</TabsTrigger>
-            </TabsList>
+          {/* Mode selector pills */}
+          <div className="flex gap-1 p-1 mb-6 bg-muted rounded-lg">
+            {([["signin", "התחברות"], ["signup", "הרשמה"]] as const).map(([m, label]) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => switchMode(m)}
+                className={cn(
+                  "flex-1 py-2 text-sm font-medium rounded-md transition-all duration-200",
+                  mode === m
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
 
-            <TabsContent value="signin">
-              <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signin-email">אימייל</Label>
-                  <Input
-                    id="signin-email"
-                    type="email"
-                    value={signinEmail}
-                    onChange={(e) => setSigninEmail(e.target.value)}
-                    placeholder="your@email.com"
-                    required
-                    disabled={isLoading}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signin-password">סיסמה</Label>
-                  <Input
-                    id="signin-password"
-                    type="password"
-                    value={signinPassword}
-                    onChange={(e) => setSigninPassword(e.target.value)}
-                    placeholder="••••••••"
-                    required
-                    disabled={isLoading}
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="me-2 h-4 w-4 animate-spin" />
-                      מתחבר...
-                    </>
-                  ) : (
-                    "התחבר"
-                  )}
-                </Button>
-              </form>
-            </TabsContent>
+          <form
+            onSubmit={mode === "signin" ? handleSignIn : mode === "signup" ? handleSignUp : handleForgotPassword}
+            className="space-y-4"
+          >
+            {/* Email — always visible */}
+            <div className="space-y-2">
+              <Label htmlFor="email">אימייל</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="your@email.com"
+                required
+                disabled={isLoading}
+              />
+            </div>
 
-            <TabsContent value="signup">
-              <form onSubmit={handleSignUp} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">אימייל</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    value={signupEmail}
-                    onChange={(e) => setSignupEmail(e.target.value)}
-                    placeholder="your@email.com"
-                    required
-                    disabled={isLoading}
+            {/* Password — signin & signup */}
+            {mode !== "forgot" && (
+              <div className="space-y-2">
+                <Label htmlFor="password">סיסמה</Label>
+                <PasswordInput
+                  id="password"
+                  value={password}
+                  onChange={setPassword}
+                  placeholder={mode === "signup" ? "לפחות 6 תווים" : "••••••••"}
+                  show={showPassword}
+                  onToggle={() => setShowPassword(p => !p)}
+                />
+              </div>
+            )}
+
+            {/* Confirm password — signup only */}
+            {mode === "signup" && (
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password">אימות סיסמה</Label>
+                <PasswordInput
+                  id="confirm-password"
+                  value={confirmPassword}
+                  onChange={setConfirmPassword}
+                  placeholder="הקלד שוב את הסיסמה"
+                  show={showConfirmPassword}
+                  onToggle={() => setShowConfirmPassword(p => !p)}
+                />
+              </div>
+            )}
+
+            {/* Remember me & forgot password — signin only */}
+            {mode === "signin" && (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="remember"
+                    checked={rememberMe}
+                    onCheckedChange={c => setRememberMe(!!c)}
                   />
+                  <Label htmlFor="remember" className="text-sm cursor-pointer font-normal">
+                    זכור אותי
+                  </Label>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">סיסמה</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    value={signupPassword}
-                    onChange={(e) => setSignupPassword(e.target.value)}
-                    placeholder="לפחות 6 תווים"
-                    required
-                    disabled={isLoading}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirm-password">אימות סיסמה</Label>
-                  <Input
-                    id="confirm-password"
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="הקלד שוב את הסיסמה"
-                    required
-                    disabled={isLoading}
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="me-2 h-4 w-4 animate-spin" />
-                      נרשם...
-                    </>
-                  ) : (
-                    "הירשם"
-                  )}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
+                <button
+                  type="button"
+                  onClick={() => switchMode("forgot")}
+                  className="text-sm text-primary hover:underline"
+                >
+                  שכחתי סיסמה
+                </button>
+              </div>
+            )}
+
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? (
+                <><Loader2 className="me-2 h-4 w-4 animate-spin" />
+                  {mode === "signin" ? "מתחבר..." : mode === "signup" ? "נרשם..." : "שולח..."}
+                </>
+              ) : (
+                mode === "signin" ? "התחבר" : mode === "signup" ? "הירשם" : "שלח קישור איפוס"
+              )}
+            </Button>
+
+            {/* Back to signin from forgot */}
+            {mode === "forgot" && (
+              <button
+                type="button"
+                onClick={() => switchMode("signin")}
+                className="flex items-center gap-1 mx-auto text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ArrowRight className="h-4 w-4" />
+                חזרה להתחברות
+              </button>
+            )}
+          </form>
         </CardContent>
       </Card>
     </div>
