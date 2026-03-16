@@ -143,16 +143,59 @@ const BeautifyPsakDinTab = () => {
     if (file) handleFileUpload(file);
   }, [handleFileUpload]);
 
+  // ===== LOAD MASECHET PSAK IDS =====
+  useEffect(() => {
+    if (dbMasechetFilter === "all") {
+      setMasechetPsakIds(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const PAGE = 1000;
+      let off = 0;
+      const ids = new Set<string>();
+      let more = true;
+      while (more) {
+        const { data } = await supabase
+          .from("talmud_references")
+          .select("psak_din_id")
+          .eq("tractate", dbMasechetFilter)
+          .range(off, off + PAGE - 1);
+        if (!data || data.length === 0) { more = false; break; }
+        for (const r of data) ids.add(r.psak_din_id);
+        if (data.length < PAGE) more = false;
+        off += PAGE;
+      }
+      if (!cancelled) setMasechetPsakIds(ids);
+    })();
+    return () => { cancelled = true; };
+  }, [dbMasechetFilter]);
+
   // ===== DB PICKER LOADING =====
   const loadDbItems = useCallback(async (search: string, offset: number, append: boolean, pageSize?: number) => {
     if (append) setDbLoadingMore(true);
     else setDbLoading(true);
     const limit = pageSize || dbLoadCount;
     try {
+      // If masechet filter active and we have IDs, use .in() filter
+      if (masechetPsakIds !== null && masechetPsakIds.size === 0) {
+        // No psakim for this masechet
+        setDbItems([]);
+        setDbHasMore(false);
+        setDbOffset(0);
+        return;
+      }
+
       let query = supabase
         .from("psakei_din")
         .select("id, title, court, year, summary, beautify_count" as any)
         .range(offset, offset + limit - 1);
+
+      // Masechet filter
+      if (masechetPsakIds !== null) {
+        const idsArr = [...masechetPsakIds];
+        query = query.in("id", idsArr);
+      }
 
       // Sort
       if (dbSortBy === "title") {
@@ -190,13 +233,14 @@ const BeautifyPsakDinTab = () => {
       setDbLoading(false);
       setDbLoadingMore(false);
     }
-  }, [toast, dbSortBy, dbBeautifyFilter, dbLoadCount]);
+  }, [toast, dbSortBy, dbBeautifyFilter, dbLoadCount, masechetPsakIds]);
 
   const openDbPicker = useCallback(() => {
     setShowDbPicker(true);
     setDbSearch("");
     setDbOffset(0);
     setSelectedIds(new Set());
+    setDbMasechetFilter("all");
     loadDbItems("", 0, false);
   }, [loadDbItems]);
 
@@ -208,7 +252,7 @@ const BeautifyPsakDinTab = () => {
       loadDbItems(dbSearch, 0, false);
     }, 300);
     return () => clearTimeout(timer);
-  }, [dbSearch, showDbPicker, loadDbItems, dbBeautifyFilter, dbSortBy]);
+  }, [dbSearch, showDbPicker, loadDbItems, dbBeautifyFilter, dbSortBy, masechetPsakIds]);
 
   // Lazy loading with IntersectionObserver
   useEffect(() => {
