@@ -106,6 +106,8 @@ const BeautifyPsakDinTab = () => {
   const [dbBeautifyFilter, setDbBeautifyFilter] = useState<"all" | "beautified" | "not_beautified">("all");
   const [dbSortBy, setDbSortBy] = useState<"year" | "title">("year");
   const [dbLoadCount, setDbLoadCount] = useState<number>(DB_PAGE);
+  const [dbMasechetFilter, setDbMasechetFilter] = useState<string>("all");
+  const [masechetPsakIds, setMasechetPsakIds] = useState<Set<string> | null>(null);
 
   // --- Batch state ---
   const [batchJobs, setBatchJobs] = useState<BatchJob[]>([]);
