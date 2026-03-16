@@ -32,6 +32,7 @@ const BulkShasDownload = () => {
     masechtot,
     activeDownloads,
     startFullDownload,
+    startMissingOnly,
     startSingleMasechet,
     pause,
     resume,
