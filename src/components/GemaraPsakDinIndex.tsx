@@ -426,7 +426,7 @@ const GemaraPsakDinIndex = () => {
       });
 
       // Add pattern_sugya_links, converting format
-      (patternLinksResult.data || []).forEach((link: PatternLink) => {
+      (patternLinksResult.data || []).forEach((link: any) => {
         if (link.psakei_din && !seenPsakIds.has(link.psak_din_id)) {
           seenPsakIds.add(link.psak_din_id);
           combined.push({
