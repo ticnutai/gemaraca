@@ -80,9 +80,32 @@ const BulkShasDownload = () => {
     toast("הורדת הש\"ס התחילה ברקע");
   };
 
-  const handleCompleteMissing = () => {
+  const handleCompleteMissing = async () => {
+    // First sync actual counts from DB, then start missing-only download
+    setSyncing(true);
+    toast("מסנכרן נתונים מהשרת...");
+    await syncAndRefresh();
+    setSyncing(false);
+    
+    const updatedMissing = useShasDownloadStore.getState().masechtot.reduce(
+      (sum, m) => sum + Math.max(0, m.totalPages - m.loadedPages), 0
+    );
+    
+    if (updatedMissing === 0) {
+      toast.success("כל הדפים מעודכנים! אין חסרים.");
+      return;
+    }
+    
     startMissingOnly();
-    toast(`משלים ${totalMissing} עמודים חסרים...`);
+    toast(`משלים ${updatedMissing} עמודים חסרים...`);
+  };
+
+  const handleSyncOnly = async () => {
+    setSyncing(true);
+    toast("מסנכרן סטטוס מול בסיס הנתונים...");
+    await syncAndRefresh();
+    setSyncing(false);
+    toast.success("הסטטוס עודכן בהצלחה!");
   };
 
   return (
