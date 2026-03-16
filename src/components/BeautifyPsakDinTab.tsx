@@ -8,6 +8,9 @@ import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
   Paintbrush, Upload, Download, Sparkles, FileText, Loader2, Eye, Code,
   RotateCcw, Database, Save, Copy, Search, X, CheckSquare, Square,
   Play, Pause, CheckCircle2, AlertCircle, ExternalLink,
