@@ -34,6 +34,8 @@ interface PsakDinExample {
   source_url?: string;
 }
 
+const RECENT_PSAKIM_KEY = 'recently_viewed_psakim';
+
 interface LoadedPagesMap {
   [masechetName: string]: { loaded: number; total: number };
 }
