@@ -283,7 +283,7 @@ const BeautifyPsakDinTab = () => {
 
   const toggleSelectAll = useCallback(() => {
     setSelectedIds(prev => {
-      if (prev.size === dbItems.length) return new Set();
+      if (prev.size > 0 && prev.size === dbItems.length) return new Set();
       return new Set(dbItems.map(i => i.id));
     });
   }, [dbItems]);
