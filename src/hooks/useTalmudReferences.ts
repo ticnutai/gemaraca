@@ -27,7 +27,7 @@ export function useTalmudReferences(psakDinId?: string) {
   });
 }
 
-export function useAllReferencesGrouped() {
+export function useAllReferencesGrouped(enabled = true) {
   return useQuery({
     queryKey: ['talmud_references', 'grouped'],
     queryFn: async () => {
@@ -52,6 +52,9 @@ export function useAllReferencesGrouped() {
 
       return all;
     },
+    enabled,
+    staleTime: 5 * 60 * 1000,    // 5 min — avoid refetch on tab switch
+    gcTime: 30 * 60 * 1000,       // 30 min — keep in memory
   });
 }
 
