@@ -256,8 +256,25 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
     setEditFullText(text);
   }, []);
 
+  // Auto-save full text on blur (works in both edit and view modes)
+  const autoSaveFullText = useCallback(async () => {
+    if (!richEditorRef.current || !psak?.id) return;
+    const text = richEditorRef.current.innerText;
+    if (text === (psak?.full_text || psak?.fullText || "")) return;
+    try {
+      await supabase
+        .from("psakei_din")
+        .update({ full_text: text.trim() || null })
+        .eq("id", psak.id);
+      toast.success("הטקסט נשמר אוטומטית");
+      onSave?.();
+    } catch {
+      toast.error("שגיאה בשמירה אוטומטית");
+    }
+  }, [psak?.id, psak?.full_text, psak?.fullText, onSave]);
+
   const handleRichSelection = useCallback(() => {
-    if (!isEditing || !richEditorRef.current) return;
+    if (!richEditorRef.current) return;
     const sel = window.getSelection();
     if (!sel || sel.isCollapsed || !sel.toString().trim()) {
       setSelectionMenu(null);
@@ -273,17 +290,16 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
       x: rect.left + rect.width / 2,
       y: rect.top - 10,
     });
-  }, [isEditing]);
+  }, []);
 
   const applyFormatCommand = useCallback((command: string, value?: string) => {
-    if (!isEditing) return;
     if (command === 'hiliteColor') {
       document.execCommand('styleWithCSS', false, 'true');
     }
     document.execCommand(command, false, value);
     syncRichEditorToState();
     setSelectionMenu(null);
-  }, [isEditing, syncRichEditorToState]);
+  }, [syncRichEditorToState]);
 
   // ── Beautify psak din ──
   const handleBeautify = useCallback(async () => {
@@ -324,9 +340,12 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
     if (!psak?.id || !beautifiedHtml) return;
     setIsSavingBeautified(true);
     try {
+      // Read current content from the editable iframe
+      const doc = beautifyIframeRef.current?.contentDocument;
+      const currentHtml = doc?.documentElement?.outerHTML || beautifiedHtml;
       // Upload beautified HTML to storage
       const fileName = `beautified/${psak.id}-${Date.now()}.html`;
-      const blob = new Blob([beautifiedHtml], { type: "text/html;charset=utf-8" });
+      const blob = new Blob([currentHtml], { type: "text/html;charset=utf-8" });
       const { error: uploadError } = await supabase.storage
         .from("psakei-din-files")
         .upload(fileName, blob, { contentType: "text/html", upsert: true });
@@ -341,7 +360,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
       const { error } = await supabase
         .from("psakei_din")
         .update({
-          full_text: beautifiedHtml,
+          full_text: currentHtml,
           source_url: urlData?.publicUrl || undefined,
         })
         .eq("id", psak.id);
@@ -362,10 +381,13 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
     if (!psak || !beautifiedHtml) return;
     setIsSavingBeautified(true);
     try {
+      // Read current content from the editable iframe
+      const doc = beautifyIframeRef.current?.contentDocument;
+      const currentHtml = doc?.documentElement?.outerHTML || beautifiedHtml;
       // Upload beautified HTML to storage
       const newId = crypto.randomUUID();
       const fileName = `beautified/${newId}.html`;
-      const blob = new Blob([beautifiedHtml], { type: "text/html;charset=utf-8" });
+      const blob = new Blob([currentHtml], { type: "text/html;charset=utf-8" });
       const { error: uploadError } = await supabase.storage
         .from("psakei-din-files")
         .upload(fileName, blob, { contentType: "text/html", upsert: true });
@@ -386,7 +408,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
           year: psak.year || new Date().getFullYear(),
           case_number: psak.case_number || psak.caseNumber || null,
           summary: psak.summary || "",
-          full_text: beautifiedHtml,
+          full_text: currentHtml,
           source_url: urlData?.publicUrl || null,
           tags: [...(psak.tags || []), "מעוצב"],
         });
@@ -1085,32 +1107,50 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
                        </div>
                      )}
 
-                     {fullText && (
-                       <div>
-                         <h3 className="font-semibold mb-2 flex items-center gap-2 justify-end">
-                           <ListOrdered className="w-4 h-4 text-primary" />
-                           טקסט מלא
-                         </h3>
-                         {textSettings.showLineNumbers ? (
-                           <div className="rounded-lg border overflow-hidden">
-                             <div className="grid grid-cols-[56px_1fr]">
-                               <div className="bg-muted/30 border-l p-3 text-xs text-muted-foreground font-mono select-none">
-                                 {fullText.split("\n").map((_, idx) => (
-                                   <div key={`line-num-${idx}`} className="leading-7 text-left">{idx + 1}</div>
-                                 ))}
-                               </div>
-                               <div className="p-4 whitespace-pre-wrap leading-relaxed">
-                                 {highlightText(fullText)}
-                               </div>
-                             </div>
-                           </div>
-                         ) : (
-                           <div className="p-4 rounded-lg border whitespace-pre-wrap leading-relaxed">
-                             {highlightText(fullText)}
-                           </div>
-                         )}
-                       </div>
-                     )}
+                     <div>
+                          <h3 className="font-semibold mb-2 flex items-center gap-2 justify-end">
+                            <ListOrdered className="w-4 h-4 text-primary" />
+                            טקסט מלא
+                            <span className="text-[10px] text-muted-foreground font-normal">(ניתן לעריכה)</span>
+                          </h3>
+                          <div className="relative">
+                            <div
+                              ref={richEditorRef}
+                              contentEditable
+                              suppressContentEditableWarning
+                              dir="rtl"
+                              className="min-h-[200px] max-h-[460px] overflow-auto rounded-md border bg-background p-4 leading-relaxed focus:outline-none focus:ring-2 focus:ring-accent/30"
+                              dangerouslySetInnerHTML={{ __html: richHtml }}
+                              onInput={syncRichEditorToState}
+                              onMouseUp={handleRichSelection}
+                              onKeyUp={handleRichSelection}
+                              onBlur={() => { syncRichEditorToState(); autoSaveFullText(); }}
+                              style={{ fontSize: `${textSettings.fontSize}px` }}
+                            />
+                            {selectionMenu && (
+                              <div
+                                className="fixed z-50 -translate-x-1/2 -translate-y-full bg-card border rounded-lg shadow-xl p-1.5 flex items-center gap-1"
+                                style={{ left: selectionMenu.x, top: selectionMenu.y }}
+                              >
+                                <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormatCommand('bold')} title="מודגש">
+                                  <Bold className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormatCommand('italic')} title="נטוי">
+                                  <Italic className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormatCommand('underline')} title="קו תחתון">
+                                  <Underline className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormatCommand('hiliteColor', '#fff59d')} title="סימון צהוב">
+                                  <Palette className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => e.preventDefault()} onClick={() => applyFormatCommand('removeFormat')} title="נקה עיצוב">
+                                  <X className="w-3.5 h-3.5" />
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
 
                     {psak.tags && psak.tags.length > 0 && (
                       <div>
@@ -1320,7 +1360,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
                     העתק ושמור
                   </Button>
                 </div>
-                {/* Rendered HTML */}
+                {/* Rendered HTML — editable */}
                 <div className="flex-1 border border-border rounded-lg overflow-hidden bg-white">
                   <iframe
                     ref={beautifyIframeRef}
@@ -1328,6 +1368,12 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
                     className="w-full h-full min-h-[500px]"
                     title="פסק דין מעוצב"
                     sandbox="allow-same-origin allow-popups"
+                    onLoad={() => {
+                      const doc = beautifyIframeRef.current?.contentDocument;
+                      if (doc?.body) {
+                        doc.designMode = "on";
+                      }
+                    }}
                   />
                 </div>
               </div>
