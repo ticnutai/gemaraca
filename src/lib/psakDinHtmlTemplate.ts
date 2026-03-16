@@ -171,6 +171,40 @@ export function generatePsakDinHtml(data: ParsedPsakDin): string {
         .psakim-link a:hover {
             text-decoration: underline;
         }
+        .detected-header {
+            color: #0B1F5B;
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-top: 28px;
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid #D4AF37;
+        }
+        .detected-subheader {
+            color: #0B1F5B;
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-top: 16px;
+            margin-bottom: 8px;
+        }
+        .detected-reference {
+            color: #555;
+            font-size: 0.95em;
+            margin: 4px 0;
+            padding-right: 20px;
+            font-style: italic;
+        }
+        .detected-quote {
+            margin: 12px 30px;
+            padding: 10px 20px;
+            border-right: 4px solid #D4AF37;
+            background-color: #faf8f0;
+            font-style: italic;
+            color: #333;
+        }
+        .spacer {
+            height: 12px;
+        }
         @media print {
             body { background: white; padding: 0; }
             .container { box-shadow: none; border: none; padding: 20px; }
