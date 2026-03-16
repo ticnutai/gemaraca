@@ -1,4 +1,5 @@
 import type { ParsedPsakDin } from './psakDinParser';
+import { classifyLines, classifiedLinesToHtml } from './smartTextFormatter';
 
 function esc(str: string): string {
   return str
@@ -6,14 +7,6 @@ function esc(str: string): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
-}
-
-function nl2p(text: string): string {
-  return text
-    .split('\n')
-    .filter(l => l.trim())
-    .map(l => `<div class="paragraph">${esc(l)}</div>`)
-    .join('\n        ');
 }
 
 /**
@@ -34,11 +27,20 @@ export function generatePsakDinHtml(data: ParsedPsakDin): string {
       : section.type === 'decision' ? '✅'
       : section.type === 'summary' ? '📝'
       : section.type === 'facts' ? '📋'
+      : section.type === 'discussion' ? '💬'
+      : section.type === 'reasoning' ? '⚖️'
+      : section.type === 'chapters' ? '📑'
+      : section.type === 'law-sources' ? '📚'
+      : section.type === 'conclusion' ? '🏁'
       : '📜';
     
+    // Use smart formatter for section content
+    const classified = classifyLines(section.content);
+    const contentHtml = classifiedLinesToHtml(classified);
+
     return `
         <h3 class="subsection-title"><span class="icon">${icon}</span> ${esc(section.title)}</h3>
-        ${nl2p(section.content)}`;
+        ${contentHtml}`;
   }).join('\n');
 
   return `<!DOCTYPE html>
@@ -169,6 +171,40 @@ export function generatePsakDinHtml(data: ParsedPsakDin): string {
         .psakim-link a:hover {
             text-decoration: underline;
         }
+        .detected-header {
+            color: #0B1F5B;
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-top: 28px;
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid #D4AF37;
+        }
+        .detected-subheader {
+            color: #0B1F5B;
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-top: 16px;
+            margin-bottom: 8px;
+        }
+        .detected-reference {
+            color: #555;
+            font-size: 0.95em;
+            margin: 4px 0;
+            padding-right: 20px;
+            font-style: italic;
+        }
+        .detected-quote {
+            margin: 12px 30px;
+            padding: 10px 20px;
+            border-right: 4px solid #D4AF37;
+            background-color: #faf8f0;
+            font-style: italic;
+            color: #333;
+        }
+        .spacer {
+            height: 12px;
+        }
         @media print {
             body { background: white; padding: 0; }
             .container { box-shadow: none; border: none; padding: 20px; }
@@ -245,7 +281,7 @@ export function generatePsakDinHtml(data: ParsedPsakDin): string {
 
         ${data.sections.length === 0 ? `
         <div style="font-size: 1.1em; line-height: 2;">
-            ${nl2p(data.rawText)}
+            ${classifiedLinesToHtml(classifyLines(data.rawText))}
         </div>
         ` : ''}
 
