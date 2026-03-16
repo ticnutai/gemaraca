@@ -256,6 +256,23 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
     setEditFullText(text);
   }, []);
 
+  // Auto-save full text on blur (works in both edit and view modes)
+  const autoSaveFullText = useCallback(async () => {
+    if (!richEditorRef.current || !psak?.id) return;
+    const text = richEditorRef.current.innerText;
+    if (text === (psak?.full_text || psak?.fullText || "")) return;
+    try {
+      await supabase
+        .from("psakei_din")
+        .update({ full_text: text.trim() || null })
+        .eq("id", psak.id);
+      toast.success("הטקסט נשמר אוטומטית");
+      onSave?.();
+    } catch {
+      toast.error("שגיאה בשמירה אוטומטית");
+    }
+  }, [psak?.id, psak?.full_text, psak?.fullText, onSave]);
+
   const handleRichSelection = useCallback(() => {
     if (!richEditorRef.current) return;
     const sel = window.getSelection();
