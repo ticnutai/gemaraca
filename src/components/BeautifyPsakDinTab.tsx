@@ -28,6 +28,7 @@ interface DbPsakItem {
   court: string;
   year: number;
   summary: string;
+  beautify_count?: number;
 }
 
 type JobStatus = "pending" | "processing" | "done" | "error";
