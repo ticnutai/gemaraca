@@ -1770,16 +1770,30 @@ export default function EmbedPdfViewerPage() {
                   </>
                 )}
 
-                {/* HTML-PAGE */}
+                {/* HTML-PAGE — try to embed, with fallback */}
                 {leftContentType === 'html-page' && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-white">
-                    <div className="text-center space-y-4 p-8 max-w-md">
-                      <ExternalLink className="h-16 w-16 mx-auto text-[#D4AF37]" />
-                      <h3 className="text-lg font-semibold">דף אינטרנט חיצוני</h3>
-                      <a href={leftSourceUrl} target="_blank" rel="noopener noreferrer">
-                        <Button size="lg" className="bg-[#0B1F5B] text-white border-2 border-[#D4AF37]"><ExternalLink className="h-5 w-5 ml-2" /> פתח בחלון חדש</Button>
-                      </a>
-                    </div>
+                  <div className="absolute inset-0">
+                    <iframe
+                      key={leftSourceUrl}
+                      src={leftSourceUrl}
+                      className="absolute inset-0 w-full h-full border-0"
+                      title="External Viewer"
+                      allow="fullscreen"
+                      sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                      onLoad={() => setIframeLoaded(true)}
+                      onError={() => setIframeError(true)}
+                    />
+                    {iframeError && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-white">
+                        <div className="text-center space-y-4 p-8 max-w-md">
+                          <ExternalLink className="h-16 w-16 mx-auto text-[#D4AF37]" />
+                          <h3 className="text-lg font-semibold">לא ניתן להטמיע את הדף</h3>
+                          <a href={leftSourceUrl} target="_blank" rel="noopener noreferrer">
+                            <Button size="lg" className="bg-[#0B1F5B] text-white border-2 border-[#D4AF37]"><ExternalLink className="h-5 w-5 ml-2" /> פתח בחלון חדש</Button>
+                          </a>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
