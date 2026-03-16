@@ -35,7 +35,7 @@ interface PsakDinExample {
 }
 
 interface LoadedPagesMap {
-  [masechetName: string]: string[];
+  [masechetName: string]: { loaded: number; total: number };
 }
 
 const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
