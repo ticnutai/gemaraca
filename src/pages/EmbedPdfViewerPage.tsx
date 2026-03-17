@@ -229,6 +229,8 @@ export default function EmbedPdfViewerPage() {
   const [isBeautifying, setIsBeautifying] = useState(false);
   const [isSavingBeautified, setIsSavingBeautified] = useState(false);
   const beautifyIframeRef = useRef<HTMLIFrameElement>(null);
+  const htmlEmbedIframeRef = useRef<HTMLIFrameElement>(null);
+  const [htmlEditMode, setHtmlEditMode] = useState(false);
 
   // Fetch psak din data when psakId is provided
   useEffect(() => {
@@ -1752,6 +1754,107 @@ export default function EmbedPdfViewerPage() {
                 </div>
               )}
 
+              {/* ═══ HTML-EMBED EDITING TOOLBAR ═══ */}
+              {leftContentType === 'html-embed' && fetchedHtml && !(beautifiedHtml && activePanel === "beautify") && (
+                <div className="border-b-2 border-[#D4AF37]/20 bg-white/80 backdrop-blur-sm flex-shrink-0">
+                  <div className="px-2 py-1.5 flex items-center gap-1 flex-wrap">
+                    <span className="text-[10px] text-[#D4AF37] font-semibold ml-2">עריכת מסמך HTML</span>
+                    <div className="w-px h-5 bg-[#D4AF37]/20" />
+
+                    <Button size="sm" variant={htmlEditMode ? "default" : "outline"} className={`h-7 text-xs gap-1 ${htmlEditMode ? "bg-[#D4AF37] text-[#0B1F5B]" : "border-[#D4AF37]/40"}`} onClick={() => {
+                      const next = !htmlEditMode;
+                      setHtmlEditMode(next);
+                      const doc = htmlEmbedIframeRef.current?.contentDocument;
+                      if (doc?.body) doc.designMode = next ? "on" : "off";
+                    }}>
+                      <Scissors className="h-3 w-3" />
+                      {htmlEditMode ? "מצב עריכה פעיל" : "ערוך"}
+                    </Button>
+
+                    {htmlEditMode && (
+                      <>
+                        <div className="w-px h-5 bg-[#D4AF37]/20" />
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { htmlEmbedIframeRef.current?.contentDocument?.execCommand("fontSize", false, "2"); }}><AArrowDown className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { htmlEmbedIframeRef.current?.contentDocument?.execCommand("fontSize", false, "5"); }}><AArrowUp className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+
+                        <div className="w-px h-5 bg-[#D4AF37]/20" />
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { htmlEmbedIframeRef.current?.contentDocument?.execCommand("bold"); }}><Bold className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { htmlEmbedIframeRef.current?.contentDocument?.execCommand("italic"); }}><Italic className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { htmlEmbedIframeRef.current?.contentDocument?.execCommand("underline"); }}><Underline className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+
+                        <div className="w-px h-5 bg-[#D4AF37]/20" />
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { htmlEmbedIframeRef.current?.contentDocument?.execCommand("justifyRight"); }}><AlignRight className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { htmlEmbedIframeRef.current?.contentDocument?.execCommand("justifyCenter"); }}><AlignCenter className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { htmlEmbedIframeRef.current?.contentDocument?.execCommand("justifyLeft"); }}><AlignLeft className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { htmlEmbedIframeRef.current?.contentDocument?.execCommand("justifyFull"); }}><AlignJustify className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+
+                        <div className="w-px h-5 bg-[#D4AF37]/20" />
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button size="icon" variant="ghost" className="h-7 w-7"><Highlighter className="h-3.5 w-3.5 text-[#D4AF37]" /></Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-2" align="start">
+                            <div className="flex gap-1.5">
+                              {HIGHLIGHT_COLORS.map((c) => (
+                                <button key={c.value} className="w-6 h-6 rounded-full border-2 border-white shadow-sm hover:scale-125 transition-transform" style={{ backgroundColor: c.value }} onClick={() => {
+                                  htmlEmbedIframeRef.current?.contentDocument?.execCommand("hiliteColor", false, c.value);
+                                }} />
+                              ))}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button size="icon" variant="ghost" className="h-7 w-7"><Palette className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-2" align="start">
+                            <div className="flex gap-1.5">
+                              {["#000000", "#0B1F5B", "#b91c1c", "#15803d", "#7e22ce", "#b45309", "#D4AF37"].map((color) => (
+                                <button key={color} className="w-6 h-6 rounded-full border-2 border-white shadow-sm hover:scale-125 transition-transform" style={{ backgroundColor: color }} onClick={() => {
+                                  htmlEmbedIframeRef.current?.contentDocument?.execCommand("foreColor", false, color);
+                                }} />
+                              ))}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+
+                        <div className="w-px h-5 bg-[#D4AF37]/20" />
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { htmlEmbedIframeRef.current?.contentDocument?.execCommand("removeFormat"); }} title="הסר עיצוב"><RotateCcw className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { htmlEmbedIframeRef.current?.contentDocument?.execCommand("undo"); }} title="בטל"><RefreshCw className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                      </>
+                    )}
+
+                    <div className="w-px h-5 bg-[#D4AF37]/20" />
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
+                      const sel = htmlEmbedIframeRef.current?.contentDocument?.getSelection()?.toString() || fetchedHtml || "";
+                      if (sel) { navigator.clipboard.writeText(sel); toast.success("הועתק"); }
+                    }} title="העתק"><Copy className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { htmlEmbedIframeRef.current?.contentWindow?.print(); }} title="הדפסה"><Printer className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                    <a href={leftSourceUrl} target="_blank" rel="noopener noreferrer">
+                      <Button size="icon" variant="ghost" className="h-7 w-7" title="פתח בחלון חדש"><ExternalLink className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {/* ═══ HTML-PAGE TOOLBAR ═══ */}
+              {leftContentType === 'html-page' && !(beautifiedHtml && activePanel === "beautify") && (
+                <div className="border-b-2 border-[#D4AF37]/20 bg-white/80 backdrop-blur-sm flex-shrink-0">
+                  <div className="px-2 py-1.5 flex items-center gap-1 flex-wrap">
+                    <span className="text-[10px] text-[#D4AF37] font-semibold ml-2">צפייה בדף חיצוני</span>
+                    <div className="w-px h-5 bg-[#D4AF37]/20" />
+                    <a href={leftSourceUrl} target="_blank" rel="noopener noreferrer">
+                      <Button size="sm" variant="outline" className="h-7 text-xs gap-1 border-[#D4AF37]/40"><ExternalLink className="h-3 w-3" /> פתח בחלון חדש</Button>
+                    </a>
+                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1 border-[#D4AF37]/40" onClick={() => { navigator.clipboard.writeText(leftSourceUrl); toast.success("הקישור הועתק"); }}><Copy className="h-3 w-3" /> העתק קישור</Button>
+                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1 border-[#D4AF37]/40" onClick={() => { window.frames[0]?.print?.(); }}><Printer className="h-3 w-3" /> הדפסה</Button>
+                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1 border-[#D4AF37]/40" asChild>
+                      <a href={leftSourceUrl} download><Download className="h-3 w-3" /> הורד</a>
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {/* Document Viewer */}
               <div className="flex-1 relative bg-[#f8f8f6]">
                 {/* BEAUTIFIED VIEW */}
@@ -1847,7 +1950,7 @@ export default function EmbedPdfViewerPage() {
                       <div className="absolute inset-0 flex items-center justify-center z-10 bg-white">
                         <div className="text-center space-y-3 p-6">
                           <FileText className="h-12 w-12 mx-auto text-[#D4AF37]/40" />
-                          <p className="text-sm text-[#0B1F5B]/70">לא ניתן לטעון את קובץ ה-HTML</p>
+                          <p className="text-sm text-[#0B1F5B]/70">לא ניתן לטעון את הקובץ</p>
                           <p className="text-xs text-[#0B1F5B]/50">{fetchHtmlError}</p>
                           <div className="flex gap-2 justify-center flex-wrap">
                             <Button size="sm" variant="outline" className="border-[#D4AF37]" onClick={() => { setFetchHtmlError(null); setFetchedHtml(null); const url = leftSourceUrl; setManualUrl(""); setTimeout(() => setManualUrl(url), 50); }}><RefreshCw className="h-3.5 w-3.5 ml-1" /> נסה שוב</Button>
@@ -1858,12 +1961,19 @@ export default function EmbedPdfViewerPage() {
                     )}
                     {fetchedHtml && (
                       <iframe
+                        ref={htmlEmbedIframeRef}
                         key={leftSourceUrl}
                         srcDoc={fetchedHtml}
                         className="absolute inset-0 w-full h-full border-0 bg-white"
                         title="HTML Viewer"
                         sandbox="allow-same-origin allow-scripts allow-popups"
-                        onLoad={() => setIframeLoaded(true)}
+                        onLoad={() => {
+                          setIframeLoaded(true);
+                          if (htmlEditMode) {
+                            const doc = htmlEmbedIframeRef.current?.contentDocument;
+                            if (doc?.body) doc.designMode = "on";
+                          }
+                        }}
                       />
                     )}
                   </>
@@ -1966,8 +2076,14 @@ export default function EmbedPdfViewerPage() {
                   <FileText className="h-10 w-10 mx-auto text-[#D4AF37]/30" />
                   <p className="text-xs text-[#0B1F5B]/50">בחר מסמך שני להשוואה</p>
                   <div className="space-y-1.5">
-                    <Button size="sm" variant="outline" className="border-[#D4AF37] text-[#0B1F5B] text-xs w-full" onClick={() => { setTargetPane("right"); togglePanel("docs"); }}>
-                      <BookOpen className="h-3.5 w-3.5 ml-1" /> בחר מהרשימה
+                    <Button size="sm" className="bg-[#0B1F5B] text-white border-2 border-[#D4AF37] text-xs w-full gap-1" onClick={() => { setTargetPane("right"); triggerFileUpload(); }} disabled={isUploading}>
+                      {isUploading ? <Loader2Icon className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} העלה מהמחשב
+                    </Button>
+                    <Button size="sm" variant="outline" className="border-[#D4AF37] text-[#0B1F5B] text-xs w-full gap-1" onClick={() => { setTargetPane("right"); loadCloudDocs(); togglePanel("add"); }}>
+                      <Database className="h-3.5 w-3.5" /> מסמכים מהענן
+                    </Button>
+                    <Button size="sm" variant="outline" className="border-[#D4AF37] text-[#0B1F5B] text-xs w-full gap-1" onClick={() => { setTargetPane("right"); togglePanel("docs"); }}>
+                      <BookOpen className="h-3.5 w-3.5" /> בחר מהרשימה
                     </Button>
                     <Input
                       placeholder="או הדבק URL..."
