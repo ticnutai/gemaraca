@@ -407,41 +407,6 @@ export type Database = {
         }
         Relationships: []
       }
-      psak_din_notes: {
-        Row: {
-          created_at: string
-          id: string
-          note_text: string
-          psak_din_id: string
-          source_url: string | null
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          note_text?: string
-          psak_din_id: string
-          source_url?: string | null
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          note_text?: string
-          psak_din_id?: string
-          source_url?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "psak_din_notes_psak_din_id_fkey"
-            columns: ["psak_din_id"]
-            isOneToOne: false
-            referencedRelation: "psakei_din"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       shas_download_progress: {
         Row: {
           completed_at: string | null
