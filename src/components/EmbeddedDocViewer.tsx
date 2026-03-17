@@ -57,6 +57,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { parsePsakDinText } from "@/lib/psakDinParser";
 import { TEMPLATES, generateFromTemplate } from "@/lib/psakDinTemplates";
+import { supabase } from "@/integrations/supabase/client";
 
 /* ─── strategy types ─── */
 type Strategy = "direct" | "google-viewer" | "allorigins" | "embedpdf";
@@ -79,6 +80,7 @@ interface EmbeddedDocViewerProps {
   url: string;
   title: string;
   psakData?: {
+    id?: string;
     title?: string;
     court?: string;
     year?: number;
@@ -121,6 +123,7 @@ export default function EmbeddedDocViewer({ url, title, psakData, onClose, onSwi
   const [notes, setNotes] = useState(() => {
     try { return localStorage.getItem(`edv-notes-${url}`) || ""; } catch { return ""; }
   });
+  const [notesRecordId, setNotesRecordId] = useState<string | null>(null);
   const [isBookmarked, setIsBookmarked] = useState(() => {
     try {
       const bm = JSON.parse(localStorage.getItem("edv-bookmarks") || "[]") as string[];
@@ -303,19 +306,71 @@ export default function EmbeddedDocViewer({ url, title, psakData, onClose, onSwi
     a.click();
   }, [url, title]);
 
+  useEffect(() => {
+    let active = true;
+    const loadNotes = async () => {
+      if (!psakData?.id) return;
+      try {
+        const { data, error } = await supabase
+          .from("psak_din_notes")
+          .select("id, note_text")
+          .eq("psak_din_id", psakData.id)
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (error || !active) return;
+        if (data?.note_text) {
+          setNotes(data.note_text);
+          setNotesRecordId(data.id);
+        }
+      } catch {
+        // Keep local fallback silently
+      }
+    };
+
+    void loadNotes();
+    return () => {
+      active = false;
+    };
+  }, [psakData?.id]);
+
   // Notes
-  const handleSaveNotes = useCallback(() => {
+  const handleSaveNotes = useCallback(async () => {
     try {
       localStorage.setItem(`edv-notes-${url}`, notes);
-      toast.success("הערות נשמרו");
+      if (psakData?.id) {
+        if (notesRecordId) {
+          await supabase
+            .from("psak_din_notes")
+            .update({ note_text: notes, source_url: url })
+            .eq("id", notesRecordId);
+        } else {
+          const { data } = await supabase
+            .from("psak_din_notes")
+            .insert({ psak_din_id: psakData.id, note_text: notes, source_url: url })
+            .select("id")
+            .single();
+          if (data?.id) setNotesRecordId(data.id);
+        }
+      }
+      toast.success("הערות נשמרו (מקומי + מסד נתונים)");
     } catch { /* quota exceeded */ }
-  }, [url, notes]);
+  }, [url, notes, notesRecordId, psakData?.id]);
 
-  const handleClearNotes = useCallback(() => {
+  const handleClearNotes = useCallback(async () => {
     setNotes("");
     try { localStorage.removeItem(`edv-notes-${url}`); } catch { /* ignore */ }
+    try {
+      if (notesRecordId) {
+        await supabase.from("psak_din_notes").delete().eq("id", notesRecordId);
+        setNotesRecordId(null);
+      }
+    } catch {
+      // Ignore remote clear errors, local clear already done
+    }
     toast("הערות נמחקו");
-  }, [url]);
+  }, [url, notesRecordId]);
 
   // Bookmark
   const toggleBookmark = useCallback(() => {
@@ -440,9 +495,10 @@ export default function EmbeddedDocViewer({ url, title, psakData, onClose, onSwi
           <ToolBtn icon={Download} tip="הורדה" onClick={handleDownload} />
           <ToolBtn icon={ExternalLink} tip="פתח בלשונית חדשה" onClick={() => window.open(url, "_blank", "noopener,noreferrer")} />
           {hasTemplateData && (
-            <ToolBtn
-              icon={FileText}
-              tip={formattedMode ? "חזרה למסמך המקור" : "תצוגה מעוצבת"}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-1.5 text-[10px] gap-1"
               onClick={() => {
                 if (formattedMode) {
                   setFormattedMode(false);
@@ -455,7 +511,10 @@ export default function EmbeddedDocViewer({ url, title, psakData, onClose, onSwi
                 }
                 applyLocalTemplate(selectedTemplate);
               }}
-            />
+            >
+              <FileText className="w-3 h-3" />
+              {formattedMode ? "מקור" : "תצוגה מעוצבת"}
+            </Button>
           )}
           <div className="w-px h-5 bg-border mx-1" />
           <ToolBtn icon={darkMode ? Sun : Moon} tip={darkMode ? "מצב רגיל" : "מצב כהה"} onClick={() => setDarkMode(d => !d)} />

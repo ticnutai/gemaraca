@@ -506,29 +506,29 @@ function renderSearchWidget(data: ParsedPsakDin): string {
     data.judges.length > 0 ? `<option value="sec-signature">חתימה</option>` : "",
   ].join("");
 
-  return `<div class="search-widget" aria-label="כלי חיפוש וניווט במסמך">
+  return `<div class="search-widget" aria-label="כלי חיפוש וניווט במסמך" data-testid="psak-doc-widget">
     <div class="search-row">
-      <input id="psak-search-input" class="search-input" type="search" placeholder="חיפוש בתוך פסק הדין..." />
-      <select id="psak-search-section" class="search-select">${sectionOptions}</select>
+      <input id="psak-search-input" data-testid="psak-search-input" class="search-input" type="search" placeholder="חיפוש בתוך פסק הדין..." />
+      <select id="psak-search-section" data-testid="psak-search-section" class="search-select">${sectionOptions}</select>
       <label class="search-check"><input id="psak-search-exact" type="checkbox" /> ביטוי מדויק</label>
       <label class="search-check"><input id="psak-search-normalized" type="checkbox" checked /> התאמה חכמה</label>
-      <button id="psak-search-prev" class="search-btn" type="button" title="תוצאה קודמת">הקודם</button>
-      <button id="psak-search-next" class="search-btn" type="button" title="תוצאה הבאה">הבא</button>
-      <button id="psak-search-clear" class="search-btn" type="button" title="ניקוי חיפוש">נקה</button>
-      <span id="psak-search-count" class="search-count">0/0</span>
+      <button id="psak-search-prev" data-testid="psak-search-prev" class="search-btn" type="button" title="תוצאה קודמת">הקודם</button>
+      <button id="psak-search-next" data-testid="psak-search-next" class="search-btn" type="button" title="תוצאה הבאה">הבא</button>
+      <button id="psak-search-clear" data-testid="psak-search-clear" class="search-btn" type="button" title="ניקוי חיפוש">נקה</button>
+      <span id="psak-search-count" data-testid="psak-search-count" class="search-count">0/0</span>
     </div>
     <div class="doc-toolbar-row">
-      <button id="psak-prev-sec" class="search-btn" type="button">סעיף קודם</button>
-      <button id="psak-next-sec" class="search-btn" type="button">סעיף הבא</button>
-      <button id="psak-back-pos" class="search-btn" type="button">חזור למיקום קודם</button>
-      <button id="psak-expand-all" class="search-btn" type="button">פתח הכל</button>
-      <button id="psak-collapse-all" class="search-btn" type="button">כווץ הכל</button>
-      <button id="psak-copy-quote" class="search-btn" type="button">העתק ציטוט מסומן</button>
-      <span id="psak-breadcrumbs" class="breadcrumbs">מיקום נוכחי: תחילת מסמך</span>
+      <button id="psak-prev-sec" data-testid="psak-prev-sec" class="search-btn" type="button">סעיף קודם</button>
+      <button id="psak-next-sec" data-testid="psak-next-sec" class="search-btn" type="button">סעיף הבא</button>
+      <button id="psak-back-pos" data-testid="psak-back-pos" class="search-btn" type="button">חזור למיקום קודם</button>
+      <button id="psak-expand-all" data-testid="psak-expand-all" class="search-btn" type="button">פתח הכל</button>
+      <button id="psak-collapse-all" data-testid="psak-collapse-all" class="search-btn" type="button">כווץ הכל</button>
+      <button id="psak-copy-quote" data-testid="psak-copy-quote" class="search-btn" type="button">העתק ציטוט מסומן</button>
+      <span id="psak-breadcrumbs" data-testid="psak-breadcrumbs" class="breadcrumbs">מיקום נוכחי: תחילת מסמך</span>
     </div>
     <div class="doc-toolbar-row">
-      <textarea id="psak-notes" class="search-input" placeholder="הערות אישיות למסמך (נשמר מקומית בדפדפן)..." style="min-height:56px;"></textarea>
-      <button id="psak-save-notes" class="search-btn" type="button">שמור הערות</button>
+      <textarea id="psak-notes" data-testid="psak-notes" class="search-input" placeholder="הערות אישיות למסמך (נשמר מקומית בדפדפן)..." style="min-height:56px;"></textarea>
+      <button id="psak-save-notes" data-testid="psak-save-notes" class="search-btn" type="button">שמור הערות</button>
     </div>
   </div>`;
 }

@@ -2,6 +2,7 @@ import { useRef, useCallback, useEffect } from 'react';
 import { useDownloadStore, DownloadItem } from '@/stores/downloadStore';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { parsePsakDinText } from '@/lib/psakDinParser';
 
 const DEFAULT_CONCURRENCY = 6;
 const RETRY_DELAYS = [500, 1500, 3000];
@@ -335,78 +336,145 @@ function buildHtmlContent(data: { title: string; court: string; year: number; ca
 
 async function generatePdf(data: { title: string; court: string; year: number; case_number?: string | null; full_text?: string | null; summary?: string | null }): Promise<Blob> {
   const { default: jsPDF } = await import('jspdf');
+  const { default: html2canvas } = await import('html2canvas');
 
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 20;
   const maxWidth = pageWidth - margin * 2;
-  let y = margin;
-
-  // Use built-in Helvetica (supports basic Latin). For Hebrew we render via UTF-16BE.
-  // jsPDF doesn't natively support Hebrew fonts, so we render HTML to canvas then to PDF.
   const textContent = data.full_text || data.summary || '';
+  const parsed = parsePsakDinText(textContent);
 
-  // Create an offscreen container to render HTML
-  const container = document.createElement('div');
-  container.style.cssText = `
-    position: fixed; top: -9999px; left: -9999px;
-    width: 700px; padding: 40px; background: white;
-    font-family: 'David', 'Times New Roman', serif;
-    direction: rtl; line-height: 1.8; color: #1a1a1a;
-  `;
-  container.innerHTML = `
-    <h1 style="color:#1a365d;border-bottom:2px solid #2b6cb0;padding-bottom:10px;font-size:22px;margin-bottom:16px">${escapeHtml(data.title)}</h1>
-    <div style="background:#f0f4f8;padding:12px;border-radius:8px;margin-bottom:20px;color:#4a5568;font-size:14px">
-      <span>בית דין: ${escapeHtml(data.court)}</span>&nbsp;&nbsp;
-      <span>שנה: ${data.year}</span>
-      ${data.case_number ? `&nbsp;&nbsp;<span>תיק: ${escapeHtml(data.case_number)}</span>` : ''}
-    </div>
-    <div style="white-space:pre-wrap;font-size:15px">${escapeHtml(textContent)}</div>
-  `;
-  document.body.appendChild(container);
+  type TocEntry = { title: string; page: number };
+  const tocEntries: TocEntry[] = [];
 
-  try {
-    const { default: html2canvas } = await import('html2canvas');
-    const canvas = await html2canvas(container, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: '#ffffff',
-    });
+  const renderContainerToPages = async (html: string): Promise<number> => {
+    const startPage = doc.getCurrentPageInfo().pageNumber;
+    const container = document.createElement('div');
+    container.style.cssText = `
+      position: fixed; top: -9999px; left: -9999px;
+      width: 700px; padding: 40px; background: white;
+      font-family: 'David', 'Times New Roman', serif;
+      direction: rtl; line-height: 1.8; color: #1a1a1a;
+    `;
+    container.innerHTML = html;
+    document.body.appendChild(container);
 
-    const imgData = canvas.toDataURL('image/jpeg', 0.92);
-    const imgWidth = maxWidth;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    try {
+      const canvas = await html2canvas(container, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+      });
 
-    // Split across pages if needed
-    let remainingHeight = imgHeight;
-    let sourceY = 0;
-    const availableHeight = pageHeight - margin * 2;
+      const imgWidth = maxWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const availableHeight = pageHeight - margin * 2;
 
-    while (remainingHeight > 0) {
-      if (sourceY > 0) doc.addPage();
+      let remainingHeight = imgHeight;
+      let sourceY = 0;
 
-      const sliceHeight = Math.min(availableHeight, remainingHeight);
-      // Calculate source coordinates for this slice
-      const srcYPx = (sourceY / imgHeight) * canvas.height;
-      const srcHPx = (sliceHeight / imgHeight) * canvas.height;
+      while (remainingHeight > 0) {
+        if (sourceY > 0) doc.addPage();
 
-      // Create a slice canvas
-      const sliceCanvas = document.createElement('canvas');
-      sliceCanvas.width = canvas.width;
-      sliceCanvas.height = srcHPx;
-      const ctx = sliceCanvas.getContext('2d')!;
-      ctx.drawImage(canvas, 0, srcYPx, canvas.width, srcHPx, 0, 0, canvas.width, srcHPx);
+        const sliceHeight = Math.min(availableHeight, remainingHeight);
+        const srcYPx = (sourceY / imgHeight) * canvas.height;
+        const srcHPx = (sliceHeight / imgHeight) * canvas.height;
 
-      const sliceData = sliceCanvas.toDataURL('image/jpeg', 0.92);
-      doc.addImage(sliceData, 'JPEG', margin, margin, imgWidth, sliceHeight);
+        const sliceCanvas = document.createElement('canvas');
+        sliceCanvas.width = canvas.width;
+        sliceCanvas.height = srcHPx;
+        const ctx = sliceCanvas.getContext('2d');
+        if (!ctx) throw new Error('Canvas context unavailable');
 
-      sourceY += sliceHeight;
-      remainingHeight -= sliceHeight;
+        ctx.drawImage(canvas, 0, srcYPx, canvas.width, srcHPx, 0, 0, canvas.width, srcHPx);
+        const sliceData = sliceCanvas.toDataURL('image/jpeg', 0.92);
+        doc.addImage(sliceData, 'JPEG', margin, margin, imgWidth, sliceHeight);
+
+        sourceY += sliceHeight;
+        remainingHeight -= sliceHeight;
+      }
+
+      return startPage;
+    } finally {
+      document.body.removeChild(container);
     }
+  };
 
-    return doc.output('blob');
-  } finally {
-    document.body.removeChild(container);
+  // Page 1: cover + placeholder TOC
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(18);
+  doc.text(data.title || 'פסק דין', pageWidth - margin, margin, { align: 'right' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(11);
+  doc.text(`בית דין: ${data.court || ''}`, pageWidth - margin, margin + 10, { align: 'right' });
+  doc.text(`שנה: ${String(data.year || '')}`, pageWidth - margin, margin + 17, { align: 'right' });
+  if (data.case_number) {
+    doc.text(`תיק: ${data.case_number}`, pageWidth - margin, margin + 24, { align: 'right' });
   }
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.text('תוכן עניינים', pageWidth - margin, margin + 36, { align: 'right' });
+
+  // Start content on page 2
+  doc.addPage();
+
+  const summaryText = parsed.summary || data.summary || '';
+  if (summaryText.trim()) {
+    const startPage = await renderContainerToPages(`
+      <h2 style="color:#1a365d;font-size:18px;margin:0 0 12px">תקציר</h2>
+      <div style="white-space:pre-wrap;font-size:15px">${escapeHtml(summaryText)}</div>
+    `);
+    tocEntries.push({ title: 'תקציר', page: startPage });
+    doc.addPage();
+  }
+
+  if (parsed.sections.length > 0) {
+    for (const section of parsed.sections) {
+      const startPage = await renderContainerToPages(`
+        <h2 style="color:#1a365d;font-size:18px;margin:0 0 12px">${escapeHtml(section.title)}</h2>
+        <div style="white-space:pre-wrap;font-size:15px">${escapeHtml(section.content)}</div>
+      `);
+      tocEntries.push({ title: section.title, page: startPage });
+      doc.addPage();
+    }
+  } else {
+    const startPage = await renderContainerToPages(`
+      <h2 style="color:#1a365d;font-size:18px;margin:0 0 12px">גוף פסק הדין</h2>
+      <div style="white-space:pre-wrap;font-size:15px">${escapeHtml(textContent)}</div>
+    `);
+    tocEntries.push({ title: 'גוף פסק הדין', page: startPage });
+  }
+
+  // Remove trailing blank page (if any)
+  const last = doc.getNumberOfPages();
+  if (last > 1) {
+    const txt = doc.getPageInfo(last);
+    if (txt.pageNumber === last) {
+      try {
+        // jsPDF has deletePage in modern versions
+        doc.deletePage(last);
+      } catch {
+        // Ignore if not supported
+      }
+    }
+  }
+
+  // Fill TOC links on page 1
+  doc.setPage(1);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(11);
+  let y = margin + 44;
+
+  tocEntries.slice(0, 24).forEach((entry, idx) => {
+    const label = `${idx + 1}. ${entry.title}`;
+    const pageLabel = `עמוד ${entry.page}`;
+    doc.text(label, pageWidth - margin, y, { align: 'right' });
+    doc.text(pageLabel, margin, y, { align: 'left' });
+    doc.link(margin, y - 4.5, pageWidth - margin * 2, 7, { pageNumber: entry.page });
+    y += 8;
+  });
+
+  return doc.output('blob');
 }

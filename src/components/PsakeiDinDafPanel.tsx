@@ -638,6 +638,7 @@ export default function PsakeiDinDafPanel({
                 url={selectedPsak.source_url}
                 title={selectedPsak.title}
                 psakData={{
+                  id: selectedPsak.id,
                   title: selectedPsak.title,
                   court: selectedPsak.court,
                   year: selectedPsak.year,
