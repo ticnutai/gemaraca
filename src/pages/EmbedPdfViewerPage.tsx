@@ -5,7 +5,7 @@ import {
   Palette, Maximize2, Minimize2, RefreshCw, Bold, Italic, Underline, AlignRight,
   AlignCenter, AlignLeft, AlignJustify, Type, AArrowUp, AArrowDown, Highlighter,
   Copy, MessageSquarePlus, Hash, ZoomIn, ZoomOut, ChevronUp, ChevronDown,
-  RotateCcw, Printer, StickyNote, Scissors, ClipboardPaste, Sparkles, Eye,
+  RotateCcw, Printer, StickyNote, Scissors, ClipboardPaste, Sparkles, Eye, Strikethrough,
   ListOrdered, WrapText, PilcrowSquare, ArrowRight, Link, BarChart3,
   Upload, HardDrive, Database, Loader2 as Loader2Icon
 } from "lucide-react";
@@ -96,6 +96,16 @@ interface TextHighlight {
 
 // ─── Selection Popup Component ───────────────────────────────
 
+const TEXT_COLORS_POPUP = [
+  { value: "#000000", label: "שחור" },
+  { value: "#0B1F5B", label: "כחול כהה" },
+  { value: "#b91c1c", label: "אדום" },
+  { value: "#15803d", label: "ירוק" },
+  { value: "#7e22ce", label: "סגול" },
+  { value: "#b45309", label: "כתום" },
+  { value: "#D4AF37", label: "זהב" },
+];
+
 function SelectionPopup({
   position,
   selectedText,
@@ -104,6 +114,8 @@ function SelectionPopup({
   onCopy,
   onSearch,
   onClose,
+  onFormat,
+  canEdit,
 }: {
   position: { x: number; y: number };
   selectedText: string;
@@ -112,70 +124,83 @@ function SelectionPopup({
   onCopy: () => void;
   onSearch: () => void;
   onClose: () => void;
+  onFormat?: (command: string, value?: string) => void;
+  canEdit?: boolean;
 }) {
   const [showColors, setShowColors] = useState(false);
+  const [showTextColors, setShowTextColors] = useState(false);
+
+  const popupBtn = "p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors";
+  const popupBtnGold = "p-1.5 rounded-lg text-[#D4AF37] hover:text-[#D4AF37] hover:bg-white/10 transition-colors";
+  const sep = <div className="w-px h-5 bg-white/20" />;
 
   return (
     <div
       className="fixed z-50 animate-in fade-in slide-in-from-bottom-2 duration-200"
       style={{ left: position.x, top: position.y, transform: "translate(-50%, -100%)" }}
     >
-      <div className="bg-[#0B1F5B] rounded-xl shadow-2xl border-2 border-[#D4AF37] p-1.5 flex items-center gap-0.5">
+      <div className="bg-[#0B1F5B] rounded-xl shadow-2xl border-2 border-[#D4AF37] p-1.5 flex items-center gap-0.5 flex-wrap max-w-[420px]">
         {/* Copy */}
-        <button
-          onClick={onCopy}
-          className="p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors"
-          title="העתק"
-        >
-          <Copy className="h-4 w-4" />
-        </button>
-        <div className="w-px h-5 bg-white/20" />
+        <button onClick={onCopy} className={popupBtn} title="העתק"><Copy className="h-4 w-4" /></button>
+        {sep}
 
         {/* Highlight */}
         <div className="relative">
-          <button
-            onClick={() => setShowColors(!showColors)}
-            className="p-1.5 rounded-lg text-[#D4AF37] hover:text-[#D4AF37] hover:bg-white/10 transition-colors"
-            title="הדגש"
-          >
+          <button onClick={() => { setShowColors(!showColors); setShowTextColors(false); }} className={popupBtnGold} title="הדגש">
             <Highlighter className="h-4 w-4" />
           </button>
           {showColors && (
             <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1.5 bg-white rounded-lg shadow-xl border-2 border-[#D4AF37] p-2 flex gap-1.5 z-50">
               {HIGHLIGHT_COLORS.map((c) => (
-                <button
-                  key={c.value}
-                  onClick={() => { onHighlight(c.value); setShowColors(false); }}
-                  className="w-6 h-6 rounded-full border-2 border-white shadow-sm hover:scale-125 transition-transform"
-                  style={{ backgroundColor: c.value }}
-                  title={c.label}
-                />
+                <button key={c.value} onClick={() => { onHighlight(c.value); setShowColors(false); }} className="w-6 h-6 rounded-full border-2 border-white shadow-sm hover:scale-125 transition-transform" style={{ backgroundColor: c.value }} title={c.label} />
               ))}
             </div>
           )}
         </div>
-        <div className="w-px h-5 bg-white/20" />
+        {sep}
 
         {/* Annotate */}
-        <button
-          onClick={onAnnotate}
-          className="p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors"
-          title="הוסף הערה"
-        >
-          <MessageSquarePlus className="h-4 w-4" />
-        </button>
-        <div className="w-px h-5 bg-white/20" />
+        <button onClick={onAnnotate} className={popupBtn} title="הוסף הערה"><MessageSquarePlus className="h-4 w-4" /></button>
+        {sep}
 
         {/* Search */}
-        <button
-          onClick={onSearch}
-          className="p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors"
-          title="חפש"
-        >
-          <Search className="h-4 w-4" />
-        </button>
-        <div className="w-px h-5 bg-white/20" />
+        <button onClick={onSearch} className={popupBtn} title="חפש"><Search className="h-4 w-4" /></button>
 
+        {/* ── Advanced editing (only when editable context) ── */}
+        {canEdit && onFormat && (
+          <>
+            {sep}
+            <button onMouseDown={e => e.preventDefault()} onClick={() => onFormat('bold')} className={popupBtn} title="מודגש"><Bold className="h-4 w-4" /></button>
+            <button onMouseDown={e => e.preventDefault()} onClick={() => onFormat('italic')} className={popupBtn} title="נטוי"><Italic className="h-4 w-4" /></button>
+            <button onMouseDown={e => e.preventDefault()} onClick={() => onFormat('underline')} className={popupBtn} title="קו תחתון"><Underline className="h-4 w-4" /></button>
+            <button onMouseDown={e => e.preventDefault()} onClick={() => onFormat('strikeThrough')} className={popupBtn} title="קו חוצה"><Strikethrough className="h-4 w-4" /></button>
+            {sep}
+            <button onMouseDown={e => e.preventDefault()} onClick={() => onFormat('fontSize', '2')} className={popupBtn} title="הקטן גופן"><AArrowDown className="h-4 w-4" /></button>
+            <button onMouseDown={e => e.preventDefault()} onClick={() => onFormat('fontSize', '5')} className={popupBtn} title="הגדל גופן"><AArrowUp className="h-4 w-4" /></button>
+            {sep}
+            <button onMouseDown={e => e.preventDefault()} onClick={() => onFormat('justifyRight')} className={popupBtn} title="ימין"><AlignRight className="h-4 w-4" /></button>
+            <button onMouseDown={e => e.preventDefault()} onClick={() => onFormat('justifyCenter')} className={popupBtn} title="מרכז"><AlignCenter className="h-4 w-4" /></button>
+            <button onMouseDown={e => e.preventDefault()} onClick={() => onFormat('justifyLeft')} className={popupBtn} title="שמאל"><AlignLeft className="h-4 w-4" /></button>
+            {sep}
+            {/* Text color picker */}
+            <div className="relative">
+              <button onMouseDown={e => e.preventDefault()} onClick={() => { setShowTextColors(!showTextColors); setShowColors(false); }} className={popupBtn} title="צבע טקסט">
+                <Palette className="h-4 w-4" />
+              </button>
+              {showTextColors && (
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1.5 bg-white rounded-lg shadow-xl border-2 border-[#D4AF37] p-2 flex gap-1.5 z-50">
+                  {TEXT_COLORS_POPUP.map((c) => (
+                    <button key={c.value} onMouseDown={e => e.preventDefault()} onClick={() => { onFormat('foreColor', c.value); setShowTextColors(false); }} className="w-6 h-6 rounded-full border-2 border-white shadow-sm hover:scale-125 transition-transform" style={{ backgroundColor: c.value }} title={c.label} />
+                  ))}
+                </div>
+              )}
+            </div>
+            {sep}
+            <button onMouseDown={e => e.preventDefault()} onClick={() => onFormat('removeFormat')} className={popupBtn} title="נקה עיצוב"><RotateCcw className="h-4 w-4" /></button>
+          </>
+        )}
+
+        {sep}
         {/* Word count for selection */}
         <span className="px-2 text-[10px] text-white/50 whitespace-nowrap">
           {selectedText.split(/\s+/).filter(Boolean).length} מילים
@@ -346,7 +371,7 @@ export default function EmbedPdfViewerPage() {
 
   // ── Selection Popup ──
   const [selectionPopup, setSelectionPopup] = useState<{
-    x: number; y: number; text: string;
+    x: number; y: number; text: string; source: 'text' | 'html-embed' | 'html-page' | 'beautify';
   } | null>(null);
   const textViewerRef = useRef<HTMLDivElement>(null);
 
@@ -626,10 +651,9 @@ export default function EmbedPdfViewerPage() {
   }, [isTextEditing, saveTextEdit]);
 
   // ── Text Selection Handler ──
-  const handleTextSelection = useCallback(() => {
+  const handleTextSelection = useCallback((source: 'text' | 'html-embed' | 'html-page' | 'beautify' = 'text') => {
     const selection = window.getSelection();
     if (!selection || selection.isCollapsed || !selection.toString().trim()) {
-      // Delay to allow click handlers to fire before hiding
       setTimeout(() => setSelectionPopup(null), 200);
       return;
     }
@@ -641,8 +665,58 @@ export default function EmbedPdfViewerPage() {
       x: rect.left + rect.width / 2,
       y: rect.top - 12,
       text,
+      source,
     });
   }, []);
+
+  // ── Iframe selection handler (for html-embed / beautify iframes) ──
+  const setupIframeSelectionListener = useCallback((iframe: HTMLIFrameElement | null, source: 'html-embed' | 'beautify') => {
+    if (!iframe) return;
+    try {
+      const doc = iframe.contentDocument;
+      if (!doc) return;
+      const handler = () => {
+        const sel = doc.getSelection();
+        if (!sel || sel.isCollapsed || !sel.toString().trim()) {
+          setTimeout(() => setSelectionPopup(null), 200);
+          return;
+        }
+        const text = sel.toString().trim();
+        if (text.length < 2) return;
+        const range = sel.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        // Offset by iframe position
+        const iframeRect = iframe.getBoundingClientRect();
+        setSelectionPopup({
+          x: iframeRect.left + rect.left + rect.width / 2,
+          y: iframeRect.top + rect.top - 12,
+          text,
+          source,
+        });
+      };
+      doc.addEventListener('mouseup', handler);
+      doc.addEventListener('keyup', handler);
+    } catch {
+      // cross-origin iframes will throw — ignore
+    }
+  }, []);
+
+  // ── Format command handler for popup ──
+  const handlePopupFormat = useCallback((command: string, value?: string) => {
+    if (!selectionPopup) return;
+    let doc: Document | null = null;
+    if (selectionPopup.source === 'html-embed') {
+      doc = htmlEmbedIframeRef.current?.contentDocument ?? null;
+    } else if (selectionPopup.source === 'beautify') {
+      doc = beautifyIframeRef.current?.contentDocument ?? null;
+    }
+    if (doc) {
+      if (command === 'hiliteColor' || command === 'foreColor') {
+        doc.execCommand('styleWithCSS', false, 'true');
+      }
+      doc.execCommand(command, false, value);
+    }
+  }, [selectionPopup]);
 
   // ── Selection popup actions ──
   const handlePopupHighlight = useCallback((color: string) => {
@@ -1868,6 +1942,7 @@ export default function EmbedPdfViewerPage() {
                     onLoad={() => {
                       const doc = beautifyIframeRef.current?.contentDocument;
                       if (doc?.body) doc.designMode = "on";
+                      setupIframeSelectionListener(beautifyIframeRef.current, 'beautify');
                     }}
                   />
                 ) : (
@@ -1912,7 +1987,7 @@ export default function EmbedPdfViewerPage() {
                             />
                           </div>
                         ) : (
-                          <div ref={textViewerRef} onMouseUp={handleTextSelection} className={`p-4 text-[#0B1F5B] ${textFormat.fontFamily} select-text`} dir="rtl" style={{ fontSize: `${textFormat.fontSize}px`, lineHeight: textFormat.lineHeight, textAlign: textFormat.textAlign, fontWeight: textFormat.isBold ? "bold" : "normal", fontStyle: textFormat.isItalic ? "italic" : "normal", textDecoration: textFormat.isUnderline ? "underline" : "none", whiteSpace: textFormat.wordWrap ? "pre-wrap" : "pre" }}>
+                          <div ref={textViewerRef} onMouseUp={() => handleTextSelection('text')} className={`p-4 text-[#0B1F5B] ${textFormat.fontFamily} select-text`} dir="rtl" style={{ fontSize: `${textFormat.fontSize}px`, lineHeight: textFormat.lineHeight, textAlign: textFormat.textAlign, fontWeight: textFormat.isBold ? "bold" : "normal", fontStyle: textFormat.isItalic ? "italic" : "normal", textDecoration: textFormat.isUnderline ? "underline" : "none", whiteSpace: textFormat.wordWrap ? "pre-wrap" : "pre" }}>
                             {textFormat.showLineNumbers ? (
                               <div className="flex">
                                 <div className="pr-3 pl-3 border-l-2 border-[#D4AF37]/20 text-[#0B1F5B]/25 text-right select-none" style={{ fontSize: `${Math.max(10, textFormat.fontSize - 2)}px`, minWidth: "3rem" }}>
@@ -1973,6 +2048,7 @@ export default function EmbedPdfViewerPage() {
                             const doc = htmlEmbedIframeRef.current?.contentDocument;
                             if (doc?.body) doc.designMode = "on";
                           }
+                          setupIframeSelectionListener(htmlEmbedIframeRef.current, 'html-embed');
                         }}
                       />
                     )}
@@ -2110,6 +2186,8 @@ export default function EmbedPdfViewerPage() {
           onCopy={handlePopupCopy}
           onSearch={handlePopupSearch}
           onClose={() => setSelectionPopup(null)}
+          onFormat={handlePopupFormat}
+          canEdit={selectionPopup.source === 'html-embed' ? htmlEditMode : selectionPopup.source === 'beautify'}
         />
       )}
 
