@@ -552,6 +552,7 @@ export default function EmbedPdfViewerPage() {
   // Split pane resizing
   const [splitRatio, setSplitRatio] = useState(50); // percentage for left pane
   const isDraggingSplitter = useRef(false);
+  const [isDraggingSplit, setIsDraggingSplit] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
 
   // Synchronized scrolling
@@ -569,6 +570,7 @@ export default function EmbedPdfViewerPage() {
     const onMouseUp = () => {
       if (isDraggingSplitter.current) {
         isDraggingSplitter.current = false;
+        setIsDraggingSplit(false);
         document.body.style.cursor = '';
         document.body.style.userSelect = '';
       }
@@ -2824,20 +2826,26 @@ export default function EmbedPdfViewerPage() {
             </div>
           )}
 
+          {/* ═══ DRAG OVERLAY — blocks iframes from stealing mouse events ═══ */}
+          {isDraggingSplit && (
+            <div className="fixed inset-0 z-[9999] cursor-col-resize" style={{ userSelect: 'none' }} />
+          )}
+
           {/* ═══ DRAGGABLE SPLIT DIVIDER ═══ */}
           {viewMode === "split" && (
             <div
-              className="w-3 flex-shrink-0 cursor-col-resize bg-[#D4AF37]/10 hover:bg-[#D4AF37]/40 active:bg-[#D4AF37]/60 transition-colors relative group flex flex-col items-center justify-center gap-2 border-x border-[#D4AF37]/20"
+              className="w-2 flex-shrink-0 cursor-col-resize bg-[#D4AF37]/10 hover:bg-[#D4AF37]/40 active:bg-[#D4AF37]/60 transition-colors relative group flex flex-col items-center justify-center gap-2 border-x border-[#D4AF37]/20"
               onMouseDown={(e) => {
                 if ((e.target as HTMLElement).closest('[data-no-drag]')) return;
                 e.preventDefault();
                 isDraggingSplitter.current = true;
+                setIsDraggingSplit(true);
                 document.body.style.cursor = 'col-resize';
                 document.body.style.userSelect = 'none';
               }}
               title="גרור לשינוי גודל"
             >
-              <div className="absolute inset-y-0 -left-1 -right-1" />
+              <div className="absolute inset-y-0 -left-2 -right-2" />
               <button
                 data-no-drag
                 onClick={(e) => { e.stopPropagation(); setSyncScroll(prev => !prev); }}
