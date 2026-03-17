@@ -15,9 +15,12 @@ import {
   Paintbrush, Upload, Download, Sparkles, FileText, Loader2, Eye, Code,
   RotateCcw, Database, Save, Copy, Search, X, CheckSquare, Square,
   Play, Pause, CheckCircle2, AlertCircle, ExternalLink, Pencil, Trash2,
+  LayoutTemplate, Plus, Minus, Type, AlignRight,
 } from "lucide-react";
 import { parsePsakDinText, isPsakDinFormat } from "@/lib/psakDinParser";
 import { generatePsakDinHtml } from "@/lib/psakDinHtmlTemplate";
+import { TEMPLATES, generateFromTemplate } from "@/lib/psakDinTemplates";
+import type { TemplateInfo } from "@/lib/psakDinTemplates";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -93,6 +96,10 @@ const BeautifyPsakDinTab = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [loadedPsakId, setLoadedPsakId] = useState<string | null>(null);
   const [loadedPsakTitle, setLoadedPsakTitle] = useState("");
+
+  // --- Template selection ---
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("classic");
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
 
   // --- DB Picker state ---
   const [showDbPicker, setShowDbPicker] = useState(false);
@@ -501,16 +508,17 @@ const BeautifyPsakDinTab = () => {
     setIsProcessing(true);
     try {
       const parsed = parsePsakDinText(rawText);
-      const html = generatePsakDinHtml(parsed);
+      const html = generateFromTemplate(selectedTemplate, parsed);
       setHtmlResult(html);
       setViewMode("preview");
-      toast({ title: "הצלחה", description: "פסק הדין עוצב בהצלחה" });
+      const tmpl = TEMPLATES.find(t => t.id === selectedTemplate);
+      toast({ title: "הצלחה", description: `פסק הדין עוצב בתבנית "${tmpl?.name || "קלאסי"}"` });
     } catch {
       toast({ title: "שגיאה", description: "שגיאה בעיבוד הטקסט", variant: "destructive" });
     } finally {
       setIsProcessing(false);
     }
-  }, [rawText, toast]);
+  }, [rawText, toast, selectedTemplate]);
 
   // ===== SINGLE AI ENHANCE =====
   const handleAiEnhance = useCallback(async () => {
@@ -946,15 +954,97 @@ const BeautifyPsakDinTab = () => {
               </p>
             )}
 
+            {/* Template Selector */}
+            <div className="space-y-2">
+              <button
+                onClick={() => setShowTemplateSelector(v => !v)}
+                className="w-full flex items-center justify-between px-3 py-2 rounded-lg border bg-muted/30 hover:bg-muted/60 transition-colors text-sm"
+              >
+                <div className="flex items-center gap-2">
+                  <LayoutTemplate className="h-4 w-4 text-primary" />
+                  <span className="font-medium">תבנית עיצוב:</span>
+                  <span className="text-muted-foreground">
+                    {TEMPLATES.find(t => t.id === selectedTemplate)?.icon}{" "}
+                    {TEMPLATES.find(t => t.id === selectedTemplate)?.name}
+                  </span>
+                </div>
+                <Badge variant="outline" className="text-[10px]">
+                  {TEMPLATES.find(t => t.id === selectedTemplate)?.requiresAi ? "AI" : "מקומי"}
+                </Badge>
+              </button>
+
+              {showTemplateSelector && (
+                <div className="border rounded-lg p-2 space-y-1 bg-background shadow-sm max-h-[280px] overflow-y-auto">
+                  {TEMPLATES.filter(t => !t.requiresAi).length > 0 && (
+                    <div className="text-[10px] font-semibold text-muted-foreground px-2 py-1 uppercase tracking-wider">ללא AI</div>
+                  )}
+                  {TEMPLATES.filter(t => !t.requiresAi).map(tmpl => (
+                    <button
+                      key={tmpl.id}
+                      onClick={() => { setSelectedTemplate(tmpl.id); setShowTemplateSelector(false); }}
+                      className={`w-full flex items-start gap-2.5 p-2.5 rounded-md text-right transition-colors ${
+                        selectedTemplate === tmpl.id
+                          ? "bg-primary/10 border border-primary/30"
+                          : "hover:bg-accent"
+                      }`}
+                    >
+                      <span className="text-lg mt-0.5">{tmpl.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">{tmpl.name}</span>
+                          {tmpl.hasIndex && <Badge variant="secondary" className="text-[9px] px-1 py-0">אינדקס</Badge>}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">{tmpl.description}</p>
+                      </div>
+                      {selectedTemplate === tmpl.id && <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-1" />}
+                    </button>
+                  ))}
+                  {TEMPLATES.filter(t => t.requiresAi).length > 0 && (
+                    <div className="text-[10px] font-semibold text-muted-foreground px-2 py-1 uppercase tracking-wider mt-1 border-t pt-2">עם AI</div>
+                  )}
+                  {TEMPLATES.filter(t => t.requiresAi).map(tmpl => (
+                    <button
+                      key={tmpl.id}
+                      onClick={() => { setSelectedTemplate(tmpl.id); setShowTemplateSelector(false); }}
+                      className={`w-full flex items-start gap-2.5 p-2.5 rounded-md text-right transition-colors ${
+                        selectedTemplate === tmpl.id
+                          ? "bg-primary/10 border border-primary/30"
+                          : "hover:bg-accent"
+                      }`}
+                    >
+                      <span className="text-lg mt-0.5">{tmpl.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">{tmpl.name}</span>
+                          <Badge className="text-[9px] px-1.5 py-0 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-0">AI</Badge>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">{tmpl.description}</p>
+                      </div>
+                      {selectedTemplate === tmpl.id && <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-1" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div className="flex gap-2 flex-wrap">
-              <Button onClick={handleFormat} disabled={!rawText.trim() || isProcessing || isAiProcessing} className="flex-1">
-                {isProcessing ? <Loader2 className="h-4 w-4 ml-2 animate-spin" /> : <Paintbrush className="h-4 w-4 ml-2" />}
-                עצב (Parser)
-              </Button>
-              <Button onClick={handleAiEnhance} disabled={!rawText.trim() || isProcessing || isAiProcessing} variant="secondary" className="flex-1">
-                {isAiProcessing ? <Loader2 className="h-4 w-4 ml-2 animate-spin" /> : <Sparkles className="h-4 w-4 ml-2" />}
-                {isAiProcessing ? aiProgress : "שפר עם AI"}
-              </Button>
+              {TEMPLATES.find(t => t.id === selectedTemplate)?.requiresAi ? (
+                <Button onClick={handleAiEnhance} disabled={!rawText.trim() || isProcessing || isAiProcessing} className="flex-1">
+                  {isAiProcessing ? <Loader2 className="h-4 w-4 ml-2 animate-spin" /> : <Sparkles className="h-4 w-4 ml-2" />}
+                  {isAiProcessing ? aiProgress : `עצב עם AI — ${TEMPLATES.find(t => t.id === selectedTemplate)?.name}`}
+                </Button>
+              ) : (
+                <Button onClick={handleFormat} disabled={!rawText.trim() || isProcessing || isAiProcessing} className="flex-1">
+                  {isProcessing ? <Loader2 className="h-4 w-4 ml-2 animate-spin" /> : <Paintbrush className="h-4 w-4 ml-2" />}
+                  עצב — {TEMPLATES.find(t => t.id === selectedTemplate)?.name}
+                </Button>
+              )}
+              {!TEMPLATES.find(t => t.id === selectedTemplate)?.requiresAi && (
+                <Button onClick={handleAiEnhance} disabled={!rawText.trim() || isProcessing || isAiProcessing} variant="secondary" size="sm">
+                  {isAiProcessing ? <Loader2 className="h-4 w-4 ml-1 animate-spin" /> : <Sparkles className="h-4 w-4 ml-1" />}
+                  AI
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
