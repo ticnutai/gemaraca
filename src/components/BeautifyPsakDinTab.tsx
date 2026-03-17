@@ -100,6 +100,10 @@ const BeautifyPsakDinTab = () => {
   // --- Template selection ---
   const [selectedTemplate, setSelectedTemplate] = useState<string>("classic");
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+  const selectedTemplateInfo = useMemo(
+    () => TEMPLATES.find(t => t.id === selectedTemplate) ?? TEMPLATES[0],
+    [selectedTemplate],
+  );
 
   // --- DB Picker state ---
   const [showDbPicker, setShowDbPicker] = useState(false);
@@ -520,6 +524,30 @@ const BeautifyPsakDinTab = () => {
     }
   }, [rawText, toast, selectedTemplate]);
 
+  const handleTemplateChange = useCallback((templateId: string) => {
+    setSelectedTemplate(templateId);
+    if (!rawText.trim() || !htmlResult) return;
+
+    const tmpl = TEMPLATES.find(t => t.id === templateId);
+    if (tmpl?.requiresAi) {
+      toast({
+        title: "תבנית AI נבחרה",
+        description: "לחצו על כפתור AI כדי לעדכן את התצוגה בתבנית זו",
+      });
+      return;
+    }
+
+    try {
+      const parsed = parsePsakDinText(rawText);
+      const html = generateFromTemplate(templateId, parsed);
+      setHtmlResult(html);
+      setViewMode("preview");
+      toast({ title: "התצוגה עודכנה", description: `הוחלפה לתבנית "${tmpl?.name || "קלאסי"}"` });
+    } catch {
+      toast({ title: "שגיאה", description: "לא ניתן לעדכן תבנית לתצוגה הנוכחית", variant: "destructive" });
+    }
+  }, [rawText, htmlResult, toast]);
+
   // ===== SINGLE AI ENHANCE =====
   const handleAiEnhance = useCallback(async () => {
     if (!rawText.trim()) {
@@ -811,6 +839,29 @@ const BeautifyPsakDinTab = () => {
             הדביקו טקסט, העלו קובץ, או בחרו מהמאגר — ניתן לעצב כמה פסקי דין במקביל
           </p>
         </div>
+        <div className="w-[200px] hidden md:block">
+          <Select value={selectedTemplate} onValueChange={handleTemplateChange}>
+            <SelectTrigger className="h-9">
+              <SelectValue>
+                <span className="inline-flex items-center gap-1.5 text-sm">
+                  <LayoutTemplate className="h-3.5 w-3.5" />
+                  <span>{selectedTemplateInfo.icon} {selectedTemplateInfo.name}</span>
+                </span>
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {TEMPLATES.map(tmpl => (
+                <SelectItem key={tmpl.id} value={tmpl.id}>
+                  <span className="inline-flex items-center gap-2">
+                    <span>{tmpl.icon}</span>
+                    <span>{tmpl.name}</span>
+                    {tmpl.requiresAi && <span className="text-[10px] text-muted-foreground">AI</span>}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <Button variant="outline" onClick={openDbPicker}>
           <Database className="h-4 w-4 ml-2" />
           טען מהמאגר
@@ -968,12 +1019,12 @@ const BeautifyPsakDinTab = () => {
                   <LayoutTemplate className="h-4 w-4 text-primary" />
                   <span className="font-medium">תבנית עיצוב:</span>
                   <span className="text-muted-foreground">
-                    {TEMPLATES.find(t => t.id === selectedTemplate)?.icon}{" "}
-                    {TEMPLATES.find(t => t.id === selectedTemplate)?.name}
+                    {selectedTemplateInfo.icon}{" "}
+                    {selectedTemplateInfo.name}
                   </span>
                 </div>
                 <Badge variant="outline" className="text-[10px]">
-                  {TEMPLATES.find(t => t.id === selectedTemplate)?.requiresAi ? "AI" : "מקומי"}
+                  {selectedTemplateInfo.requiresAi ? "AI" : "מקומי"}
                 </Badge>
               </button>
 
@@ -1067,6 +1118,29 @@ const BeautifyPsakDinTab = () => {
                 )}
               </h3>
               <div className="flex gap-2 flex-wrap">
+                <div className="w-[190px]">
+                  <Select value={selectedTemplate} onValueChange={handleTemplateChange}>
+                    <SelectTrigger className="h-9">
+                      <SelectValue>
+                        <span className="inline-flex items-center gap-1.5 text-sm">
+                          <LayoutTemplate className="h-3.5 w-3.5" />
+                          <span>{selectedTemplateInfo.icon} {selectedTemplateInfo.name}</span>
+                        </span>
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TEMPLATES.map(tmpl => (
+                        <SelectItem key={tmpl.id} value={tmpl.id}>
+                          <span className="inline-flex items-center gap-2">
+                            <span>{tmpl.icon}</span>
+                            <span>{tmpl.name}</span>
+                            {tmpl.requiresAi && <span className="text-[10px] text-muted-foreground">AI</span>}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <Button variant={viewMode === "preview" ? "default" : "outline"} size="sm" onClick={() => setViewMode("preview")}>
                   <Eye className="h-3 w-3 ml-1" />
                   תצוגה

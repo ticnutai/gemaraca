@@ -637,6 +637,15 @@ export default function PsakeiDinDafPanel({
               <EmbeddedDocViewer
                 url={selectedPsak.source_url}
                 title={selectedPsak.title}
+                psakData={{
+                  title: selectedPsak.title,
+                  court: selectedPsak.court,
+                  year: selectedPsak.year,
+                  caseNumber: selectedPsak.case_number,
+                  summary: selectedPsak.summary,
+                  fullText: selectedPsak.full_text,
+                  tags: selectedPsak.tags,
+                }}
                 onClose={() => setEmbeddedPdfOpen(false)}
                 onSwitchToRegular={() => { setEmbeddedPdfOpen(false); setDialogOpen(true); }}
                 initialStrategy={defaultViewer === 'google-viewer' ? 'google-viewer' : defaultViewer === 'embedpdf' ? 'embedpdf' : defaultViewer === 'embedded-pdf' ? 'direct' : 'google-viewer'}

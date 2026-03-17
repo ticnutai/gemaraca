@@ -17,6 +17,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -31,6 +38,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getCachedBeautified, cacheBeautified, cachePsak } from "@/lib/psakCache";
+import { parsePsakDinText } from "@/lib/psakDinParser";
+import { TEMPLATES, generateFromTemplate } from "@/lib/psakDinTemplates";
 
 const VIEWER_TEXT_SETTINGS_KEY = 'psak-din-viewer-text-settings';
 
@@ -97,6 +106,17 @@ const plainTextToHtml = (value: string) => {
   return escapeHtml(value).replace(/\n/g, "<br>");
 };
 
+const stripHtmlToText = (input: string): string => {
+  if (!/<[a-z][\s\S]*>/i.test(input)) return input;
+  const doc = new DOMParser().parseFromString(input, "text/html");
+  doc.querySelectorAll("style, script, link, meta, title, head").forEach(el => el.remove());
+  doc.querySelectorAll("p, div, br, h1, h2, h3, h4, h5, h6, li, tr, hr, blockquote").forEach(el => {
+    el.insertAdjacentText("beforebegin", "\n");
+  });
+  const text = doc.body?.textContent || "";
+  return text.replace(/[ \t]+/g, " ").replace(/\n[ \t]*/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+};
+
 interface PsakDinViewDialogProps {
   psak: {
     id?: string;
@@ -158,7 +178,12 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
   const [beautifiedHtml, setBeautifiedHtml] = useState<string | null>(null);
   const [isBeautifying, setIsBeautifying] = useState(false);
   const [isSavingBeautified, setIsSavingBeautified] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("classic");
   const beautifyIframeRef = useRef<HTMLIFrameElement>(null);
+  const selectedTemplateInfo = useMemo(
+    () => TEMPLATES.find(t => t.id === selectedTemplate) ?? TEMPLATES[0],
+    [selectedTemplate],
+  );
 
   useEffect(() => {
     localStorage.setItem(VIEWER_TEXT_SETTINGS_KEY, JSON.stringify(textSettings));
@@ -170,6 +195,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
       const sourceUrl = psak.source_url || psak.sourceUrl;
       setActiveTab(sourceUrl ? "preview" : "info");
       setIsEditing(false);
+      setSelectedTemplate("classic");
       // Try loading cached beautified HTML
       setBeautifiedHtml(null);
       if (psak.id) {
@@ -334,7 +360,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
   }, [syncRichEditorToState]);
 
   // ── Beautify psak din (streaming) ──
-  const handleBeautify = useCallback(async () => {
+  const handleBeautify = useCallback(async (mode: "full" | "summary" = "full") => {
     if (!psak) return;
     setIsBeautifying(true);
     setActiveTab("beautified");
@@ -361,6 +387,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
           summary: psak.summary,
           fullText: psak.full_text || psak.fullText,
           tags: psak.tags,
+          ...(mode === "summary" ? { mode: "summary" } : {}),
         }),
       });
 
@@ -417,6 +444,49 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
       setIsBeautifying(false);
     }
   }, [psak]);
+
+  const applyLocalTemplate = useCallback((templateId: string) => {
+    if (!psak) return;
+    const baseText = stripHtmlToText(psak.full_text || psak.fullText || psak.summary || "");
+    if (!baseText.trim()) {
+      toast.error("לא נמצא טקסט לעיצוב");
+      return;
+    }
+
+    try {
+      const parsed = parsePsakDinText(baseText);
+      if (!parsed.title) parsed.title = psak.title;
+      if (!parsed.court && psak.court) parsed.court = psak.court;
+      if (!parsed.year && psak.year) parsed.year = psak.year;
+      if (!parsed.caseNumber && (psak.case_number || psak.caseNumber)) {
+        parsed.caseNumber = psak.case_number || psak.caseNumber;
+      }
+      if ((!parsed.summary || parsed.summary.length < 20) && psak.summary) {
+        parsed.summary = psak.summary;
+      }
+
+      const html = generateFromTemplate(templateId, parsed);
+      setBeautifiedHtml(html);
+      setActiveTab("beautified");
+      toast.success(`התבנית הוחלפה ל-${TEMPLATES.find(t => t.id === templateId)?.name || "קלאסי"}`);
+    } catch {
+      toast.error("שגיאה בהחלת תבנית על פסק הדין");
+    }
+  }, [psak]);
+
+  const applySelectedTemplate = useCallback(async (templateId: string) => {
+    const tmpl = TEMPLATES.find(t => t.id === templateId);
+    if (tmpl?.requiresAi) {
+      await handleBeautify(templateId === "ai-summary" ? "summary" : "full");
+      return;
+    }
+    applyLocalTemplate(templateId);
+  }, [applyLocalTemplate, handleBeautify]);
+
+  const handleTemplateSelection = useCallback((templateId: string) => {
+    setSelectedTemplate(templateId);
+    void applySelectedTemplate(templateId);
+  }, [applySelectedTemplate]);
 
   const handlePrintBeautified = useCallback(() => {
     if (!beautifyIframeRef.current?.contentWindow) return;
@@ -1332,7 +1402,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
                 <Button
                   size="lg"
                   className="gap-2 bg-gradient-to-l from-[#0B1F5B] to-[#1a3580] text-white border-2 border-[#D4AF37] hover:opacity-90 px-8"
-                  onClick={handleBeautify}
+                  onClick={() => void applySelectedTemplate(selectedTemplate)}
                   disabled={isBeautifying}
                 >
                   {isBeautifying ? (
@@ -1343,7 +1413,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
                   ) : (
                     <>
                       <Sparkles className="w-5 h-5" />
-                      עצב פסק דין ✨
+                      עצב פסק דין ({selectedTemplateInfo.name}) ✨
                     </>
                   )}
                 </Button>
@@ -1352,15 +1422,38 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
               <div className="h-full flex flex-col">
                 {/* Toolbar */}
                 <div className="flex items-center gap-2 mb-2 flex-wrap">
+                  <div className="w-[210px]">
+                    <Select value={selectedTemplate} onValueChange={handleTemplateSelection}>
+                      <SelectTrigger className="h-8">
+                        <SelectValue>
+                          <span className="inline-flex items-center gap-1.5 text-xs">
+                            <span>{selectedTemplateInfo.icon}</span>
+                            <span>{selectedTemplateInfo.name}</span>
+                          </span>
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {TEMPLATES.map(tmpl => (
+                          <SelectItem key={tmpl.id} value={tmpl.id}>
+                            <span className="inline-flex items-center gap-2">
+                              <span>{tmpl.icon}</span>
+                              <span>{tmpl.name}</span>
+                              {tmpl.requiresAi && <span className="text-[10px] text-muted-foreground">AI</span>}
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <Button
                     variant="outline"
                     size="sm"
                     className="gap-1"
-                    onClick={handleBeautify}
+                    onClick={() => void applySelectedTemplate(selectedTemplate)}
                     disabled={isBeautifying}
                   >
                     {isBeautifying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                    עצב מחדש
+                    החל מחדש ({selectedTemplateInfo.name})
                   </Button>
                   <Button
                     variant="outline"
@@ -1485,11 +1578,11 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
             variant="outline"
             size="sm"
             className="gap-2 bg-gradient-to-l from-[#D4AF37]/10 to-[#D4AF37]/5 border-[#D4AF37]/50 text-[#0B1F5B] hover:bg-[#D4AF37]/20"
-            onClick={handleBeautify}
+            onClick={() => void applySelectedTemplate(selectedTemplate)}
             disabled={isBeautifying}
           >
             {isBeautifying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 text-[#D4AF37]" />}
-            {isBeautifying ? "מעצב..." : "עצב פסק דין"}
+            {isBeautifying ? "מעצב..." : `עצב פסק דין (${selectedTemplateInfo.name})`}
           </Button>
           {sourceUrl && (
             <>

@@ -1,6 +1,13 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -42,11 +49,14 @@ import {
   BookmarkCheck,
   PanelRightOpen,
   PanelRightClose,
+  LayoutTemplate,
   Save,
   Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { parsePsakDinText } from "@/lib/psakDinParser";
+import { TEMPLATES, generateFromTemplate } from "@/lib/psakDinTemplates";
 
 /* ─── strategy types ─── */
 type Strategy = "direct" | "google-viewer" | "allorigins" | "embedpdf";
@@ -68,6 +78,15 @@ const DEVICE_PRESETS = [
 interface EmbeddedDocViewerProps {
   url: string;
   title: string;
+  psakData?: {
+    title?: string;
+    court?: string;
+    year?: number;
+    caseNumber?: string;
+    summary?: string;
+    fullText?: string;
+    tags?: string[];
+  };
   onClose: () => void;
   onSwitchToRegular?: () => void;
   initialStrategy?: Strategy;
@@ -75,7 +94,18 @@ interface EmbeddedDocViewerProps {
 
 export type { Strategy };
 
-export default function EmbeddedDocViewer({ url, title, onClose, onSwitchToRegular, initialStrategy = "google-viewer" }: EmbeddedDocViewerProps) {
+const stripHtmlToText = (input: string): string => {
+  if (!/<[a-z][\s\S]*>/i.test(input)) return input;
+  const doc = new DOMParser().parseFromString(input, "text/html");
+  doc.querySelectorAll("style, script, link, meta, title, head").forEach(el => el.remove());
+  doc.querySelectorAll("p, div, br, h1, h2, h3, h4, h5, h6, li, tr, hr, blockquote").forEach(el => {
+    el.insertAdjacentText("beforebegin", "\n");
+  });
+  const text = doc.body?.textContent || "";
+  return text.replace(/[ \t]+/g, " ").replace(/\n[ \t]*/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+};
+
+export default function EmbeddedDocViewer({ url, title, psakData, onClose, onSwitchToRegular, initialStrategy = "google-viewer" }: EmbeddedDocViewerProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const embedRef = useRef<HTMLEmbedElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -101,6 +131,45 @@ export default function EmbeddedDocViewer({ url, title, onClose, onSwitchToRegul
   const [loadProgress, setLoadProgress] = useState(0);
   const [retryCount, setRetryCount] = useState(0);
   const [devicePreset, setDevicePreset] = useState<string>("auto");
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("classic");
+  const [formattedHtml, setFormattedHtml] = useState<string>("");
+  const [formattedMode, setFormattedMode] = useState(false);
+
+  const selectedTemplateInfo = TEMPLATES.find(t => t.id === selectedTemplate) ?? TEMPLATES[0];
+  const hasTemplateData = Boolean((psakData?.fullText || psakData?.summary || "").trim());
+
+  const applyLocalTemplate = useCallback((templateId: string) => {
+    if (!hasTemplateData) return;
+    const baseText = stripHtmlToText(psakData?.fullText || psakData?.summary || "");
+    if (!baseText.trim()) return;
+
+    try {
+      const parsed = parsePsakDinText(baseText);
+      if (!parsed.title && psakData?.title) parsed.title = psakData.title;
+      if (!parsed.court && psakData?.court) parsed.court = psakData.court;
+      if (!parsed.year && psakData?.year) parsed.year = psakData.year;
+      if (!parsed.caseNumber && psakData?.caseNumber) parsed.caseNumber = psakData.caseNumber;
+      if ((!parsed.summary || parsed.summary.length < 20) && psakData?.summary) {
+        parsed.summary = psakData.summary;
+      }
+      const html = generateFromTemplate(templateId, parsed);
+      setFormattedHtml(html);
+      setFormattedMode(true);
+      toast.success(`התצוגה עודכנה לתבנית ${TEMPLATES.find(t => t.id === templateId)?.name || "קלאסי"}`);
+    } catch {
+      toast.error("לא ניתן להחיל תבנית על מסמך זה");
+    }
+  }, [hasTemplateData, psakData]);
+
+  const handleTemplateChange = useCallback((templateId: string) => {
+    setSelectedTemplate(templateId);
+    const tmpl = TEMPLATES.find(t => t.id === templateId);
+    if (tmpl?.requiresAi) {
+      toast("תבניות AI זמינות בצפיין הרגיל");
+      return;
+    }
+    applyLocalTemplate(templateId);
+  }, [applyLocalTemplate]);
 
   // Build URL based on strategy
   const getStrategyUrl = useCallback((strat: Strategy, sourceUrl: string) => {
@@ -288,6 +357,31 @@ export default function EmbeddedDocViewer({ url, title, onClose, onSwitchToRegul
 
         {/* Center: zoom & tools */}
         <div className="flex items-center gap-1">
+          {hasTemplateData && (
+            <div className="w-[180px] ml-1">
+              <Select value={selectedTemplate} onValueChange={handleTemplateChange}>
+                <SelectTrigger className="h-7 text-[10px]">
+                  <SelectValue>
+                    <span className="inline-flex items-center gap-1">
+                      <LayoutTemplate className="w-3 h-3" />
+                      <span>{selectedTemplateInfo.icon} {selectedTemplateInfo.name}</span>
+                    </span>
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {TEMPLATES.map(tmpl => (
+                    <SelectItem key={tmpl.id} value={tmpl.id}>
+                      <span className="inline-flex items-center gap-2 text-xs">
+                        <span>{tmpl.icon}</span>
+                        <span>{tmpl.name}</span>
+                        {tmpl.requiresAi && <span className="text-[10px] text-muted-foreground">AI</span>}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <ToolBtn icon={ZoomOut} tip="הקטן" onClick={handleZoomOut} />
           <div className="w-20 mx-1">
             <Slider value={[zoom]} min={30} max={200} step={5} onValueChange={v => setZoom(v[0])} />
@@ -345,6 +439,24 @@ export default function EmbeddedDocViewer({ url, title, onClose, onSwitchToRegul
           <ToolBtn icon={Printer} tip="הדפסה" onClick={handlePrint} />
           <ToolBtn icon={Download} tip="הורדה" onClick={handleDownload} />
           <ToolBtn icon={ExternalLink} tip="פתח בלשונית חדשה" onClick={() => window.open(url, "_blank", "noopener,noreferrer")} />
+          {hasTemplateData && (
+            <ToolBtn
+              icon={FileText}
+              tip={formattedMode ? "חזרה למסמך המקור" : "תצוגה מעוצבת"}
+              onClick={() => {
+                if (formattedMode) {
+                  setFormattedMode(false);
+                  return;
+                }
+                const tmpl = TEMPLATES.find(t => t.id === selectedTemplate);
+                if (tmpl?.requiresAi) {
+                  toast("בחרו תבנית מקומית או עברו לצפיין הרגיל עבור AI");
+                  return;
+                }
+                applyLocalTemplate(selectedTemplate);
+              }}
+            />
+          )}
           <div className="w-px h-5 bg-border mx-1" />
           <ToolBtn icon={darkMode ? Sun : Moon} tip={darkMode ? "מצב רגיל" : "מצב כהה"} onClick={() => setDarkMode(d => !d)} />
           <ToolBtn icon={isBookmarked ? BookmarkCheck : Bookmark} tip={isBookmarked ? "הסר סימניה" : "הוסף לסימניות"} onClick={toggleBookmark} />
@@ -370,14 +482,14 @@ export default function EmbeddedDocViewer({ url, title, onClose, onSwitchToRegul
       </div>
 
       {/* ═══ Progress bar ═══ */}
-      {loadState === "loading" && (
+      {!formattedMode && loadState === "loading" && (
         <Progress value={loadProgress} className="h-0.5 rounded-none" />
       )}
 
       {/* ═══ Content area ═══ */}
       <div className="flex-1 min-h-0 relative overflow-auto bg-muted/5">
         {/* Loading overlay */}
-        {loadState === "loading" && (
+        {!formattedMode && loadState === "loading" && (
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
             <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
             <p className="text-sm font-semibold text-foreground mb-1">טוען את המסמך...</p>
@@ -395,7 +507,7 @@ export default function EmbeddedDocViewer({ url, title, onClose, onSwitchToRegul
         )}
 
         {/* Error state */}
-        {loadState === "error" && (
+        {!formattedMode && loadState === "error" && (
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background">
             <AlertTriangle className="w-14 h-14 text-amber-500/60 mb-4" />
             <h3 className="text-base font-bold mb-1">לא ניתן לטעון את המסמך</h3>
@@ -433,7 +545,20 @@ export default function EmbeddedDocViewer({ url, title, onClose, onSwitchToRegul
             maxWidth: "100%",
             margin: devicePreset !== "auto" && devicePreset !== "desktop" ? "0 auto" : undefined,
           }}>
-            {strategy === "embedpdf" ? (
+            {formattedMode && formattedHtml ? (
+              <iframe
+                key={`formatted-${selectedTemplate}-${retryCount}`}
+                srcDoc={formattedHtml}
+                className="w-full h-full border-0 bg-white"
+                title={`${title} - formatted`}
+                sandbox="allow-same-origin"
+                style={{
+                  minHeight: zoom < 100 ? `${100 / (zoom / 100)}%` : "100%",
+                  boxShadow: devicePreset !== "auto" && devicePreset !== "desktop" ? "0 0 20px rgba(0,0,0,0.1)" : "none",
+                  borderRadius: devicePreset === "mobile" ? "16px" : devicePreset === "tablet" ? "12px" : "0",
+                }}
+              />
+            ) : strategy === "embedpdf" ? (
               <embed
                 ref={embedRef}
                 key={`embed-${currentUrl}-${retryCount}`}
@@ -450,21 +575,21 @@ export default function EmbeddedDocViewer({ url, title, onClose, onSwitchToRegul
                 }}
               />
             ) : (
-              <iframe
-                ref={iframeRef}
-                key={`${currentUrl}-${retryCount}`}
-                src={currentUrl}
-                className="w-full h-full border-0"
-                title={title}
-                sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-popups-to-escape-sandbox"
-                onLoad={handleIframeLoad}
-                onError={handleIframeError}
-                style={{
-                  minHeight: zoom < 100 ? `${100 / (zoom / 100)}%` : "100%",
-                  boxShadow: devicePreset !== "auto" && devicePreset !== "desktop" ? "0 0 20px rgba(0,0,0,0.1)" : "none",
-                  borderRadius: devicePreset === "mobile" ? "16px" : devicePreset === "tablet" ? "12px" : "0",
-                }}
-              />
+                <iframe
+                  ref={iframeRef}
+                  key={`${currentUrl}-${retryCount}`}
+                  src={currentUrl}
+                  className="w-full h-full border-0"
+                  title={title}
+                  sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-popups-to-escape-sandbox"
+                  onLoad={handleIframeLoad}
+                  onError={handleIframeError}
+                  style={{
+                    minHeight: zoom < 100 ? `${100 / (zoom / 100)}%` : "100%",
+                    boxShadow: devicePreset !== "auto" && devicePreset !== "desktop" ? "0 0 20px rgba(0,0,0,0.1)" : "none",
+                    borderRadius: devicePreset === "mobile" ? "16px" : devicePreset === "tablet" ? "12px" : "0",
+                  }}
+                />
             )}
           </div>
         </div>
