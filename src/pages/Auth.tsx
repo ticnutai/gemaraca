@@ -18,6 +18,51 @@ const REMEMBER_EMAIL_KEY = "gemara-remember-email";
 
 type AuthMode = "signin" | "signup" | "forgot";
 
+type PasswordInputProps = {
+  id: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  show: boolean;
+  onToggle: () => void;
+  isLoading: boolean;
+};
+
+function PasswordInput({
+  id,
+  value,
+  onChange,
+  placeholder,
+  show,
+  onToggle,
+  isLoading,
+}: PasswordInputProps) {
+  return (
+    <div className="relative">
+      <Input
+        id={id}
+        type={show ? "text" : "password"}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        required
+        disabled={isLoading}
+        className="pe-10"
+        autoComplete={id === "password" ? "current-password" : "new-password"}
+      />
+      <button
+        type="button"
+        onClick={onToggle}
+        onMouseDown={e => e.preventDefault()}
+        className="absolute start-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+        aria-label={show ? "הסתר סיסמה" : "הצג סיסמה"}
+      >
+        {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+      </button>
+    </div>
+  );
+}
+
 export default function Auth() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
@@ -147,34 +192,6 @@ export default function Auth() {
     ? "צור חשבון חדש כדי לגשת לכל התכונות"
     : "נשלח לך קישור לאיפוס הסיסמה";
 
-  const PasswordInput = ({
-    id, value, onChange, placeholder, show, onToggle,
-  }: {
-    id: string; value: string; onChange: (v: string) => void;
-    placeholder: string; show: boolean; onToggle: () => void;
-  }) => (
-    <div className="relative">
-      <Input
-        id={id}
-        type={show ? "text" : "password"}
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        placeholder={placeholder}
-        required
-        disabled={isLoading}
-        className="pe-10"
-      />
-      <button
-        type="button"
-        onClick={onToggle}
-        className="absolute start-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-        tabIndex={-1}
-      >
-        {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-      </button>
-    </div>
-  );
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4" dir="rtl">
       <Card className="w-full max-w-md overflow-hidden">
@@ -234,6 +251,7 @@ export default function Auth() {
                   placeholder={mode === "signup" ? "לפחות 6 תווים" : "••••••••"}
                   show={showPassword}
                   onToggle={() => setShowPassword(p => !p)}
+                  isLoading={isLoading}
                 />
               </div>
             )}
@@ -249,6 +267,7 @@ export default function Auth() {
                   placeholder="הקלד שוב את הסיסמה"
                   show={showConfirmPassword}
                   onToggle={() => setShowConfirmPassword(p => !p)}
+                  isLoading={isLoading}
                 />
               </div>
             )}
