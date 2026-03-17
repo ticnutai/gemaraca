@@ -1,0 +1,243 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - region "Notifications (F8)":
+    - list
+  - region "Notifications alt+T"
+  - generic [ref=e3]:
+    - button "פיתוח - מיגרציות" [ref=e4] [cursor=pointer]:
+      - img
+    - button [ref=e5] [cursor=pointer]:
+      - img
+  - button "מורה AI" [ref=e6]:
+    - img
+  - generic [ref=e8]:
+    - banner [ref=e9]:
+      - generic [ref=e10]:
+        - generic [ref=e11]:
+          - button "פתח סיידבר" [ref=e12] [cursor=pointer]:
+            - img
+          - heading "גמרא להלכה" [level=1] [ref=e13]
+        - navigation [ref=e14]:
+          - button "גמרא" [ref=e15] [cursor=pointer]:
+            - img [ref=e16]
+            - generic [ref=e18]: גמרא
+          - button "פסקי דין" [ref=e19] [cursor=pointer]:
+            - img [ref=e20]
+            - generic [ref=e24]: פסקי דין
+          - button "אינדקס חכם" [ref=e25] [cursor=pointer]:
+            - img [ref=e26]
+            - generic [ref=e28]: אינדקס חכם
+          - button "אינדקס מתקדם" [ref=e29] [cursor=pointer]:
+            - img [ref=e30]
+            - generic [ref=e33]: אינדקס מתקדם
+          - button "חיפוש" [ref=e34] [cursor=pointer]:
+            - img [ref=e35]
+            - generic [ref=e38]: חיפוש
+          - button "העלאה" [ref=e39] [cursor=pointer]:
+            - img [ref=e40]
+            - generic [ref=e43]: העלאה
+          - button "הורדה" [ref=e44] [cursor=pointer]:
+            - img [ref=e45]
+            - generic [ref=e47]: הורדה
+          - button "עוד" [ref=e48] [cursor=pointer]:
+            - img [ref=e49]
+            - generic [ref=e53]: עוד
+        - generic [ref=e54]:
+          - button "התחבר" [ref=e55] [cursor=pointer]:
+            - img
+            - generic [ref=e56]: התחבר
+          - button "הגדרות טקסט" [ref=e57] [cursor=pointer]:
+            - img
+          - button [ref=e58] [cursor=pointer]:
+            - img
+    - generic [ref=e59]:
+      - main [ref=e61]:
+        - generic [ref=e63]:
+          - generic [ref=e66]:
+            - button "רשת" [ref=e67] [cursor=pointer]:
+              - img [ref=e68]
+              - generic [ref=e73]: רשת
+            - button "רשימה" [ref=e74] [cursor=pointer]:
+              - img [ref=e75]
+              - generic [ref=e76]: רשימה
+            - button "עץ" [ref=e77] [cursor=pointer]:
+              - img [ref=e78]
+              - generic [ref=e82]: עץ
+            - button "סייר" [ref=e83] [cursor=pointer]:
+              - img [ref=e84]
+              - generic [ref=e87]: סייר
+          - generic [ref=e88]:
+            - button "זרעים 1 מסכתות" [ref=e89] [cursor=pointer]:
+              - img [ref=e90]
+              - generic [ref=e92]: זרעים
+              - generic [ref=e93]: 1 מסכתות
+            - button "מועד 12 מסכתות" [ref=e94] [cursor=pointer]:
+              - img [ref=e95]
+              - generic [ref=e97]: מועד
+              - generic [ref=e98]: 12 מסכתות
+            - button "נשים 7 מסכתות" [ref=e99] [cursor=pointer]:
+              - img [ref=e100]
+              - generic [ref=e102]: נשים
+              - generic [ref=e103]: 7 מסכתות
+            - button "נזיקין 8 מסכתות" [ref=e104] [cursor=pointer]:
+              - img [ref=e105]
+              - generic [ref=e107]: נזיקין
+              - generic [ref=e108]: 8 מסכתות
+            - button "קדשים 9 מסכתות" [ref=e109] [cursor=pointer]:
+              - img [ref=e110]
+              - generic [ref=e112]: קדשים
+              - generic [ref=e113]: 9 מסכתות
+            - button "טהרות 1 מסכתות" [ref=e114] [cursor=pointer]:
+              - img [ref=e115]
+              - generic [ref=e117]: טהרות
+              - generic [ref=e118]: 1 מסכתות
+      - generic [ref=e119]:
+        - generic [ref=e121]:
+          - generic [ref=e122]:
+            - heading "ניווט ראשי" [level=2] [ref=e123]
+            - paragraph [ref=e124]: מסכתות ופסקי דין
+          - button "נעץ סיידבר" [ref=e125] [cursor=pointer]:
+            - img
+        - generic [ref=e126]:
+          - generic [ref=e127]:
+            - generic [ref=e128]: תפריט
+            - list [ref=e130]:
+              - listitem [ref=e131]:
+                - button "גמרא" [ref=e132] [cursor=pointer]:
+                  - img [ref=e133]
+                  - generic [ref=e135]: גמרא
+              - listitem [ref=e136]:
+                - button "פסקי דין" [ref=e137] [cursor=pointer]:
+                  - img [ref=e138]
+                  - generic [ref=e142]: פסקי דין
+              - listitem [ref=e143]:
+                - button "חיפוש פסקי דין" [ref=e144] [cursor=pointer]:
+                  - img [ref=e145]
+                  - generic [ref=e148]: חיפוש פסקי דין
+              - listitem [ref=e149]:
+                - button "העלאה" [ref=e150] [cursor=pointer]:
+                  - img [ref=e151]
+                  - generic [ref=e154]: העלאה
+              - listitem [ref=e155]:
+                - button "הורדה" [ref=e156] [cursor=pointer]:
+                  - img [ref=e157]
+                  - generic [ref=e159]: הורדה
+              - listitem [ref=e160]:
+                - button "אינדקס מתקדם" [ref=e161] [cursor=pointer]:
+                  - img [ref=e162]
+                  - generic [ref=e165]: אינדקס מתקדם
+              - listitem [ref=e166]:
+                - button "הורדת ש\"ס" [ref=e167] [cursor=pointer]:
+                  - img [ref=e168]
+                  - generic [ref=e172]: הורדת ש"ס
+              - listitem [ref=e173]:
+                - button "צפיין PDF" [ref=e174] [cursor=pointer]:
+                  - img [ref=e175]
+                  - generic [ref=e178]: צפיין PDF
+              - listitem [ref=e179]:
+                - button "צפיין EmbedPDF" [ref=e180] [cursor=pointer]:
+                  - img [ref=e181]
+                  - generic [ref=e185]: צפיין EmbedPDF
+              - listitem [ref=e186]:
+                - button "לוח שבועי חדש" [ref=e187] [cursor=pointer]:
+                  - img [ref=e188]
+                  - generic [ref=e190]: לוח שבועי
+                  - generic [ref=e191]: חדש
+              - listitem [ref=e192]:
+                - button "מילון מונחים חדש" [ref=e193] [cursor=pointer]:
+                  - img [ref=e194]
+                  - generic [ref=e197]: מילון מונחים
+                  - generic [ref=e198]: חדש
+              - listitem [ref=e199]:
+                - button "מפת חום הש\"ס חדש" [ref=e200] [cursor=pointer]:
+                  - img [ref=e201]
+                  - generic [ref=e203]: מפת חום הש"ס
+                  - generic [ref=e204]: חדש
+              - listitem [ref=e205]:
+                - button "כרטיסיות חזרה חדש" [ref=e206] [cursor=pointer]:
+                  - img [ref=e207]
+                  - generic [ref=e211]: כרטיסיות חזרה
+                  - generic [ref=e212]: חדש
+              - listitem [ref=e213]:
+                - button "מצב מבחן חדש" [ref=e214] [cursor=pointer]:
+                  - img [ref=e215]
+                  - generic [ref=e218]: מצב מבחן
+                  - generic [ref=e219]: חדש
+              - listitem [ref=e220]:
+                - button "סטטיסטיקות חדש" [ref=e221] [cursor=pointer]:
+                  - img [ref=e222]
+                  - generic [ref=e224]: סטטיסטיקות
+                  - generic [ref=e225]: חדש
+              - listitem [ref=e226]:
+                - button "המלצות למידה חדש" [ref=e227] [cursor=pointer]:
+                  - img [ref=e228]
+                  - generic [ref=e231]: המלצות למידה
+                  - generic [ref=e232]: חדש
+              - listitem [ref=e233]:
+                - button "עיצוב פסקי דין חדש" [ref=e234] [cursor=pointer]:
+                  - img [ref=e235]
+                  - generic [ref=e239]: עיצוב פסקי דין
+                  - generic [ref=e240]: חדש
+              - listitem [ref=e241]:
+                - button "אינדקס חכם" [ref=e242] [cursor=pointer]:
+                  - img [ref=e243]
+                  - generic [ref=e253]: אינדקס חכם
+              - listitem [ref=e254]:
+                - button "חיפוש גלובלי" [ref=e255] [cursor=pointer]:
+                  - img [ref=e256]
+                  - generic [ref=e259]: חיפוש גלובלי
+              - listitem [ref=e260]:
+                - button "היסטוריית למידה" [ref=e261] [cursor=pointer]:
+                  - img [ref=e262]
+                  - generic [ref=e266]: היסטוריית למידה
+              - listitem [ref=e267]:
+                - button "דף יומי" [ref=e268] [cursor=pointer]:
+                  - img [ref=e269]
+                  - generic [ref=e272]: דף יומי
+              - listitem [ref=e273]:
+                - button "השוואת פסקים" [ref=e274] [cursor=pointer]:
+                  - img [ref=e275]
+                  - generic [ref=e282]: השוואת פסקים
+              - listitem [ref=e283]:
+                - button "גרף ידע" [ref=e284] [cursor=pointer]:
+                  - img [ref=e285]
+                  - generic [ref=e291]: גרף ידע
+          - generic [ref=e292]:
+            - generic [ref=e293]: מסכתות הגמרא
+            - generic [ref=e295]:
+              - button "סדר זרעים 1 מסכתות" [ref=e297] [cursor=pointer]:
+                - generic [ref=e298]: סדר זרעים
+                - generic [ref=e299]:
+                  - generic [ref=e300]: 1 מסכתות
+                  - img [ref=e301]
+              - button "סדר מועד 12 מסכתות" [ref=e304] [cursor=pointer]:
+                - generic [ref=e305]: סדר מועד
+                - generic [ref=e306]:
+                  - generic [ref=e307]: 12 מסכתות
+                  - img [ref=e308]
+              - button "סדר נשים 7 מסכתות" [ref=e311] [cursor=pointer]:
+                - generic [ref=e312]: סדר נשים
+                - generic [ref=e313]:
+                  - generic [ref=e314]: 7 מסכתות
+                  - img [ref=e315]
+              - button "סדר נזיקין 8 מסכתות" [ref=e318] [cursor=pointer]:
+                - generic [ref=e319]: סדר נזיקין
+                - generic [ref=e320]:
+                  - generic [ref=e321]: 8 מסכתות
+                  - img [ref=e322]
+              - button "סדר קדשים 9 מסכתות" [ref=e325] [cursor=pointer]:
+                - generic [ref=e326]: סדר קדשים
+                - generic [ref=e327]:
+                  - generic [ref=e328]: 9 מסכתות
+                  - img [ref=e329]
+              - button "סדר טהרות 1 מסכתות" [ref=e332] [cursor=pointer]:
+                - generic [ref=e333]: סדר טהרות
+                - generic [ref=e334]:
+                  - generic [ref=e335]: 1 מסכתות
+                  - img [ref=e336]
+        - generic [ref=e339]: גמרא להלכה © 2026
+    - button "ניווט מהיר" [ref=e340] [cursor=pointer]:
+      - img [ref=e341]
+```
