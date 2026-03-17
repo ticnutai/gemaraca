@@ -57,6 +57,14 @@ export const TEMPLATES: TemplateInfo[] = [
     hasIndex: true,
   },
   {
+    id: "navy-luxury",
+    name: "יוקרה נייבי",
+    description: "עיצוב יוקרתי נקי: רקע לבן, כותרות ואייקונים בנייבי חזק, מסגרת לבנה אלגנטית",
+    requiresAi: false,
+    icon: "💎",
+    hasIndex: true,
+  },
+  {
     id: "ai-enhanced",
     name: "שיפור AI מלא",
     description: "AI מעצב, מסכם ומשפר את הטקסט, מוסיף מבנה מקצועי",
@@ -967,6 +975,107 @@ function generateAcademicHtml(data: ParsedPsakDin): string {
 </html>`;
 }
 
+// ═════════════════════════════════════════════════════
+// TEMPLATE: Luxury Navy
+// ═════════════════════════════════════════════════════
+function generateNavyLuxuryHtml(data: ParsedPsakDin): string {
+  const { tocHtml, sectionAnchors } = buildTableOfContents(data);
+
+  const judgesHtml = data.judges.length > 0
+    ? `<ul style="list-style-type:none;padding:0;margin:0;">${data.judges.map(j => `<li>${esc(j)}</li>`).join("")}</ul>`
+    : "";
+
+  const sectionsHtml = data.sections.map((section, i) => {
+    const anchor = sectionAnchors.get(i) || `sec-${i}`;
+    const contentHtml = renderSectionContent(section.content);
+    return `<section class="doc-section" data-search-scope="${anchor}" data-search-label="${esc(section.title)}">
+      <h3 id="${anchor}" class="subsection-title"><span class="icon">◆</span> ${esc(section.title)} <a href="#toc-top" class="back-to-top" title="חזרה לתוכן עניינים">↑</a></h3>
+      <div class="doc-section-content">${contentHtml}</div>
+    </section>`;
+  }).join("\n");
+
+  const fallbackBody = renderBodyText(data);
+
+  return `<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>פסק דין: ${esc(data.title)}</title>
+  <style>
+    body { font-family:'Frank Ruhl Libre','David','Times New Roman',serif; line-height:1.85; color:#0B1F5B; background:#ffffff; margin:0; padding:24px; direction:rtl; text-align:right; }
+    .container { max-width:920px; margin:24px auto; background:#ffffff; border:6px solid #ffffff; outline:2px solid #0B1F5B; box-shadow:0 12px 40px rgba(11,31,91,0.12); padding:42px 56px; border-radius:10px; }
+    .header { text-align:center; margin-bottom:34px; border-bottom:3px solid #0B1F5B; padding-bottom:18px; }
+    .header h1 { color:#0B1F5B; font-size:2.7em; margin:0; font-weight:800; letter-spacing:0.3px; }
+    .header .logo { font-size:1.05em; color:#0B1F5B; margin-top:6px; font-weight:700; }
+    .section-title { color:#0B1F5B; font-size:1.85em; margin-top:34px; margin-bottom:14px; border-bottom:2px solid #0B1F5B; padding-bottom:8px; font-weight:800; }
+    .subsection-title { color:#0B1F5B; font-size:1.35em; margin-top:24px; margin-bottom:10px; font-weight:800; scroll-margin-top:20px; }
+    .details-table { width:100%; border-collapse:collapse; margin-bottom:24px; }
+    .details-table td { padding:10px 0; border-bottom:1px solid #dbe4f1; vertical-align:top; }
+    .details-table td:first-child { font-weight:800; width:160px; color:#0B1F5B; }
+    .paragraph { margin-bottom:14px; text-align:justify; color:#0B1F5B; }
+    .icon { margin-left:8px; color:#0B1F5B; font-weight:900; }
+    .divider { border:none; border-top:1px solid #0B1F5B; opacity:0.25; margin:26px 0; }
+    .footer { text-align:center; margin-top:48px; padding-top:18px; border-top:1px solid #dbe4f1; color:#0B1F5B; font-size:0.9em; font-weight:700; }
+    .signature { text-align:center; margin-top:38px; font-weight:800; color:#0B1F5B; }
+    .signature div { margin-top:10px; }
+    .back-to-top { font-size:0.6em; color:#0B1F5B; text-decoration:none; margin-right:8px; vertical-align:middle; opacity:0.7; }
+    .back-to-top:hover { opacity:1; }
+    .detected-header { color:#0B1F5B; font-size:1.28em; font-weight:800; margin-top:26px; margin-bottom:10px; padding-bottom:6px; border-bottom:2px solid #0B1F5B; }
+    .detected-subheader { color:#0B1F5B; font-size:1.08em; font-weight:800; margin-top:15px; margin-bottom:7px; }
+    .detected-reference { color:#0B1F5B; font-size:0.94em; margin:4px 0; padding-right:20px; font-style:italic; }
+    .detected-quote { margin:12px 28px; padding:10px 18px; border-right:4px solid #0B1F5B; background:#f8fbff; font-style:italic; color:#0B1F5B; }
+    .spacer { height:10px; }
+    ${TOC_CSS}
+    .toc { background:#ffffff; border:1px solid #dbe4f1; }
+    .toc-title { color:#0B1F5B; border-bottom-color:#0B1F5B; }
+    .toc-list li { border-bottom:1px dotted #dbe4f1; }
+    .toc-list li::before { color:#0B1F5B; }
+    .toc-link { color:#0B1F5B; }
+    .toc-link:hover { color:#0B1F5B; text-decoration:underline; }
+    ${SEARCH_WIDGET_CSS}
+    ${PRINT_CSS}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">◇ בית דין רבני ◇</div>
+      <h1>פסק דין</h1>
+      ${data.caseNumber ? `<div style="font-size:1.05em;color:#0B1F5B;">תיק מס' ${esc(data.caseNumber)}</div>` : ""}
+    </div>
+
+    <div id="toc-top"></div>
+    ${tocHtml}
+    ${renderSearchWidget(data)}
+
+    <section class="doc-section" data-search-scope="sec-details" data-search-label="פרטי התיק">
+      <h2 id="sec-details" class="section-title"><span class="icon">◆</span> פרטי התיק</h2>
+      <div class="doc-section-content">
+        <table class="details-table">
+          ${data.title ? `<tr><td><span class="icon">◆</span> כותרת:</td><td>${esc(data.title)}</td></tr>` : ""}
+          ${data.court ? `<tr><td><span class="icon">◆</span> בית הדין:</td><td>${esc(data.court)}</td></tr>` : ""}
+          ${data.date ? `<tr><td><span class="icon">◆</span> תאריך:</td><td>${esc(data.date)}</td></tr>` : ""}
+          ${data.sourceId ? `<tr><td><span class="icon">◆</span> מזהה:</td><td>${esc(data.sourceId)}</td></tr>` : ""}
+          ${data.sourceUrl ? `<tr><td><span class="icon">◆</span> קישור:</td><td><a href="${esc(data.sourceUrl)}" target="_blank">${esc(data.sourceUrl)}</a></td></tr>` : ""}
+        </table>
+      </div>
+    </section>
+
+    ${data.summary ? `<section class="doc-section" data-search-scope="sec-summary" data-search-label="תקציר"><h2 id="sec-summary" class="section-title"><span class="icon">◆</span> תקציר</h2><div class="doc-section-content"><div class="paragraph">${esc(data.summary)}</div></div></section>` : ""}
+    <hr class="divider">
+    <h2 class="section-title"><span class="icon">◆</span> גוף פסק הדין</h2>
+    ${data.topics ? `<div class="paragraph"><strong>נושאים:</strong> ${esc(data.topics)}</div>` : ""}
+    ${sectionsHtml}
+    ${fallbackBody ? `<section class="doc-section" data-search-scope="sec-body" data-search-label="גוף פסק הדין"><div class="doc-section-content">${fallbackBody}</div></section>` : ""}
+    ${judgesHtml ? `<div id="sec-signature" class="signature" data-search-scope="sec-signature" data-search-label="חתימה"><div>חתמו על פסק הדין:</div>${judgesHtml}</div>` : ""}
+    <div class="footer">מסמך זה עוצב אוטומטית • ${new Date().toLocaleDateString("he-IL")}</div>
+  </div>
+  ${SEARCH_WIDGET_SCRIPT}
+</body>
+</html>`;
+}
+
 // ─── Section icon helper ───
 function getSectionIcon(type: string): string {
   switch (type) {
@@ -986,6 +1095,7 @@ function getSectionIcon(type: string): string {
 // ─── Main dispatch ───
 export function generateFromTemplate(templateId: string, data: ParsedPsakDin): string {
   switch (templateId) {
+    case "navy-luxury": return generateNavyLuxuryHtml(data);
     case "modern": return generateModernHtml(data);
     case "indexed": return generateIndexedHtml(data);
     case "academic": return generateAcademicHtml(data);

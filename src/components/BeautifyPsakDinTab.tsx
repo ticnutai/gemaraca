@@ -15,7 +15,7 @@ import {
   Paintbrush, Upload, Download, Sparkles, FileText, Loader2, Eye, Code,
   RotateCcw, Database, Save, Copy, Search, X, CheckSquare, Square,
   Play, Pause, CheckCircle2, AlertCircle, ExternalLink, Pencil, Trash2,
-  LayoutTemplate, Plus, Minus, Type, AlignRight,
+  LayoutTemplate, Plus, Minus, Type, AlignRight, Bold, Link2, Link2Off,
 } from "lucide-react";
 import { parsePsakDinText, isPsakDinFormat } from "@/lib/psakDinParser";
 import { generatePsakDinHtml } from "@/lib/psakDinHtmlTemplate";
@@ -64,6 +64,14 @@ async function processWithConcurrency<T>(
 
 const CONCURRENCY = 3;
 const DB_PAGE = 50;
+const FONT_OPTIONS = [
+  { value: "'David','Times New Roman',serif", label: "דוד" },
+  { value: "'Frank Ruhl Libre','David',serif", label: "פרנק רוהל" },
+  { value: "'Heebo','Arial',sans-serif", label: "חיבו" },
+  { value: "'Rubik','Arial',sans-serif", label: "רוביק" },
+  { value: "'Arial',sans-serif", label: "אריאל" },
+  { value: "'Noto Serif Hebrew','David',serif", label: "נוטו סריף" },
+];
 
 /** Detect HTML content and extract plain text */
 function stripHtmlToText(input: string): string {
@@ -96,6 +104,13 @@ const BeautifyPsakDinTab = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [loadedPsakId, setLoadedPsakId] = useState<string | null>(null);
   const [loadedPsakTitle, setLoadedPsakTitle] = useState("");
+  const [leftFontFamily, setLeftFontFamily] = useState(FONT_OPTIONS[0].value);
+  const [leftFontSize, setLeftFontSize] = useState(16);
+  const [leftBold, setLeftBold] = useState(false);
+  const [rightFontFamily, setRightFontFamily] = useState(FONT_OPTIONS[0].value);
+  const [rightFontSize, setRightFontSize] = useState(16);
+  const [rightBold, setRightBold] = useState(false);
+  const [isScrollSync, setIsScrollSync] = useState(false);
 
   // --- Template selection ---
   const [selectedTemplate, setSelectedTemplate] = useState<string>("classic");
@@ -132,7 +147,86 @@ const BeautifyPsakDinTab = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollSentinelRef = useRef<HTMLDivElement>(null);
+  const rawTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const sourceTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const previewIframeRef = useRef<HTMLIFrameElement | null>(null);
+  const syncBusyRef = useRef(false);
+  const iframeScrollCleanupRef = useRef<(() => void) | null>(null);
   const { toast } = useToast();
+
+  const applyPreviewTypography = useCallback(() => {
+    const doc = previewIframeRef.current?.contentDocument;
+    if (!doc?.body) return;
+    doc.body.style.fontFamily = rightFontFamily;
+    doc.body.style.fontSize = `${rightFontSize}px`;
+    doc.body.style.fontWeight = rightBold ? "700" : "400";
+    doc.body.style.lineHeight = "1.8";
+  }, [rightFontFamily, rightFontSize, rightBold]);
+
+  const syncRawToOutput = useCallback(() => {
+    if (!isScrollSync || syncBusyRef.current) return;
+    const raw = rawTextareaRef.current;
+    if (!raw) return;
+    const rawMax = Math.max(1, raw.scrollHeight - raw.clientHeight);
+    const ratio = raw.scrollTop / rawMax;
+
+    syncBusyRef.current = true;
+    if (viewMode === "source" && sourceTextareaRef.current) {
+      const dst = sourceTextareaRef.current;
+      const dstMax = Math.max(1, dst.scrollHeight - dst.clientHeight);
+      dst.scrollTop = ratio * dstMax;
+    }
+    if (viewMode === "preview") {
+      const win = previewIframeRef.current?.contentWindow;
+      const doc = previewIframeRef.current?.contentDocument;
+      if (win && doc) {
+        const root = doc.scrollingElement || doc.documentElement || doc.body;
+        const dstMax = Math.max(1, root.scrollHeight - win.innerHeight);
+        win.scrollTo({ top: ratio * dstMax, behavior: "auto" });
+      }
+    }
+    setTimeout(() => { syncBusyRef.current = false; }, 0);
+  }, [isScrollSync, viewMode]);
+
+  const syncOutputToRaw = useCallback((ratio: number) => {
+    if (!isScrollSync || syncBusyRef.current) return;
+    const raw = rawTextareaRef.current;
+    if (!raw) return;
+    syncBusyRef.current = true;
+    const rawMax = Math.max(1, raw.scrollHeight - raw.clientHeight);
+    raw.scrollTop = ratio * rawMax;
+    setTimeout(() => { syncBusyRef.current = false; }, 0);
+  }, [isScrollSync]);
+
+  useEffect(() => {
+    applyPreviewTypography();
+  }, [htmlResult, applyPreviewTypography]);
+
+  useEffect(() => {
+    iframeScrollCleanupRef.current?.();
+    iframeScrollCleanupRef.current = null;
+    if (viewMode !== "preview" || !isScrollSync) return;
+
+    const iframe = previewIframeRef.current;
+    const win = iframe?.contentWindow;
+    const doc = iframe?.contentDocument;
+    if (!iframe || !win || !doc) return;
+
+    const onScroll = () => {
+      if (syncBusyRef.current) return;
+      const root = doc.scrollingElement || doc.documentElement || doc.body;
+      const max = Math.max(1, root.scrollHeight - win.innerHeight);
+      syncOutputToRaw(root.scrollTop / max);
+    };
+
+    win.addEventListener("scroll", onScroll, { passive: true });
+    iframeScrollCleanupRef.current = () => win.removeEventListener("scroll", onScroll);
+
+    return () => {
+      iframeScrollCleanupRef.current?.();
+      iframeScrollCleanupRef.current = null;
+    };
+  }, [viewMode, isScrollSync, htmlResult, syncOutputToRaw]);
 
   // ===== FILE UPLOAD =====
   const handleFileUpload = useCallback((file: File) => {
@@ -993,12 +1087,52 @@ const BeautifyPsakDinTab = () => {
             />
 
             <div onDrop={handleDrop} onDragOver={(e) => e.preventDefault()}>
+              <div className="mb-2 flex items-center gap-2 flex-wrap">
+                <Type className="h-4 w-4 text-muted-foreground" />
+                <Select value={leftFontFamily} onValueChange={setLeftFontFamily}>
+                  <SelectTrigger className="w-[140px] h-8 text-xs">
+                    <SelectValue placeholder="גופן" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FONT_OPTIONS.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setLeftBold(v => !v)}>
+                  <Bold className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setLeftFontSize(v => Math.max(12, v - 1))}>
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <span className="text-xs text-muted-foreground w-9 text-center">{leftFontSize}</span>
+                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setLeftFontSize(v => Math.min(28, v + 1))}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={isScrollSync ? "default" : "outline"}
+                  size="sm"
+                  className="h-8"
+                  onClick={() => setIsScrollSync(v => !v)}
+                  title="סנכרון גלילה בין שני הצדדים"
+                >
+                  {isScrollSync ? <Link2 className="h-4 w-4 ml-1" /> : <Link2Off className="h-4 w-4 ml-1" />}
+                  סנכרון גלילה
+                </Button>
+              </div>
               <Textarea
+                ref={rawTextareaRef}
                 value={rawText}
                 onChange={(e) => setRawText(e.target.value)}
+                onScroll={syncRawToOutput}
                 placeholder="הדביקו כאן את טקסט פסק הדין הגולמי, או גררו קובץ TXT לכאן..."
                 className="min-h-[350px] font-mono text-sm leading-relaxed resize-y"
                 dir="rtl"
+                style={{
+                  fontFamily: leftFontFamily,
+                  fontSize: `${leftFontSize}px`,
+                  fontWeight: leftBold ? 700 : 400,
+                }}
               />
             </div>
 
@@ -1118,6 +1252,26 @@ const BeautifyPsakDinTab = () => {
                 )}
               </h3>
               <div className="flex gap-2 flex-wrap">
+                <Select value={rightFontFamily} onValueChange={setRightFontFamily}>
+                  <SelectTrigger className="w-[135px] h-9 text-xs">
+                    <SelectValue placeholder="גופן תצוגה" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FONT_OPTIONS.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button variant={rightBold ? "default" : "outline"} size="icon" className="h-9 w-9" onClick={() => setRightBold(v => !v)}>
+                  <Bold className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => setRightFontSize(v => Math.max(12, v - 1))}>
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <span className="text-xs text-muted-foreground w-9 text-center self-center">{rightFontSize}</span>
+                <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => setRightFontSize(v => Math.min(28, v + 1))}>
+                  <Plus className="h-4 w-4" />
+                </Button>
                 <div className="w-[190px]">
                   <Select value={selectedTemplate} onValueChange={handleTemplateChange}>
                     <SelectTrigger className="h-9">
@@ -1179,13 +1333,33 @@ const BeautifyPsakDinTab = () => {
             {htmlResult ? (
               viewMode === "preview" ? (
                 <iframe
+                  ref={previewIframeRef}
                   srcDoc={htmlResult}
                   className="w-full min-h-[400px] border rounded-md bg-white"
                   sandbox="allow-same-origin"
                   title="תצוגה מקדימה של פסק דין מעוצב"
+                  onLoad={applyPreviewTypography}
                 />
               ) : (
-                <Textarea value={htmlResult} readOnly className="min-h-[400px] font-mono text-xs leading-relaxed resize-y" dir="ltr" />
+                <Textarea
+                  ref={sourceTextareaRef}
+                  value={htmlResult}
+                  readOnly
+                  onScroll={() => {
+                    if (!isScrollSync || syncBusyRef.current) return;
+                    const src = sourceTextareaRef.current;
+                    if (!src) return;
+                    const srcMax = Math.max(1, src.scrollHeight - src.clientHeight);
+                    syncOutputToRaw(src.scrollTop / srcMax);
+                  }}
+                  className="min-h-[400px] font-mono text-xs leading-relaxed resize-y"
+                  dir="ltr"
+                  style={{
+                    fontFamily: rightFontFamily,
+                    fontSize: `${rightFontSize}px`,
+                    fontWeight: rightBold ? 700 : 400,
+                  }}
+                />
               )
             ) : (
               <div className="min-h-[400px] flex items-center justify-center border rounded-md bg-muted/30">
