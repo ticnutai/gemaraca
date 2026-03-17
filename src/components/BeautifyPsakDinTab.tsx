@@ -15,7 +15,7 @@ import {
   Paintbrush, Upload, Download, Sparkles, FileText, Loader2, Eye, Code,
   RotateCcw, Database, Save, Copy, Search, X, CheckSquare, Square,
   Play, Pause, CheckCircle2, AlertCircle, ExternalLink, Pencil, Trash2,
-  LayoutTemplate, Plus, Minus, Type, AlignRight, Bold, Link2, Link2Off,
+  LayoutTemplate, Plus, Minus, Type, AlignRight, Bold, Link2, Link2Off, Lock, Unlock,
 } from "lucide-react";
 import { parsePsakDinText, isPsakDinFormat } from "@/lib/psakDinParser";
 import { generatePsakDinHtml } from "@/lib/psakDinHtmlTemplate";
@@ -64,6 +64,7 @@ async function processWithConcurrency<T>(
 
 const CONCURRENCY = 3;
 const DB_PAGE = 50;
+const TYPOGRAPHY_PROFILE_KEY = "beautify-typography-profile-v1";
 const FONT_OPTIONS = [
   { value: "'David','Times New Roman',serif", label: "דוד" },
   { value: "'Frank Ruhl Libre','David',serif", label: "פרנק רוהל" },
@@ -111,6 +112,8 @@ const BeautifyPsakDinTab = () => {
   const [rightFontSize, setRightFontSize] = useState(16);
   const [rightBold, setRightBold] = useState(false);
   const [isScrollSync, setIsScrollSync] = useState(false);
+  const [syncMode, setSyncMode] = useState<"ratio" | "section">("ratio");
+  const [isPreviewLocked, setIsPreviewLocked] = useState(false);
 
   // --- Template selection ---
   const [selectedTemplate, setSelectedTemplate] = useState<string>("classic");
@@ -154,6 +157,75 @@ const BeautifyPsakDinTab = () => {
   const iframeScrollCleanupRef = useRef<(() => void) | null>(null);
   const { toast } = useToast();
 
+  const sectionAnchorMap = useMemo(() => {
+    if (!rawText.trim()) return [] as Array<{ anchor: string; index: number }>;
+    try {
+      const parsed = parsePsakDinText(rawText);
+      return parsed.sections
+        .map((sec, i) => {
+          const idx = sec.title ? rawText.indexOf(sec.title) : -1;
+          return { anchor: `sec-${i}`, index: idx >= 0 ? idx : Math.floor((i / Math.max(parsed.sections.length, 1)) * rawText.length) };
+        })
+        .filter(s => s.index >= 0)
+        .sort((a, b) => a.index - b.index);
+    } catch {
+      return [] as Array<{ anchor: string; index: number }>;
+    }
+  }, [rawText]);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(TYPOGRAPHY_PROFILE_KEY);
+      if (!saved) return;
+      const data = JSON.parse(saved) as {
+        leftFontFamily?: string;
+        leftFontSize?: number;
+        leftBold?: boolean;
+        rightFontFamily?: string;
+        rightFontSize?: number;
+        rightBold?: boolean;
+        isScrollSync?: boolean;
+        syncMode?: "ratio" | "section";
+      };
+      if (data.leftFontFamily) setLeftFontFamily(data.leftFontFamily);
+      if (typeof data.leftFontSize === "number") setLeftFontSize(data.leftFontSize);
+      if (typeof data.leftBold === "boolean") setLeftBold(data.leftBold);
+      if (data.rightFontFamily) setRightFontFamily(data.rightFontFamily);
+      if (typeof data.rightFontSize === "number") setRightFontSize(data.rightFontSize);
+      if (typeof data.rightBold === "boolean") setRightBold(data.rightBold);
+      if (typeof data.isScrollSync === "boolean") setIsScrollSync(data.isScrollSync);
+      if (data.syncMode === "ratio" || data.syncMode === "section") setSyncMode(data.syncMode);
+    } catch {
+      // Ignore invalid saved profile
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(TYPOGRAPHY_PROFILE_KEY, JSON.stringify({
+        leftFontFamily,
+        leftFontSize,
+        leftBold,
+        rightFontFamily,
+        rightFontSize,
+        rightBold,
+        isScrollSync,
+        syncMode,
+      }));
+    } catch {
+      // Ignore storage quota issues
+    }
+  }, [
+    leftFontFamily,
+    leftFontSize,
+    leftBold,
+    rightFontFamily,
+    rightFontSize,
+    rightBold,
+    isScrollSync,
+    syncMode,
+  ]);
+
   const applyPreviewTypography = useCallback(() => {
     const doc = previewIframeRef.current?.contentDocument;
     if (!doc?.body) return;
@@ -180,13 +252,29 @@ const BeautifyPsakDinTab = () => {
       const win = previewIframeRef.current?.contentWindow;
       const doc = previewIframeRef.current?.contentDocument;
       if (win && doc) {
-        const root = doc.scrollingElement || doc.documentElement || doc.body;
-        const dstMax = Math.max(1, root.scrollHeight - win.innerHeight);
-        win.scrollTo({ top: ratio * dstMax, behavior: "auto" });
+        if (syncMode === "section" && sectionAnchorMap.length > 0) {
+          const approxPos = Math.floor(ratio * rawText.length);
+          let chosen = sectionAnchorMap[0];
+          for (const sec of sectionAnchorMap) {
+            if (sec.index <= approxPos) chosen = sec;
+            else break;
+          }
+          const target = doc.getElementById(chosen.anchor);
+          if (target) target.scrollIntoView({ block: "start", behavior: "auto" });
+          else {
+            const root = doc.scrollingElement || doc.documentElement || doc.body;
+            const dstMax = Math.max(1, root.scrollHeight - win.innerHeight);
+            win.scrollTo({ top: ratio * dstMax, behavior: "auto" });
+          }
+        } else {
+          const root = doc.scrollingElement || doc.documentElement || doc.body;
+          const dstMax = Math.max(1, root.scrollHeight - win.innerHeight);
+          win.scrollTo({ top: ratio * dstMax, behavior: "auto" });
+        }
       }
     }
     setTimeout(() => { syncBusyRef.current = false; }, 0);
-  }, [isScrollSync, viewMode]);
+  }, [isScrollSync, viewMode, syncMode, sectionAnchorMap, rawText.length]);
 
   const syncOutputToRaw = useCallback((ratio: number) => {
     if (!isScrollSync || syncBusyRef.current) return;
@@ -216,6 +304,22 @@ const BeautifyPsakDinTab = () => {
       if (syncBusyRef.current) return;
       const root = doc.scrollingElement || doc.documentElement || doc.body;
       const max = Math.max(1, root.scrollHeight - win.innerHeight);
+      if (syncMode === "section" && sectionAnchorMap.length > 0) {
+        const sections = Array.from(doc.querySelectorAll<HTMLElement>("[id^='sec-']"));
+        let currentAnchor: string | null = null;
+        for (const el of sections) {
+          const rect = el.getBoundingClientRect();
+          if (rect.top <= 120) currentAnchor = el.id;
+          else break;
+        }
+        if (currentAnchor) {
+          const mapped = sectionAnchorMap.find(s => s.anchor === currentAnchor);
+          if (mapped) {
+            syncOutputToRaw(mapped.index / Math.max(rawText.length, 1));
+            return;
+          }
+        }
+      }
       syncOutputToRaw(root.scrollTop / max);
     };
 
@@ -226,7 +330,7 @@ const BeautifyPsakDinTab = () => {
       iframeScrollCleanupRef.current?.();
       iframeScrollCleanupRef.current = null;
     };
-  }, [viewMode, isScrollSync, htmlResult, syncOutputToRaw]);
+  }, [viewMode, isScrollSync, htmlResult, syncOutputToRaw, syncMode, sectionAnchorMap, rawText.length]);
 
   // ===== FILE UPLOAD =====
   const handleFileUpload = useCallback((file: File) => {
@@ -1119,6 +1223,18 @@ const BeautifyPsakDinTab = () => {
                   {isScrollSync ? <Link2 className="h-4 w-4 ml-1" /> : <Link2Off className="h-4 w-4 ml-1" />}
                   סנכרון גלילה
                 </Button>
+                {isScrollSync && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => setSyncMode(v => (v === "ratio" ? "section" : "ratio"))}
+                    title="מעבר בין סנכרון יחסי לסנכרון חכם לפי סעיפים"
+                  >
+                    <AlignRight className="h-4 w-4 ml-1" />
+                    {syncMode === "ratio" ? "סנכרון יחסי" : "סנכרון חכם"}
+                  </Button>
+                )}
               </div>
               <Textarea
                 ref={rawTextareaRef}
@@ -1303,6 +1419,12 @@ const BeautifyPsakDinTab = () => {
                   <Code className="h-3 w-3 ml-1" />
                   קוד
                 </Button>
+                {viewMode === "preview" && (
+                  <Button variant={isPreviewLocked ? "default" : "outline"} size="sm" onClick={() => setIsPreviewLocked(v => !v)}>
+                    {isPreviewLocked ? <Lock className="h-4 w-4 ml-1" /> : <Unlock className="h-4 w-4 ml-1" />}
+                    {isPreviewLocked ? "תצוגה נעולה" : "נעילת תצוגה"}
+                  </Button>
+                )}
                 {htmlResult && (
                   <>
                     <Button variant="outline" size="sm" onClick={handleOpenInBrowser} title="פתח בדפדפן עם עריכה">
@@ -1332,14 +1454,25 @@ const BeautifyPsakDinTab = () => {
 
             {htmlResult ? (
               viewMode === "preview" ? (
-                <iframe
-                  ref={previewIframeRef}
-                  srcDoc={htmlResult}
-                  className="w-full min-h-[400px] border rounded-md bg-white"
-                  sandbox="allow-same-origin"
-                  title="תצוגה מקדימה של פסק דין מעוצב"
-                  onLoad={applyPreviewTypography}
-                />
+                <div className="relative">
+                  <iframe
+                    ref={previewIframeRef}
+                    srcDoc={htmlResult}
+                    className="w-full min-h-[400px] border rounded-md bg-white"
+                    sandbox="allow-same-origin"
+                    title="תצוגה מקדימה של פסק דין מעוצב"
+                    onLoad={applyPreviewTypography}
+                    style={{ pointerEvents: isPreviewLocked ? "none" : "auto" }}
+                  />
+                  {isPreviewLocked && (
+                    <div className="absolute inset-0 flex items-center justify-center rounded-md bg-white/10 backdrop-blur-[1px]">
+                      <Badge variant="secondary" className="text-sm px-3 py-1.5">
+                        <Lock className="h-4 w-4 ml-1" />
+                        מצב תצוגה נעול
+                      </Badge>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <Textarea
                   ref={sourceTextareaRef}
