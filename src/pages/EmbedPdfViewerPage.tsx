@@ -7,7 +7,7 @@ import {
   Copy, MessageSquarePlus, Hash, ZoomIn, ZoomOut, ChevronUp, ChevronDown,
   RotateCcw, Printer, StickyNote, Scissors, ClipboardPaste, Sparkles, Eye, Strikethrough,
   ListOrdered, WrapText, PilcrowSquare, ArrowRight, Link, BarChart3,
-  Upload, HardDrive, Database, Loader2 as Loader2Icon, Save, CopyPlus, Columns
+  Upload, HardDrive, Database, Loader2 as Loader2Icon, Save, CopyPlus, Columns, GripVertical
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -548,6 +548,34 @@ export default function EmbedPdfViewerPage() {
       return (localStorage.getItem(VIEW_MODE_STORAGE_KEY) as ViewMode) || "single";
     } catch { return "single"; }
   });
+
+  // Split pane resizing
+  const [splitRatio, setSplitRatio] = useState(50); // percentage for left pane
+  const isDraggingSplitter = useRef(false);
+  const mainRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isDraggingSplitter.current || !mainRef.current) return;
+      e.preventDefault();
+      const rect = mainRef.current.getBoundingClientRect();
+      const pct = ((e.clientX - rect.left) / rect.width) * 100;
+      setSplitRatio(Math.min(80, Math.max(20, pct)));
+    };
+    const onMouseUp = () => {
+      if (isDraggingSplitter.current) {
+        isDraggingSplitter.current = false;
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      }
+    };
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+  }, []);
 
   // Annotation form
   const [currentPage, setCurrentPage] = useState("1");
@@ -2110,9 +2138,9 @@ export default function EmbedPdfViewerPage() {
         )}
 
         {/* ═══ VIEWER ═══ */}
-        <main className={`flex-1 min-w-0 ${viewMode === "split" ? "flex flex-row" : "flex flex-col"}`}>
+        <main ref={mainRef} className={`flex-1 min-w-0 ${viewMode === "split" ? "flex flex-row" : "flex flex-col"}`}>
           {leftSourceUrl ? (
-            <div className={`flex-1 flex flex-col ${viewMode === "split" ? "w-1/2" : ""}`} style={{ minHeight: viewerFullscreen ? "calc(100vh - 50px)" : "calc(100vh - 50px)" }}>
+            <div className="flex-1 flex flex-col" style={{ minHeight: viewerFullscreen ? "calc(100vh - 50px)" : "calc(100vh - 50px)", ...(viewMode === "split" ? { width: `${splitRatio}%`, flexShrink: 0, flexGrow: 0 } : {}) }}>
               {/* ═══ BEAUTIFIED FORMATTING TOOLBAR ═══ */}
               {beautifiedHtml && activePanel === "beautify" && (
                 <div className="border-b-2 border-[#D4AF37]/20 bg-white/80 backdrop-blur-sm flex-shrink-0">
@@ -2751,10 +2779,27 @@ export default function EmbedPdfViewerPage() {
             </div>
           )}
 
+          {/* ═══ DRAGGABLE SPLIT DIVIDER ═══ */}
+          {viewMode === "split" && (
+            <div
+              className="w-2 flex-shrink-0 cursor-col-resize bg-[#D4AF37]/20 hover:bg-[#D4AF37]/50 active:bg-[#D4AF37]/70 transition-colors relative group flex items-center justify-center"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                isDraggingSplitter.current = true;
+                document.body.style.cursor = 'col-resize';
+                document.body.style.userSelect = 'none';
+              }}
+              title="גרור לשינוי גודל"
+            >
+              <div className="absolute inset-y-0 -left-1 -right-1" />
+              <GripVertical className="h-5 w-5 text-[#D4AF37]/60 group-hover:text-[#D4AF37] transition-colors" />
+            </div>
+          )}
+
           {/* Second viewer for split/compare */}
           {viewMode !== "single" && (
             rightSourceUrl ? (
-              <div className={`${viewMode === "split" ? "w-1/2" : "h-[400px]"} border-t-2 sm:border-t-0 sm:border-r-2 border-[#D4AF37]/30 relative bg-[#f8f8f6] flex flex-col`}>
+              <div className={`${viewMode !== "split" ? "h-[400px]" : ""} border-t-2 sm:border-t-0 border-[#D4AF37]/30 relative bg-[#f8f8f6] flex flex-col`} style={viewMode === "split" ? { width: `${100 - splitRatio}%`, flexShrink: 0, flexGrow: 0 } : {}}>
                 {/* ── Right pane toolbar ── */}
                 <div className="flex-shrink-0 bg-white/80 backdrop-blur-sm border-b border-[#D4AF37]/20 px-2 py-1 flex items-center gap-1">
                   <span className="text-[10px] text-[#0B1F5B]/50 truncate flex-1" dir="ltr">{rightSourceUrl.split('/').pop()?.split('?')[0] || 'מסמך'}</span>
@@ -2801,7 +2846,7 @@ export default function EmbedPdfViewerPage() {
                 </div>
               </div>
             ) : (
-              <div className={`${viewMode === "split" ? "w-1/2" : "h-[300px]"} border-t-2 sm:border-t-0 sm:border-r-2 border-[#D4AF37]/30 flex items-center justify-center bg-[#f8f8f6]`}>
+              <div className={`${viewMode !== "split" ? "h-[300px]" : ""} border-t-2 sm:border-t-0 border-[#D4AF37]/30 flex items-center justify-center bg-[#f8f8f6]`} style={viewMode === "split" ? { width: `${100 - splitRatio}%`, flexShrink: 0, flexGrow: 0 } : {}}>
                 <div className="text-center space-y-3 p-6">
                   <FileText className="h-10 w-10 mx-auto text-[#D4AF37]/30" />
                   <p className="text-xs text-[#0B1F5B]/50">בחר מסמך שני להשוואה</p>
