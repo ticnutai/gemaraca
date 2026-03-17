@@ -7,7 +7,7 @@ import {
   Copy, MessageSquarePlus, Hash, ZoomIn, ZoomOut, ChevronUp, ChevronDown,
   RotateCcw, Printer, StickyNote, Scissors, ClipboardPaste, Sparkles, Eye, Strikethrough,
   ListOrdered, WrapText, PilcrowSquare, ArrowRight, Link, BarChart3,
-  Upload, HardDrive, Database, Loader2 as Loader2Icon, Save, CopyPlus
+  Upload, HardDrive, Database, Loader2 as Loader2Icon, Save, CopyPlus, Columns
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
 import { usePDFAnnotations, type PDFAnnotation } from "@/hooks/usePDFAnnotations";
 import { useUserBooks, type UserBook } from "@/hooks/useUserBooks";
@@ -60,6 +61,229 @@ const FONTS = [
   { value: "font-frank", label: "פרנק רוהל" },
   { value: "font-rubik", label: "רוביק" },
 ];
+
+const IFRAME_FONTS = [
+  { css: "Arial, sans-serif", label: "אריאל" },
+  { css: "Times New Roman, serif", label: "טיימס" },
+  { css: "Courier New, monospace", label: "מונו" },
+  { css: "David Libre, David, serif", label: "דוד" },
+  { css: "Frank Ruhl Libre, serif", label: "פרנק רוהל" },
+  { css: "Rubik, sans-serif", label: "רוביק" },
+  { css: "Noto Sans Hebrew, sans-serif", label: "נוטו" },
+  { css: "Heebo, sans-serif", label: "חיבו" },
+  { css: "Assistant, sans-serif", label: "אסיסטנט" },
+  { css: "Georgia, serif", label: "ג׳ורג׳יה" },
+  { css: "Tahoma, sans-serif", label: "טאהומה" },
+];
+
+// ─── Typography Popover for iframe formatting ────────────────
+function TypographyPopover({ iframeRef, source }: { iframeRef: React.RefObject<HTMLIFrameElement>; source: string }) {
+  const [fontSize, setFontSize] = useState(16);
+  const [lineHeight, setLineHeight] = useState(1.6);
+  const [letterSpacing, setLetterSpacing] = useState(0);
+  const [currentFont, setCurrentFont] = useState("Arial, sans-serif");
+
+  const getDoc = () => iframeRef.current?.contentDocument ?? null;
+
+  // Apply whole-page style
+  const applyBodyStyle = (prop: string, val: string) => {
+    const doc = getDoc();
+    if (doc?.body) (doc.body.style as any)[prop] = val;
+  };
+
+  // Apply to selection via execCommand or CSS wrap
+  const applyToSelection = (prop: string, val: string) => {
+    const doc = getDoc();
+    if (!doc) return;
+    const sel = doc.getSelection();
+    if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+      doc.execCommand('styleWithCSS', false, 'true');
+      // For fontName we can use execCommand directly
+      if (prop === 'fontFamily') {
+        doc.execCommand('fontName', false, val);
+      } else if (prop === 'fontSize') {
+        // Wrap selection in span with font-size
+        const range = sel.getRangeAt(0);
+        const span = doc.createElement('span');
+        span.style.fontSize = val;
+        try {
+          range.surroundContents(span);
+        } catch {
+          // If surroundContents fails (partial selection), use insertHTML
+          const html = `<span style="font-size:${val}">${range.toString()}</span>`;
+          doc.execCommand('insertHTML', false, html);
+        }
+      } else {
+        const range = sel.getRangeAt(0);
+        const span = doc.createElement('span');
+        (span.style as any)[prop] = val;
+        try {
+          range.surroundContents(span);
+        } catch {
+          const escaped = range.toString().replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          const html = `<span style="${prop.replace(/([A-Z])/g, '-$1').toLowerCase()}:${val}">${escaped}</span>`;
+          doc.execCommand('insertHTML', false, html);
+        }
+      }
+    } else {
+      // No selection — apply to whole page
+      applyBodyStyle(prop, val);
+    }
+  };
+
+  const handleFontChange = (fontCss: string) => {
+    setCurrentFont(fontCss);
+    applyToSelection('fontFamily', fontCss);
+  };
+
+  const handleFontSizeChange = (val: number[]) => {
+    const v = val[0];
+    setFontSize(v);
+    applyBodyStyle('fontSize', `${v}px`);
+  };
+
+  const handleFontSizeSelection = (val: number[]) => {
+    const v = val[0];
+    setFontSize(v);
+    applyToSelection('fontSize', `${v}px`);
+  };
+
+  const handleLineHeightChange = (val: number[]) => {
+    const v = val[0];
+    setLineHeight(v);
+    applyBodyStyle('lineHeight', `${v}`);
+  };
+
+  const handleLetterSpacingChange = (val: number[]) => {
+    const v = val[0];
+    setLetterSpacing(v);
+    applyBodyStyle('letterSpacing', `${v}px`);
+  };
+
+  const handleAlign = (align: string) => {
+    const doc = getDoc();
+    if (!doc) return;
+    const sel = doc.getSelection();
+    if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+      doc.execCommand(`justify${align}`, false);
+    } else {
+      applyBodyStyle('textAlign', align.toLowerCase() === 'full' ? 'justify' : align.toLowerCase());
+    }
+  };
+
+  const sliderThumb = "[&_[role=slider]]:h-3.5 [&_[role=slider]]:w-3.5";
+
+  return (
+    <div className="w-64 space-y-3 p-1" dir="rtl">
+      <p className="text-[11px] font-bold text-[#0B1F5B] border-b border-[#D4AF37]/30 pb-1">עיצוב טקסט</p>
+
+      {/* Font Family */}
+      <div>
+        <p className="text-[10px] text-[#0B1F5B]/70 mb-1">גופן</p>
+        <div className="grid grid-cols-3 gap-1">
+          {IFRAME_FONTS.map(f => (
+            <button
+              key={f.css}
+              onMouseDown={e => e.preventDefault()}
+              onClick={() => handleFontChange(f.css)}
+              className={`text-[10px] px-1.5 py-1 rounded border transition-colors ${
+                currentFont === f.css
+                  ? 'bg-[#D4AF37] text-[#0B1F5B] border-[#D4AF37] font-bold'
+                  : 'border-[#D4AF37]/30 hover:bg-[#D4AF37]/10'
+              }`}
+              style={{ fontFamily: f.css }}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Font Size — whole page */}
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <p className="text-[10px] text-[#0B1F5B]/70">גודל גופן (כל העמוד)</p>
+          <span className="text-[10px] font-mono text-[#D4AF37]">{fontSize}px</span>
+        </div>
+        <Slider
+          value={[fontSize]} onValueChange={handleFontSizeChange}
+          min={10} max={36} step={1}
+          className={`${sliderThumb} [&_[role=slider]]:bg-[#D4AF37] [&_[role=slider]]:border-[#0B1F5B]`}
+        />
+      </div>
+
+      {/* Font Size — selection only */}
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <p className="text-[10px] text-[#0B1F5B]/70">גודל גופן (לבחירה)</p>
+          <span className="text-[10px] font-mono text-[#D4AF37]">{fontSize}px</span>
+        </div>
+        <Slider
+          value={[fontSize]} onValueChange={handleFontSizeSelection}
+          min={10} max={48} step={1}
+          className={`${sliderThumb} [&_[role=slider]]:bg-[#0B1F5B] [&_[role=slider]]:border-[#D4AF37]`}
+        />
+      </div>
+
+      {/* Line Height */}
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <p className="text-[10px] text-[#0B1F5B]/70">מרווח שורות</p>
+          <span className="text-[10px] font-mono text-[#D4AF37]">{lineHeight.toFixed(1)}</span>
+        </div>
+        <Slider
+          value={[lineHeight]} onValueChange={handleLineHeightChange}
+          min={1} max={3.5} step={0.1}
+          className={`${sliderThumb} [&_[role=slider]]:bg-[#D4AF37] [&_[role=slider]]:border-[#0B1F5B]`}
+        />
+      </div>
+
+      {/* Letter Spacing */}
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <p className="text-[10px] text-[#0B1F5B]/70">מרווח אותיות</p>
+          <span className="text-[10px] font-mono text-[#D4AF37]">{letterSpacing}px</span>
+        </div>
+        <Slider
+          value={[letterSpacing]} onValueChange={handleLetterSpacingChange}
+          min={-2} max={10} step={0.5}
+          className={`${sliderThumb} [&_[role=slider]]:bg-[#D4AF37] [&_[role=slider]]:border-[#0B1F5B]`}
+        />
+      </div>
+
+      {/* Alignment */}
+      <div>
+        <p className="text-[10px] text-[#0B1F5B]/70 mb-1">יישור</p>
+        <div className="flex gap-1">
+          <Button size="icon" variant="outline" className="h-7 w-7 border-[#D4AF37]/30" onMouseDown={e => e.preventDefault()} onClick={() => handleAlign('Right')}>
+            <AlignRight className="h-3.5 w-3.5" />
+          </Button>
+          <Button size="icon" variant="outline" className="h-7 w-7 border-[#D4AF37]/30" onMouseDown={e => e.preventDefault()} onClick={() => handleAlign('Center')}>
+            <AlignCenter className="h-3.5 w-3.5" />
+          </Button>
+          <Button size="icon" variant="outline" className="h-7 w-7 border-[#D4AF37]/30" onMouseDown={e => e.preventDefault()} onClick={() => handleAlign('Left')}>
+            <AlignLeft className="h-3.5 w-3.5" />
+          </Button>
+          <Button size="icon" variant="outline" className="h-7 w-7 border-[#D4AF37]/30" onMouseDown={e => e.preventDefault()} onClick={() => handleAlign('Full')}>
+            <AlignJustify className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Quick reset */}
+      <Button size="sm" variant="ghost" className="w-full text-[10px] text-[#0B1F5B]/60 h-6" onClick={() => {
+        setFontSize(16); setLineHeight(1.6); setLetterSpacing(0); setCurrentFont("Arial, sans-serif");
+        const doc = getDoc();
+        if (doc?.body) {
+          doc.body.style.fontSize = ''; doc.body.style.lineHeight = ''; doc.body.style.letterSpacing = '';
+          doc.body.style.fontFamily = ''; doc.body.style.textAlign = '';
+        }
+      }}>
+        <RotateCcw className="h-3 w-3 ml-1" /> איפוס עיצוב
+      </Button>
+    </div>
+  );
+}
 
 interface TextFormat {
   fontSize: number;
@@ -131,6 +355,7 @@ function SelectionPopup({
 }) {
   const [showColors, setShowColors] = useState(false);
   const [showTextColors, setShowTextColors] = useState(false);
+  const [showFontPicker, setShowFontPicker] = useState(false);
 
   const popupBtn = "p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors";
   const popupBtnGold = "p-1.5 rounded-lg text-[#D4AF37] hover:text-[#D4AF37] hover:bg-white/10 transition-colors";
@@ -179,6 +404,22 @@ function SelectionPopup({
             {sep}
             <button onMouseDown={e => e.preventDefault()} onClick={() => onFormat('fontSize', '2')} className={popupBtn} title="הקטן גופן"><AArrowDown className="h-4 w-4" /></button>
             <button onMouseDown={e => e.preventDefault()} onClick={() => onFormat('fontSize', '5')} className={popupBtn} title="הגדל גופן"><AArrowUp className="h-4 w-4" /></button>
+            {sep}
+            {/* Font family picker for selection */}
+            <div className="relative">
+              <button onMouseDown={e => e.preventDefault()} onClick={() => { setShowFontPicker(!showFontPicker); setShowColors(false); setShowTextColors(false); }} className={popupBtn} title="שנה גופן">
+                <Type className="h-4 w-4" />
+              </button>
+              {showFontPicker && (
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1.5 bg-white rounded-lg shadow-xl border-2 border-[#D4AF37] p-2 grid grid-cols-2 gap-1 z-50 w-44">
+                  {IFRAME_FONTS.map((f) => (
+                    <button key={f.css} onMouseDown={e => e.preventDefault()} onClick={() => { onFormat('fontName', f.css); setShowFontPicker(false); }} className="text-[10px] px-2 py-1.5 rounded border border-[#D4AF37]/30 hover:bg-[#D4AF37]/10 text-[#0B1F5B] transition-colors text-right" style={{ fontFamily: f.css }}>
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             {sep}
             <button onMouseDown={e => e.preventDefault()} onClick={() => onFormat('justifyRight')} className={popupBtn} title="ימין"><AlignRight className="h-4 w-4" /></button>
             <button onMouseDown={e => e.preventDefault()} onClick={() => onFormat('justifyCenter')} className={popupBtn} title="מרכז"><AlignCenter className="h-4 w-4" /></button>
@@ -669,6 +910,35 @@ export default function EmbedPdfViewerPage() {
       setIsSavingHtmlEmbed(false);
     }
   }, [psakData, fetchedHtml, selectedPdf?.title, addBook]);
+
+  // ── Duplicate & open in compare mode ──
+  const handleDuplicateAndCompare = useCallback(async (source: 'beautify' | 'html-embed') => {
+    const iframeRef = source === 'beautify' ? beautifyIframeRef : htmlEmbedIframeRef;
+    const fallbackHtml = source === 'beautify' ? beautifiedHtml : fetchedHtml;
+    const doc = iframeRef.current?.contentDocument;
+    const currentHtml = doc?.documentElement?.outerHTML || fallbackHtml || "";
+    if (!currentHtml) { toast.error("אין תוכן לשכפול"); return; }
+
+    try {
+      const newId = crypto.randomUUID();
+      const fileName = `compare/${newId}.html`;
+      const blob = new Blob([currentHtml], { type: "text/html;charset=utf-8" });
+      await supabase.storage.from("psakei-din-files").upload(fileName, blob, { contentType: "text/html", upsert: true });
+      const { data: urlData } = supabase.storage.from("psakei-din-files").getPublicUrl(fileName);
+      const newUrl = urlData?.publicUrl;
+      if (!newUrl) { toast.error("שגיאה ביצירת קישור"); return; }
+
+      const title = psakData?.title || selectedPdf?.title || "מסמך";
+      await addBook.mutateAsync({ title: `${title} (עותק להשוואה)`, fileUrl: newUrl });
+
+      setViewMode("split");
+      setComparePdfId(null);
+      setCompareManualUrl(newUrl);
+      toast.success("המסמך שוכפל ונפתח במצב השוואה");
+    } catch (err: unknown) {
+      toast.error("שגיאה בשכפול להשוואה");
+    }
+  }, [beautifiedHtml, fetchedHtml, psakData, selectedPdf?.title, addBook]);
 
   // Fetch HTML for right pane when html-embed in split/compare
   useEffect(() => {
@@ -1821,6 +2091,9 @@ export default function EmbedPdfViewerPage() {
                       <Button size="sm" variant="outline" className="w-full text-xs border-[#D4AF37] gap-1" onClick={handleCopyAndSaveBeautified} disabled={isSavingBeautified}>
                         {isSavingBeautified ? <Loader2Icon className="h-3 w-3 animate-spin" /> : <Copy className="h-3 w-3" />} העתק ושמור כחדש
                       </Button>
+                      <Button size="sm" variant="outline" className="w-full text-xs border-[#D4AF37] gap-1 text-[#0B1F5B]" onClick={() => handleDuplicateAndCompare('beautify')}>
+                        <Columns className="h-3 w-3" /> שכפול והשוואה
+                      </Button>
                       <Separator className="bg-[#D4AF37]/20" />
                       <Button size="sm" variant="ghost" className="w-full text-xs gap-1" onClick={() => {
                         const win = window.open("", "_blank");
@@ -1846,6 +2119,18 @@ export default function EmbedPdfViewerPage() {
                   <div className="px-2 py-1.5 flex items-center gap-1 flex-wrap">
                     <span className="text-[10px] text-[#D4AF37] font-semibold ml-2">עריכת מסמך מעוצב</span>
                     <div className="w-px h-5 bg-[#D4AF37]/20" />
+
+                    {/* Typography T popover */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" title="עיצוב טקסט">
+                          <Type className="h-4 w-4 text-[#D4AF37]" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-2" align="start" side="bottom">
+                        <TypographyPopover iframeRef={beautifyIframeRef} source="beautify" />
+                      </PopoverContent>
+                    </Popover>
 
                     <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
                       beautifyIframeRef.current?.contentDocument?.execCommand("fontSize", false, "2");
@@ -1927,6 +2212,9 @@ export default function EmbedPdfViewerPage() {
                     </Button>
                     <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleCopyAndSaveBeautified} disabled={isSavingBeautified} title="שכפול ושמירה">
                       {isSavingBeautified ? <Loader2Icon className="h-3.5 w-3.5 animate-spin" /> : <CopyPlus className="h-3.5 w-3.5 text-[#0B1F5B]" />}
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleDuplicateAndCompare('beautify')} title="שכפול והשוואה">
+                      <Columns className="h-3.5 w-3.5 text-[#0B1F5B]" />
                     </Button>
 
                     <div className="w-px h-5 bg-[#D4AF37]/20" />
@@ -2099,6 +2387,19 @@ export default function EmbedPdfViewerPage() {
                     {htmlEditMode && (
                       <>
                         <div className="w-px h-5 bg-[#D4AF37]/20" />
+
+                        {/* Typography T popover */}
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button size="icon" variant="ghost" className="h-7 w-7" title="עיצוב טקסט">
+                              <Type className="h-4 w-4 text-[#D4AF37]" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-2" align="start" side="bottom">
+                            <TypographyPopover iframeRef={htmlEmbedIframeRef} source="html-embed" />
+                          </PopoverContent>
+                        </Popover>
+
                         <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { htmlEmbedIframeRef.current?.contentDocument?.execCommand("fontSize", false, "2"); }}><AArrowDown className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
                         <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { htmlEmbedIframeRef.current?.contentDocument?.execCommand("fontSize", false, "5"); }}><AArrowUp className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
 
@@ -2168,6 +2469,9 @@ export default function EmbedPdfViewerPage() {
                     </Button>
                     <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleCopyAndSaveHtmlEmbed} disabled={isSavingHtmlEmbed} title="שכפול ושמירה">
                       {isSavingHtmlEmbed ? <Loader2Icon className="h-3.5 w-3.5 animate-spin" /> : <CopyPlus className="h-3.5 w-3.5 text-[#0B1F5B]" />}
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleDuplicateAndCompare('html-embed')} title="שכפול והשוואה">
+                      <Columns className="h-3.5 w-3.5 text-[#0B1F5B]" />
                     </Button>
 
                     <div className="w-px h-5 bg-[#D4AF37]/20" />
