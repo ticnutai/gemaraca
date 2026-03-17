@@ -174,6 +174,10 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
   const [editFullText, setEditFullText] = useState("");
   const [editTags, setEditTags] = useState("");
 
+  // Fetched HTML preview state (for rendering html files with srcDoc)
+  const [fetchedHtmlPreview, setFetchedHtmlPreview] = useState<string | null>(null);
+  const [fetchingHtmlPreview, setFetchingHtmlPreview] = useState(false);
+
   // Beautify state
   const [beautifiedHtml, setBeautifiedHtml] = useState<string | null>(null);
   const [isBeautifying, setIsBeautifying] = useState(false);
@@ -237,6 +241,22 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
   const fullText = psak?.full_text || psak?.fullText;
   const sourceUrl = psak?.source_url || psak?.sourceUrl;
   const caseNumber = psak?.case_number || psak?.caseNumber;
+
+  // Fetch HTML content for preview when fileType is html
+  useEffect(() => {
+    if (!open || !sourceUrl) { setFetchedHtmlPreview(null); return; }
+    const lower = sourceUrl.toLowerCase();
+    const isHtml = lower.includes('.html') || lower.includes('.htm');
+    if (!isHtml) { setFetchedHtmlPreview(null); return; }
+    let cancelled = false;
+    setFetchingHtmlPreview(true);
+    fetch(sourceUrl)
+      .then(r => r.text())
+      .then(html => { if (!cancelled) setFetchedHtmlPreview(html); })
+      .catch(() => { if (!cancelled) setFetchedHtmlPreview(null); })
+      .finally(() => { if (!cancelled) setFetchingHtmlPreview(false); });
+    return () => { cancelled = true; };
+  }, [open, sourceUrl]);
 
   const factualCaseText = useMemo(() => {
     const base = (fullText || psak?.summary || "").trim();
@@ -1349,12 +1369,25 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
                       title="צפייה בפסק דין"
                     />
                   ) : fileType === 'html' ? (
-                    <iframe
-                      src={sourceUrl}
-                      className="w-full h-full min-h-[500px]"
-                      title="צפייה בפסק דין מעוצב"
-                      sandbox="allow-same-origin"
-                    />
+                    fetchingHtmlPreview ? (
+                      <div className="flex items-center justify-center h-full min-h-[500px]">
+                        <Loader2 className="w-6 h-6 animate-spin text-[#D4AF37]" />
+                      </div>
+                    ) : fetchedHtmlPreview ? (
+                      <iframe
+                        srcDoc={fetchedHtmlPreview}
+                        className="w-full h-full min-h-[500px]"
+                        title="צפייה בפסק דין מעוצב"
+                        sandbox="allow-same-origin allow-scripts allow-popups"
+                      />
+                    ) : (
+                      <iframe
+                        src={sourceUrl}
+                        className="w-full h-full min-h-[500px]"
+                        title="צפייה בפסק דין מעוצב"
+                        sandbox="allow-same-origin allow-scripts"
+                      />
+                    )
                   ) : fileType === 'txt' ? (
                     <TxtViewer url={sourceUrl} textSettings={textSettings} textClasses={textClasses} />
                   ) : (
