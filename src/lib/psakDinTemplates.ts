@@ -149,15 +149,16 @@ const SEARCH_WIDGET_CSS = `
     align-items: center;
     flex-wrap: wrap;
   }
-  .search-input {
-    flex: 1;
-    min-width: 180px;
+  .search-input, .search-select {
     border: 1px solid #d1d5db;
     border-radius: 8px;
     padding: 8px 10px;
     font-size: 14px;
     direction: rtl;
+    background: #fff;
   }
+  .search-input { flex: 1; min-width: 180px; }
+  .search-select { min-width: 140px; }
   .search-btn {
     border: 1px solid #d1d5db;
     background: #f8fafc;
@@ -173,6 +174,36 @@ const SEARCH_WIDGET_CSS = `
     min-width: 64px;
     text-align: center;
   }
+  .search-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: #334155;
+  }
+  .doc-toolbar-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .breadcrumbs {
+    font-size: 12px;
+    color: #475569;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 6px 10px;
+  }
+  .toc-link.toc-active {
+    color: #b45309;
+    font-weight: 700;
+    text-decoration: underline;
+  }
+  .doc-section-content.section-collapsed {
+    display: none;
+  }
   mark.psak-hit {
     background: #fde68a;
     color: #111827;
@@ -184,7 +215,7 @@ const SEARCH_WIDGET_CSS = `
     color: #111827;
   }
   [id^="sec-"], #toc-top {
-    scroll-margin-top: 86px;
+    scroll-margin-top: 98px;
   }
 `;
 
@@ -194,27 +225,53 @@ const SEARCH_WIDGET_SCRIPT = `
   var root = document.querySelector('.container') || document.body;
   if (!root) return;
 
-  document.querySelectorAll('.toc-link').forEach(function (link) {
-    link.addEventListener('click', function (event) {
-      var href = link.getAttribute('href') || '';
-      if (!href.startsWith('#')) return;
-      var target = document.querySelector(href);
-      if (!target) return;
-      event.preventDefault();
-      target.scrollIntoView({ behavior: 'auto', block: 'start' });
-      if (history && history.replaceState) history.replaceState(null, '', href);
-    });
-  });
-
   var input = document.getElementById('psak-search-input');
   var prevBtn = document.getElementById('psak-search-prev');
   var nextBtn = document.getElementById('psak-search-next');
   var clearBtn = document.getElementById('psak-search-clear');
   var countEl = document.getElementById('psak-search-count');
-  if (!input || !prevBtn || !nextBtn || !clearBtn || !countEl) return;
+  var exactEl = document.getElementById('psak-search-exact');
+  var normalizedEl = document.getElementById('psak-search-normalized');
+  var sectionFilterEl = document.getElementById('psak-search-section');
+  var tocExpandEl = document.getElementById('psak-expand-all');
+  var tocCollapseEl = document.getElementById('psak-collapse-all');
+  var secPrevEl = document.getElementById('psak-prev-sec');
+  var secNextEl = document.getElementById('psak-next-sec');
+  var backPosEl = document.getElementById('psak-back-pos');
+  var copyQuoteEl = document.getElementById('psak-copy-quote');
+  var notesEl = document.getElementById('psak-notes');
+  var notesSaveEl = document.getElementById('psak-save-notes');
+  var breadcrumbEl = document.getElementById('psak-breadcrumbs');
 
+  if (!input || !prevBtn || !nextBtn || !clearBtn || !countEl || !exactEl || !normalizedEl || !sectionFilterEl) return;
+
+  var lastScrollY = 0;
   var hits = [];
   var activeIndex = -1;
+  var allSecAnchors = Array.prototype.slice.call(document.querySelectorAll('[id^="sec-"]'));
+
+  function normalizeHebrew(str) {
+    if (!str) return '';
+    var base = str
+      .replace(/[\u0591-\u05C7]/g, '')
+      .replace(/ך/g, 'כ')
+      .replace(/ם/g, 'מ')
+      .replace(/ן/g, 'נ')
+      .replace(/ף/g, 'פ')
+      .replace(/ץ/g, 'צ');
+    return base.toLocaleLowerCase('he-IL');
+  }
+
+  function isBoundary(ch) {
+    return !ch || /[\s.,;:!?()\[\]{}"'\/\\|-]/.test(ch);
+  }
+
+  function sectionKeyFromNode(node) {
+    var parent = node.parentElement;
+    if (!parent) return '';
+    var holder = parent.closest('[data-search-scope]');
+    return holder ? (holder.getAttribute('data-search-scope') || '') : '';
+  }
 
   function clearHighlights() {
     document.querySelectorAll('mark.psak-hit').forEach(function (mark) {
@@ -228,6 +285,7 @@ const SEARCH_WIDGET_SCRIPT = `
   }
 
   function collectTextNodes(node) {
+    var sectionFilter = sectionFilterEl.value || '';
     var walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT, {
       acceptNode: function (textNode) {
         var parent = textNode.parentElement;
@@ -236,6 +294,7 @@ const SEARCH_WIDGET_SCRIPT = `
         if (parent.closest('.toc')) return NodeFilter.FILTER_REJECT;
         if (parent.closest('script, style, mark')) return NodeFilter.FILTER_REJECT;
         if (!(textNode.nodeValue || '').trim()) return NodeFilter.FILTER_REJECT;
+        if (sectionFilter && sectionKeyFromNode(textNode) !== sectionFilter) return NodeFilter.FILTER_REJECT;
         return NodeFilter.FILTER_ACCEPT;
       }
     });
@@ -249,18 +308,28 @@ const SEARCH_WIDGET_SCRIPT = `
     clearHighlights();
     if (!term || term.length < 2) return;
 
-    var query = term.toLocaleLowerCase('he-IL');
+    var normalizedMode = !!normalizedEl.checked;
+    var exactMode = !!exactEl.checked;
+    var query = normalizedMode ? normalizeHebrew(term) : term.toLocaleLowerCase('he-IL');
     var nodes = collectTextNodes(root);
 
     nodes.forEach(function (node) {
       var original = node.nodeValue || '';
-      var lower = original.toLocaleLowerCase('he-IL');
+      var source = normalizedMode ? normalizeHebrew(original) : original.toLocaleLowerCase('he-IL');
       var indexes = [];
       var from = 0;
 
-      while (from < lower.length) {
-        var idx = lower.indexOf(query, from);
+      while (from < source.length) {
+        var idx = source.indexOf(query, from);
         if (idx === -1) break;
+        if (exactMode) {
+          var left = idx > 0 ? source.charAt(idx - 1) : '';
+          var right = source.charAt(idx + query.length);
+          if (!isBoundary(left) || !isBoundary(right)) {
+            from = idx + query.length;
+            continue;
+          }
+        }
         indexes.push(idx);
         from = idx + query.length;
       }
@@ -299,10 +368,64 @@ const SEARCH_WIDGET_SCRIPT = `
     countEl.textContent = String(activeIndex + 1) + '/' + String(hits.length);
   }
 
-  input.addEventListener('input', function () {
-    highlightTerm(input.value.trim());
+  function updateActiveToc() {
+    var active = null;
+    for (var i = 0; i < allSecAnchors.length; i += 1) {
+      var rect = allSecAnchors[i].getBoundingClientRect();
+      if (rect.top <= 130) active = allSecAnchors[i];
+      else break;
+    }
+    document.querySelectorAll('.toc-link').forEach(function (l) { l.classList.remove('toc-active'); });
+    if (!active) return;
+    var selector = '.toc-link[href="#' + active.id + '"]';
+    var link = document.querySelector(selector);
+    if (link) link.classList.add('toc-active');
+    if (breadcrumbEl) breadcrumbEl.textContent = 'מיקום נוכחי: ' + (active.textContent || active.id);
+  }
+
+  function jumpToAnchor(anchorId) {
+    var target = document.getElementById(anchorId);
+    if (!target) return;
+    lastScrollY = window.scrollY;
+    target.scrollIntoView({ behavior: 'auto', block: 'start' });
+    if (history && history.replaceState) history.replaceState(null, '', '#' + anchorId);
+  }
+
+  function currentSectionIndex() {
+    var current = 0;
+    for (var i = 0; i < allSecAnchors.length; i += 1) {
+      var rect = allSecAnchors[i].getBoundingClientRect();
+      if (rect.top <= 130) current = i;
+      else break;
+    }
+    return current;
+  }
+
+  function getSelectedQuote() {
+    var selection = window.getSelection();
+    var text = (selection && selection.toString()) ? selection.toString().trim() : '';
+    if (!text) return '';
+    var node = selection.anchorNode;
+    var holder = node && node.parentElement ? node.parentElement.closest('[data-search-scope]') : null;
+    var ref = holder ? (holder.getAttribute('data-search-label') || holder.getAttribute('data-search-scope') || '') : '';
+    return text + (ref ? '\n\n[הפניה: ' + ref + ']' : '');
+  }
+
+  document.querySelectorAll('.toc-link').forEach(function (link) {
+    link.addEventListener('click', function (event) {
+      var href = link.getAttribute('href') || '';
+      if (!href.startsWith('#')) return;
+      var id = href.slice(1);
+      if (!id) return;
+      event.preventDefault();
+      jumpToAnchor(id);
+    });
   });
 
+  input.addEventListener('input', function () { highlightTerm(input.value.trim()); });
+  exactEl.addEventListener('change', function () { highlightTerm(input.value.trim()); });
+  normalizedEl.addEventListener('change', function () { highlightTerm(input.value.trim()); });
+  sectionFilterEl.addEventListener('change', function () { highlightTerm(input.value.trim()); });
   input.addEventListener('keydown', function (event) {
     if (event.key === 'Enter') {
       event.preventDefault();
@@ -317,18 +440,95 @@ const SEARCH_WIDGET_SCRIPT = `
     input.value = '';
     clearHighlights();
   });
+
+  if (tocExpandEl) {
+    tocExpandEl.addEventListener('click', function () {
+      document.querySelectorAll('.doc-section-content').forEach(function (el) { el.classList.remove('section-collapsed'); });
+    });
+  }
+
+  if (tocCollapseEl) {
+    tocCollapseEl.addEventListener('click', function () {
+      document.querySelectorAll('.doc-section-content').forEach(function (el) { el.classList.add('section-collapsed'); });
+    });
+  }
+
+  if (secPrevEl) {
+    secPrevEl.addEventListener('click', function () {
+      if (!allSecAnchors.length) return;
+      var idx = Math.max(0, currentSectionIndex() - 1);
+      jumpToAnchor(allSecAnchors[idx].id);
+    });
+  }
+
+  if (secNextEl) {
+    secNextEl.addEventListener('click', function () {
+      if (!allSecAnchors.length) return;
+      var idx = Math.min(allSecAnchors.length - 1, currentSectionIndex() + 1);
+      jumpToAnchor(allSecAnchors[idx].id);
+    });
+  }
+
+  if (backPosEl) {
+    backPosEl.addEventListener('click', function () {
+      window.scrollTo({ top: lastScrollY || 0, behavior: 'auto' });
+    });
+  }
+
+  if (copyQuoteEl && navigator.clipboard) {
+    copyQuoteEl.addEventListener('click', function () {
+      var quote = getSelectedQuote();
+      if (!quote) return;
+      navigator.clipboard.writeText(quote).catch(function () {});
+    });
+  }
+
+  if (notesEl && notesSaveEl) {
+    var key = 'psak-notes:' + (location.pathname || 'doc') + ':' + (document.title || 'psak');
+    try { notesEl.value = localStorage.getItem(key) || ''; } catch (e) { }
+    notesSaveEl.addEventListener('click', function () {
+      try { localStorage.setItem(key, notesEl.value || ''); } catch (e) { }
+    });
+  }
+
+  document.addEventListener('scroll', updateActiveToc, { passive: true });
+  updateActiveToc();
 })();
 </script>
 `;
 
-function renderSearchWidget(): string {
-  return `<div class="search-widget" aria-label="חיפוש במסמך">
+function renderSearchWidget(data: ParsedPsakDin): string {
+  const sectionOptions = [
+    `<option value="">כל המסמך</option>`,
+    `<option value="sec-details">פרטי תיק</option>`,
+    data.summary ? `<option value="sec-summary">תקציר</option>` : "",
+    ...data.sections.map((sec, i) => `<option value="sec-${i}">${esc(sec.title)}</option>`),
+    data.judges.length > 0 ? `<option value="sec-signature">חתימה</option>` : "",
+  ].join("");
+
+  return `<div class="search-widget" aria-label="כלי חיפוש וניווט במסמך">
     <div class="search-row">
       <input id="psak-search-input" class="search-input" type="search" placeholder="חיפוש בתוך פסק הדין..." />
+      <select id="psak-search-section" class="search-select">${sectionOptions}</select>
+      <label class="search-check"><input id="psak-search-exact" type="checkbox" /> ביטוי מדויק</label>
+      <label class="search-check"><input id="psak-search-normalized" type="checkbox" checked /> התאמה חכמה</label>
       <button id="psak-search-prev" class="search-btn" type="button" title="תוצאה קודמת">הקודם</button>
       <button id="psak-search-next" class="search-btn" type="button" title="תוצאה הבאה">הבא</button>
       <button id="psak-search-clear" class="search-btn" type="button" title="ניקוי חיפוש">נקה</button>
       <span id="psak-search-count" class="search-count">0/0</span>
+    </div>
+    <div class="doc-toolbar-row">
+      <button id="psak-prev-sec" class="search-btn" type="button">סעיף קודם</button>
+      <button id="psak-next-sec" class="search-btn" type="button">סעיף הבא</button>
+      <button id="psak-back-pos" class="search-btn" type="button">חזור למיקום קודם</button>
+      <button id="psak-expand-all" class="search-btn" type="button">פתח הכל</button>
+      <button id="psak-collapse-all" class="search-btn" type="button">כווץ הכל</button>
+      <button id="psak-copy-quote" class="search-btn" type="button">העתק ציטוט מסומן</button>
+      <span id="psak-breadcrumbs" class="breadcrumbs">מיקום נוכחי: תחילת מסמך</span>
+    </div>
+    <div class="doc-toolbar-row">
+      <textarea id="psak-notes" class="search-input" placeholder="הערות אישיות למסמך (נשמר מקומית בדפדפן)..." style="min-height:56px;"></textarea>
+      <button id="psak-save-notes" class="search-btn" type="button">שמור הערות</button>
     </div>
   </div>`;
 }
@@ -393,7 +593,10 @@ function generateClassicHtml(data: ParsedPsakDin): string {
     const icon = getSectionIcon(section.type);
     const anchor = sectionAnchors.get(i) || `sec-${i}`;
     const contentHtml = renderSectionContent(section.content);
-    return `<h3 id="${anchor}" class="subsection-title"><span class="icon">${icon}</span> ${esc(section.title)} <a href="#toc-top" class="back-to-top" title="חזרה לתוכן עניינים">↑</a></h3>\n        ${contentHtml}`;
+    return `<section class="doc-section" data-search-scope="${anchor}" data-search-label="${esc(section.title)}">
+      <h3 id="${anchor}" class="subsection-title"><span class="icon">${icon}</span> ${esc(section.title)} <a href="#toc-top" class="back-to-top" title="חזרה לתוכן עניינים">↑</a></h3>
+      <div class="doc-section-content">${contentHtml}</div>
+    </section>`;
   }).join("\n");
 
   const fallbackBody = renderBodyText(data);
@@ -443,23 +646,27 @@ function generateClassicHtml(data: ParsedPsakDin): string {
 
     <div id="toc-top"></div>
     ${tocHtml}
-    ${renderSearchWidget()}
+    ${renderSearchWidget(data)}
 
-    <h2 id="sec-details" class="section-title"><span class="icon">📋</span> פרטי התיק</h2>
-    <table class="details-table">
-      ${data.title ? `<tr><td><span class="icon">📌</span> כותרת:</td><td>${esc(data.title)}</td></tr>` : ""}
-      ${data.court ? `<tr><td><span class="icon">🏛️</span> בית הדין:</td><td>${esc(data.court)}</td></tr>` : ""}
-      ${data.date ? `<tr><td><span class="icon">📅</span> תאריך:</td><td>${esc(data.date)}</td></tr>` : ""}
-      ${data.sourceId ? `<tr><td><span class="icon">🔖</span> מזהה:</td><td>${esc(data.sourceId)}</td></tr>` : ""}
-      ${data.sourceUrl ? `<tr><td><span class="icon">🔗</span> קישור:</td><td><a href="${esc(data.sourceUrl)}" target="_blank">${esc(data.sourceUrl)}</a></td></tr>` : ""}
-    </table>
-    ${data.summary ? `<h2 id="sec-summary" class="section-title"><span class="icon">📝</span> תקציר</h2><div class="paragraph">${esc(data.summary)}</div>` : ""}
+    <section class="doc-section" data-search-scope="sec-details" data-search-label="פרטי התיק">
+      <h2 id="sec-details" class="section-title"><span class="icon">📋</span> פרטי התיק</h2>
+      <div class="doc-section-content">
+        <table class="details-table">
+          ${data.title ? `<tr><td><span class="icon">📌</span> כותרת:</td><td>${esc(data.title)}</td></tr>` : ""}
+          ${data.court ? `<tr><td><span class="icon">🏛️</span> בית הדין:</td><td>${esc(data.court)}</td></tr>` : ""}
+          ${data.date ? `<tr><td><span class="icon">📅</span> תאריך:</td><td>${esc(data.date)}</td></tr>` : ""}
+          ${data.sourceId ? `<tr><td><span class="icon">🔖</span> מזהה:</td><td>${esc(data.sourceId)}</td></tr>` : ""}
+          ${data.sourceUrl ? `<tr><td><span class="icon">🔗</span> קישור:</td><td><a href="${esc(data.sourceUrl)}" target="_blank">${esc(data.sourceUrl)}</a></td></tr>` : ""}
+        </table>
+      </div>
+    </section>
+    ${data.summary ? `<section class="doc-section" data-search-scope="sec-summary" data-search-label="תקציר"><h2 id="sec-summary" class="section-title"><span class="icon">📝</span> תקציר</h2><div class="doc-section-content"><div class="paragraph">${esc(data.summary)}</div></div></section>` : ""}
     <hr class="divider">
     <h2 class="section-title"><span class="icon">📖</span> גוף פסק הדין</h2>
     ${data.topics ? `<div class="paragraph"><strong>נושאים:</strong> ${esc(data.topics)}</div>` : ""}
     ${sectionsHtml}
-    ${fallbackBody}
-    ${judgesHtml ? `<div id="sec-signature" class="signature">
+    ${fallbackBody ? `<section class="doc-section" data-search-scope="sec-body" data-search-label="גוף פסק הדין"><div class="doc-section-content">${fallbackBody}</div></section>` : ""}
+    ${judgesHtml ? `<div id="sec-signature" class="signature" data-search-scope="sec-signature" data-search-label="חתימה">
       <div>חתמו על פסק הדין:</div>
       ${judgesHtml}
     </div>` : ""}
@@ -478,12 +685,13 @@ function generateModernHtml(data: ParsedPsakDin): string {
     ? data.judges.map(j => `<span class="judge-chip">${esc(j)}</span>`).join(" ")
     : "";
 
-  const sectionsHtml = data.sections.map(section => {
+  const sectionsHtml = data.sections.map((section, i) => {
+    const anchor = `sec-${i}`;
     const contentHtml = renderSectionContent(section.content);
-    return `<div class="modern-section">
-        <h3 class="modern-section-title">${esc(section.title)}</h3>
-        ${contentHtml}
-      </div>`;
+    return `<section class="modern-section doc-section" data-search-scope="${anchor}" data-search-label="${esc(section.title)}">
+        <h3 id="${anchor}" class="modern-section-title">${esc(section.title)}</h3>
+        <div class="doc-section-content">${contentHtml}</div>
+      </section>`;
   }).join("\n");
 
   const fallbackBody = renderBodyText(data);
@@ -530,17 +738,19 @@ function generateModernHtml(data: ParsedPsakDin): string {
       <h1>${esc(data.title)}</h1>
       ${data.caseNumber ? `<div class="case-no">תיק ${esc(data.caseNumber)}</div>` : ""}
     </div>
-    <div class="meta-grid">
-      ${data.court ? `<div class="meta-item"><span class="meta-label">בית הדין</span><span class="meta-value">${esc(data.court)}</span></div>` : ""}
-      ${data.date ? `<div class="meta-item"><span class="meta-label">תאריך</span><span class="meta-value">${esc(data.date)}</span></div>` : ""}
-      ${data.year ? `<div class="meta-item"><span class="meta-label">שנה</span><span class="meta-value">${data.year}</span></div>` : ""}
-      ${data.sourceId ? `<div class="meta-item"><span class="meta-label">מזהה</span><span class="meta-value">${esc(data.sourceId)}</span></div>` : ""}
-    </div>
-    ${renderSearchWidget()}
-    ${data.summary ? `<div class="summary-card"><p>${esc(data.summary)}</p></div>` : ""}
+    <section class="doc-section" data-search-scope="sec-details" data-search-label="פרטי התיק">
+      <div id="sec-details" class="meta-grid doc-section-content">
+        ${data.court ? `<div class="meta-item"><span class="meta-label">בית הדין</span><span class="meta-value">${esc(data.court)}</span></div>` : ""}
+        ${data.date ? `<div class="meta-item"><span class="meta-label">תאריך</span><span class="meta-value">${esc(data.date)}</span></div>` : ""}
+        ${data.year ? `<div class="meta-item"><span class="meta-label">שנה</span><span class="meta-value">${data.year}</span></div>` : ""}
+        ${data.sourceId ? `<div class="meta-item"><span class="meta-label">מזהה</span><span class="meta-value">${esc(data.sourceId)}</span></div>` : ""}
+      </div>
+    </section>
+    ${renderSearchWidget(data)}
+    ${data.summary ? `<section class="doc-section" data-search-scope="sec-summary" data-search-label="תקציר"><div id="sec-summary" class="summary-card doc-section-content"><p>${esc(data.summary)}</p></div></section>` : ""}
     ${sectionsHtml}
-    ${fallbackBody}
-    ${judgesHtml ? `<div style="margin-top:32px;text-align:center;"><div style="color:#718096;font-size:0.9em;margin-bottom:8px;">חתימת הדיינים</div>${judgesHtml}</div>` : ""}
+    ${fallbackBody ? `<section class="doc-section" data-search-scope="sec-body" data-search-label="גוף פסק הדין"><div class="doc-section-content">${fallbackBody}</div></section>` : ""}
+    ${judgesHtml ? `<div id="sec-signature" data-search-scope="sec-signature" data-search-label="חתימה" style="margin-top:32px;text-align:center;"><div style="color:#718096;font-size:0.9em;margin-bottom:8px;">חתימת הדיינים</div>${judgesHtml}</div>` : ""}
     <div class="modern-footer">עוצב אוטומטית • ${new Date().toLocaleDateString("he-IL")}</div>
   </div>
   ${SEARCH_WIDGET_SCRIPT}
@@ -562,8 +772,10 @@ function generateIndexedHtml(data: ParsedPsakDin): string {
     const icon = getSectionIcon(section.type);
     const anchor = sectionAnchors.get(i) || `sec-${i}`;
     const contentHtml = renderSectionContent(section.content);
-    return `<h3 id="${anchor}" class="subsection-title"><span class="icon">${icon}</span> ${esc(section.title)} <a href="#toc-top" class="back-to-top" title="חזרה לתוכן עניינים">↑</a></h3>
-        ${contentHtml}`;
+    return `<section class="doc-section" data-search-scope="${anchor}" data-search-label="${esc(section.title)}">
+      <h3 id="${anchor}" class="subsection-title"><span class="icon">${icon}</span> ${esc(section.title)} <a href="#toc-top" class="back-to-top" title="חזרה לתוכן עניינים">↑</a></h3>
+      <div class="doc-section-content">${contentHtml}</div>
+    </section>`;
   }).join("\n");
 
   const fallbackBody = renderBodyText(data);
@@ -613,23 +825,27 @@ function generateIndexedHtml(data: ParsedPsakDin): string {
 
     <div id="toc-top"></div>
     ${tocHtml}
-    ${renderSearchWidget()}
+    ${renderSearchWidget(data)}
 
-    <h2 id="sec-details" class="section-title"><span class="icon">📋</span> פרטי התיק</h2>
-    <table class="details-table">
-      ${data.title ? `<tr><td><span class="icon">📌</span> כותרת:</td><td>${esc(data.title)}</td></tr>` : ""}
-      ${data.court ? `<tr><td><span class="icon">🏛️</span> בית הדין:</td><td>${esc(data.court)}</td></tr>` : ""}
-      ${data.date ? `<tr><td><span class="icon">📅</span> תאריך:</td><td>${esc(data.date)}</td></tr>` : ""}
-      ${data.sourceId ? `<tr><td><span class="icon">🔖</span> מזהה:</td><td>${esc(data.sourceId)}</td></tr>` : ""}
-      ${data.sourceUrl ? `<tr><td><span class="icon">🔗</span> קישור:</td><td><a href="${esc(data.sourceUrl)}" target="_blank">${esc(data.sourceUrl)}</a></td></tr>` : ""}
-    </table>
-    ${data.summary ? `<h2 id="sec-summary" class="section-title"><span class="icon">📝</span> תקציר</h2><div class="paragraph">${esc(data.summary)}</div>` : ""}
+    <section class="doc-section" data-search-scope="sec-details" data-search-label="פרטי התיק">
+      <h2 id="sec-details" class="section-title"><span class="icon">📋</span> פרטי התיק</h2>
+      <div class="doc-section-content">
+        <table class="details-table">
+          ${data.title ? `<tr><td><span class="icon">📌</span> כותרת:</td><td>${esc(data.title)}</td></tr>` : ""}
+          ${data.court ? `<tr><td><span class="icon">🏛️</span> בית הדין:</td><td>${esc(data.court)}</td></tr>` : ""}
+          ${data.date ? `<tr><td><span class="icon">📅</span> תאריך:</td><td>${esc(data.date)}</td></tr>` : ""}
+          ${data.sourceId ? `<tr><td><span class="icon">🔖</span> מזהה:</td><td>${esc(data.sourceId)}</td></tr>` : ""}
+          ${data.sourceUrl ? `<tr><td><span class="icon">🔗</span> קישור:</td><td><a href="${esc(data.sourceUrl)}" target="_blank">${esc(data.sourceUrl)}</a></td></tr>` : ""}
+        </table>
+      </div>
+    </section>
+    ${data.summary ? `<section class="doc-section" data-search-scope="sec-summary" data-search-label="תקציר"><h2 id="sec-summary" class="section-title"><span class="icon">📝</span> תקציר</h2><div class="doc-section-content"><div class="paragraph">${esc(data.summary)}</div></div></section>` : ""}
     <hr class="divider">
     <h2 class="section-title"><span class="icon">📖</span> גוף פסק הדין</h2>
     ${data.topics ? `<div class="paragraph"><strong>נושאים:</strong> ${esc(data.topics)}</div>` : ""}
     ${sectionsHtml}
-    ${fallbackBody}
-    ${judgesHtml ? `<div id="sec-signature" class="signature">
+    ${fallbackBody ? `<section class="doc-section" data-search-scope="sec-body" data-search-label="גוף פסק הדין"><div class="doc-section-content">${fallbackBody}</div></section>` : ""}
+    ${judgesHtml ? `<div id="sec-signature" class="signature" data-search-scope="sec-signature" data-search-label="חתימה">
       <div>חתמו על פסק הדין:</div>
       ${judgesHtml}
     </div>` : ""}
@@ -655,10 +871,10 @@ function generateAcademicHtml(data: ParsedPsakDin): string {
     sectionCounter++;
     const anchor = sectionAnchors.get(i) || `sec-${i}`;
     const contentHtml = renderSectionContent(section.content);
-    return `<div class="academic-section" id="${anchor}">
+    return `<section class="academic-section doc-section" id="${anchor}" data-search-scope="${anchor}" data-search-label="${esc(section.title)}">
         <h3 class="academic-section-title">${sectionCounter}. ${esc(section.title)} <a href="#toc-top" class="back-to-top">↑</a></h3>
-        ${contentHtml}
-      </div>`;
+        <div class="doc-section-content">${contentHtml}</div>
+      </section>`;
   }).join("\n");
 
   const fallbackBody = renderBodyText(data);
@@ -717,28 +933,30 @@ function generateAcademicHtml(data: ParsedPsakDin): string {
 
     <div id="toc-top"></div>
     ${tocHtml}
-    ${renderSearchWidget()}
+    ${renderSearchWidget(data)}
 
-    <div id="sec-details" class="meta-block">
-      ${data.title ? `<div class="row"><span class="label">כותרת:</span><span>${esc(data.title)}</span></div>` : ""}
-      ${data.court ? `<div class="row"><span class="label">בית הדין:</span><span>${esc(data.court)}</span></div>` : ""}
-      ${data.date ? `<div class="row"><span class="label">תאריך:</span><span>${esc(data.date)}</span></div>` : ""}
-      ${data.sourceId ? `<div class="row"><span class="label">מזהה:</span><span>${esc(data.sourceId)}</span></div>` : ""}
-      ${data.judges.length > 0 ? `<div class="row"><span class="label">הרכב:</span><span>${data.judges.map(j => esc(j)).join(", ")}</span></div>` : ""}
-      ${data.sourceUrl ? `<div class="row"><span class="label">מקור:</span><span><a href="${esc(data.sourceUrl)}" target="_blank">${esc(data.sourceUrl)}</a></span></div>` : ""}
-    </div>
+    <section class="doc-section" data-search-scope="sec-details" data-search-label="פרטי התיק">
+      <div id="sec-details" class="meta-block doc-section-content">
+        ${data.title ? `<div class="row"><span class="label">כותרת:</span><span>${esc(data.title)}</span></div>` : ""}
+        ${data.court ? `<div class="row"><span class="label">בית הדין:</span><span>${esc(data.court)}</span></div>` : ""}
+        ${data.date ? `<div class="row"><span class="label">תאריך:</span><span>${esc(data.date)}</span></div>` : ""}
+        ${data.sourceId ? `<div class="row"><span class="label">מזהה:</span><span>${esc(data.sourceId)}</span></div>` : ""}
+        ${data.judges.length > 0 ? `<div class="row"><span class="label">הרכב:</span><span>${data.judges.map(j => esc(j)).join(", ")}</span></div>` : ""}
+        ${data.sourceUrl ? `<div class="row"><span class="label">מקור:</span><span><a href="${esc(data.sourceUrl)}" target="_blank">${esc(data.sourceUrl)}</a></span></div>` : ""}
+      </div>
+    </section>
 
-    ${data.summary ? `<div id="sec-summary" class="academic-section">
+    ${data.summary ? `<section class="doc-section" data-search-scope="sec-summary" data-search-label="תקציר"><div id="sec-summary" class="academic-section">
       <h3 class="academic-section-title">תקציר</h3>
-      <div class="paragraph">${esc(data.summary)}</div>
-    </div>` : ""}
+      <div class="paragraph doc-section-content">${esc(data.summary)}</div>
+    </div></section>` : ""}
 
     <hr class="divider">
     ${data.topics ? `<div class="paragraph"><strong>נושאים נידונים:</strong> ${esc(data.topics)}</div>` : ""}
     ${sectionsHtml}
-    ${fallbackBody}
+    ${fallbackBody ? `<section class="doc-section" data-search-scope="sec-body" data-search-label="גוף פסק הדין"><div class="doc-section-content">${fallbackBody}</div></section>` : ""}
 
-    ${judgesHtml ? `<hr class="divider"><div id="sec-signature" style="margin-top:30px;">
+    ${judgesHtml ? `<hr class="divider"><div id="sec-signature" style="margin-top:30px;" data-search-scope="sec-signature" data-search-label="חתימה">
       <div style="font-weight:bold;margin-bottom:8px;">חתימת הדיינים:</div>
       ${judgesHtml}
     </div>` : ""}
