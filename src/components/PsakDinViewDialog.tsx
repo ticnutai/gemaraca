@@ -591,7 +591,8 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
     if (lower.includes('.txt')) return 'txt';
     if (lower.includes('.rtf')) return 'rtf';
     if (lower.includes('.html') || lower.includes('.htm')) return 'html';
-    return 'unknown';
+    // Default: try loading as HTML/iframe (most web URLs serve viewable content)
+    return 'auto';
   };
 
   const fileType = getFileType(sourceUrl);
@@ -1357,21 +1358,12 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
                   ) : fileType === 'txt' ? (
                     <TxtViewer url={sourceUrl} textSettings={textSettings} textClasses={textClasses} />
                   ) : (
-                    <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-                      <FileIcon className="w-16 h-16 text-muted-foreground mb-4" />
-                      <p className="text-foreground font-medium mb-2">
-                        לא ניתן להציג תצוגה מקדימה של קובץ זה
-                      </p>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        ניתן להוריד את הקובץ לצפייה
-                      </p>
-                      <Button asChild className="gap-2">
-                        <a href={sourceUrl} download target="_blank" rel="noopener noreferrer">
-                          <Download className="w-4 h-4" />
-                          הורד קובץ
-                        </a>
-                      </Button>
-                    </div>
+                    <iframe
+                      src={sourceUrl}
+                      className="w-full h-full min-h-[500px]"
+                      title="צפייה בפסק דין"
+                      sandbox="allow-same-origin allow-scripts"
+                    />
                   )}
                 </div>
               </div>
