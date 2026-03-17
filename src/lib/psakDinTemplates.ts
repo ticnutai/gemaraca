@@ -131,6 +131,208 @@ const TOC_CSS = `
   }
 `;
 
+const SEARCH_WIDGET_CSS = `
+  .search-widget {
+    position: sticky;
+    top: 10px;
+    z-index: 50;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 10px;
+    margin: 12px 0 18px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  }
+  .search-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .search-input {
+    flex: 1;
+    min-width: 180px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 14px;
+    direction: rtl;
+  }
+  .search-btn {
+    border: 1px solid #d1d5db;
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .search-btn:hover { background: #eef2f7; }
+  .search-count {
+    font-size: 12px;
+    color: #475569;
+    min-width: 64px;
+    text-align: center;
+  }
+  mark.psak-hit {
+    background: #fde68a;
+    color: #111827;
+    border-radius: 2px;
+    padding: 0 1px;
+  }
+  mark.psak-hit.active-hit {
+    background: #f59e0b;
+    color: #111827;
+  }
+  [id^="sec-"], #toc-top {
+    scroll-margin-top: 86px;
+  }
+`;
+
+const SEARCH_WIDGET_SCRIPT = `
+<script>
+(function () {
+  var root = document.querySelector('.container') || document.body;
+  if (!root) return;
+
+  document.querySelectorAll('.toc-link').forEach(function (link) {
+    link.addEventListener('click', function (event) {
+      var href = link.getAttribute('href') || '';
+      if (!href.startsWith('#')) return;
+      var target = document.querySelector(href);
+      if (!target) return;
+      event.preventDefault();
+      target.scrollIntoView({ behavior: 'auto', block: 'start' });
+      if (history && history.replaceState) history.replaceState(null, '', href);
+    });
+  });
+
+  var input = document.getElementById('psak-search-input');
+  var prevBtn = document.getElementById('psak-search-prev');
+  var nextBtn = document.getElementById('psak-search-next');
+  var clearBtn = document.getElementById('psak-search-clear');
+  var countEl = document.getElementById('psak-search-count');
+  if (!input || !prevBtn || !nextBtn || !clearBtn || !countEl) return;
+
+  var hits = [];
+  var activeIndex = -1;
+
+  function clearHighlights() {
+    document.querySelectorAll('mark.psak-hit').forEach(function (mark) {
+      var text = document.createTextNode(mark.textContent || '');
+      mark.replaceWith(text);
+      if (text.parentNode) text.parentNode.normalize();
+    });
+    hits = [];
+    activeIndex = -1;
+    countEl.textContent = '0/0';
+  }
+
+  function collectTextNodes(node) {
+    var walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT, {
+      acceptNode: function (textNode) {
+        var parent = textNode.parentElement;
+        if (!parent) return NodeFilter.FILTER_REJECT;
+        if (parent.closest('.search-widget')) return NodeFilter.FILTER_REJECT;
+        if (parent.closest('.toc')) return NodeFilter.FILTER_REJECT;
+        if (parent.closest('script, style, mark')) return NodeFilter.FILTER_REJECT;
+        if (!(textNode.nodeValue || '').trim()) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+
+    var nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    return nodes;
+  }
+
+  function highlightTerm(term) {
+    clearHighlights();
+    if (!term || term.length < 2) return;
+
+    var query = term.toLocaleLowerCase('he-IL');
+    var nodes = collectTextNodes(root);
+
+    nodes.forEach(function (node) {
+      var original = node.nodeValue || '';
+      var lower = original.toLocaleLowerCase('he-IL');
+      var indexes = [];
+      var from = 0;
+
+      while (from < lower.length) {
+        var idx = lower.indexOf(query, from);
+        if (idx === -1) break;
+        indexes.push(idx);
+        from = idx + query.length;
+      }
+
+      for (var i = indexes.length - 1; i >= 0; i -= 1) {
+        var start = indexes[i];
+        var after = node.splitText(start + query.length);
+        var middle = node.splitText(start);
+        var mark = document.createElement('mark');
+        mark.className = 'psak-hit';
+        mark.textContent = middle.nodeValue || '';
+        middle.parentNode.replaceChild(mark, middle);
+        hits.push(mark);
+        node = after;
+      }
+    });
+
+    if (hits.length > 0) {
+      activeIndex = 0;
+      focusHit(activeIndex);
+    } else {
+      countEl.textContent = '0/0';
+    }
+  }
+
+  function focusHit(index) {
+    if (!hits.length) {
+      countEl.textContent = '0/0';
+      return;
+    }
+    hits.forEach(function (hit) { hit.classList.remove('active-hit'); });
+    activeIndex = ((index % hits.length) + hits.length) % hits.length;
+    var current = hits[activeIndex];
+    current.classList.add('active-hit');
+    current.scrollIntoView({ behavior: 'auto', block: 'center' });
+    countEl.textContent = String(activeIndex + 1) + '/' + String(hits.length);
+  }
+
+  input.addEventListener('input', function () {
+    highlightTerm(input.value.trim());
+  });
+
+  input.addEventListener('keydown', function (event) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      if (event.shiftKey) focusHit(activeIndex - 1);
+      else focusHit(activeIndex + 1);
+    }
+  });
+
+  prevBtn.addEventListener('click', function () { focusHit(activeIndex - 1); });
+  nextBtn.addEventListener('click', function () { focusHit(activeIndex + 1); });
+  clearBtn.addEventListener('click', function () {
+    input.value = '';
+    clearHighlights();
+  });
+})();
+</script>
+`;
+
+function renderSearchWidget(): string {
+  return `<div class="search-widget" aria-label="חיפוש במסמך">
+    <div class="search-row">
+      <input id="psak-search-input" class="search-input" type="search" placeholder="חיפוש בתוך פסק הדין..." />
+      <button id="psak-search-prev" class="search-btn" type="button" title="תוצאה קודמת">הקודם</button>
+      <button id="psak-search-next" class="search-btn" type="button" title="תוצאה הבאה">הבא</button>
+      <button id="psak-search-clear" class="search-btn" type="button" title="ניקוי חיפוש">נקה</button>
+      <span id="psak-search-count" class="search-count">0/0</span>
+    </div>
+  </div>`;
+}
+
 // ─── Build table of contents from parsed data ───
 function buildTableOfContents(data: ParsedPsakDin): { tocHtml: string; sectionAnchors: Map<number, string> } {
   const anchors = new Map<number, string>();
@@ -227,6 +429,7 @@ function generateClassicHtml(data: ParsedPsakDin): string {
     .detected-quote { margin:12px 30px; padding:10px 20px; border-right:4px solid #D4AF37; background:#faf8f0; font-style:italic; color:#333; }
     .spacer { height:12px; }
     ${TOC_CSS}
+    ${SEARCH_WIDGET_CSS}
     ${PRINT_CSS}
   </style>
 </head>
@@ -240,6 +443,7 @@ function generateClassicHtml(data: ParsedPsakDin): string {
 
     <div id="toc-top"></div>
     ${tocHtml}
+    ${renderSearchWidget()}
 
     <h2 id="sec-details" class="section-title"><span class="icon">📋</span> פרטי התיק</h2>
     <table class="details-table">
@@ -261,6 +465,7 @@ function generateClassicHtml(data: ParsedPsakDin): string {
     </div>` : ""}
     <div class="footer">מסמך זה עוצב אוטומטית • ${new Date().toLocaleDateString("he-IL")}</div>
   </div>
+  ${SEARCH_WIDGET_SCRIPT}
 </body>
 </html>`;
 }
@@ -314,6 +519,7 @@ function generateModernHtml(data: ParsedPsakDin): string {
     .detected-reference { color:#718096; font-size:0.9em; margin:4px 0; padding-right:16px; font-style:italic; }
     .detected-quote { margin:12px 24px; padding:12px 18px; border-right:3px solid #667eea; background:#f7fafc; font-style:italic; border-radius:0 8px 8px 0; }
     .spacer { height:10px; }
+    ${SEARCH_WIDGET_CSS}
     ${PRINT_CSS}
   </style>
 </head>
@@ -330,12 +536,14 @@ function generateModernHtml(data: ParsedPsakDin): string {
       ${data.year ? `<div class="meta-item"><span class="meta-label">שנה</span><span class="meta-value">${data.year}</span></div>` : ""}
       ${data.sourceId ? `<div class="meta-item"><span class="meta-label">מזהה</span><span class="meta-value">${esc(data.sourceId)}</span></div>` : ""}
     </div>
+    ${renderSearchWidget()}
     ${data.summary ? `<div class="summary-card"><p>${esc(data.summary)}</p></div>` : ""}
     ${sectionsHtml}
     ${fallbackBody}
     ${judgesHtml ? `<div style="margin-top:32px;text-align:center;"><div style="color:#718096;font-size:0.9em;margin-bottom:8px;">חתימת הדיינים</div>${judgesHtml}</div>` : ""}
     <div class="modern-footer">עוצב אוטומטית • ${new Date().toLocaleDateString("he-IL")}</div>
   </div>
+  ${SEARCH_WIDGET_SCRIPT}
 </body>
 </html>`;
 }
@@ -391,6 +599,7 @@ function generateIndexedHtml(data: ParsedPsakDin): string {
     .detected-quote { margin:12px 30px; padding:10px 20px; border-right:4px solid #D4AF37; background:#faf8f0; font-style:italic; color:#333; }
     .spacer { height:12px; }
     ${TOC_CSS}
+    ${SEARCH_WIDGET_CSS}
     ${PRINT_CSS}
   </style>
 </head>
@@ -404,6 +613,7 @@ function generateIndexedHtml(data: ParsedPsakDin): string {
 
     <div id="toc-top"></div>
     ${tocHtml}
+    ${renderSearchWidget()}
 
     <h2 id="sec-details" class="section-title"><span class="icon">📋</span> פרטי התיק</h2>
     <table class="details-table">
@@ -425,6 +635,7 @@ function generateIndexedHtml(data: ParsedPsakDin): string {
     </div>` : ""}
     <div class="footer">מסמך זה עוצב אוטומטית • ${new Date().toLocaleDateString("he-IL")}</div>
   </div>
+  ${SEARCH_WIDGET_SCRIPT}
 </body>
 </html>`;
 }
@@ -488,6 +699,7 @@ function generateAcademicHtml(data: ParsedPsakDin): string {
     .toc-list li::before { color:#4a5568; }
     .toc-link { color:#1a202c; }
     .toc-link:hover { color:#4a5568; }
+    ${SEARCH_WIDGET_CSS}
     ${PRINT_CSS}
   </style>
 </head>
@@ -505,6 +717,7 @@ function generateAcademicHtml(data: ParsedPsakDin): string {
 
     <div id="toc-top"></div>
     ${tocHtml}
+    ${renderSearchWidget()}
 
     <div id="sec-details" class="meta-block">
       ${data.title ? `<div class="row"><span class="label">כותרת:</span><span>${esc(data.title)}</span></div>` : ""}
@@ -531,6 +744,7 @@ function generateAcademicHtml(data: ParsedPsakDin): string {
     </div>` : ""}
     <div class="footer">מסמך מחקרי — עוצב אוטומטית • ${new Date().toLocaleDateString("he-IL")}</div>
   </div>
+  ${SEARCH_WIDGET_SCRIPT}
 </body>
 </html>`;
 }
