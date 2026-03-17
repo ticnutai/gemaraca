@@ -53,6 +53,7 @@ import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import FileTypeBadge from "./FileTypeBadge";
 import SummaryToggle from "./SummaryToggle";
+import { getViewerPreference, setViewerPreference, clearViewerPreference } from "./ViewerPreferenceDialog";
 import { toast } from "sonner";
 
 const PsakDinViewDialog = lazy(() => import("@/components/PsakDinViewDialog"));
@@ -108,7 +109,12 @@ export default function PsakeiDinDafPanel({
   const [viewerSelectOpen, setViewerSelectOpen] = useState(false);
   const [embeddedPdfOpen, setEmbeddedPdfOpen] = useState(false);
   const [defaultViewer, setDefaultViewer] = useState<ViewerType | null>(
-    () => localStorage.getItem(PSAK_VIEWER_DEFAULT_KEY) as ViewerType | null
+    () => {
+      const unified = getViewerPreference();
+      if (unified === "dialog") return "regular";
+      if (unified === "embedpdf") return "embedpdf-page";
+      return localStorage.getItem(PSAK_VIEWER_DEFAULT_KEY) as ViewerType | null;
+    }
   );
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
@@ -206,7 +212,12 @@ export default function PsakeiDinDafPanel({
       return;
     }
     // If a default viewer is saved, open directly with it
-    const saved = localStorage.getItem(PSAK_VIEWER_DEFAULT_KEY) as ViewerType | null;
+    const unified = getViewerPreference();
+    const saved = unified === "dialog"
+      ? "regular"
+      : unified === "embedpdf"
+      ? "embedpdf-page"
+      : (localStorage.getItem(PSAK_VIEWER_DEFAULT_KEY) as ViewerType | null);
     if (saved) {
       if (saved === 'embedpdf-page' && psak.source_url) {
         navigate(`/embedpdf-viewer?url=${encodeURIComponent(psak.source_url)}&psakId=${psak.id}`);
@@ -241,6 +252,8 @@ export default function PsakeiDinDafPanel({
 
   const setAsDefault = useCallback((type: ViewerType) => {
     localStorage.setItem(PSAK_VIEWER_DEFAULT_KEY, type);
+    if (type === "regular") setViewerPreference("dialog");
+    else if (type === "embedpdf-page" || type === "embedpdf" || type === "embedded-pdf" || type === "google-viewer") setViewerPreference("embedpdf");
     setDefaultViewer(type);
     toast.success(`${type === 'regular' ? 'צפיין רגיל' : type === 'embedded-pdf' ? 'PDF מוטמע' : type === 'embedpdf' ? 'EmbedPDF (pdfium)' : type === 'embedpdf-page' ? 'EmbedPDF (דף מלא)' : 'Google Docs'} נקבע כברירת מחדל`);
     openViewer(type);
@@ -248,6 +261,7 @@ export default function PsakeiDinDafPanel({
 
   const clearDefault = useCallback(() => {
     localStorage.removeItem(PSAK_VIEWER_DEFAULT_KEY);
+    clearViewerPreference();
     setDefaultViewer(null);
     toast.info('ברירת מחדל אופסה');
   }, []);

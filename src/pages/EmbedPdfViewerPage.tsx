@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { usePDFAnnotations, type PDFAnnotation } from "@/hooks/usePDFAnnotations";
 import { useUserBooks, type UserBook } from "@/hooks/useUserBooks";
 import { supabase } from "@/integrations/supabase/client";
+import PsakDinViewDialog from "@/components/PsakDinViewDialog";
 
 
 // ─── Constants ───────────────────────────────────────────────
@@ -217,7 +218,9 @@ export default function EmbedPdfViewerPage() {
   const [comparePdfId, setComparePdfId] = useState<string | null>(null);
   const [manualUrl, setManualUrl] = useState(() => searchParams.get("url") || "");
   const [compareManualUrl, setCompareManualUrl] = useState("");
+  const [targetPane, setTargetPane] = useState<"left" | "right">("left");
   const [viewerFullscreen, setViewerFullscreen] = useState(false);
+  const [regularViewerOpen, setRegularViewerOpen] = useState(false);
 
   // ── Psak Din context (for beautify) ──
   const psakIdParam = searchParams.get("psakId");
@@ -423,7 +426,7 @@ export default function EmbedPdfViewerPage() {
         return url;
       case 'text':
       case 'html-page':
-        return "";
+        return url;
       case 'docx':
         return `https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`;
     }
@@ -838,16 +841,39 @@ export default function EmbedPdfViewerPage() {
     toast.success("CSV יוצא בהצלחה");
   }, [filteredAnnotations]);
 
+  const assignSourceToTarget = useCallback((sourceUrl: string, bookId?: string | null) => {
+    if (targetPane === "right" && viewMode !== "single") {
+      if (bookId) {
+        setComparePdfId(bookId);
+        setCompareManualUrl("");
+      } else {
+        setComparePdfId(null);
+        setCompareManualUrl(sourceUrl);
+      }
+      return;
+    }
+
+    if (bookId) {
+      setSelectedPdfId(bookId);
+      setManualUrl("");
+    } else {
+      setSelectedPdfId(null);
+      setManualUrl(sourceUrl);
+    }
+  }, [targetPane, viewMode]);
+
   // ── Add book ──
   const handleAddBook = useCallback(async () => {
     if (!newBookUrl.trim()) return toast.error("יש להזין קישור");
-    await addBook.mutateAsync({
+    const result = await addBook.mutateAsync({
       title: newBookTitle.trim() || "מסמך ללא שם",
       fileUrl: newBookUrl.trim(),
     });
+    assignSourceToTarget(newBookUrl.trim(), result.id);
     setNewBookTitle("");
     setNewBookUrl("");
-  }, [newBookTitle, newBookUrl, addBook]);
+    setActivePanel(null);
+  }, [newBookTitle, newBookUrl, addBook, assignSourceToTarget]);
 
   // ─── Active panel state ──
   const [activePanel, setActivePanel] = useState<string | null>(null);
@@ -892,8 +918,7 @@ export default function EmbedPdfViewerPage() {
         fileName: file.name,
         fileUrl: publicUrl,
       });
-      setSelectedPdfId(result.id);
-      setManualUrl("");
+      assignSourceToTarget(publicUrl, result.id);
       setActivePanel(null);
       toast.success(`הקובץ "${file.name}" הועלה בהצלחה`);
     } catch (err: any) {
@@ -903,7 +928,7 @@ export default function EmbedPdfViewerPage() {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
-  }, [addBook]);
+  }, [addBook, assignSourceToTarget]);
 
   const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1152,6 +1177,16 @@ export default function EmbedPdfViewerPage() {
               <ExternalLink className="h-4 w-4" />
             </a>
           )}
+
+          {psakData && (
+            <button
+              onClick={() => setRegularViewerOpen(true)}
+              className="p-1.5 rounded-md text-[#0B1F5B]/50 hover:text-[#0B1F5B] hover:bg-[#D4AF37]/10"
+              title="החלף לצפיין רגיל"
+            >
+              <Eye className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </header>
 
@@ -1174,6 +1209,30 @@ export default function EmbedPdfViewerPage() {
               {/* ADD DOCUMENT (unified panel) */}
               {activePanel === "add" && (
                 <div className="space-y-3">
+                  {viewMode !== "single" && (
+                    <div className="border border-[#D4AF37]/30 rounded-lg p-2 space-y-1.5">
+                      <p className="text-[11px] font-semibold text-[#0B1F5B]">יעד הוספה</p>
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant={targetPane === "left" ? "default" : "outline"}
+                          className={targetPane === "left" ? "h-7 flex-1 bg-[#0B1F5B] text-white" : "h-7 flex-1 border-[#D4AF37]"}
+                          onClick={() => setTargetPane("left")}
+                        >
+                          צד שמאל
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={targetPane === "right" ? "default" : "outline"}
+                          className={targetPane === "right" ? "h-7 flex-1 bg-[#0B1F5B] text-white" : "h-7 flex-1 border-[#D4AF37]"}
+                          onClick={() => setTargetPane("right")}
+                        >
+                          צד ימין
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Upload from computer with drag & drop */}
                   <div
                     className={`border-2 border-dashed rounded-lg p-3 space-y-2 transition-colors ${
@@ -1263,7 +1322,7 @@ export default function EmbedPdfViewerPage() {
                               type="button"
                               className="w-full flex items-start gap-2 px-2 py-2 text-right hover:bg-[#D4AF37]/10 transition-colors"
                               onClick={() => {
-                                setManualUrl(doc.source_url);
+                                assignSourceToTarget(doc.source_url, null);
                                 setActivePanel(null);
                                 toast.success(`נטען: ${doc.title || "מסמך"}`);
                               }}
@@ -1300,35 +1359,74 @@ export default function EmbedPdfViewerPage() {
 
               {/* DOCS LIST */}
               {activePanel === "docs" && (
-                <ScrollArea className="max-h-[400px]">
-                  {books.length === 0 ? (
-                    <p className="text-xs text-[#0B1F5B]/50 text-center py-4">אין מסמכים עדיין</p>
-                  ) : (
-                    <div className="space-y-1">
-                      {books.map((book) => (
-                        <div
-                          key={book.id}
-                          className={`flex items-center justify-between px-2 py-1.5 rounded-md cursor-pointer text-sm transition-colors ${
-                            selectedPdfId === book.id ? "bg-[#D4AF37]/20 font-semibold border border-[#D4AF37]/40" : "hover:bg-[#D4AF37]/5"
-                          }`}
-                          onClick={() => { setSelectedPdfId(book.id); setActivePanel(null); }}
+                <div className="space-y-2">
+                  {viewMode !== "single" && (
+                    <div className="border border-[#D4AF37]/30 rounded-lg p-2 space-y-1.5">
+                      <p className="text-[11px] font-semibold text-[#0B1F5B]">טעינה לרכיב</p>
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant={targetPane === "left" ? "default" : "outline"}
+                          className={targetPane === "left" ? "h-7 flex-1 bg-[#0B1F5B] text-white" : "h-7 flex-1 border-[#D4AF37]"}
+                          onClick={() => setTargetPane("left")}
                         >
-                          <span className="truncate flex-1 text-[#0B1F5B]">{book.title}</span>
-                          <div className="flex items-center gap-1">
-                            {viewMode !== "single" && (
-                              <Button size="icon" variant="ghost" className="h-6 w-6 text-[#0B1F5B]" title="בחר להשוואה" onClick={(e) => { e.stopPropagation(); setComparePdfId(book.id); }}>
-                                <FileText className="h-3 w-3" />
-                              </Button>
-                            )}
-                            <Button size="icon" variant="ghost" className="h-6 w-6 text-red-600" onClick={(e) => { e.stopPropagation(); deleteBook.mutate(book.id); }}>
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
+                          שמאל
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={targetPane === "right" ? "default" : "outline"}
+                          className={targetPane === "right" ? "h-7 flex-1 bg-[#0B1F5B] text-white" : "h-7 flex-1 border-[#D4AF37]"}
+                          onClick={() => setTargetPane("right")}
+                        >
+                          ימין
+                        </Button>
+                      </div>
                     </div>
                   )}
-                </ScrollArea>
+
+                  <Button size="sm" variant="outline" className="w-full text-xs border-[#D4AF37]" onClick={() => { loadCloudDocs(); setActivePanel("add"); }}>
+                    <Plus className="h-3.5 w-3.5 ml-1" /> הוסף מסמך חדש
+                  </Button>
+
+                  <ScrollArea className="max-h-[360px]">
+                    {books.length === 0 ? (
+                      <p className="text-xs text-[#0B1F5B]/50 text-center py-4">אין מסמכים עדיין</p>
+                    ) : (
+                      <div className="space-y-1">
+                        {books.map((book) => (
+                          <div
+                            key={book.id}
+                            className={`flex items-center justify-between px-2 py-1.5 rounded-md cursor-pointer text-sm transition-colors ${
+                              selectedPdfId === book.id ? "bg-[#D4AF37]/20 font-semibold border border-[#D4AF37]/40" : "hover:bg-[#D4AF37]/5"
+                            }`}
+                            onClick={() => {
+                              if (targetPane === "right" && viewMode !== "single") {
+                                setComparePdfId(book.id);
+                                setCompareManualUrl("");
+                              } else {
+                                setSelectedPdfId(book.id);
+                                setManualUrl("");
+                              }
+                              setActivePanel(null);
+                            }}
+                          >
+                            <span className="truncate flex-1 text-[#0B1F5B]">{book.title}</span>
+                            <div className="flex items-center gap-1">
+                              {viewMode !== "single" && (
+                                <Button size="icon" variant="ghost" className="h-6 w-6 text-[#0B1F5B]" title="בחר להשוואה" onClick={(e) => { e.stopPropagation(); setComparePdfId(book.id); }}>
+                                  <FileText className="h-3 w-3" />
+                                </Button>
+                              )}
+                              <Button size="icon" variant="ghost" className="h-6 w-6 text-red-600" onClick={(e) => { e.stopPropagation(); deleteBook.mutate(book.id); }}>
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </ScrollArea>
+                </div>
               )}
 
               {/* ANNOTATIONS */}
@@ -1801,6 +1899,11 @@ export default function EmbedPdfViewerPage() {
                 {/* PDF / DOCX */}
                 {(leftContentType === 'pdf' || leftContentType === 'docx') && (
                   <>
+                    <div className="absolute top-2 right-2 z-20">
+                      <Badge variant="secondary" className="text-[10px] bg-[#D4AF37]/15 border border-[#D4AF37]/40 text-[#0B1F5B]">
+                        עריכת טקסט מלאה זמינה בקבצי TXT/HTML
+                      </Badge>
+                    </div>
                     {!iframeLoaded && !iframeError && (
                       <div className="absolute inset-0 flex items-center justify-center z-10">
                         <div className="w-8 h-8 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin mx-auto" />
@@ -1863,7 +1966,7 @@ export default function EmbedPdfViewerPage() {
                   <FileText className="h-10 w-10 mx-auto text-[#D4AF37]/30" />
                   <p className="text-xs text-[#0B1F5B]/50">בחר מסמך שני להשוואה</p>
                   <div className="space-y-1.5">
-                    <Button size="sm" variant="outline" className="border-[#D4AF37] text-[#0B1F5B] text-xs w-full" onClick={() => togglePanel("docs")}>
+                    <Button size="sm" variant="outline" className="border-[#D4AF37] text-[#0B1F5B] text-xs w-full" onClick={() => { setTargetPane("right"); togglePanel("docs"); }}>
                       <BookOpen className="h-3.5 w-3.5 ml-1" /> בחר מהרשימה
                     </Button>
                     <Input
@@ -1893,6 +1996,22 @@ export default function EmbedPdfViewerPage() {
           onClose={() => setSelectionPopup(null)}
         />
       )}
+
+      <PsakDinViewDialog
+        psak={psakData ? {
+          id: psakData.id,
+          title: psakData.title,
+          court: psakData.court,
+          year: psakData.year,
+          case_number: psakData.case_number,
+          summary: psakData.summary,
+          full_text: psakData.full_text,
+          source_url: psakData.source_url,
+          tags: psakData.tags,
+        } : null}
+        open={regularViewerOpen}
+        onOpenChange={setRegularViewerOpen}
+      />
     </div>
   );
 }

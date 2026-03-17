@@ -24,6 +24,7 @@ import PsakDinEditDialog from "./PsakDinEditDialog";
 import BulkActionsBar from "./BulkActionsBar";
 import FileTypeBadge from "./FileTypeBadge";
 import GemaraPsakDinIndex from "./GemaraPsakDinIndex";
+import { getViewerPreference, setViewerPreference, type ViewerMode } from "./ViewerPreferenceDialog";
 import { useToast } from "@/hooks/use-toast";
 import { cachePsakim, getAllCachedPsakim, type CachedPsak } from "@/lib/psakCache";
 import { exportPsakimToCsv } from "@/lib/csvExporter";
@@ -222,12 +223,36 @@ const PsakDinTab = () => {
   };
 
   const handlePsakClick = (psak: PsakDinRow) => {
-    if (psak.source_url) {
-      navigate(`/embedpdf-viewer?url=${encodeURIComponent(psak.source_url)}&psakId=${psak.id}`);
-    } else {
-      setSelectedPsak(psak);
-      setDialogOpen(true);
+    const sourceUrl = psak.source_url;
+    const preferred = getViewerPreference() ?? "dialog";
+
+    if (preferred === "newwindow" && sourceUrl) {
+      window.open(sourceUrl, "_blank");
+      return;
     }
+
+    if (preferred === "embedpdf" && sourceUrl) {
+      navigate(`/embedpdf-viewer?url=${encodeURIComponent(sourceUrl)}&psakId=${psak.id}`);
+      return;
+    }
+
+    setSelectedPsak(psak);
+    setDialogOpen(true);
+  };
+
+  const handleSwitchViewer = (psak: PsakDinRow, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const current = getViewerPreference() ?? "dialog";
+    const next: ViewerMode = current === "dialog" ? "embedpdf" : "dialog";
+    setViewerPreference(next);
+
+    if (next === "embedpdf" && psak.source_url) {
+      navigate(`/embedpdf-viewer?url=${encodeURIComponent(psak.source_url)}&psakId=${psak.id}`);
+      return;
+    }
+
+    setSelectedPsak(psak);
+    setDialogOpen(true);
   };
 
   const handleEditPsak = (psakId: string) => {
@@ -574,6 +599,15 @@ const PsakDinTab = () => {
                                   "flex items-center gap-0.5 transition-opacity duration-150",
                                   isHovered ? "opacity-100" : "opacity-0 pointer-events-none"
                                 )}>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                    title="החלף צפיין"
+                                    onClick={(e) => handleSwitchViewer(psak, e)}
+                                  >
+                                    <ArrowUpDown className="w-4 h-4" />
+                                  </Button>
                                   <Button
                                     size="icon"
                                     variant="ghost"

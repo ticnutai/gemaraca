@@ -16,10 +16,10 @@ import { toHebrewNumeral } from "@/lib/hebrewNumbers";
 import { 
   Search, BookOpen, Scale, ChevronRight, TrendingUp, 
   Database, Tag, Filter, BarChart3, Sparkles, Building2, Calendar,
-  List, LayoutGrid, TableIcon
+  List, LayoutGrid, TableIcon, ArrowUpDown
 } from "lucide-react";
 import PsakDinViewDialog from "./PsakDinViewDialog";
-import ViewerPreferenceDialog, { getViewerPreference, type ViewerMode } from "./ViewerPreferenceDialog";
+import ViewerPreferenceDialog, { getViewerPreference, setViewerPreference, type ViewerMode } from "./ViewerPreferenceDialog";
 import { getMeta, setMeta } from "@/lib/psakCache";
 
 interface PsakLink {
@@ -86,6 +86,7 @@ const GemaraPsakDinIndex = () => {
   const [psakimView, setPsakimView] = useState<"list" | "table" | "compact">("list");
   const [prefDialogOpen, setPrefDialogOpen] = useState(false);
   const [pendingPsak, setPendingPsak] = useState<PsakLink | null>(null);
+  const [preferredViewer, setPreferredViewer] = useState<ViewerMode>(() => getViewerPreference() ?? "dialog");
 
   const statistics = useMemo<Statistics>(() => {
     const tagCounts = new Map<string, number>();
@@ -504,6 +505,12 @@ const GemaraPsakDinIndex = () => {
     }
   }, [openWithMode]);
 
+  const toggleViewerPreference = useCallback(() => {
+    const next: ViewerMode = preferredViewer === "dialog" ? "embedpdf" : "dialog";
+    setPreferredViewer(next);
+    setViewerPreference(next);
+  }, [preferredViewer]);
+
   const handleTagClick = useCallback((tag: string) => {
     setSelectedTag(tag === selectedTag ? "all" : tag);
   }, [selectedTag]);
@@ -903,6 +910,16 @@ return (
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <div className="flex gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-6 px-2 text-[11px]"
+                    onClick={toggleViewerPreference}
+                    title="החלף ברירת מחדל לצפיין"
+                  >
+                    <ArrowUpDown className="w-3.5 h-3.5 ml-1" />
+                    {preferredViewer === "dialog" ? "רגיל" : "EmbedPDF"}
+                  </Button>
                   <Button variant={psakimView === "list" ? "default" : "ghost"} size="sm" className="h-6 px-2 text-[11px]" onClick={() => setPsakimView("list")} title="רשימה">
                     <List className="w-3.5 h-3.5" />
                   </Button>

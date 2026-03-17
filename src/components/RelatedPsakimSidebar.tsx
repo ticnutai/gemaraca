@@ -4,14 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
+import { Scale, ExternalLink, Plus, ArrowUpDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { PsakDinRow } from "@/types/psakDin";
-import { Scale, ExternalLink, Plus } from "lucide-react";
 import PsakDinViewDialog from "./PsakDinViewDialog";
 import PsakDinEditDialog from "./PsakDinEditDialog";
 import PsakDinActions from "./PsakDinActions";
 import FileTypeBadge from "./FileTypeBadge";
 import SummaryToggle from "./SummaryToggle";
+import { getViewerPreference, setViewerPreference, type ViewerMode } from "./ViewerPreferenceDialog";
 
 interface RelatedPsakimSidebarProps {
   sugyaId: string;
@@ -118,12 +119,37 @@ const RelatedPsakimSidebar = ({ sugyaId }: RelatedPsakimSidebarProps) => {
   }, [sugyaId]);
 
   const handlePsakClick = useCallback((psak: typeof psakim[number]) => {
-    if ((psak as any).source_url) {
-      navigate(`/embedpdf-viewer?url=${encodeURIComponent((psak as any).source_url)}&psakId=${psak.id}`);
-    } else {
-      setSelectedPsak(psak);
-      setDialogOpen(true);
+    const sourceUrl = (psak as any).source_url as string | undefined;
+    const preferred = getViewerPreference() ?? "dialog";
+
+    if (preferred === "newwindow" && sourceUrl) {
+      window.open(sourceUrl, "_blank");
+      return;
     }
+
+    if (preferred === "embedpdf" && sourceUrl) {
+      navigate(`/embedpdf-viewer?url=${encodeURIComponent(sourceUrl)}&psakId=${psak.id}`);
+      return;
+    }
+
+    setSelectedPsak(psak);
+    setDialogOpen(true);
+  }, [navigate]);
+
+  const handleSwitchViewer = useCallback((psak: typeof psakim[number], e: React.MouseEvent) => {
+    e.stopPropagation();
+    const current = getViewerPreference() ?? "dialog";
+    const next: ViewerMode = current === "dialog" ? "embedpdf" : "dialog";
+    setViewerPreference(next);
+
+    const sourceUrl = (psak as any).source_url as string | undefined;
+    if (next === "embedpdf" && sourceUrl) {
+      navigate(`/embedpdf-viewer?url=${encodeURIComponent(sourceUrl)}&psakId=${psak.id}`);
+      return;
+    }
+
+    setSelectedPsak(psak);
+    setDialogOpen(true);
   }, [navigate]);
 
   const handleEditPsak = useCallback(async (psakId: string) => {
@@ -218,6 +244,15 @@ const RelatedPsakimSidebar = ({ sugyaId }: RelatedPsakimSidebarProps) => {
                       </p>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7"
+                        title="החלף צפיין"
+                        onClick={(e) => handleSwitchViewer(link.psakei_din as any, e)}
+                      >
+                        <ArrowUpDown className="w-3.5 h-3.5" />
+                      </Button>
                       {link.psakei_din?.id && (
                         <PsakDinActions
                           psakId={link.psakei_din.id}

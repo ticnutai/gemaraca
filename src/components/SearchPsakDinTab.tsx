@@ -6,11 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Calendar, Building2, FileText, ExternalLink, Loader2 } from "lucide-react";
+import { Search, Calendar, Building2, FileText, ExternalLink, Loader2, ArrowUpDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import PsakDinViewDialog from "./PsakDinViewDialog";
 import FileTypeBadge from "./FileTypeBadge";
 import SummaryToggle from "./SummaryToggle";
+import { getViewerPreference, setViewerPreference, type ViewerMode } from "./ViewerPreferenceDialog";
 
 interface SearchResult {
   id: string;
@@ -152,12 +153,35 @@ const SearchPsakDinTab = () => {
   };
 
   const handlePsakClick = (psak: SearchResult) => {
-    if (psak.sourceUrl) {
-      navigate(`/embedpdf-viewer?url=${encodeURIComponent(psak.sourceUrl)}&psakId=${psak.id}`);
-    } else {
-      setSelectedPsak(psak);
-      setDialogOpen(true);
+    const preferred = getViewerPreference() ?? "dialog";
+
+    if (preferred === "newwindow" && psak.sourceUrl) {
+      window.open(psak.sourceUrl, "_blank");
+      return;
     }
+
+    if (preferred === "embedpdf" && psak.sourceUrl) {
+      navigate(`/embedpdf-viewer?url=${encodeURIComponent(psak.sourceUrl)}&psakId=${psak.id}`);
+      return;
+    }
+
+    setSelectedPsak(psak);
+    setDialogOpen(true);
+  };
+
+  const handleSwitchViewer = (psak: SearchResult, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const current = getViewerPreference() ?? "dialog";
+    const next: ViewerMode = current === "dialog" ? "embedpdf" : "dialog";
+    setViewerPreference(next);
+
+    if (next === "embedpdf" && psak.sourceUrl) {
+      navigate(`/embedpdf-viewer?url=${encodeURIComponent(psak.sourceUrl)}&psakId=${psak.id}`);
+      return;
+    }
+
+    setSelectedPsak(psak);
+    setDialogOpen(true);
   };
 
   return (
@@ -294,7 +318,15 @@ const SearchPsakDinTab = () => {
                         לפסק הדין המלא
                       </a>
                       <button
-                        onClick={() => navigate(`/embedpdf-viewer?url=${encodeURIComponent(psak.sourceUrl)}`)}
+                        onClick={(e) => handleSwitchViewer(psak, e)}
+                        className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-md bg-muted border border-border text-foreground hover:bg-accent transition-colors"
+                        title="החלף צפיין לאותו פסק דין"
+                      >
+                        <ArrowUpDown className="w-3 h-3" />
+                        החלף צפיין
+                      </button>
+                      <button
+                        onClick={() => navigate(`/embedpdf-viewer?url=${encodeURIComponent(psak.sourceUrl)}&psakId=${psak.id}`)}
                         className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-md bg-[#D4AF37]/10 border border-[#D4AF37]/40 text-[#0B1F5B] hover:bg-[#D4AF37]/20 transition-colors"
                       >
                         <FileText className="w-3 h-3" />

@@ -7,13 +7,14 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
-import { FileText, Brain, Loader2, ChevronDown, ChevronUp, ExternalLink, Sparkles, Plus, Trash2 } from "lucide-react";
+import { FileText, Brain, Loader2, ChevronDown, ChevronUp, ExternalLink, Sparkles, Plus, Trash2, ArrowUpDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import PsakDinViewDialog from "./PsakDinViewDialog";
 import PsakDinEditDialog from "./PsakDinEditDialog";
 import PsakDinActions from "./PsakDinActions";
 import FileTypeBadge from "./FileTypeBadge";
 import SummaryToggle from "./SummaryToggle";
+import { getViewerPreference, setViewerPreference, type ViewerMode } from "./ViewerPreferenceDialog";
 
 interface LinkedPsakimSectionProps {
   sugyaId: string;
@@ -171,14 +172,42 @@ const LinkedPsakimSection = ({ sugyaId, masechet, dafNumber }: LinkedPsakimSecti
       .eq('id', psakId)
       .maybeSingle();
     
-    if (data) {
-      if (data.source_url) {
-        navigate(`/embedpdf-viewer?url=${encodeURIComponent(data.source_url)}&psakId=${data.id}`);
-      } else {
-        setSelectedPsak(data);
-        setDialogOpen(true);
-      }
+    if (!data) return;
+
+    const preferred = getViewerPreference() ?? "dialog";
+    if (preferred === "newwindow" && data.source_url) {
+      window.open(data.source_url, "_blank");
+      return;
     }
+    if (preferred === "embedpdf" && data.source_url) {
+      navigate(`/embedpdf-viewer?url=${encodeURIComponent(data.source_url)}&psakId=${data.id}`);
+      return;
+    }
+
+    setSelectedPsak(data);
+    setDialogOpen(true);
+  };
+
+  const handleSwitchViewer = async (psakId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const { data } = await supabase
+      .from('psakei_din')
+      .select('*')
+      .eq('id', psakId)
+      .maybeSingle();
+    if (!data) return;
+
+    const current = getViewerPreference() ?? "dialog";
+    const next: ViewerMode = current === "dialog" ? "embedpdf" : "dialog";
+    setViewerPreference(next);
+
+    if (next === "embedpdf" && data.source_url) {
+      navigate(`/embedpdf-viewer?url=${encodeURIComponent(data.source_url)}&psakId=${data.id}`);
+      return;
+    }
+
+    setSelectedPsak(data);
+    setDialogOpen(true);
   };
 
   const handleEditPsak = async (psakId: string) => {
@@ -297,6 +326,15 @@ const LinkedPsakimSection = ({ sugyaId, masechet, dafNumber }: LinkedPsakimSecti
                         </Badge>
                       )}
                       
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 text-muted-foreground hover:text-primary"
+                        onClick={(e) => void handleSwitchViewer(psak.id, e)}
+                        title="החלף צפיין"
+                      >
+                        <ArrowUpDown className="w-4 h-4" />
+                      </Button>
                       <Button
                         size="icon"
                         variant="ghost"

@@ -6,19 +6,35 @@ import { Eye, FileText, ExternalLink } from "lucide-react";
 import { useState } from "react";
 
 const VIEWER_PREF_KEY = "psak_din_viewer_preference";
+const LEGACY_VIEWER_PREF_KEY = "psak-din-default-viewer";
 
 export type ViewerMode = "dialog" | "embedpdf" | "newwindow";
 
 export function getViewerPreference(): ViewerMode | null {
-  return localStorage.getItem(VIEWER_PREF_KEY) as ViewerMode | null;
+  const direct = localStorage.getItem(VIEWER_PREF_KEY) as ViewerMode | null;
+  if (direct === "dialog" || direct === "embedpdf" || direct === "newwindow") {
+    return direct;
+  }
+
+  const legacy = localStorage.getItem(LEGACY_VIEWER_PREF_KEY);
+  if (!legacy) return null;
+
+  if (legacy === "regular") return "dialog";
+  if (legacy === "embedpdf" || legacy === "embedpdf-page" || legacy === "embedded-pdf" || legacy === "google-viewer") {
+    return "embedpdf";
+  }
+  return null;
 }
 
 export function setViewerPreference(mode: ViewerMode) {
   localStorage.setItem(VIEWER_PREF_KEY, mode);
+  const legacyValue = mode === "dialog" ? "regular" : mode === "embedpdf" ? "embedpdf-page" : "newwindow";
+  localStorage.setItem(LEGACY_VIEWER_PREF_KEY, legacyValue);
 }
 
 export function clearViewerPreference() {
   localStorage.removeItem(VIEWER_PREF_KEY);
+  localStorage.removeItem(LEGACY_VIEWER_PREF_KEY);
 }
 
 interface ViewerPreferenceDialogProps {

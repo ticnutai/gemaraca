@@ -20,7 +20,7 @@ import CardsView from './talmud-index/CardsView';
 import TreeViewIndex from './talmud-index/TreeViewIndex';
 import GenealogyTreeView from './talmud-index/GenealogyTreeView';
 import PsakDinViewDialog from './PsakDinViewDialog';
-import ViewerPreferenceDialog, { getViewerPreference, type ViewerMode } from './ViewerPreferenceDialog';
+import ViewerPreferenceDialog, { getViewerPreference, setViewerPreference, type ViewerMode } from './ViewerPreferenceDialog';
 import IndexingControlPanel from './IndexingControlPanel';
 import DebugDiagnosticDialog from './DebugDiagnosticDialog';
 import { TalmudRefWithPsak, TRACTATES, ValidationStatus, ViewMode, HIGHLIGHT_COLORS } from './talmud-index/types';
@@ -113,6 +113,7 @@ export default function AdvancedIndexTab() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [prefDialogOpen, setPrefDialogOpen] = useState(false);
   const [pendingRef, setPendingRef] = useState<TalmudRefWithPsak | null>(null);
+  const [preferredViewer, setPreferredViewer] = useState<ViewerMode>(() => getViewerPreference() ?? 'dialog');
   const navigate = useNavigate();
 
   const openWithMode = useCallback(async (ref: TalmudRefWithPsak, mode: ViewerMode) => {
@@ -161,6 +162,12 @@ export default function AdvancedIndexTab() {
       setPrefDialogOpen(true);
     }
   }, [openWithMode]);
+
+  const toggleViewerPreference = useCallback(() => {
+    const next: ViewerMode = preferredViewer === 'dialog' ? 'embedpdf' : 'dialog';
+    setPreferredViewer(next);
+    setViewerPreference(next);
+  }, [preferredViewer]);
 
   if (isLoading) {
     return (
@@ -352,6 +359,16 @@ export default function AdvancedIndexTab() {
           ))}
         </div>
         <div className="flex items-center gap-1.5">
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 px-2 gap-1 text-xs"
+            onClick={toggleViewerPreference}
+            title="החלף ברירת מחדל לצפיין"
+          >
+            <ChevronsUpDown className="w-3.5 h-3.5" />
+            {preferredViewer === 'dialog' ? 'רגיל' : 'EmbedPDF'}
+          </Button>
           <span className="text-xs text-muted-foreground">צבע הדגשה:</span>
           {HIGHLIGHT_COLORS.map((c, i) => (
             <button
