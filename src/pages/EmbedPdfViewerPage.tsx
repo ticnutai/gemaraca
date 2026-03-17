@@ -1803,6 +1803,28 @@ export default function EmbedPdfViewerPage() {
                       if (sel) { navigator.clipboard.writeText(sel); toast.success("הועתק"); }
                     }} title="העתק בחירה"><Copy className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
                     <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { beautifyIframeRef.current?.contentWindow?.print(); }} title="הדפסה"><Printer className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+
+                    <div className="w-px h-5 bg-[#D4AF37]/20" />
+                    {/* Template Switcher */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button size="sm" variant={leftTemplate ? "default" : "outline"} className={`h-7 text-xs gap-1 ${leftTemplate ? 'bg-[#D4AF37] text-[#0B1F5B] hover:bg-[#D4AF37]/90' : 'border-[#D4AF37]/40'}`} title="החלף תבנית עיצוב">
+                          <Sparkles className="h-3 w-3" />
+                          {leftTemplate ? TEMPLATES.find(t => t.id === leftTemplate)?.name : 'תבניות'}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-56 p-1.5" align="start" dir="rtl">
+                        <p className="text-[10px] font-semibold text-[#0B1F5B]/70 px-2 py-1">תבניות עיצוב פסק דין</p>
+                        <button onClick={() => applyTemplate('left', null)} className={`w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2 ${!leftTemplate ? 'bg-[#D4AF37]/15 font-semibold' : ''}`}>
+                          <span>📄</span> מקורי (ללא תבנית)
+                        </button>
+                        {TEMPLATES.filter(t => !t.requiresAi).map(t => (
+                          <button key={t.id} onClick={() => applyTemplate('left', t.id)} className={`w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2 ${leftTemplate === t.id ? 'bg-[#D4AF37]/15 font-semibold' : ''}`}>
+                            <span>{t.icon}</span> {t.name}
+                          </button>
+                        ))}
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>
               )}
@@ -1876,6 +1898,28 @@ export default function EmbedPdfViewerPage() {
                       if (win) { win.document.write(`<html dir="rtl"><head><title>הדפסה</title><style>body{font-family:serif;font-size:${textFormat.fontSize}px;line-height:${textFormat.lineHeight};text-align:${textFormat.textAlign};padding:40px;white-space:pre-wrap;}</style></head><body>${fetchedText.replace(/</g,"&lt;").replace(/>/g,"&gt;")}</body></html>`); win.document.close(); win.print(); }
                     }} title="הדפסה"><Printer className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
                     <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setTextFormat(DEFAULT_FORMAT)} title="אפס"><RotateCcw className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+
+                    <div className="w-px h-5 bg-[#D4AF37]/20" />
+                    {/* Template Switcher */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button size="sm" variant={leftTemplate ? "default" : "outline"} className={`h-7 text-xs gap-1 ${leftTemplate ? 'bg-[#D4AF37] text-[#0B1F5B] hover:bg-[#D4AF37]/90' : 'border-[#D4AF37]/40'}`} title="החלף תבנית עיצוב">
+                          <Sparkles className="h-3 w-3" />
+                          {leftTemplate ? TEMPLATES.find(t => t.id === leftTemplate)?.name : 'תבניות'}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-56 p-1.5" align="start" dir="rtl">
+                        <p className="text-[10px] font-semibold text-[#0B1F5B]/70 px-2 py-1">תבניות עיצוב פסק דין</p>
+                        <button onClick={() => applyTemplate('left', null)} className={`w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2 ${!leftTemplate ? 'bg-[#D4AF37]/15 font-semibold' : ''}`}>
+                          <span>📄</span> מקורי (ללא תבנית)
+                        </button>
+                        {TEMPLATES.filter(t => !t.requiresAi).map(t => (
+                          <button key={t.id} onClick={() => applyTemplate('left', t.id)} className={`w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2 ${leftTemplate === t.id ? 'bg-[#D4AF37]/15 font-semibold' : ''}`}>
+                            <span>{t.icon}</span> {t.name}
+                          </button>
+                        ))}
+                      </PopoverContent>
+                    </Popover>
 
                     <div className="flex-1" />
                     <span className="text-[10px] text-[#0B1F5B]/40">{textStats.words} מילים · {textStats.lines} שורות</span>
@@ -1989,6 +2033,28 @@ export default function EmbedPdfViewerPage() {
                     <a href={leftSourceUrl} target="_blank" rel="noopener noreferrer">
                       <Button size="icon" variant="ghost" className="h-7 w-7" title="פתח בחלון חדש"><ExternalLink className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
                     </a>
+
+                    <div className="w-px h-5 bg-[#D4AF37]/20" />
+                    {/* Template Switcher */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button size="sm" variant={leftTemplate ? "default" : "outline"} className={`h-7 text-xs gap-1 ${leftTemplate ? 'bg-[#D4AF37] text-[#0B1F5B] hover:bg-[#D4AF37]/90' : 'border-[#D4AF37]/40'}`} title="החלף תבנית עיצוב">
+                          <Sparkles className="h-3 w-3" />
+                          {leftTemplate ? TEMPLATES.find(t => t.id === leftTemplate)?.name : 'תבניות'}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-56 p-1.5" align="start" dir="rtl">
+                        <p className="text-[10px] font-semibold text-[#0B1F5B]/70 px-2 py-1">תבניות עיצוב פסק דין</p>
+                        <button onClick={() => applyTemplate('left', null)} className={`w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2 ${!leftTemplate ? 'bg-[#D4AF37]/15 font-semibold' : ''}`}>
+                          <span>📄</span> מקורי (ללא תבנית)
+                        </button>
+                        {TEMPLATES.filter(t => !t.requiresAi).map(t => (
+                          <button key={t.id} onClick={() => applyTemplate('left', t.id)} className={`w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2 ${leftTemplate === t.id ? 'bg-[#D4AF37]/15 font-semibold' : ''}`}>
+                            <span>{t.icon}</span> {t.name}
+                          </button>
+                        ))}
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>
               )}
@@ -1998,6 +2064,27 @@ export default function EmbedPdfViewerPage() {
                 <div className="border-b-2 border-[#D4AF37]/20 bg-white/80 backdrop-blur-sm flex-shrink-0">
                   <div className="px-2 py-1.5 flex items-center gap-1 flex-wrap">
                     <span className="text-[10px] text-[#D4AF37] font-semibold ml-2">צפייה בדף חיצוני</span>
+                    <div className="w-px h-5 bg-[#D4AF37]/20" />
+                    {/* Template Switcher */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button size="sm" variant={leftTemplate ? "default" : "outline"} className={`h-7 text-xs gap-1 ${leftTemplate ? 'bg-[#D4AF37] text-[#0B1F5B] hover:bg-[#D4AF37]/90' : 'border-[#D4AF37]/40'}`} title="החלף תבנית עיצוב">
+                          <Sparkles className="h-3 w-3" />
+                          {leftTemplate ? TEMPLATES.find(t => t.id === leftTemplate)?.name : 'תבניות'}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-56 p-1.5" align="start" dir="rtl">
+                        <p className="text-[10px] font-semibold text-[#0B1F5B]/70 px-2 py-1">תבניות עיצוב פסק דין</p>
+                        <button onClick={() => applyTemplate('left', null)} className={`w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2 ${!leftTemplate ? 'bg-[#D4AF37]/15 font-semibold' : ''}`}>
+                          <span>📄</span> מקורי (ללא תבנית)
+                        </button>
+                        {TEMPLATES.filter(t => !t.requiresAi).map(t => (
+                          <button key={t.id} onClick={() => applyTemplate('left', t.id)} className={`w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2 ${leftTemplate === t.id ? 'bg-[#D4AF37]/15 font-semibold' : ''}`}>
+                            <span>{t.icon}</span> {t.name}
+                          </button>
+                        ))}
+                      </PopoverContent>
+                    </Popover>
                     <div className="w-px h-5 bg-[#D4AF37]/20" />
                     <a href={leftSourceUrl} target="_blank" rel="noopener noreferrer">
                       <Button size="sm" variant="outline" className="h-7 text-xs gap-1 border-[#D4AF37]/40"><ExternalLink className="h-3 w-3" /> פתח בחלון חדש</Button>
@@ -2013,30 +2100,6 @@ export default function EmbedPdfViewerPage() {
 
               {/* Document Viewer */}
               <div className="flex-1 relative bg-[#f8f8f6]">
-                {/* Left pane template switcher (floating) */}
-                {!(beautifiedHtml && activePanel === "beautify") && (
-                  <div className="absolute top-2 left-2 z-20 flex items-center gap-1">
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <button className="p-1.5 rounded-lg bg-white/90 shadow-md border border-[#D4AF37]/30 text-[#0B1F5B]/60 hover:text-[#D4AF37] hover:border-[#D4AF37] transition-colors" title="החלף תבנית עיצוב">
-                          <Sparkles className="h-4 w-4" />
-                        </button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-56 p-1.5" align="start" dir="rtl">
-                        <p className="text-[10px] font-semibold text-[#0B1F5B]/70 px-2 py-1">תבניות עיצוב פסק דין</p>
-                        <button onClick={() => applyTemplate('left', null)} className={`w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2 ${!leftTemplate ? 'bg-[#D4AF37]/15 font-semibold' : ''}`}>
-                          <span>📄</span> מקורי (ללא תבנית)
-                        </button>
-                        {TEMPLATES.filter(t => !t.requiresAi).map(t => (
-                          <button key={t.id} onClick={() => applyTemplate('left', t.id)} className={`w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2 ${leftTemplate === t.id ? 'bg-[#D4AF37]/15 font-semibold' : ''}`}>
-                            <span>{t.icon}</span> {t.name}
-                          </button>
-                        ))}
-                      </PopoverContent>
-                    </Popover>
-                    {leftTemplate && <span className="text-[9px] bg-[#D4AF37]/20 text-[#0B1F5B] px-1.5 py-0.5 rounded-md">{TEMPLATES.find(t => t.id === leftTemplate)?.icon} {TEMPLATES.find(t => t.id === leftTemplate)?.name}</span>}
-                  </div>
-                )}
                 {/* BEAUTIFIED VIEW */}
                 {leftTemplateHtml && !beautifiedHtml ? (
                   <iframe srcDoc={leftTemplateHtml} className="absolute inset-0 w-full h-full border-0" title="Template View" sandbox="allow-same-origin allow-scripts allow-popups" />
