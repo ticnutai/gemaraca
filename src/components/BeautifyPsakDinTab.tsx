@@ -202,7 +202,7 @@ const BeautifyPsakDinTab = () => {
           const chunk = allIds.slice(c, c + CHUNK);
           let query = supabase
             .from("psakei_din")
-            .select("id, title, court, year, summary, beautify_count" as any)
+            .select("id, title, court, year, summary, beautify_count")
             .in("id", chunk);
 
           if (dbSortBy === "title") query = query.order("title", { ascending: true });
@@ -216,7 +216,7 @@ const BeautifyPsakDinTab = () => {
 
           const { data, error } = await query;
           if (error) throw error;
-          if (data) allItems = allItems.concat((data as any[]).map(d => ({ ...d, beautify_count: d.beautify_count || 0 })));
+          if (data) allItems = allItems.concat(data.map(d => ({ ...d, beautify_count: d.beautify_count || 0 })));
         }
 
         // Sort combined results
@@ -230,7 +230,7 @@ const BeautifyPsakDinTab = () => {
         // Normal load (no masechet filter)
         let query = supabase
           .from("psakei_din")
-          .select("id, title, court, year, summary, beautify_count" as any)
+          .select("id, title, court, year, summary, beautify_count")
           .range(offset, offset + limit - 1);
 
         if (dbSortBy === "title") query = query.order("title", { ascending: true });
@@ -245,7 +245,7 @@ const BeautifyPsakDinTab = () => {
         const { data, error } = await query;
         if (error) throw error;
 
-        const items = (data || []).map((d: any) => ({ ...d, beautify_count: d.beautify_count || 0 }));
+        const items = (data || []).map(d => ({ ...d, beautify_count: d.beautify_count || 0 }));
         setDbHasMore(items.length === limit);
         if (append) {
           setDbItems(prev => [...prev, ...items]);
@@ -462,15 +462,15 @@ const BeautifyPsakDinTab = () => {
         if (mode === "save") {
           const { data: current } = await supabase.from("psakei_din").select("beautify_count").eq("id", job.id).single();
           const newCount = ((current?.beautify_count as number) || 0) + 1;
-          const { error } = await (supabase
-            .from("psakei_din") as any)
+          const { error } = await supabase
+            .from("psakei_din")
             .update({ full_text: job.html, source_url: urlData?.publicUrl || undefined, beautify_count: newCount })
             .eq("id", job.id);
           if (error) throw error;
         } else {
           const parsed = parsePsakDinText(job.rawText);
-          const { error } = await (supabase
-            .from("psakei_din") as any)
+          const { error } = await supabase
+            .from("psakei_din")
             .insert({
               id: fileId,
               title: `${job.title} (מעוצב)`,
@@ -527,7 +527,7 @@ const BeautifyPsakDinTab = () => {
       return;
     }
     setIsAiProcessing(true);
-    setAiProgress("מתחבר ל-AI...");
+    setAiProgress(selectedTemplate === "ai-summary" ? "מסכם עם AI..." : "מתחבר ל-AI...");
     setHtmlResult("");
 
     try {
@@ -545,7 +545,10 @@ const BeautifyPsakDinTab = () => {
           "Authorization": `Bearer ${token}`,
           "apikey": anonKey,
         },
-        body: JSON.stringify({ fullText: rawText }),
+        body: JSON.stringify({
+          fullText: rawText,
+          ...(selectedTemplate === "ai-summary" ? { mode: "summary" } : {}),
+        }),
       });
 
       if (!res.ok) throw new Error(`שגיאת שרת: ${res.status}`);
@@ -586,7 +589,8 @@ const BeautifyPsakDinTab = () => {
         if (accumulated) {
           setHtmlResult(accumulated);
           setViewMode("preview");
-          toast({ title: "הצלחה", description: "פסק הדין עוצב בעזרת AI" });
+          const desc = selectedTemplate === "ai-summary" ? "סיכום AI נוצר בהצלחה" : "פסק הדין עוצב בעזרת AI";
+          toast({ title: "הצלחה", description: desc });
         } else {
           toast({ title: "שגיאה", description: "לא התקבל תוצאה מה-AI", variant: "destructive" });
         }
@@ -604,7 +608,7 @@ const BeautifyPsakDinTab = () => {
       setIsAiProcessing(false);
       setAiProgress("");
     }
-  }, [rawText, toast]);
+  }, [rawText, toast, selectedTemplate]);
 
   // ===== SINGLE SAVE =====
   const handleSave = useCallback(async () => {
@@ -620,12 +624,12 @@ const BeautifyPsakDinTab = () => {
       const { data: current } = await supabase.from("psakei_din").select("beautify_count").eq("id", loadedPsakId).single();
       const newCount = ((current?.beautify_count as number) || 0) + 1;
 
-      const { error } = await (supabase.from("psakei_din") as any)
+      const { error } = await supabase.from("psakei_din")
         .update({ full_text: htmlResult, source_url: urlData?.publicUrl || undefined, beautify_count: newCount })
         .eq("id", loadedPsakId);
       if (error) throw error;
 
-      toast({ title: "נשמר", description: `"${"${loadedPsakTitle}"}" עודכן בהצלחה` });
+      toast({ title: "נשמר", description: `"${loadedPsakTitle}" עודכן בהצלחה` });
     } catch {
       toast({ title: "שגיאה", description: "שגיאה בשמירת פסק הדין", variant: "destructive" });
     } finally {
@@ -645,7 +649,7 @@ const BeautifyPsakDinTab = () => {
       const { data: urlData } = supabase.storage.from("psakei-din-files").getPublicUrl(fileName);
 
       const parsed = parsePsakDinText(rawText);
-      const { error } = await (supabase.from("psakei_din") as any).insert({
+      const { error } = await supabase.from("psakei_din").insert({
         id: newId,
         title: `${loadedPsakTitle || parsed.title} (מעוצב)`,
         court: parsed.court || "לא ידוע",
@@ -1160,7 +1164,7 @@ const BeautifyPsakDinTab = () => {
                   ))}
                 </SelectContent>
               </Select>
-              <Select value={dbBeautifyFilter} onValueChange={(v) => setDbBeautifyFilter(v as any)}>
+              <Select value={dbBeautifyFilter} onValueChange={(v) => setDbBeautifyFilter(v as typeof dbBeautifyFilter)}>
                 <SelectTrigger className="w-[120px] h-8 text-xs">
                   <SelectValue />
                 </SelectTrigger>
@@ -1170,7 +1174,7 @@ const BeautifyPsakDinTab = () => {
                   <SelectItem value="not_beautified">לא עוצבו</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={dbSortBy} onValueChange={(v) => setDbSortBy(v as any)}>
+              <Select value={dbSortBy} onValueChange={(v) => setDbSortBy(v as typeof dbSortBy)}>
                 <SelectTrigger className="w-[110px] h-8 text-xs">
                   <SelectValue />
                 </SelectTrigger>
