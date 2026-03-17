@@ -22,6 +22,8 @@ import { usePDFAnnotations, type PDFAnnotation } from "@/hooks/usePDFAnnotations
 import { useUserBooks, type UserBook } from "@/hooks/useUserBooks";
 import { supabase } from "@/integrations/supabase/client";
 import PsakDinViewDialog from "@/components/PsakDinViewDialog";
+import { TEMPLATES, generateFromTemplate } from "@/lib/psakDinTemplates";
+import { parsePsakDinText } from "@/lib/psakDinParser";
 
 
 // ─── Constants ───────────────────────────────────────────────
@@ -464,6 +466,17 @@ export default function EmbedPdfViewerPage() {
   const leftViewerUrl = getViewerUrl(leftSourceUrl, leftContentType);
   const rightViewerUrl = getViewerUrl(rightSourceUrl, rightContentType);
 
+  // ── Right pane HTML fetch (for html-embed in split/compare) ──
+  const [rightFetchedHtml, setRightFetchedHtml] = useState<string | null>(null);
+  const [rightFetchingHtml, setRightFetchingHtml] = useState(false);
+  const rightIframeRef = useRef<HTMLIFrameElement>(null);
+
+  // ── Template switcher per pane ──
+  const [leftTemplate, setLeftTemplate] = useState<string | null>(null);
+  const [rightTemplate, setRightTemplate] = useState<string | null>(null);
+  const [leftTemplateHtml, setLeftTemplateHtml] = useState<string | null>(null);
+  const [rightTemplateHtml, setRightTemplateHtml] = useState<string | null>(null);
+
   // Iframe loading state
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const [iframeError, setIframeError] = useState(false);
@@ -566,6 +579,75 @@ export default function EmbedPdfViewerPage() {
 
     return () => { cancelled = true; };
   }, [leftSourceUrl, leftContentType]);
+
+  // Fetch HTML for right pane when html-embed in split/compare
+  useEffect(() => {
+    if (rightContentType !== 'html-embed' || !rightSourceUrl) {
+      setRightFetchedHtml(null);
+      return;
+    }
+    let cancelled = false;
+    setRightFetchingHtml(true);
+    fetch(rightSourceUrl)
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const buffer = await r.arrayBuffer();
+        return new TextDecoder('utf-8').decode(buffer);
+      })
+      .then((html) => {
+        if (!cancelled) { setRightFetchedHtml(html); setRightFetchingHtml(false); }
+      })
+      .catch(() => {
+        if (!cancelled) { setRightFetchedHtml(null); setRightFetchingHtml(false); }
+      });
+    return () => { cancelled = true; };
+  }, [rightSourceUrl, rightContentType]);
+
+  // Apply template to a pane
+  const applyTemplate = useCallback((pane: 'left' | 'right', templateId: string | null) => {
+    if (pane === 'left') {
+      setLeftTemplate(templateId);
+      if (!templateId) { setLeftTemplateHtml(null); return; }
+      // Extract text from fetched HTML or fetched text
+      let rawText = fetchedText || '';
+      if (!rawText && fetchedHtml) {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = fetchedHtml;
+        rawText = tmp.textContent || '';
+      }
+      if (!rawText && psakData?.full_text) rawText = psakData.full_text;
+      if (!rawText) { toast.error('אין טקסט לעיצוב'); setLeftTemplate(null); return; }
+      try {
+        const parsed = parsePsakDinText(rawText);
+        if (psakData) {
+          parsed.title = parsed.title || psakData.title || '';
+          parsed.court = parsed.court || psakData.court || '';
+          parsed.caseNumber = parsed.caseNumber || psakData.case_number || '';
+        }
+        setLeftTemplateHtml(generateFromTemplate(templateId, parsed));
+      } catch { toast.error('שגיאה בהחלת תבנית'); setLeftTemplate(null); }
+    } else {
+      setRightTemplate(templateId);
+      if (!templateId) { setRightTemplateHtml(null); return; }
+      let rawText = '';
+      if (rightFetchedHtml) {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = rightFetchedHtml;
+        rawText = tmp.textContent || '';
+      }
+      if (!rawText && psakData?.full_text) rawText = psakData.full_text;
+      if (!rawText) { toast.error('אין טקסט לעיצוב'); setRightTemplate(null); return; }
+      try {
+        const parsed = parsePsakDinText(rawText);
+        if (psakData) {
+          parsed.title = parsed.title || psakData.title || '';
+          parsed.court = parsed.court || psakData.court || '';
+          parsed.caseNumber = parsed.caseNumber || psakData.case_number || '';
+        }
+        setRightTemplateHtml(generateFromTemplate(templateId, parsed));
+      } catch { toast.error('שגיאה בהחלת תבנית'); setRightTemplate(null); }
+    }
+  }, [fetchedText, fetchedHtml, rightFetchedHtml, psakData]);
 
   const startTextEdit = useCallback(() => {
     if (fetchedText === null) return;
@@ -1931,8 +2013,34 @@ export default function EmbedPdfViewerPage() {
 
               {/* Document Viewer */}
               <div className="flex-1 relative bg-[#f8f8f6]">
+                {/* Left pane template switcher (floating) */}
+                {!(beautifiedHtml && activePanel === "beautify") && (
+                  <div className="absolute top-2 left-2 z-20 flex items-center gap-1">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button className="p-1.5 rounded-lg bg-white/90 shadow-md border border-[#D4AF37]/30 text-[#0B1F5B]/60 hover:text-[#D4AF37] hover:border-[#D4AF37] transition-colors" title="החלף תבנית עיצוב">
+                          <Sparkles className="h-4 w-4" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-56 p-1.5" align="start" dir="rtl">
+                        <p className="text-[10px] font-semibold text-[#0B1F5B]/70 px-2 py-1">תבניות עיצוב פסק דין</p>
+                        <button onClick={() => applyTemplate('left', null)} className={`w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2 ${!leftTemplate ? 'bg-[#D4AF37]/15 font-semibold' : ''}`}>
+                          <span>📄</span> מקורי (ללא תבנית)
+                        </button>
+                        {TEMPLATES.filter(t => !t.requiresAi).map(t => (
+                          <button key={t.id} onClick={() => applyTemplate('left', t.id)} className={`w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2 ${leftTemplate === t.id ? 'bg-[#D4AF37]/15 font-semibold' : ''}`}>
+                            <span>{t.icon}</span> {t.name}
+                          </button>
+                        ))}
+                      </PopoverContent>
+                    </Popover>
+                    {leftTemplate && <span className="text-[9px] bg-[#D4AF37]/20 text-[#0B1F5B] px-1.5 py-0.5 rounded-md">{TEMPLATES.find(t => t.id === leftTemplate)?.icon} {TEMPLATES.find(t => t.id === leftTemplate)?.name}</span>}
+                  </div>
+                )}
                 {/* BEAUTIFIED VIEW */}
-                {beautifiedHtml && activePanel === "beautify" ? (
+                {leftTemplateHtml && !beautifiedHtml ? (
+                  <iframe srcDoc={leftTemplateHtml} className="absolute inset-0 w-full h-full border-0" title="Template View" sandbox="allow-same-origin allow-scripts allow-popups" />
+                ) : beautifiedHtml && activePanel === "beautify" ? (
                   <iframe
                     ref={beautifyIframeRef}
                     srcDoc={beautifiedHtml}
@@ -2143,8 +2251,51 @@ export default function EmbedPdfViewerPage() {
           {/* Second viewer for split/compare */}
           {viewMode !== "single" && (
             rightSourceUrl ? (
-              <div className={`${viewMode === "split" ? "w-1/2" : "h-[400px]"} border-t-2 sm:border-t-0 sm:border-r-2 border-[#D4AF37]/30 relative bg-[#f8f8f6]`}>
-                <iframe src={rightViewerUrl} className="absolute inset-0 w-full h-full border-0" title="PDF Compare" allow="fullscreen" />
+              <div className={`${viewMode === "split" ? "w-1/2" : "h-[400px]"} border-t-2 sm:border-t-0 sm:border-r-2 border-[#D4AF37]/30 relative bg-[#f8f8f6] flex flex-col`}>
+                {/* ── Right pane toolbar ── */}
+                <div className="flex-shrink-0 bg-white/80 backdrop-blur-sm border-b border-[#D4AF37]/20 px-2 py-1 flex items-center gap-1">
+                  <span className="text-[10px] text-[#0B1F5B]/50 truncate flex-1" dir="ltr">{rightSourceUrl.split('/').pop()?.split('?')[0] || 'מסמך'}</span>
+                  {/* Template switcher */}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className="p-1 rounded text-[#0B1F5B]/50 hover:text-[#D4AF37] hover:bg-[#D4AF37]/10 transition-colors" title="החלף תבנית עיצוב">
+                        <Sparkles className="h-3.5 w-3.5" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-56 p-1.5" align="end" dir="rtl">
+                      <p className="text-[10px] font-semibold text-[#0B1F5B]/70 px-2 py-1">תבניות עיצוב פסק דין</p>
+                      <button onClick={() => applyTemplate('right', null)} className={`w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2 ${!rightTemplate ? 'bg-[#D4AF37]/15 font-semibold' : ''}`}>
+                        <span>📄</span> מקורי (ללא תבנית)
+                      </button>
+                      {TEMPLATES.filter(t => !t.requiresAi).map(t => (
+                        <button key={t.id} onClick={() => applyTemplate('right', t.id)} className={`w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2 ${rightTemplate === t.id ? 'bg-[#D4AF37]/15 font-semibold' : ''}`}>
+                          <span>{t.icon}</span> {t.name}
+                        </button>
+                      ))}
+                    </PopoverContent>
+                  </Popover>
+                  <a href={rightSourceUrl} target="_blank" rel="noopener noreferrer" className="p-1 rounded text-[#0B1F5B]/50 hover:text-[#0B1F5B] hover:bg-[#D4AF37]/10" title="פתח בחלון חדש">
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                </div>
+                {/* ── Right pane content ── */}
+                <div className="flex-1 relative">
+                  {rightTemplateHtml ? (
+                    <iframe srcDoc={rightTemplateHtml} className="absolute inset-0 w-full h-full border-0" title="Template View" sandbox="allow-same-origin allow-scripts allow-popups" />
+                  ) : rightContentType === 'html-embed' ? (
+                    rightFetchingHtml ? (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-8 h-8 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    ) : rightFetchedHtml ? (
+                      <iframe ref={rightIframeRef} srcDoc={rightFetchedHtml} className="absolute inset-0 w-full h-full border-0 bg-white" title="HTML Compare" sandbox="allow-same-origin allow-scripts allow-popups" />
+                    ) : (
+                      <iframe src={rightViewerUrl} className="absolute inset-0 w-full h-full border-0" title="Compare Viewer" allow="fullscreen" />
+                    )
+                  ) : (
+                    <iframe src={rightViewerUrl} className="absolute inset-0 w-full h-full border-0" title="Compare Viewer" allow="fullscreen" />
+                  )}
+                </div>
               </div>
             ) : (
               <div className={`${viewMode === "split" ? "w-1/2" : "h-[300px]"} border-t-2 sm:border-t-0 sm:border-r-2 border-[#D4AF37]/30 flex items-center justify-center bg-[#f8f8f6]`}>
