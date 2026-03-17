@@ -7,7 +7,7 @@ import {
   Copy, MessageSquarePlus, Hash, ZoomIn, ZoomOut, ChevronUp, ChevronDown,
   RotateCcw, Printer, StickyNote, Scissors, ClipboardPaste, Sparkles, Eye, Strikethrough,
   ListOrdered, WrapText, PilcrowSquare, ArrowRight, Link, BarChart3,
-  Upload, HardDrive, Database, Loader2 as Loader2Icon, Save, CopyPlus, Columns, GripVertical
+  Upload, HardDrive, Database, Loader2 as Loader2Icon, Save, CopyPlus, Columns, GripVertical, Lock, Unlock
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -554,6 +554,10 @@ export default function EmbedPdfViewerPage() {
   const isDraggingSplitter = useRef(false);
   const mainRef = useRef<HTMLDivElement>(null);
 
+  // Synchronized scrolling
+  const [syncScroll, setSyncScroll] = useState(false);
+  const isSyncing = useRef(false);
+
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
       if (!isDraggingSplitter.current || !mainRef.current) return;
@@ -576,6 +580,47 @@ export default function EmbedPdfViewerPage() {
       window.removeEventListener('mouseup', onMouseUp);
     };
   }, []);
+
+  // Synchronized scroll between left & right iframes
+  useEffect(() => {
+    if (viewMode !== 'split' || !syncScroll) return;
+
+    const getLeftDoc = () => {
+      return beautifyIframeRef.current?.contentDocument
+        ?? htmlEmbedIframeRef.current?.contentDocument
+        ?? null;
+    };
+    const getRightDoc = () => rightIframeRef.current?.contentDocument ?? null;
+
+    const makeHandler = (sourceDoc: Document | null, targetDoc: Document | null) => {
+      return () => {
+        if (isSyncing.current || !sourceDoc?.documentElement || !targetDoc?.documentElement) return;
+        isSyncing.current = true;
+        const srcEl = sourceDoc.scrollingElement || sourceDoc.documentElement;
+        const tgtEl = targetDoc.scrollingElement || targetDoc.documentElement;
+        const maxSrc = srcEl.scrollHeight - srcEl.clientHeight;
+        const ratio = maxSrc > 0 ? srcEl.scrollTop / maxSrc : 0;
+        const maxTgt = tgtEl.scrollHeight - tgtEl.clientHeight;
+        tgtEl.scrollTop = ratio * maxTgt;
+        requestAnimationFrame(() => { isSyncing.current = false; });
+      };
+    };
+
+    const leftDoc = getLeftDoc();
+    const rightDoc = getRightDoc();
+    if (!leftDoc || !rightDoc) return;
+
+    const leftToRight = makeHandler(leftDoc, rightDoc);
+    const rightToLeft = makeHandler(rightDoc, leftDoc);
+
+    leftDoc.addEventListener('scroll', leftToRight, { passive: true });
+    rightDoc.addEventListener('scroll', rightToLeft, { passive: true });
+
+    return () => {
+      leftDoc.removeEventListener('scroll', leftToRight);
+      rightDoc.removeEventListener('scroll', rightToLeft);
+    };
+  }, [viewMode, syncScroll]);
 
   // Annotation form
   const [currentPage, setCurrentPage] = useState("1");
@@ -2782,8 +2827,9 @@ export default function EmbedPdfViewerPage() {
           {/* ═══ DRAGGABLE SPLIT DIVIDER ═══ */}
           {viewMode === "split" && (
             <div
-              className="w-2 flex-shrink-0 cursor-col-resize bg-[#D4AF37]/20 hover:bg-[#D4AF37]/50 active:bg-[#D4AF37]/70 transition-colors relative group flex items-center justify-center"
+              className="w-8 flex-shrink-0 cursor-col-resize bg-[#D4AF37]/10 hover:bg-[#D4AF37]/30 active:bg-[#D4AF37]/50 transition-colors relative group flex flex-col items-center justify-center gap-2 border-x border-[#D4AF37]/20"
               onMouseDown={(e) => {
+                if ((e.target as HTMLElement).closest('[data-no-drag]')) return;
                 e.preventDefault();
                 isDraggingSplitter.current = true;
                 document.body.style.cursor = 'col-resize';
@@ -2792,7 +2838,19 @@ export default function EmbedPdfViewerPage() {
               title="גרור לשינוי גודל"
             >
               <div className="absolute inset-y-0 -left-1 -right-1" />
-              <GripVertical className="h-5 w-5 text-[#D4AF37]/60 group-hover:text-[#D4AF37] transition-colors" />
+              <button
+                data-no-drag
+                onClick={(e) => { e.stopPropagation(); setSyncScroll(prev => !prev); }}
+                className={`z-10 p-1 rounded transition-colors ${
+                  syncScroll
+                    ? 'bg-[#D4AF37] text-[#0B1F5B] shadow-sm'
+                    : 'text-[#D4AF37]/50 hover:text-[#D4AF37] hover:bg-[#D4AF37]/20'
+                }`}
+                title={syncScroll ? "גלילה מסונכרנת פעילה" : "הפעל גלילה מסונכרנת"}
+              >
+                {syncScroll ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
+              </button>
+              <GripVertical className="h-5 w-5 text-[#D4AF37]/40 group-hover:text-[#D4AF37]/70 transition-colors" />
             </div>
           )}
 
