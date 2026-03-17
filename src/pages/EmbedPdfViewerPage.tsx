@@ -7,7 +7,7 @@ import {
   Copy, MessageSquarePlus, Hash, ZoomIn, ZoomOut, ChevronUp, ChevronDown,
   RotateCcw, Printer, StickyNote, Scissors, ClipboardPaste, Sparkles, Eye, Strikethrough,
   ListOrdered, WrapText, PilcrowSquare, ArrowRight, Link, BarChart3,
-  Upload, HardDrive, Database, Loader2 as Loader2Icon
+  Upload, HardDrive, Database, Loader2 as Loader2Icon, Save, CopyPlus
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -255,6 +255,7 @@ export default function EmbedPdfViewerPage() {
   const [beautifiedHtml, setBeautifiedHtml] = useState<string | null>(null);
   const [isBeautifying, setIsBeautifying] = useState(false);
   const [isSavingBeautified, setIsSavingBeautified] = useState(false);
+  const [isSavingHtmlEmbed, setIsSavingHtmlEmbed] = useState(false);
   const beautifyIframeRef = useRef<HTMLIFrameElement>(null);
   const htmlEmbedIframeRef = useRef<HTMLIFrameElement>(null);
   const [htmlEditMode, setHtmlEditMode] = useState(false);
@@ -295,57 +296,6 @@ export default function EmbedPdfViewerPage() {
       setIsBeautifying(false);
     }
   }, [psakData]);
-
-  const handleSaveBeautified = useCallback(async () => {
-    if (!psakData?.id || !beautifiedHtml) return;
-    setIsSavingBeautified(true);
-    try {
-      const doc = beautifyIframeRef.current?.contentDocument;
-      const currentHtml = doc?.documentElement?.outerHTML || beautifiedHtml;
-      const fileName = `beautified/${psakData.id}-${Date.now()}.html`;
-      const blob = new Blob([currentHtml], { type: "text/html;charset=utf-8" });
-      await supabase.storage.from("psakei-din-files").upload(fileName, blob, { contentType: "text/html", upsert: true });
-      const { data: urlData } = supabase.storage.from("psakei-din-files").getPublicUrl(fileName);
-      const { error } = await supabase.from("psakei_din").update({ full_text: currentHtml, source_url: urlData?.publicUrl || undefined }).eq("id", psakData.id);
-      if (error) throw error;
-      toast.success("פסק הדין המעוצב נשמר בהצלחה");
-    } catch (err: unknown) {
-      toast.error("שגיאה בשמירת פסק הדין המעוצב");
-    } finally {
-      setIsSavingBeautified(false);
-    }
-  }, [psakData, beautifiedHtml]);
-
-  const handleCopyAndSaveBeautified = useCallback(async () => {
-    if (!psakData || !beautifiedHtml) return;
-    setIsSavingBeautified(true);
-    try {
-      const doc = beautifyIframeRef.current?.contentDocument;
-      const currentHtml = doc?.documentElement?.outerHTML || beautifiedHtml;
-      const newId = crypto.randomUUID();
-      const fileName = `beautified/${newId}.html`;
-      const blob = new Blob([currentHtml], { type: "text/html;charset=utf-8" });
-      await supabase.storage.from("psakei-din-files").upload(fileName, blob, { contentType: "text/html", upsert: true });
-      const { data: urlData } = supabase.storage.from("psakei-din-files").getPublicUrl(fileName);
-      const { error } = await supabase.from("psakei_din").insert({
-        id: newId,
-        title: `${psakData.title} (מעוצב)`,
-        court: psakData.court || "",
-        year: psakData.year || new Date().getFullYear(),
-        case_number: psakData.case_number || null,
-        summary: psakData.summary || "",
-        full_text: currentHtml,
-        source_url: urlData?.publicUrl || null,
-        tags: [...(psakData.tags || []), "מעוצב"],
-      });
-      if (error) throw error;
-      toast.success("פסק הדין המעוצב הועתק ונשמר כפריט חדש");
-    } catch (err: unknown) {
-      toast.error("שגיאה בהעתקה ושמירה");
-    } finally {
-      setIsSavingBeautified(false);
-    }
-  }, [psakData, beautifiedHtml]);
 
   // Add book form
   const [newBookTitle, setNewBookTitle] = useState("");
@@ -417,6 +367,77 @@ export default function EmbedPdfViewerPage() {
   // Source URLs
   const leftSourceUrl = manualUrl.trim() || selectedPdf?.file_url || "";
   const rightSourceUrl = compareManualUrl.trim() || comparePdf?.file_url || "";
+
+  // ── Save Beautified Handlers ──
+  const handleSaveBeautified = useCallback(async () => {
+    if (!beautifiedHtml) return;
+    const docId = psakData?.id || selectedPdf?.id || `manual-${Date.now()}`;
+    setIsSavingBeautified(true);
+    try {
+      const doc = beautifyIframeRef.current?.contentDocument;
+      const currentHtml = doc?.documentElement?.outerHTML || beautifiedHtml;
+      // 1. Upload to Supabase Storage (cloud)
+      const fileName = `beautified/${docId}-${Date.now()}.html`;
+      const blob = new Blob([currentHtml], { type: "text/html;charset=utf-8" });
+      await supabase.storage.from("psakei-din-files").upload(fileName, blob, { contentType: "text/html", upsert: true });
+      const { data: urlData } = supabase.storage.from("psakei-din-files").getPublicUrl(fileName);
+      // 2. Save to psakei_din DB if psakData exists
+      if (psakData?.id) {
+        const { error } = await supabase.from("psakei_din").update({ full_text: currentHtml, source_url: urlData?.publicUrl || undefined }).eq("id", psakData.id);
+        if (error) throw error;
+      }
+      // 3. Save to user_books DB if selectedPdf exists
+      if (canPersist && selectedPdf?.id) {
+        await updateBookEditedText.mutateAsync({ id: selectedPdf.id, editedText: currentHtml });
+      }
+      toast.success("פסק הדין המעוצב נשמר בענן ובמסד הנתונים");
+    } catch (err: unknown) {
+      toast.error("שגיאה בשמירת פסק הדין המעוצב");
+    } finally {
+      setIsSavingBeautified(false);
+    }
+  }, [psakData, beautifiedHtml, canPersist, selectedPdf?.id, updateBookEditedText]);
+
+  const handleCopyAndSaveBeautified = useCallback(async () => {
+    if (!beautifiedHtml) return;
+    setIsSavingBeautified(true);
+    try {
+      const doc = beautifyIframeRef.current?.contentDocument;
+      const currentHtml = doc?.documentElement?.outerHTML || beautifiedHtml;
+      const newId = crypto.randomUUID();
+      // 1. Upload to Supabase Storage (cloud)
+      const fileName = `beautified/${newId}.html`;
+      const blob = new Blob([currentHtml], { type: "text/html;charset=utf-8" });
+      await supabase.storage.from("psakei-din-files").upload(fileName, blob, { contentType: "text/html", upsert: true });
+      const { data: urlData } = supabase.storage.from("psakei-din-files").getPublicUrl(fileName);
+      const newUrl = urlData?.publicUrl || null;
+      // 2. Insert into psakei_din DB if psakData exists
+      if (psakData) {
+        const { error } = await supabase.from("psakei_din").insert({
+          id: newId,
+          title: `${psakData.title} (מעוצב)`,
+          court: psakData.court || "",
+          year: psakData.year || new Date().getFullYear(),
+          case_number: psakData.case_number || null,
+          summary: psakData.summary || "",
+          full_text: currentHtml,
+          source_url: newUrl,
+          tags: [...(psakData.tags || []), "מעוצב"],
+        });
+        if (error) throw error;
+      }
+      // 3. Add as new user_book
+      if (newUrl) {
+        const title = psakData?.title || selectedPdf?.title || "מסמך מעוצב";
+        await addBook.mutateAsync({ title: `${title} (עותק)`, fileUrl: newUrl });
+      }
+      toast.success("פסק הדין המעוצב שוכפל ונשמר בענן ובמסד הנתונים");
+    } catch (err: unknown) {
+      toast.error("שגיאה בהעתקה ושמירה");
+    } finally {
+      setIsSavingBeautified(false);
+    }
+  }, [psakData, beautifiedHtml, selectedPdf?.title, addBook]);
 
   // Smart viewer strategy: detect if URL is a direct file (PDF/TXT/DOCX) or an HTML page
   type ContentViewType = 'pdf' | 'text' | 'docx' | 'image' | 'html-embed' | 'html-page';
@@ -580,6 +601,75 @@ export default function EmbedPdfViewerPage() {
     return () => { cancelled = true; };
   }, [leftSourceUrl, leftContentType]);
 
+  // ── Save HTML Embed Handlers ──
+  const handleSaveHtmlEmbed = useCallback(async () => {
+    const docId = psakData?.id || selectedPdf?.id || `manual-${Date.now()}`;
+    setIsSavingHtmlEmbed(true);
+    try {
+      const doc = htmlEmbedIframeRef.current?.contentDocument;
+      const currentHtml = doc?.documentElement?.outerHTML || fetchedHtml || "";
+      // 1. Upload to Supabase Storage (cloud)
+      const fileName = `html-embed/${docId}-${Date.now()}.html`;
+      const blob = new Blob([currentHtml], { type: "text/html;charset=utf-8" });
+      await supabase.storage.from("psakei-din-files").upload(fileName, blob, { contentType: "text/html", upsert: true });
+      const { data: urlData } = supabase.storage.from("psakei-din-files").getPublicUrl(fileName);
+      // 2. Save to psakei_din DB if psakData exists
+      if (psakData?.id) {
+        const { error } = await supabase.from("psakei_din").update({ full_text: currentHtml, source_url: urlData?.publicUrl || undefined }).eq("id", psakData.id);
+        if (error) throw error;
+      }
+      // 3. Save to user_books DB if selectedPdf exists
+      if (canPersist && selectedPdf?.id) {
+        await updateBookEditedText.mutateAsync({ id: selectedPdf.id, editedText: currentHtml });
+      }
+      toast.success("המסמך נשמר בענן ובמסד הנתונים");
+    } catch (err: unknown) {
+      toast.error("שגיאה בשמירת המסמך");
+    } finally {
+      setIsSavingHtmlEmbed(false);
+    }
+  }, [psakData, fetchedHtml, canPersist, selectedPdf?.id, updateBookEditedText]);
+
+  const handleCopyAndSaveHtmlEmbed = useCallback(async () => {
+    setIsSavingHtmlEmbed(true);
+    try {
+      const doc = htmlEmbedIframeRef.current?.contentDocument;
+      const currentHtml = doc?.documentElement?.outerHTML || fetchedHtml || "";
+      const newId = crypto.randomUUID();
+      // 1. Upload to Supabase Storage (cloud)
+      const fileName = `html-embed/${newId}.html`;
+      const blob = new Blob([currentHtml], { type: "text/html;charset=utf-8" });
+      await supabase.storage.from("psakei-din-files").upload(fileName, blob, { contentType: "text/html", upsert: true });
+      const { data: urlData } = supabase.storage.from("psakei-din-files").getPublicUrl(fileName);
+      const newUrl = urlData?.publicUrl || null;
+      // 2. Insert into psakei_din DB if psakData exists
+      if (psakData) {
+        const { error } = await supabase.from("psakei_din").insert({
+          id: newId,
+          title: `${psakData.title} (עותק)`,
+          court: psakData.court || "",
+          year: psakData.year || new Date().getFullYear(),
+          case_number: psakData.case_number || null,
+          summary: psakData.summary || "",
+          full_text: currentHtml,
+          source_url: newUrl,
+          tags: [...(psakData.tags || []), "עותק"],
+        });
+        if (error) throw error;
+      }
+      // 3. Add as new user_book
+      if (newUrl) {
+        const title = psakData?.title || selectedPdf?.title || "מסמך";
+        await addBook.mutateAsync({ title: `${title} (עותק)`, fileUrl: newUrl });
+      }
+      toast.success("המסמך שוכפל ונשמר בענן ובמסד הנתונים");
+    } catch (err: unknown) {
+      toast.error("שגיאה בשכפול ושמירה");
+    } finally {
+      setIsSavingHtmlEmbed(false);
+    }
+  }, [psakData, fetchedHtml, selectedPdf?.title, addBook]);
+
   // Fetch HTML for right pane when html-embed in split/compare
   useEffect(() => {
     if (rightContentType !== 'html-embed' || !rightSourceUrl) {
@@ -666,26 +756,50 @@ export default function EmbedPdfViewerPage() {
     setFetchedText(nextText);
     setIsTextEditing(false);
 
+    let savedToCloud = false;
+    let savedToDb = false;
+
+    // 1. Upload to Supabase Storage (cloud)
+    try {
+      const docId = selectedPdf?.id || `manual-${Date.now()}`;
+      const fileName = `edited-text/${docId}-${Date.now()}.txt`;
+      const blob = new Blob([nextText], { type: "text/plain;charset=utf-8" });
+      await supabase.storage.from("psakei-din-files").upload(fileName, blob, { contentType: "text/plain", upsert: true });
+      savedToCloud = true;
+    } catch {
+      // Cloud upload failed, continue to DB save
+    }
+
+    // 2. Save to user_books DB if selectedPdf exists
     if (canPersist && selectedPdf?.id) {
       try {
         await updateBookEditedText.mutateAsync({
           id: selectedPdf.id,
           editedText: nextText,
         });
-        toast.success("הטקסט נשמר למסד הנתונים");
-        return;
+        savedToDb = true;
       } catch {
-        toast.warning("שמירה לענן נכשלה, נשמר מקומית בלבד");
+        // DB save failed
       }
     }
 
-    if (currentTextStorageKey) {
+    // 3. Fallback to localStorage for manual URLs
+    if (!savedToDb && currentTextStorageKey) {
       try {
         localStorage.setItem(currentTextStorageKey, nextText);
-        toast.success("הטקסט נשמר מקומית");
       } catch {
-        toast.error("שמירת הטקסט נכשלה");
+        // localStorage failed
       }
+    }
+
+    if (savedToCloud && savedToDb) {
+      toast.success("הטקסט נשמר בענן ובמסד הנתונים");
+    } else if (savedToCloud) {
+      toast.success("הטקסט נשמר בענן");
+    } else if (savedToDb) {
+      toast.success("הטקסט נשמר במסד הנתונים");
+    } else {
+      toast.warning("הטקסט נשמר מקומית בלבד");
     }
   }, [textEditBuffer, currentTextStorageKey, canPersist, selectedPdf?.id, updateBookEditedText]);
 
@@ -1802,7 +1916,18 @@ export default function EmbedPdfViewerPage() {
                       const sel = beautifyIframeRef.current?.contentDocument?.getSelection()?.toString() || "";
                       if (sel) { navigator.clipboard.writeText(sel); toast.success("הועתק"); }
                     }} title="העתק בחירה"><Copy className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { beautifyIframeRef.current?.contentWindow?.print(); }} title="הדפסה"><Printer className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
+                      const html = beautifyIframeRef.current?.contentDocument?.documentElement?.outerHTML || beautifiedHtml;
+                      if (html) { const win = window.open("", "_blank"); if (win) { win.document.write(html); win.document.close(); win.print(); } }
+                    }} title="הדפסה"><Printer className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+
+                    <div className="w-px h-5 bg-[#D4AF37]/20" />
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleSaveBeautified} disabled={isSavingBeautified} title="שמור (דריסה)">
+                      {isSavingBeautified ? <Loader2Icon className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5 text-[#0B1F5B]" />}
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleCopyAndSaveBeautified} disabled={isSavingBeautified} title="שכפול ושמירה">
+                      {isSavingBeautified ? <Loader2Icon className="h-3.5 w-3.5 animate-spin" /> : <CopyPlus className="h-3.5 w-3.5 text-[#0B1F5B]" />}
+                    </Button>
 
                     <div className="w-px h-5 bg-[#D4AF37]/20" />
                     {/* Template Switcher */}
@@ -2029,10 +2154,21 @@ export default function EmbedPdfViewerPage() {
                       const sel = htmlEmbedIframeRef.current?.contentDocument?.getSelection()?.toString() || fetchedHtml || "";
                       if (sel) { navigator.clipboard.writeText(sel); toast.success("הועתק"); }
                     }} title="העתק"><Copy className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { htmlEmbedIframeRef.current?.contentWindow?.print(); }} title="הדפסה"><Printer className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
+                      const html = htmlEmbedIframeRef.current?.contentDocument?.documentElement?.outerHTML || fetchedHtml;
+                      if (html) { const win = window.open("", "_blank"); if (win) { win.document.write(html); win.document.close(); win.print(); } }
+                    }} title="הדפסה"><Printer className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
                     <a href={leftSourceUrl} target="_blank" rel="noopener noreferrer">
                       <Button size="icon" variant="ghost" className="h-7 w-7" title="פתח בחלון חדש"><ExternalLink className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
                     </a>
+
+                    <div className="w-px h-5 bg-[#D4AF37]/20" />
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleSaveHtmlEmbed} disabled={isSavingHtmlEmbed} title="שמור (דריסה)">
+                      {isSavingHtmlEmbed ? <Loader2Icon className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5 text-[#0B1F5B]" />}
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleCopyAndSaveHtmlEmbed} disabled={isSavingHtmlEmbed} title="שכפול ושמירה">
+                      {isSavingHtmlEmbed ? <Loader2Icon className="h-3.5 w-3.5 animate-spin" /> : <CopyPlus className="h-3.5 w-3.5 text-[#0B1F5B]" />}
+                    </Button>
 
                     <div className="w-px h-5 bg-[#D4AF37]/20" />
                     {/* Template Switcher */}
@@ -2109,7 +2245,7 @@ export default function EmbedPdfViewerPage() {
                     srcDoc={beautifiedHtml}
                     className="absolute inset-0 w-full h-full border-0"
                     title="Beautified Psak Din"
-                    sandbox="allow-same-origin allow-popups allow-scripts"
+                    sandbox="allow-same-origin allow-popups allow-scripts allow-modals"
                     onLoad={() => {
                       const doc = beautifyIframeRef.current?.contentDocument;
                       if (doc?.body) doc.designMode = "on";
@@ -2212,7 +2348,7 @@ export default function EmbedPdfViewerPage() {
                         srcDoc={fetchedHtml}
                         className="absolute inset-0 w-full h-full border-0 bg-white"
                         title="HTML Viewer"
-                        sandbox="allow-same-origin allow-scripts allow-popups"
+                        sandbox="allow-same-origin allow-scripts allow-popups allow-modals"
                         onLoad={() => {
                           setIframeLoaded(true);
                           if (htmlEditMode) {
