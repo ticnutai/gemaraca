@@ -27,10 +27,10 @@ export const TEMPLATES: TemplateInfo[] = [
   {
     id: "classic",
     name: "קלאסי מקצועי",
-    description: "עיצוב מסורתי עם כותרות, פרטי תיק וחתימה — ללא AI",
+    description: "עיצוב מסורתי עם אינדקס פנימי קליקבילי, כותרות, פרטי תיק וחתימה — ללא AI",
     requiresAi: false,
     icon: "📜",
-    hasIndex: false,
+    hasIndex: true,
   },
   {
     id: "modern",
@@ -181,15 +181,17 @@ function renderBodyText(data: ParsedPsakDin): string {
 // TEMPLATE: Classic Professional (default)
 // ═════════════════════════════════════════════════════
 function generateClassicHtml(data: ParsedPsakDin): string {
-  // This is the original template — same as generatePsakDinHtml
+  const { tocHtml, sectionAnchors } = buildTableOfContents(data);
+
   const judgesHtml = data.judges.length > 0
     ? `<ul style="list-style-type:none;padding:0;margin:0;">${data.judges.map(j => `<li>${esc(j)}</li>`).join("")}</ul>`
     : "";
 
-  const sectionsHtml = data.sections.map(section => {
+  const sectionsHtml = data.sections.map((section, i) => {
     const icon = getSectionIcon(section.type);
+    const anchor = sectionAnchors.get(i) || `sec-${i}`;
     const contentHtml = renderSectionContent(section.content);
-    return `<h3 class="subsection-title"><span class="icon">${icon}</span> ${esc(section.title)}</h3>\n        ${contentHtml}`;
+    return `<h3 id="${anchor}" class="subsection-title"><span class="icon">${icon}</span> ${esc(section.title)} <a href="#toc-top" class="back-to-top" title="חזרה לתוכן עניינים">↑</a></h3>\n        ${contentHtml}`;
   }).join("\n");
 
   const fallbackBody = renderBodyText(data);
@@ -207,7 +209,7 @@ function generateClassicHtml(data: ParsedPsakDin): string {
     .header h1 { color:#0B1F5B; font-size:2.8em; margin:0; padding-bottom:10px; font-weight:bold; }
     .header .logo { font-size:1.2em; color:#555; margin-top:5px; }
     .section-title { color:#0B1F5B; font-size:1.8em; margin-top:35px; margin-bottom:15px; border-bottom:2px solid #D4AF37; padding-bottom:8px; font-weight:bold; }
-    .subsection-title { color:#0B1F5B; font-size:1.4em; margin-top:25px; margin-bottom:10px; font-weight:bold; }
+    .subsection-title { color:#0B1F5B; font-size:1.4em; margin-top:25px; margin-bottom:10px; font-weight:bold; scroll-margin-top:20px; }
     .details-table { width:100%; border-collapse:collapse; margin-bottom:25px; }
     .details-table td { padding:10px 0; border-bottom:1px dashed #eee; vertical-align:top; }
     .details-table td:first-child { font-weight:bold; width:150px; color:#0B1F5B; }
@@ -217,11 +219,14 @@ function generateClassicHtml(data: ParsedPsakDin): string {
     .footer { text-align:center; margin-top:50px; padding-top:20px; border-top:1px solid #eee; color:#777; font-size:0.9em; }
     .signature { text-align:center; margin-top:40px; font-weight:bold; color:#0B1F5B; }
     .signature div { margin-top:10px; }
+    .back-to-top { font-size:0.6em; color:#D4AF37; text-decoration:none; margin-right:8px; vertical-align:middle; opacity:0.6; }
+    .back-to-top:hover { opacity:1; }
     .detected-header { color:#0B1F5B; font-size:1.3em; font-weight:bold; margin-top:28px; margin-bottom:12px; padding-bottom:6px; border-bottom:2px solid #D4AF37; }
     .detected-subheader { color:#0B1F5B; font-size:1.1em; font-weight:bold; margin-top:16px; margin-bottom:8px; }
     .detected-reference { color:#555; font-size:0.95em; margin:4px 0; padding-right:20px; font-style:italic; }
     .detected-quote { margin:12px 30px; padding:10px 20px; border-right:4px solid #D4AF37; background:#faf8f0; font-style:italic; color:#333; }
     .spacer { height:12px; }
+    ${TOC_CSS}
     ${PRINT_CSS}
   </style>
 </head>
@@ -232,7 +237,11 @@ function generateClassicHtml(data: ParsedPsakDin): string {
       <h1>פסק דין</h1>
       ${data.caseNumber ? `<div style="font-size:1.1em;color:#555;">תיק מס' ${esc(data.caseNumber)}</div>` : ""}
     </div>
-    <h2 class="section-title"><span class="icon">📋</span> פרטי התיק</h2>
+
+    <div id="toc-top"></div>
+    ${tocHtml}
+
+    <h2 id="sec-details" class="section-title"><span class="icon">📋</span> פרטי התיק</h2>
     <table class="details-table">
       ${data.title ? `<tr><td><span class="icon">📌</span> כותרת:</td><td>${esc(data.title)}</td></tr>` : ""}
       ${data.court ? `<tr><td><span class="icon">🏛️</span> בית הדין:</td><td>${esc(data.court)}</td></tr>` : ""}
@@ -240,13 +249,13 @@ function generateClassicHtml(data: ParsedPsakDin): string {
       ${data.sourceId ? `<tr><td><span class="icon">🔖</span> מזהה:</td><td>${esc(data.sourceId)}</td></tr>` : ""}
       ${data.sourceUrl ? `<tr><td><span class="icon">🔗</span> קישור:</td><td><a href="${esc(data.sourceUrl)}" target="_blank">${esc(data.sourceUrl)}</a></td></tr>` : ""}
     </table>
-    ${data.summary ? `<h2 class="section-title"><span class="icon">📝</span> תקציר</h2><div class="paragraph">${esc(data.summary)}</div>` : ""}
+    ${data.summary ? `<h2 id="sec-summary" class="section-title"><span class="icon">📝</span> תקציר</h2><div class="paragraph">${esc(data.summary)}</div>` : ""}
     <hr class="divider">
     <h2 class="section-title"><span class="icon">📖</span> גוף פסק הדין</h2>
     ${data.topics ? `<div class="paragraph"><strong>נושאים:</strong> ${esc(data.topics)}</div>` : ""}
     ${sectionsHtml}
     ${fallbackBody}
-    ${judgesHtml ? `<div class="signature">
+    ${judgesHtml ? `<div id="sec-signature" class="signature">
       <div>חתמו על פסק הדין:</div>
       ${judgesHtml}
     </div>` : ""}
