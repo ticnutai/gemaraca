@@ -442,6 +442,22 @@ export default function AiTutorChat() {
     return () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); };
   }, [isFabDragging]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const onEsc = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      if (event.defaultPrevented) return;
+      if (event.ctrlKey || event.altKey || event.metaKey) return;
+
+      event.preventDefault();
+      setIsOpen(false);
+    };
+
+    window.addEventListener("keydown", onEsc);
+    return () => window.removeEventListener("keydown", onEsc);
+  }, [isOpen]);
+
   const msgCount = conversations.reduce((s, c) => s + c.messages.length, 0);
 
   return (
