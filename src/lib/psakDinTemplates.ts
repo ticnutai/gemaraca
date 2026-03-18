@@ -132,6 +132,14 @@ export const TEMPLATES: TemplateInfo[] = [
     hasIndex: true,
   },
   {
+    id: "rabbinic-authentic",
+    name: "רבני אותנטי מפורט",
+    description: "תבנית אותנטית של פסק דין רבני: כותרות מודגשות, שקע פסקה ראשונה, אותיות עבריות (א׳ ב׳), הדגשת מקורות הלכתיים, חתימת דיינים עם תפקידים",
+    requiresAi: false,
+    icon: "📖",
+    hasIndex: true,
+  },
+  {
     id: "ai-enhanced",
     name: "שיפור AI מלא",
     description: "AI מעצב, מסכם ומשפר את הטקסט, מוסיף מבנה מקצועי",
@@ -1935,11 +1943,573 @@ function getSectionIcon(type: string): string {
   }
 }
 
+// ═════════════════════════════════════════════════════
+// TEMPLATE: Rabbinic Authentic — אותנטי מפורט
+// ═════════════════════════════════════════════════════
+
+/**
+ * Enhanced content renderer for the authentic rabbinic template.
+ * – Merges consecutive lines into justified paragraphs with first-line indent.
+ * – Detects Hebrew-letter markers (א. / א' / א) and renders them as styled items.
+ * – Highlights inline halachic source references.
+ * – Detects inline sub-headings ending with ":".
+ */
+function renderAuthenticBlocks(content: string): string {
+  const lines = content
+    .replace(/\r\n?/g, "\n")
+    .split("\n")
+    .map((l) => l.trim());
+
+  const out: string[] = [];
+  let paragraphBuffer: string[] = [];
+  let hebrewListItems: { marker: string; text: string }[] = [];
+  let orderedItems: string[] = [];
+  let bulletItems: string[] = [];
+
+  const highlightSources = (text: string): string => {
+    const escaped = esc(text);
+    return escaped.replace(
+      /(שו&quot;ע|שו&quot;ת|רמב&quot;ם|רמ&quot;א|גמ(?:רא|&#39;)|טור|ב&quot;[קמגפ]|משנה\s+ברורה|חו&quot;מ|אה&quot;ע|או&quot;ח|יו&quot;ד|שו&quot;ע\s+(?:אורח\s+חיים|יורה\s+דעה|אבן\s+העזר|חושן\s+משפט))/g,
+      '<span class="source-ref">$1</span>'
+    );
+  };
+
+  const flushParagraph = () => {
+    if (!paragraphBuffer.length) return;
+    const merged = applyNbspToTail(paragraphBuffer.join(" "));
+    if (merged) out.push(`<p class="auth-paragraph">${highlightSources(merged)}</p>`);
+    paragraphBuffer = [];
+  };
+
+  const flushHebrewList = () => {
+    if (!hebrewListItems.length) return;
+    const itemsHtml = hebrewListItems
+      .map((item) => `<li><span class="heb-marker">${esc(item.marker)}</span> ${highlightSources(applyNbspToTail(item.text))}</li>`)
+      .join("");
+    out.push(`<ol class="heb-list">${itemsHtml}</ol>`);
+    hebrewListItems = [];
+  };
+
+  const flushOrdered = () => {
+    if (!orderedItems.length) return;
+    const itemsHtml = orderedItems
+      .map((item, idx) => `<li><span class="num-marker">${idx + 1}.</span> ${highlightSources(applyNbspToTail(item))}</li>`)
+      .join("");
+    out.push(`<ol class="num-list">${itemsHtml}</ol>`);
+    orderedItems = [];
+  };
+
+  const flushBullets = () => {
+    if (!bulletItems.length) return;
+    const itemsHtml = bulletItems
+      .map((item) => `<li>${highlightSources(applyNbspToTail(item))}</li>`)
+      .join("");
+    out.push(`<ul class="bullet-list">${itemsHtml}</ul>`);
+    bulletItems = [];
+  };
+
+  for (const line of lines) {
+    if (!line) {
+      flushParagraph();
+      flushHebrewList();
+      flushOrdered();
+      flushBullets();
+      continue;
+    }
+
+    if (isUiArtifactLine(line)) {
+      flushParagraph();
+      flushHebrewList();
+      flushOrdered();
+      flushBullets();
+      out.push(`<p class="ui-artifact" aria-hidden="true">${esc(line)}</p>`);
+      continue;
+    }
+
+    // Hebrew letter markers: א. / א' / א) / (א)
+    const hebLetterMatch = line.match(/^\s*[\u05D0-\u05EA]{1,2}[\.\'\)\u05F3\u05F4]\s+(.+)$/);
+    const hebParenMatch = !hebLetterMatch ? line.match(/^\s*\([\u05D0-\u05EA]{1,2}\)\s+(.+)$/) : null;
+    if (hebLetterMatch || hebParenMatch) {
+      flushParagraph();
+      flushOrdered();
+      flushBullets();
+      const markerEnd = line.indexOf(" ");
+      const marker = line.slice(0, markerEnd).trim();
+      const text = line.slice(markerEnd).trim();
+      hebrewListItems.push({ marker, text });
+      continue;
+    }
+
+    // Numeric markers: 1. / 1)
+    const orderedMatch = line.match(/^\s*(\d+)[\.\)]\s+(.+)$/);
+    if (orderedMatch) {
+      flushParagraph();
+      flushHebrewList();
+      flushBullets();
+      orderedItems.push(orderedMatch[2].trim());
+      continue;
+    }
+
+    // Bullet markers
+    const bulletMatch = line.match(/^\s*[-•]\s+(.+)$/);
+    if (bulletMatch) {
+      flushParagraph();
+      flushHebrewList();
+      flushOrdered();
+      bulletItems.push(bulletMatch[1].trim());
+      continue;
+    }
+
+    // Inline sub-heading (short line ending with ":")
+    if (/^[^.]{2,80}:$/.test(line)) {
+      flushParagraph();
+      flushHebrewList();
+      flushOrdered();
+      flushBullets();
+      out.push(`<h4 class="auth-subhead">${esc(line)}</h4>`);
+      continue;
+    }
+
+    paragraphBuffer.push(line);
+  }
+
+  flushParagraph();
+  flushHebrewList();
+  flushOrdered();
+  flushBullets();
+
+  return out.join("\n");
+}
+
+function generateRabbinicAuthenticHtml(data: ParsedPsakDin): string {
+  const { tocHtml, sectionAnchors } = buildTableOfContents(data);
+
+  // Classify sections by type for visual treatment
+  const sectionTypeClass = (title: string): string => {
+    const t = title.trim();
+    if (/עובד|רקע/.test(t)) return "sec-type-facts";
+    if (/טענ/.test(t)) return "sec-type-claims";
+    if (/דיון|ניתוח|הלכ/.test(t)) return "sec-type-discussion";
+    if (/נימוק|הנמקה/.test(t)) return "sec-type-reasoning";
+    if (/פסק|החלט|הכרע/.test(t)) return "sec-type-ruling";
+    if (/מסקנ|סוף\s+דבר/.test(t)) return "sec-type-conclusion";
+    if (/מקור|מרא/.test(t)) return "sec-type-sources";
+    return "";
+  };
+
+  const sectionsHtml = data.sections.map((section, i) => {
+    const anchor = sectionAnchors.get(i) || `sec-${i}`;
+    const contentHtml = renderAuthenticBlocks(section.content);
+    const typeClass = sectionTypeClass(section.title);
+    return `<section class="auth-section ${typeClass}" data-search-scope="${anchor}" data-search-label="${esc(section.title)}">
+      <h3 id="${anchor}" class="auth-section-head">${esc(section.title)} <a href="#toc-top" class="back-link" title="חזרה לתוכן עניינים">▲</a></h3>
+      <div class="auth-section-body">${contentHtml}</div>
+    </section>`;
+  }).join("\n");
+
+  const fallbackBody = data.sections.length ? "" : renderAuthenticBlocks(data.rawText);
+
+  // Build judge signature block with role titles
+  let signatureHtml = "";
+  if (data.judges.length > 0) {
+    const roles = ["אב״ד", "דיין", "דיין"];
+    const judgeLines = data.judges.map((j, i) => {
+      const role = i < roles.length ? roles[i] : "דיין";
+      return `<div class="sign-line">
+        <div class="sign-name">${esc(j)}</div>
+        <div class="sign-role">${role}</div>
+        <div class="sign-underline"></div>
+      </div>`;
+    }).join("");
+
+    signatureHtml = `<div id="sec-signature" class="auth-signature" data-search-scope="sec-signature" data-search-label="חתימה">
+      <div class="sign-intro">בזאת באנו על החתום:</div>
+      <div class="sign-grid">${judgeLines}</div>
+    </div>`;
+  }
+
+  return `<!DOCTYPE html>
+<html lang="he-IL" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>פסק דין: ${esc(data.title)}</title>
+  <style>
+    :root {
+      --ink: #1a1a1a;
+      --heading: #0d0d0d;
+      --accent: #1B3A6B;
+      --accent-light: #2c5aa0;
+      --rule: #8b7d6b;
+      --rule-light: #d4cfc7;
+      --bg: #ffffff;
+      --bg-warm: #fdfcf9;
+      --bg-section: #f9f8f5;
+      --source-bg: #fef9e7;
+      --source-border: #d4af37;
+      --ruling-bg: #f0f7f0;
+      --ruling-border: #2d7a3a;
+    }
+    html { direction: rtl; }
+    body {
+      margin: 0;
+      background: var(--bg-warm);
+      color: var(--ink);
+      font-family: "David","Frank Ruehl","Raanana","Times New Roman",serif;
+      font-size: 13pt;
+      line-height: 1.85;
+      text-align: right;
+      padding: 24px 16px;
+    }
+    .page {
+      max-width: 820px;
+      margin: 0 auto;
+      background: var(--bg);
+      border: 1px solid var(--rule-light);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+      padding: 48px 56px;
+    }
+
+    /* ── Header ── */
+    .doc-head {
+      text-align: center;
+      margin-bottom: 28px;
+      padding-bottom: 20px;
+      border-bottom: 3px double var(--rule);
+    }
+    .basad-line {
+      font-size: 11pt;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.08em;
+      margin-bottom: 10px;
+    }
+    .court-name {
+      font-size: 14pt;
+      font-weight: 700;
+      color: var(--heading);
+      margin: 4px 0;
+    }
+    .court-city {
+      font-size: 12pt;
+      color: var(--accent);
+      margin: 2px 0 12px;
+    }
+    .main-title {
+      font-size: 26pt;
+      font-weight: 700;
+      color: var(--heading);
+      margin: 10px 0 6px;
+      letter-spacing: 0.06em;
+    }
+    .case-num {
+      font-size: 12pt;
+      color: #444;
+      margin: 4px 0 0;
+    }
+    .head-rule {
+      border: none;
+      border-top: 1px solid var(--rule-light);
+      margin: 14px auto 0;
+      width: 60%;
+    }
+
+    /* ── Case details ── */
+    .details-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      font-size: 12pt;
+    }
+    .details-table th {
+      text-align: start;
+      width: 140px;
+      font-weight: 700;
+      color: var(--accent);
+      padding: 6px 0;
+      border-bottom: 1px dashed var(--rule-light);
+      vertical-align: top;
+    }
+    .details-table td {
+      padding: 6px 0;
+      border-bottom: 1px dashed var(--rule-light);
+    }
+    .details-table tr:last-child th,
+    .details-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* ── TOC ── */
+    .toc {
+      border: 1px solid var(--rule-light);
+      background: var(--bg-section);
+      padding: 14px 20px;
+      margin-bottom: 24px;
+    }
+    .toc-title {
+      font-size: 13pt;
+      font-weight: 700;
+      color: var(--heading);
+      text-align: center;
+      margin-bottom: 8px;
+      border-bottom: 1px solid var(--rule);
+      padding-bottom: 6px;
+    }
+    .toc-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      counter-reset: toc-counter;
+    }
+    .toc-list li {
+      counter-increment: toc-counter;
+      padding: 3px 0;
+      border-bottom: 1px dotted var(--rule-light);
+    }
+    .toc-list li:last-child { border-bottom: none; }
+    .toc-list li::before {
+      content: counter(toc-counter, hebrew) ". ";
+      font-weight: 700;
+      color: var(--accent);
+      margin-left: 6px;
+    }
+    .toc-link { color: var(--ink); text-decoration: none; }
+    .toc-link:hover { color: var(--accent-light); text-decoration: underline; }
+
+    /* ── Sections ── */
+    .auth-section {
+      margin-bottom: 24px;
+    }
+    .auth-section-head {
+      font-size: 15pt;
+      font-weight: 700;
+      color: var(--heading);
+      margin: 28px 0 12px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid var(--accent);
+      scroll-margin-top: 20px;
+    }
+    .back-link {
+      font-size: 0.5em;
+      color: var(--accent-light);
+      text-decoration: none;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    .auth-section-body {
+      padding-right: 8px;
+    }
+
+    /* Section type accents */
+    .sec-type-ruling .auth-section-head {
+      border-bottom-color: var(--ruling-border);
+      color: var(--ruling-border);
+    }
+    .sec-type-ruling .auth-section-body {
+      background: var(--ruling-bg);
+      padding: 12px 16px;
+      border-right: 4px solid var(--ruling-border);
+      margin-bottom: 8px;
+    }
+    .sec-type-sources .auth-section-head {
+      border-bottom-color: var(--source-border);
+    }
+
+    /* ── Paragraphs ── */
+    .auth-paragraph {
+      margin: 0 0 14px;
+      text-align: justify;
+      text-indent: 2em;
+      orphans: 3;
+      widows: 3;
+      text-wrap: pretty;
+    }
+    .auth-paragraph:first-child {
+      text-indent: 0;
+    }
+
+    /* ── Inline sub-headings ── */
+    .auth-subhead {
+      margin: 18px 0 8px;
+      font-size: 13pt;
+      font-weight: 700;
+      color: var(--accent);
+      text-indent: 0;
+    }
+
+    /* ── Source references highlighting ── */
+    .source-ref {
+      background: var(--source-bg);
+      border-bottom: 1px solid var(--source-border);
+      padding: 0 3px;
+      font-weight: 700;
+    }
+
+    /* ── Hebrew letter lists (א', ב', ג') ── */
+    .heb-list {
+      list-style: none;
+      margin: 8px 0 14px;
+      padding: 0;
+    }
+    .heb-list li {
+      margin: 6px 0;
+      padding-right: 28px;
+      text-indent: -28px;
+    }
+    .heb-marker {
+      display: inline-block;
+      min-width: 28px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    /* ── Numeric lists ── */
+    .num-list {
+      list-style: none;
+      margin: 8px 0 14px;
+      padding: 0;
+    }
+    .num-list li {
+      margin: 6px 0;
+      padding-right: 24px;
+      text-indent: -24px;
+    }
+    .num-marker {
+      display: inline-block;
+      min-width: 24px;
+      font-weight: 700;
+      color: var(--heading);
+    }
+
+    /* ── Bullet lists ── */
+    .bullet-list {
+      margin: 8px 0 14px;
+      padding-right: 24px;
+    }
+    .bullet-list li { margin: 4px 0; }
+
+    /* ── Signature block ── */
+    .auth-signature {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 2px solid var(--rule);
+    }
+    .sign-intro {
+      text-align: center;
+      font-weight: 700;
+      font-size: 13pt;
+      margin-bottom: 24px;
+      color: var(--heading);
+    }
+    .sign-grid {
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .sign-line {
+      text-align: center;
+      min-width: 160px;
+    }
+    .sign-underline {
+      border-bottom: 1px solid var(--ink);
+      width: 140px;
+      margin: 8px auto;
+    }
+    .sign-name {
+      font-weight: 700;
+      font-size: 12pt;
+    }
+    .sign-role {
+      font-size: 10.5pt;
+      color: var(--accent);
+    }
+
+    /* ── Footer ── */
+    .doc-footer {
+      margin-top: 32px;
+      text-align: center;
+      border-top: 1px solid var(--rule-light);
+      padding-top: 10px;
+      color: #888;
+      font-size: 10pt;
+    }
+
+    .ui-artifact { display: none !important; }
+
+    ${SEARCH_WIDGET_CSS}
+
+    @page { size: A4; margin: 2.5cm; }
+    @media print {
+      body { padding: 0; background: #fff; font-size: 12pt; line-height: 1.7; }
+      .page { border: none; box-shadow: none; padding: 0; max-width: none; }
+      .toc { border: none; background: none; padding: 0; }
+      .auth-signature { page-break-inside: avoid; }
+      .sec-type-ruling .auth-section-body { background: none; border-right-color: #888; }
+      a { color: #000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="doc-head">
+      <div class="basad-line">בס״ד</div>
+      <div class="court-name">${esc(data.court || "בית הדין הרבני")}</div>
+      <div class="main-title">פסק דין</div>
+      ${data.caseNumber ? `<div class="case-num">תיק מס׳ ${esc(data.caseNumber)}</div>` : ""}
+      <hr class="head-rule" />
+    </header>
+
+    <div id="toc-top"></div>
+    ${tocHtml}
+    ${renderSearchWidget(data)}
+
+    <section class="auth-section" data-search-scope="sec-details" data-search-label="פרטי התיק">
+      <h3 id="sec-details" class="auth-section-head">פרטי התיק</h3>
+      <div class="auth-section-body">
+        <table class="details-table">
+          ${data.title ? `<tr><th>כותרת</th><td>${esc(data.title)}</td></tr>` : ""}
+          ${data.court ? `<tr><th>בית הדין</th><td>${esc(data.court)}</td></tr>` : ""}
+          ${data.date ? `<tr><th>תאריך</th><td>${esc(data.date)}</td></tr>` : ""}
+          ${data.sourceId ? `<tr><th>מספר סידורי</th><td>${esc(data.sourceId)}</td></tr>` : ""}
+          ${data.judges.length ? `<tr><th>הרכב הדיינים</th><td>${data.judges.map(j => esc(j)).join("&ensp;·&ensp;")}</td></tr>` : ""}
+          ${data.sourceUrl ? `<tr><th>קישור למקור</th><td><a href="${esc(data.sourceUrl)}" target="_blank">${esc(data.sourceUrl)}</a></td></tr>` : ""}
+        </table>
+      </div>
+    </section>
+
+    ${data.summary ? `<section class="auth-section" data-search-scope="sec-summary" data-search-label="תקציר">
+      <h3 id="sec-summary" class="auth-section-head">תקציר <a href="#toc-top" class="back-link" title="חזרה לתוכן עניינים">▲</a></h3>
+      <div class="auth-section-body"><p class="auth-paragraph" style="text-indent:0">${highlightSourcesStatic(esc(applyNbspToTail(data.summary)))}</p></div>
+    </section>` : ""}
+
+    <section class="auth-section" data-search-scope="sec-body" data-search-label="טקסט מלא של פסק הדין">
+      <h3 class="auth-section-head">טקסט מלא של פסק הדין</h3>
+      ${sectionsHtml}
+      ${fallbackBody ? `<div class="auth-section-body">${fallbackBody}</div>` : ""}
+    </section>
+
+    ${signatureHtml}
+    <div class="doc-footer">מסמך בעימוד בית דין רבני • ${new Date().toLocaleDateString("he-IL")}</div>
+  </div>
+  ${SEARCH_WIDGET_SCRIPT}
+</body>
+</html>`;
+}
+
+function highlightSourcesStatic(escaped: string): string {
+  return escaped.replace(
+    /(שו&quot;ע|שו&quot;ת|רמב&quot;ם|רמ&quot;א|גמ(?:רא|&#39;)|טור|ב&quot;[קמגפ]|משנה\s+ברורה|חו&quot;מ|אה&quot;ע|או&quot;ח|יו&quot;ד)/g,
+    '<span class="source-ref">$1</span>'
+  );
+}
+
 // ─── Main dispatch ───
 export function generateFromTemplate(templateId: string, data: ParsedPsakDin): string {
   const sanitizedData = sanitizeParsedData(data);
 
   switch (templateId) {
+    case "rabbinic-authentic": return generateRabbinicAuthenticHtml(sanitizedData);
     case "rabbinic-court-structured": return generateRabbinicCourtStructuredHtml(sanitizedData);
     case "court-rtl-official": return generateCourtRtlOfficialHtml(sanitizedData);
     case "navy-luxury-gold": return generateNavyLuxuryGoldHtml(sanitizedData);
