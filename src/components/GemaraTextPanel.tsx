@@ -131,9 +131,14 @@ const TEXT_SETTINGS_KEY = 'gemara-text-settings';
 interface TextSettings {
   fontSize: number;
   fontFamily: string;
-  textAlign: 'right' | 'center' | 'left';
+  textAlign: 'right' | 'center' | 'left' | 'justify';
   isBold: boolean;
+  isItalic: boolean;
+  isUnderline: boolean;
+  isStrikethrough: boolean;
   highlightColor: string;
+  textColor: string;
+  lineHeight: number;
 }
 
 const defaultTextSettings: TextSettings = {
@@ -141,7 +146,12 @@ const defaultTextSettings: TextSettings = {
   fontFamily: 'font-serif',
   textAlign: 'right',
   isBold: false,
+  isItalic: false,
+  isUnderline: false,
+  isStrikethrough: false,
   highlightColor: 'bg-transparent',
+  textColor: '',
+  lineHeight: 1.8,
 };
 
 export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Batra" }: GemaraTextPanelProps) {
