@@ -1109,9 +1109,9 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
       case 'text':
       default:
         return gemaraText ? (
-          <div className="space-y-3">
+          <div className="space-y-0">
             {renderTextToolbar()}
-            <div className="prose prose-slate max-w-none dark:prose-invert bg-amber-50/30 dark:bg-amber-950/10 p-4 rounded-lg">
+            <div className="prose prose-slate max-w-none dark:prose-invert bg-amber-50/30 dark:bg-amber-950/10 p-4 rounded-b-lg border border-t-0 border-border">
               {renderGemaraText()}
             </div>
           </div>
