@@ -123,7 +123,7 @@ export default function EmbeddedDocViewer({ url, title, psakData, onClose, onSwi
   const [notes, setNotes] = useState(() => {
     try { return localStorage.getItem(`edv-notes-${url}`) || ""; } catch { return ""; }
   });
-  const [notesRecordId, setNotesRecordId] = useState<string | null>(null);
+  
   const [isBookmarked, setIsBookmarked] = useState(() => {
     try {
       const bm = JSON.parse(localStorage.getItem("edv-bookmarks") || "[]") as string[];
@@ -307,70 +307,25 @@ export default function EmbeddedDocViewer({ url, title, psakData, onClose, onSwi
   }, [url, title]);
 
   useEffect(() => {
-    let active = true;
-    const loadNotes = async () => {
-      if (!psakData?.id) return;
-      try {
-        const { data, error } = await supabase
-          .from("psak_din_notes")
-          .select("id, note_text")
-          .eq("psak_din_id", psakData.id)
-          .order("updated_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (error || !active) return;
-        if (data?.note_text) {
-          setNotes(data.note_text);
-          setNotesRecordId(data.id);
-        }
-      } catch {
-        // Keep local fallback silently
-      }
-    };
-
-    void loadNotes();
-    return () => {
-      active = false;
-    };
-  }, [psakData?.id]);
+    try {
+      const saved = localStorage.getItem(`edv-notes-${url}`);
+      if (saved) setNotes(saved);
+    } catch { /* ignore */ }
+  }, [url]);
 
   // Notes
   const handleSaveNotes = useCallback(async () => {
     try {
       localStorage.setItem(`edv-notes-${url}`, notes);
-      if (psakData?.id) {
-        if (notesRecordId) {
-          await supabase
-            .from("psak_din_notes")
-            .update({ note_text: notes, source_url: url })
-            .eq("id", notesRecordId);
-        } else {
-          const { data } = await supabase
-            .from("psak_din_notes")
-            .insert({ psak_din_id: psakData.id, note_text: notes, source_url: url })
-            .select("id")
-            .single();
-          if (data?.id) setNotesRecordId(data.id);
-        }
-      }
-      toast.success("הערות נשמרו (מקומי + מסד נתונים)");
+      toast.success("הערות נשמרו");
     } catch { /* quota exceeded */ }
-  }, [url, notes, notesRecordId, psakData?.id]);
+  }, [url, notes]);
 
-  const handleClearNotes = useCallback(async () => {
+  const handleClearNotes = useCallback(() => {
     setNotes("");
     try { localStorage.removeItem(`edv-notes-${url}`); } catch { /* ignore */ }
-    try {
-      if (notesRecordId) {
-        await supabase.from("psak_din_notes").delete().eq("id", notesRecordId);
-        setNotesRecordId(null);
-      }
-    } catch {
-      // Ignore remote clear errors, local clear already done
-    }
     toast("הערות נמחקו");
-  }, [url, notesRecordId]);
+  }, [url]);
 
   // Bookmark
   const toggleBookmark = useCallback(() => {

@@ -108,14 +108,6 @@ export const TEMPLATES: TemplateInfo[] = [
     hasIndex: true,
   },
   {
-    id: "clean-merged",
-    name: "נקי מאוחד",
-    description: "עיצוב נקי ללא אימוג'ים, שורות מאוחדות לפסקאות זורמות — ללא AI",
-    requiresAi: false,
-    icon: "📃",
-    hasIndex: false,
-  },
-  {
     id: "ai-enhanced",
     name: "שיפור AI מלא",
     description: "AI מעצב, מסכם ומשפר את הטקסט, מוסיף מבנה מקצועי",
@@ -1229,150 +1221,6 @@ function generateNavyLuxuryGoldHtml(data: ParsedPsakDin): string {
 </html>`;
 }
 
-// ═════════════════════════════════════════════════════
-// TEMPLATE: Clean Merged (no icons, merged paragraphs)
-// ═════════════════════════════════════════════════════
-
-/**
- * Merge consecutive short lines into flowing paragraphs.
- * Lines shorter than ~60 chars that appear consecutively are joined.
- */
-function mergeContentLines(content: string): string {
-  const lines = content.split('\n');
-  const merged: string[] = [];
-  let buffer = '';
-
-  for (const raw of lines) {
-    const trimmed = raw.trim();
-    if (!trimmed) {
-      if (buffer) { merged.push(buffer); buffer = ''; }
-      continue;
-    }
-    // If it looks like a header (short + ends with colon, or starts with known patterns)
-    const isHeader = /^[^.]{3,60}:$/.test(trimmed) || /^(פסק הדין|תקציר|רקע|הערה|חתימה|נושאים)/.test(trimmed);
-    if (isHeader) {
-      if (buffer) { merged.push(buffer); buffer = ''; }
-      merged.push(trimmed);
-      continue;
-    }
-    // Merge short consecutive lines
-    if (buffer) {
-      buffer += ' ' + trimmed;
-    } else {
-      buffer = trimmed;
-    }
-    // If the line ends with a period or is long enough, flush
-    if (trimmed.endsWith('.') || trimmed.endsWith('。') || buffer.length > 200) {
-      merged.push(buffer);
-      buffer = '';
-    }
-  }
-  if (buffer) merged.push(buffer);
-  return merged.join('\n');
-}
-
-function renderMergedSectionContent(content: string): string {
-  const merged = mergeContentLines(content);
-  const lines = merged.split('\n');
-  return lines.map(line => {
-    const trimmed = line.trim();
-    if (!trimmed) return '';
-    // Check if it's a header-like line
-    if (/^[^.]{3,60}:$/.test(trimmed) || /^(פסק הדין|תקציר|רקע|הערה|חתימה|נושאים)/.test(trimmed)) {
-      return `<div class="detected-subheader"><b>${esc(trimmed)}</b></div>`;
-    }
-    return `<div class="paragraph">${esc(trimmed)}</div>`;
-  }).filter(Boolean).join('\n        ');
-}
-
-function renderMergedBodyText(data: ParsedPsakDin): string {
-  if (data.sections.length > 0) return '';
-  return renderMergedSectionContent(data.rawText);
-}
-
-function generateCleanMergedHtml(data: ParsedPsakDin): string {
-  const judgesHtml = data.judges.length > 0
-    ? `<ul style="list-style-type:none;padding:0;margin:0;">${data.judges.map(j => `<li>${esc(j)}</li>`).join('')}</ul>`
-    : '';
-
-  const sectionsHtml = data.sections.map((section, i) => {
-    const contentHtml = renderMergedSectionContent(section.content);
-    return `<section class="doc-section">
-      <h3 class="subsection-title"><u>${esc(section.title)}</u></h3>
-      <div class="doc-section-content">${contentHtml}</div>
-    </section>`;
-  }).join('\n');
-
-  const fallbackBody = renderMergedBodyText(data);
-
-  return `<!DOCTYPE html>
-<html lang="he" dir="rtl">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>פסק דין: ${esc(data.title)}</title>
-  <style>
-    body { font-family: 'David','Times New Roman',serif; line-height:1.8; color:#333; background:#f9f9f9; margin:0; padding:20px; direction:rtl; text-align:right; }
-    .container { max-width:900px; margin:30px auto; background:#fff; border:1px solid #eee; box-shadow:0 0 15px rgba(0,0,0,.05); padding:40px 60px; border-radius:8px; }
-    .header { text-align:center; margin-bottom:40px; border-bottom:3px solid #D4AF37; padding-bottom:20px; }
-    .header h1 { color:#0B1F5B; font-size:2.8em; margin:0; padding-bottom:10px; font-weight:bold; }
-    .header .logo { font-size:1.2em; color:#555; margin-top:5px; }
-    .section-title { color:#0B1F5B; font-size:1.8em; margin-top:35px; margin-bottom:15px; border-bottom:2px solid #D4AF37; padding-bottom:8px; font-weight:bold; }
-    .subsection-title { color:#0B1F5B; font-size:1.4em; margin-top:25px; margin-bottom:10px; font-weight:bold; }
-    .details-table { width:100%; border-collapse:collapse; margin-bottom:25px; }
-    .details-table td { padding:10px 0; border-bottom:1px dashed #eee; vertical-align:top; }
-    .details-table td:first-child { font-weight:bold; width:150px; color:#0B1F5B; }
-    .paragraph { margin-bottom:15px; text-align:justify; }
-    .bold-text { font-weight:bold; color:#0B1F5B; }
-    .divider { border:none; border-top:1px solid #eee; margin:30px 0; }
-    .footer { text-align:center; margin-top:50px; padding-top:20px; border-top:1px solid #eee; color:#777; font-size:0.9em; }
-    .signature { text-align:center; margin-top:40px; font-weight:bold; color:#0B1F5B; }
-    .signature div { margin-top:10px; }
-    .detected-header { color:#0B1F5B; font-size:1.3em; font-weight:bold; margin-top:28px; margin-bottom:12px; padding-bottom:6px; border-bottom:2px solid #D4AF37; }
-    .detected-subheader { color:#0B1F5B; font-size:1.1em; font-weight:bold; margin-top:16px; margin-bottom:8px; }
-    .detected-reference { color:#555; font-size:0.95em; margin:4px 0; padding-right:20px; font-style:italic; }
-    .detected-quote { margin:12px 30px; padding:10px 20px; border-right:4px solid #D4AF37; background:#faf8f0; font-style:italic; color:#333; }
-    .spacer { height:12px; }
-    ${PRINT_CSS}
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <div class="logo">בית דין רבני</div>
-      <h1>פסק דין</h1>
-      ${data.caseNumber ? `<div style="font-size:1.1em;color:#555;">תיק מס' ${esc(data.caseNumber)}</div>` : ''}
-    </div>
-
-    <h2 class="section-title"><u>פרטי התיק</u></h2>
-    <table class="details-table">
-      ${data.title ? `<tr><td>כותרת:</td><td>${esc(data.title)}</td></tr>` : ''}
-      ${data.court ? `<tr><td>בית הדין:</td><td>${esc(data.court)}</td></tr>` : ''}
-      ${data.date ? `<tr><td>תאריך:</td><td>${esc(data.date)}</td></tr>` : ''}
-      ${data.sourceId ? `<tr><td>מזהה:</td><td>${esc(data.sourceId)}</td></tr>` : ''}
-      ${data.sourceUrl ? `<tr><td>קישור:</td><td><a href="${esc(data.sourceUrl)}" target="_blank" style="color:#0B1F5B;">${esc(data.sourceUrl)}</a></td></tr>` : ''}
-    </table>
-
-    ${data.summary ? `<h2 class="section-title"><u>תקציר</u></h2>\n    <div class="paragraph">${esc(data.summary)}</div>` : ''}
-
-    <h2 class="section-title"><u>טקסט מלא של פסק הדין</u></h2>
-
-    ${data.caseNumber ? `<div style="text-align:center;margin-bottom:20px;">מס. סידורי: ${esc(data.caseNumber)}</div>` : ''}
-    ${data.title ? `<h3 style="text-align:center;color:#0B1F5B;font-size:1.6em;margin-bottom:25px;">${esc(data.title)}</h3>` : ''}
-    ${data.court ? `<div style="font-size:1.1em;margin-bottom:20px;"><span class="bold-text">שם בית דין:</span> ${esc(data.court)}</div>` : ''}
-    ${judgesHtml ? `<div style="font-size:1.1em;margin-bottom:20px;"><span class="bold-text">דיינים:</span>${judgesHtml}</div>` : ''}
-    ${data.topics ? `<div style="font-size:1.1em;margin-bottom:20px;"><span class="bold-text">נושאים הנידונים בפסק:</span> ${esc(data.topics)}</div>` : ''}
-
-    ${sectionsHtml}
-    ${fallbackBody ? `<div class="doc-section">${fallbackBody}</div>` : ''}
-
-    ${judgesHtml ? `<div class="signature">\n      <div>בזאת באתי על החתום:</div>\n      <div>_________________</div>\n      ${judgesHtml}\n    </div>` : ''}
-    <div class="footer">מסמך זה עוצב אוטומטית • ${new Date().toLocaleDateString('he-IL')}</div>
-  </div>
-</body>
-</html>`;
-}
-
 // ─── Section icon helper ───
 function getSectionIcon(type: string): string {
   switch (type) {
@@ -1399,7 +1247,6 @@ export function generateFromTemplate(templateId: string, data: ParsedPsakDin): s
     case "modern": return generateModernHtml(sanitizedData);
     case "indexed": return generateIndexedHtml(sanitizedData);
     case "academic": return generateAcademicHtml(sanitizedData);
-    case "clean-merged": return generateCleanMergedHtml(sanitizedData);
     case "classic":
     default:
       return generateClassicHtml(sanitizedData);
