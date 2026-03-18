@@ -507,7 +507,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   const renderGemaraText = () => {
     if (!gemaraText) return null;
 
-    const textClasses = `leading-loose ${textSettings.fontFamily} ${getTextAlignClass()} ${textSettings.isBold ? 'font-bold' : ''} ${textSettings.highlightColor}`;
+    const textClasses = `${textSettings.fontFamily} ${getTextAlignClass()} ${textSettings.isBold ? 'font-bold' : ''} ${textSettings.isItalic ? 'italic' : ''} ${textSettings.isUnderline ? 'underline' : ''} ${textSettings.isStrikethrough ? 'line-through' : ''} ${textSettings.highlightColor}`;
     
     return (
       <RichTextViewer
@@ -515,7 +515,11 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
         sourceType="gemara"
         sourceId={sugyaId}
         className={textClasses}
-        baseStyle={{ fontSize: `${textSettings.fontSize}px` }}
+        baseStyle={{
+          fontSize: `${textSettings.fontSize}px`,
+          lineHeight: `${textSettings.lineHeight}`,
+          ...(textSettings.textColor ? { color: textSettings.textColor } : {}),
+        }}
       />
     );
   };
