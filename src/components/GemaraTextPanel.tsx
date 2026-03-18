@@ -1,7 +1,8 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +15,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Loader2, BookOpen, Image, FileText, ExternalLink, Eye, Check, ZoomIn, ZoomOut, Type, AArrowUp, AArrowDown, AlignRight, AlignCenter, AlignLeft, Bold, Highlighter, MousePointer2 } from "lucide-react";
+import { Loader2, BookOpen, Image, FileText, ExternalLink, Eye, Check, ZoomIn, ZoomOut, Type, AArrowUp, AArrowDown, AlignRight, AlignCenter, AlignLeft, AlignJustify, Bold, Italic, Underline, Strikethrough, Highlighter, MousePointer2, Database, Copy, Printer, MoveVertical, FileDown, Save, Palette, RotateCcw, Scissors } from "lucide-react";
+import { toast as sonnerToast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getCachedGemaraText, setCachedGemaraText } from "@/lib/pageCache";
@@ -41,7 +43,7 @@ interface GemaraTextPanelProps {
   masechet?: string; // Sefaria name e.g. "Megillah", "Bava_Batra"
 }
 
-type ViewMode = 'text' | 'sefaria' | 'edaf-image' | 'edaf-site';
+type ViewMode = 'text' | 'sefaria' | 'edaf-image' | 'edaf-site' | 'cloud';
 
 // Pre-defined lookup maps — avoid re-creating on every render
 const HEBREW_TO_NUMBER_STR: Record<string, string> = {
@@ -98,7 +100,17 @@ const VIEW_LABELS: Record<ViewMode, { label: string; icon: React.ReactNode; desc
   'sefaria': { label: 'תצוגת ספריא', icon: <BookOpen className="h-4 w-4" />, description: 'קורא ספריא מלא' },
   'edaf-image': { label: 'תמונה סרוקה', icon: <Image className="h-4 w-4" />, description: 'תמונת דף מ-E-Daf' },
   'edaf-site': { label: 'אתר E-Daf', icon: <ExternalLink className="h-4 w-4" />, description: 'תצוגת אתר E-Daf' },
+  'cloud': { label: 'גמרא מהענן', icon: <Database className="h-4 w-4" />, description: 'גמרות שהורדו ונשמרו' },
 };
+
+const CLOUD_HIGHLIGHT_COLORS = [
+  { value: '#FFF9C4', label: 'צהוב' },
+  { value: '#C8E6C9', label: 'ירוק' },
+  { value: '#BBDEFB', label: 'כחול' },
+  { value: '#F8BBD0', label: 'ורוד' },
+  { value: '#FFE0B2', label: 'כתום' },
+  { value: '#E1BEE7', label: 'סגול' },
+];
 
 const STORAGE_KEY = 'gemara-view-preference';
 const TEXT_SETTINGS_KEY = 'gemara-text-settings';
@@ -133,6 +145,109 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
     return saved ? JSON.parse(saved) : defaultTextSettings;
   });
   const { toast } = useToast();
+
+  // Cloud editor state
+  const cloudIframeRef = useRef<HTMLIFrameElement>(null);
+  const [cloudEditMode, setCloudEditMode] = useState(false);
+  const [cloudPages, setCloudPages] = useState<Array<{ sugya_id: string; title: string; daf_yomi: string; masechet: string }>>([]);
+  const [cloudLoading, setCloudLoading] = useState(false);
+  const [cloudContent, setCloudContent] = useState<string>("");
+  const [cloudLineHeight, setCloudLineHeight] = useState(1.8);
+  const [cloudParagraphSpacing, setCloudParagraphSpacing] = useState(10);
+
+  // Load cloud pages list when switching to cloud mode
+  useEffect(() => {
+    if (viewMode === 'cloud') {
+      loadCloudPages();
+    }
+  }, [viewMode]);
+
+  // Load the current daf's cloud content when entering cloud mode
+  useEffect(() => {
+    if (viewMode === 'cloud' && sugyaId) {
+      loadCloudContent(sugyaId);
+    }
+  }, [viewMode, sugyaId]);
+
+  const loadCloudPages = async () => {
+    setCloudLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('gemara_pages')
+        .select('sugya_id, title, daf_yomi, masechet')
+        .order('masechet')
+        .order('daf_number');
+      if (error) throw error;
+      setCloudPages((data || []) as Array<{ sugya_id: string; title: string; daf_yomi: string; masechet: string }>);
+    } catch {
+      sonnerToast.error("שגיאה בטעינת רשימת הדפים");
+    } finally {
+      setCloudLoading(false);
+    }
+  };
+
+  const loadCloudContent = async (sid: string) => {
+    setCloudLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('gemara_pages')
+        .select('*')
+        .eq('sugya_id', sid)
+        .maybeSingle();
+      if (error) throw error;
+      if (data) {
+        const ext = data as Record<string, unknown>;
+        const text = (ext.gemara_text as string) || (ext.full_text as string) || "";
+        setCloudContent(text);
+      } else {
+        setCloudContent("");
+      }
+    } catch {
+      sonnerToast.error("שגיאה בטעינת תוכן הדף");
+    } finally {
+      setCloudLoading(false);
+    }
+  };
+
+  const handleCloudCopy = useCallback(() => {
+    const doc = cloudIframeRef.current?.contentDocument;
+    const sel = doc?.getSelection()?.toString() || cloudContent || "";
+    if (sel) { navigator.clipboard.writeText(sel); sonnerToast.success("הועתק"); }
+  }, [cloudContent]);
+
+  const handleCloudPrint = useCallback(() => {
+    const doc = cloudIframeRef.current?.contentDocument;
+    const html = doc?.documentElement?.outerHTML || cloudContent;
+    if (html) {
+      const win = window.open("", "_blank");
+      if (win) { win.document.write(html); win.document.close(); win.print(); }
+    }
+  }, [cloudContent]);
+
+  const handleCloudDownload = useCallback((format: string) => {
+    const doc = cloudIframeRef.current?.contentDocument;
+    const content = doc?.body?.innerHTML || cloudContent;
+    if (!content) { sonnerToast.error("אין תוכן להורדה"); return; }
+    const title = `gemara_${sugyaId}`;
+    let blob: Blob;
+    let ext: string;
+    if (format === "html") {
+      blob = new Blob([`<!DOCTYPE html><html dir=\"rtl\" lang=\"he\"><head><meta charset=\"utf-8\"><title>${title}</title></head><body>${content}</body></html>`], { type: "text/html;charset=utf-8" });
+      ext = "html";
+    } else if (format === "txt") {
+      const text = doc?.body?.innerText || content.replace(/<[^>]+>/g, '');
+      blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+      ext = "txt";
+    } else {
+      blob = new Blob([`<!DOCTYPE html><html dir=\"rtl\"><head><meta charset=\"utf-8\"><title>${title}</title></head><body>${content}</body></html>`], { type: "text/html;charset=utf-8" });
+      ext = "html";
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `${title}.${ext}`; a.click();
+    URL.revokeObjectURL(url);
+    sonnerToast.success(`הקובץ ${title}.${ext} הורד בהצלחה`);
+  }, [cloudContent, sugyaId]);
 
   useEffect(() => {
     loadGemaraText();
@@ -640,6 +755,198 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
     );
   };
 
+  const renderCloudView = () => {
+    if (cloudLoading && !cloudContent) {
+      return (
+        <div className="space-y-4 py-6">
+          <Skeleton className="h-6 w-48 mx-auto" />
+          {[...Array(6)].map((_, i) => (
+            <Skeleton key={i} className="h-4 w-full" style={{ width: `${80 + Math.random() * 20}%` }} />
+          ))}
+        </div>
+      );
+    }
+
+    if (!cloudContent) {
+      return (
+        <div className="text-center py-12 space-y-4">
+          <Database className="h-12 w-12 text-[#D4AF37] mx-auto opacity-60" />
+          <p className="text-[#0B1F5B]/70 text-sm">לא נמצא תוכן עבור דף זה בענן</p>
+          <p className="text-[#0B1F5B]/40 text-xs">הורד את הדף דרך ניווט הסדרים כדי לשמור אותו</p>
+        </div>
+      );
+    }
+
+    const cloudHtml = `<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="utf-8"><style>
+      body { font-family: 'David', 'Times New Roman', serif; font-size: 18px; line-height: ${cloudLineHeight}; color: #0B1F5B; padding: 24px; margin: 0; background: #fff; direction: rtl; }
+      p, div { margin-bottom: ${cloudParagraphSpacing}px; }
+      ::selection { background: #D4AF3744; }
+    </style></head><body>${cloudContent}</body></html>`;
+
+    return (
+      <div className="space-y-0">
+        {/* ═══ CLOUD EDITOR TOOLBAR ═══ */}
+        <div className="border-2 border-b-0 border-[#D4AF37]/30 rounded-t-xl bg-white px-2 py-1.5 flex items-center gap-1 flex-wrap">
+          <span className="text-[10px] text-[#D4AF37] font-bold ml-2">📀 גמרא מהענן</span>
+          <div className="w-px h-5 bg-[#D4AF37]/20" />
+
+          {/* Edit Mode Toggle */}
+          <Button size="sm" variant={cloudEditMode ? "default" : "outline"} className={`h-7 text-xs gap-1 ${cloudEditMode ? "bg-[#D4AF37] text-[#0B1F5B]" : "border-[#D4AF37]/40 text-[#0B1F5B]"}`} onClick={() => {
+            const next = !cloudEditMode;
+            setCloudEditMode(next);
+            const doc = cloudIframeRef.current?.contentDocument;
+            if (doc?.body) doc.designMode = next ? "on" : "off";
+          }}>
+            <Scissors className="h-3 w-3" />
+            {cloudEditMode ? "מצב עריכה פעיל" : "ערוך"}
+          </Button>
+
+          {cloudEditMode && (
+            <>
+              <div className="w-px h-5 bg-[#D4AF37]/20" />
+              {/* Font Size */}
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => cloudIframeRef.current?.contentDocument?.execCommand("fontSize", false, "2")} title="הקטנה"><AArrowDown className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => cloudIframeRef.current?.contentDocument?.execCommand("fontSize", false, "5")} title="הגדלה"><AArrowUp className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+
+              <div className="w-px h-5 bg-[#D4AF37]/20" />
+              {/* Text Formatting */}
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => cloudIframeRef.current?.contentDocument?.execCommand("bold")} title="הדגשה"><Bold className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => cloudIframeRef.current?.contentDocument?.execCommand("italic")} title="נטוי"><Italic className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => cloudIframeRef.current?.contentDocument?.execCommand("underline")} title="קו תחתון"><Underline className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => cloudIframeRef.current?.contentDocument?.execCommand("strikeThrough")} title="קו חוצה"><Strikethrough className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+
+              <div className="w-px h-5 bg-[#D4AF37]/20" />
+              {/* Alignment */}
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => cloudIframeRef.current?.contentDocument?.execCommand("justifyRight")} title="ימין"><AlignRight className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => cloudIframeRef.current?.contentDocument?.execCommand("justifyCenter")} title="מרכז"><AlignCenter className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => cloudIframeRef.current?.contentDocument?.execCommand("justifyLeft")} title="שמאל"><AlignLeft className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => cloudIframeRef.current?.contentDocument?.execCommand("justifyFull")} title="מלא"><AlignJustify className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+
+              <div className="w-px h-5 bg-[#D4AF37]/20" />
+              {/* Highlight Colors */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button size="icon" variant="ghost" className="h-7 w-7" title="סימון בצבע"><Highlighter className="h-3.5 w-3.5 text-[#D4AF37]" /></Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-2" align="start">
+                  <div className="flex gap-1.5">
+                    {CLOUD_HIGHLIGHT_COLORS.map(c => (
+                      <button key={c.value} className="w-6 h-6 rounded-full border-2 border-white shadow-sm hover:scale-125 transition-transform" style={{ backgroundColor: c.value }} onClick={() => {
+                        cloudIframeRef.current?.contentDocument?.execCommand("hiliteColor", false, c.value);
+                      }} />
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+              {/* Font Color */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button size="icon" variant="ghost" className="h-7 w-7" title="צבע טקסט"><Palette className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-2" align="start">
+                  <div className="flex gap-1.5">
+                    {["#0B1F5B", "#000000", "#b91c1c", "#15803d", "#7e22ce", "#b45309", "#D4AF37"].map(color => (
+                      <button key={color} className="w-6 h-6 rounded-full border-2 border-white shadow-sm hover:scale-125 transition-transform" style={{ backgroundColor: color }} onClick={() => {
+                        cloudIframeRef.current?.contentDocument?.execCommand("foreColor", false, color);
+                      }} />
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              <div className="w-px h-5 bg-[#D4AF37]/20" />
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => cloudIframeRef.current?.contentDocument?.execCommand("removeFormat")} title="הסר עיצוב"><RotateCcw className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+            </>
+          )}
+
+          <div className="w-px h-5 bg-[#D4AF37]/20" />
+          {/* Copy / Print */}
+          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleCloudCopy} title="העתק"><Copy className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleCloudPrint} title="הדפסה"><Printer className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+
+          {/* Download */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button size="icon" variant="ghost" className="h-7 w-7" title="הורד"><FileDown className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-44 p-1.5" align="start" dir="rtl">
+              <button className="w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2" onClick={() => handleCloudDownload("html")}>📄 HTML</button>
+              <button className="w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2" onClick={() => handleCloudDownload("txt")}>📝 טקסט (TXT)</button>
+            </PopoverContent>
+          </Popover>
+
+          {/* Line Spacing */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button size="icon" variant="ghost" className="h-7 w-7" title="מרווח שורות"><MoveVertical className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-3" align="start" dir="rtl">
+              <p className="text-xs font-semibold text-[#0B1F5B] mb-2">מרווח שורות</p>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-[10px] text-[#0B1F5B]/60">גובה שורה ({cloudLineHeight})</label>
+                  <input type="range" min="1" max="3" step="0.1" value={cloudLineHeight} className="w-full accent-[#D4AF37]" onChange={e => {
+                    const v = parseFloat(e.target.value);
+                    setCloudLineHeight(v);
+                    const doc = cloudIframeRef.current?.contentDocument;
+                    if (doc?.body) doc.body.style.lineHeight = String(v);
+                  }} />
+                </div>
+                <div>
+                  <label className="text-[10px] text-[#0B1F5B]/60">רווח בין פסקאות ({cloudParagraphSpacing}px)</label>
+                  <input type="range" min="0" max="40" step="2" value={cloudParagraphSpacing} className="w-full accent-[#D4AF37]" onChange={e => {
+                    const v = parseInt(e.target.value);
+                    setCloudParagraphSpacing(v);
+                    const doc = cloudIframeRef.current?.contentDocument;
+                    if (doc) {
+                      const paras = doc.querySelectorAll('p, div');
+                      paras.forEach(p => (p as HTMLElement).style.marginBottom = v + 'px');
+                    }
+                  }} />
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          {/* Cloud Pages Selector */}
+          {cloudPages.length > 0 && (
+            <>
+              <div className="w-px h-5 bg-[#D4AF37]/20" />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button size="sm" variant="outline" className="h-7 text-xs gap-1 border-[#D4AF37]/40 text-[#0B1F5B]">
+                    <Database className="h-3 w-3 text-[#D4AF37]" />
+                    דפים ({cloudPages.length})
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-1.5 max-h-72 overflow-y-auto" align="start" dir="rtl">
+                  <p className="text-[10px] font-semibold text-[#0B1F5B]/70 px-2 py-1">דפים שהורדו</p>
+                  {cloudPages.map(p => (
+                    <button key={p.sugya_id} onClick={() => loadCloudContent(p.sugya_id)} className={`w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2 ${p.sugya_id === sugyaId ? 'bg-[#D4AF37]/15 font-semibold' : ''}`}>
+                      <BookOpen className="h-3 w-3 text-[#D4AF37] shrink-0" />
+                      <span className="truncate">{p.title || p.daf_yomi}</span>
+                    </button>
+                  ))}
+                </PopoverContent>
+              </Popover>
+            </>
+          )}
+        </div>
+
+        {/* ═══ CLOUD CONTENT AREA ═══ */}
+        <div className="border-2 border-[#D4AF37]/30 rounded-b-xl bg-white overflow-hidden shadow-lg" style={{ minHeight: '500px' }}>
+          <iframe
+            ref={cloudIframeRef}
+            srcDoc={cloudHtml}
+            className="w-full border-0"
+            style={{ height: '600px' }}
+            title="תצוגת גמרא מהענן"
+          />
+        </div>
+      </div>
+    );
+  };
+
   const renderContent = () => {
     if (isLoading && viewMode === 'text') {
       return (
@@ -661,6 +968,8 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
         return renderEdafImageView();
       case 'edaf-site':
         return renderEdafSiteView();
+      case 'cloud':
+        return renderCloudView();
       case 'text':
       default:
         return gemaraText ? (

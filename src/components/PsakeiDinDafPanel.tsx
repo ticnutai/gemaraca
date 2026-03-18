@@ -112,7 +112,10 @@ export default function PsakeiDinDafPanel({
     () => {
       const unified = getViewerPreference();
       if (unified === "dialog") return "regular";
-      if (unified === "embedpdf") return "embedpdf-page";
+      if (unified === "embedpdf" || unified === "newwindow") {
+        const exact = localStorage.getItem(PSAK_VIEWER_DEFAULT_KEY) as ViewerType | null;
+        return exact ?? (unified === "embedpdf" ? "embedpdf-page" : null);
+      }
       return localStorage.getItem(PSAK_VIEWER_DEFAULT_KEY) as ViewerType | null;
     }
   );
@@ -213,10 +216,14 @@ export default function PsakeiDinDafPanel({
     }
     // If a default viewer is saved, open directly with it
     const unified = getViewerPreference();
+    if (unified === "newwindow" && psak.source_url) {
+      window.open(psak.source_url, "_blank");
+      return;
+    }
     const saved = unified === "dialog"
       ? "regular"
       : unified === "embedpdf"
-      ? "embedpdf-page"
+      ? (localStorage.getItem(PSAK_VIEWER_DEFAULT_KEY) as ViewerType | null) ?? "embedpdf-page"
       : (localStorage.getItem(PSAK_VIEWER_DEFAULT_KEY) as ViewerType | null);
     if (saved) {
       if (saved === 'embedpdf-page' && psak.source_url) {
@@ -251,9 +258,9 @@ export default function PsakeiDinDafPanel({
   };
 
   const setAsDefault = useCallback((type: ViewerType) => {
-    localStorage.setItem(PSAK_VIEWER_DEFAULT_KEY, type);
     if (type === "regular") setViewerPreference("dialog");
     else if (type === "embedpdf-page" || type === "embedpdf" || type === "embedded-pdf" || type === "google-viewer") setViewerPreference("embedpdf");
+    localStorage.setItem(PSAK_VIEWER_DEFAULT_KEY, type);
     setDefaultViewer(type);
     toast.success(`${type === 'regular' ? 'צפיין רגיל' : type === 'embedded-pdf' ? 'PDF מוטמע' : type === 'embedpdf' ? 'EmbedPDF (pdfium)' : type === 'embedpdf-page' ? 'EmbedPDF (דף מלא)' : 'Google Docs'} נקבע כברירת מחדל`);
     openViewer(type);

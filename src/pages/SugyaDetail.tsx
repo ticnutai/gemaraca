@@ -311,7 +311,13 @@ const SugyaDetail = () => {
           <Button 
             variant="ghost" 
             size="sm"
-            onClick={() => navigate("/")}
+            onClick={() => {
+              if (window.history.length > 1) {
+                navigate(-1);
+              } else {
+                navigate('/');
+              }
+            }}
             className="gap-1 text-muted-foreground hover:text-foreground"
           >
             <ArrowRight className="w-4 h-4 rotate-180" />

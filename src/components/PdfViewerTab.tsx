@@ -161,6 +161,9 @@ const PdfViewerTab = () => {
   useEffect(() => saveToStorage(STORAGE_KEYS.theme, theme), [theme]);
   useEffect(() => saveToStorage(STORAGE_KEYS.recentUrls, recentUrls), [recentUrls]);
 
+  // Sync active viewer when default changes
+  useEffect(() => { if (defaultViewer) setActiveViewer(defaultViewer); }, [defaultViewer]);
+
   /* ─── Actions ─── */
   const handleSetDefault = useCallback(
     (id: ViewerEngine) => {

@@ -7,7 +7,8 @@ import {
   Copy, MessageSquarePlus, Hash, ZoomIn, ZoomOut, ChevronUp, ChevronDown,
   RotateCcw, Printer, StickyNote, Scissors, ClipboardPaste, Sparkles, Eye, Strikethrough,
   ListOrdered, WrapText, PilcrowSquare, ArrowRight, Link, BarChart3,
-  Upload, HardDrive, Database, Loader2 as Loader2Icon, Save, CopyPlus, Columns, GripVertical, Lock, Unlock
+  Upload, HardDrive, Database, Loader2 as Loader2Icon, Save, CopyPlus, Columns, GripVertical, Lock, Unlock,
+  Pencil, FileDown, FileType, SlidersHorizontal, MoveVertical
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Slider } from "@/components/ui/slider";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { usePDFAnnotations, type PDFAnnotation } from "@/hooks/usePDFAnnotations";
 import { useUserBooks, type UserBook } from "@/hooks/useUserBooks";
@@ -501,6 +504,11 @@ export default function EmbedPdfViewerPage() {
   const htmlEmbedIframeRef = useRef<HTMLIFrameElement>(null);
   const [htmlEditMode, setHtmlEditMode] = useState(false);
 
+  // ── Edit Psak Din Details ──
+  const [editPsakOpen, setEditPsakOpen] = useState(false);
+  const [editPsakForm, setEditPsakForm] = useState({ title: "", court: "", year: 0, case_number: "", summary: "", tags: "" });
+  const [isSavingPsakEdit, setIsSavingPsakEdit] = useState(false);
+
   // Fetch psak din data when psakId is provided
   useEffect(() => {
     if (!psakIdParam) { setPsakData(null); return; }
@@ -844,6 +852,103 @@ export default function EmbedPdfViewerPage() {
     setIsTextEditing(false);
     setTextEditBuffer("");
   }, [leftSourceUrl]);
+
+  // ── Download in multiple formats ──
+  const getCurrentContent = useCallback((): { html: string; text: string; title: string } => {
+    const title = psakData?.title || selectedPdf?.title || "document";
+    const bDoc = beautifyIframeRef.current?.contentDocument;
+    if (bDoc?.body?.innerHTML) {
+      return { html: bDoc.documentElement.outerHTML, text: bDoc.body.innerText || "", title };
+    }
+    const hDoc = htmlEmbedIframeRef.current?.contentDocument;
+    if (hDoc?.body?.innerHTML) {
+      return { html: hDoc.documentElement.outerHTML, text: hDoc.body.innerText || "", title };
+    }
+    return { html: "", text: fetchedText || "", title };
+  }, [psakData?.title, selectedPdf?.title, fetchedText]);
+
+  const handleDownloadFormat = useCallback((format: "html" | "txt" | "docx" | "pdf") => {
+    const { html, text, title } = getCurrentContent();
+    const safeName = title.replace(/[/\\?%*:|"<>]/g, "_").slice(0, 80);
+
+    if (format === "html") {
+      const content = html || `<html dir="rtl"><head><meta charset="utf-8"><title>${title}</title></head><body style="font-family:serif;padding:40px;line-height:1.8;white-space:pre-wrap;">${text.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</body></html>`;
+      downloadBlob(content, `${safeName}.html`, "text/html;charset=utf-8");
+      toast.success("הקובץ הורד כ-HTML");
+    } else if (format === "txt") {
+      downloadBlob(text || "אין תוכן טקסט", `${safeName}.txt`, "text/plain;charset=utf-8");
+      toast.success("הקובץ הורד כטקסט");
+    } else if (format === "docx") {
+      const bodyContent = beautifyIframeRef.current?.contentDocument?.body?.innerHTML || htmlEmbedIframeRef.current?.contentDocument?.body?.innerHTML || text.replace(/\n/g, "<br>");
+      const wordHtml = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>${title}</title><!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml><![endif]--><style>body{font-family:'David Libre',David,serif;font-size:14pt;line-height:1.8;direction:rtl;padding:2cm;}h1,h2,h3{color:#0B1F5B;}</style></head><body dir="rtl">${bodyContent}</body></html>`;
+      const blob = new Blob(['\ufeff', wordHtml], { type: "application/msword" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url; a.download = `${safeName}.doc`; a.click();
+      URL.revokeObjectURL(url);
+      toast.success("הקובץ הורד כ-Word");
+    } else if (format === "pdf") {
+      const content = html || `<html dir="rtl"><head><meta charset="utf-8"><title>${title}</title><style>body{font-family:serif;padding:40px;line-height:1.8;}</style></head><body>${text.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>")}</body></html>`;
+      const win = window.open("", "_blank");
+      if (win) { win.document.write(content); win.document.close(); setTimeout(() => win.print(), 500); }
+      toast.info("שמור כ-PDF דרך חלון ההדפסה");
+    }
+  }, [getCurrentContent]);
+
+  const handleDownloadAndSaveToCloud = useCallback(async (format: "html" | "txt") => {
+    const { html, text, title } = getCurrentContent();
+    const safeName = title.replace(/[/\\?%*:|"<>]/g, "_").slice(0, 80);
+    const docId = psakData?.id || selectedPdf?.id || `manual-${Date.now()}`;
+    try {
+      const content = format === "html" ? (html || `<html dir="rtl"><body>${text}</body></html>`) : (text || "");
+      const mime = format === "html" ? "text/html;charset=utf-8" : "text/plain;charset=utf-8";
+      const ext = format === "html" ? "html" : "txt";
+      const fileName = `exports/${docId}-${Date.now()}.${ext}`;
+      const blob = new Blob([content], { type: mime });
+      await supabase.storage.from("psakei-din-files").upload(fileName, blob, { contentType: mime, upsert: true });
+      downloadBlob(content, `${safeName}.${ext}`, mime);
+      toast.success(`הקובץ נשמר בענן והורד למחשב כ-${ext.toUpperCase()}`);
+    } catch {
+      toast.error("שגיאה בשמירה בענן");
+    }
+  }, [getCurrentContent, psakData?.id, selectedPdf?.id]);
+
+  // ── Edit Psak Din Details ──
+  const openEditPsakDialog = useCallback(() => {
+    if (!psakData) return;
+    setEditPsakForm({
+      title: psakData.title || "",
+      court: psakData.court || "",
+      year: psakData.year || new Date().getFullYear(),
+      case_number: psakData.case_number || "",
+      summary: psakData.summary || "",
+      tags: (psakData.tags || []).join(", "),
+    });
+    setEditPsakOpen(true);
+  }, [psakData]);
+
+  const handleSavePsakEdit = useCallback(async () => {
+    if (!psakData?.id) return;
+    setIsSavingPsakEdit(true);
+    try {
+      const tagArray = editPsakForm.tags.split(",").map(t => t.trim()).filter(Boolean);
+      const { error } = await (supabase as any).from("psakei_din").update({
+        title: editPsakForm.title,
+        court: editPsakForm.court,
+        year: editPsakForm.year,
+        case_number: editPsakForm.case_number || null,
+        summary: editPsakForm.summary,
+        tags: tagArray,
+      }).eq("id", psakData.id);
+      if (error) throw error;
+      setPsakData((prev: any) => ({ ...prev, title: editPsakForm.title, court: editPsakForm.court, year: editPsakForm.year, case_number: editPsakForm.case_number || null, summary: editPsakForm.summary, tags: tagArray }));
+      setEditPsakOpen(false);
+      toast.success("פרטי פסק הדין עודכנו בהצלחה");
+    } catch {
+      toast.error("שגיאה בעדכון פרטי פסק הדין");
+    } finally {
+      setIsSavingPsakEdit(false);
+    }
+  }, [psakData?.id, editPsakForm]);
 
   // Fetch text content for .txt files
   useEffect(() => {
@@ -2293,6 +2398,52 @@ export default function EmbedPdfViewerPage() {
                     </Button>
 
                     <div className="w-px h-5 bg-[#D4AF37]/20" />
+                    {/* Download in multiple formats */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" title="הורד בפורמטים שונים"><FileDown className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-48 p-1.5" align="start" dir="rtl">
+                        <p className="text-[10px] font-semibold text-[#0B1F5B]/70 px-2 py-1">הורדה למחשב</p>
+                        <button className="w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2" onClick={() => handleDownloadFormat("html")}>📄 HTML</button>
+                        <button className="w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2" onClick={() => handleDownloadFormat("txt")}>📝 טקסט (TXT)</button>
+                        <button className="w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2" onClick={() => handleDownloadFormat("docx")}>📘 Word (DOC)</button>
+                        <button className="w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2" onClick={() => handleDownloadFormat("pdf")}>📕 PDF (הדפסה)</button>
+                        <Separator className="my-1 bg-[#D4AF37]/20" />
+                        <p className="text-[10px] font-semibold text-[#0B1F5B]/70 px-2 py-1">הורדה + שמירה בענן</p>
+                        <button className="w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2" onClick={() => handleDownloadAndSaveToCloud("html")}>☁️ HTML + ענן</button>
+                        <button className="w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2" onClick={() => handleDownloadAndSaveToCloud("txt")}>☁️ TXT + ענן</button>
+                      </PopoverContent>
+                    </Popover>
+                    {/* Edit psak din details */}
+                    {psakData && (
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={openEditPsakDialog} title="ערוך שם ופרטי פסק דין">
+                        <Pencil className="h-3.5 w-3.5 text-[#0B1F5B]" />
+                      </Button>
+                    )}
+                    {/* Line spacing slider */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" title="מרווח שורות"><MoveVertical className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-56 p-3" align="start" dir="rtl">
+                        <p className="text-xs font-semibold text-[#0B1F5B] mb-2">מרווח בין שורות</p>
+                        <Slider defaultValue={[1.6]} min={1} max={3} step={0.1} onValueChange={([v]) => {
+                          const doc = beautifyIframeRef.current?.contentDocument;
+                          if (doc?.body) doc.body.style.lineHeight = String(v);
+                        }} />
+                        <p className="text-[10px] text-[#0B1F5B]/50 mt-1.5 text-center">1.0 — 3.0</p>
+                        <Separator className="my-2 bg-[#D4AF37]/20" />
+                        <p className="text-xs font-semibold text-[#0B1F5B] mb-2">מרווח בין פסקאות</p>
+                        <Slider defaultValue={[0]} min={0} max={40} step={2} onValueChange={([v]) => {
+                          const doc = beautifyIframeRef.current?.contentDocument;
+                          if (doc?.body) { doc.body.style.setProperty("--para-spacing", `${v}px`); doc.querySelectorAll("p,div,li").forEach(el => { (el as HTMLElement).style.marginBottom = `${v}px`; }); }
+                        }} />
+                        <p className="text-[10px] text-[#0B1F5B]/50 mt-1.5 text-center">0px — 40px</p>
+                      </PopoverContent>
+                    </Popover>
+
+                    <div className="w-px h-5 bg-[#D4AF37]/20" />
                     {/* Template Switcher */}
                     <Popover>
                       <PopoverTrigger asChild>
@@ -2357,12 +2508,12 @@ export default function EmbedPdfViewerPage() {
                     <div className="w-px h-5 bg-[#D4AF37]/20" />
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button size="sm" variant="ghost" className="h-7 text-xs gap-1"><PilcrowSquare className="h-3.5 w-3.5 text-[#0B1F5B]" /><span className="text-[10px] text-[#0B1F5B]/60">{textFormat.lineHeight}</span></Button>
+                        <Button size="sm" variant="ghost" className="h-7 text-xs gap-1"><MoveVertical className="h-3.5 w-3.5 text-[#0B1F5B]" /><span className="text-[10px] text-[#0B1F5B]/60">{textFormat.lineHeight}</span></Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-28 p-1" align="start">
-                        {[1.2, 1.5, 1.8, 2.0, 2.5, 3.0].map(lh => (
-                          <button key={lh} className={`w-full text-right px-2 py-1 text-xs rounded hover:bg-[#D4AF37]/10 ${textFormat.lineHeight === lh ? "bg-[#D4AF37]/20 font-bold" : ""}`} onClick={() => updateFormat({ lineHeight: lh })}>{lh}</button>
-                        ))}
+                      <PopoverContent className="w-56 p-3" align="start" dir="rtl">
+                        <p className="text-xs font-semibold text-[#0B1F5B] mb-2">מרווח בין שורות</p>
+                        <Slider value={[textFormat.lineHeight]} min={1} max={3} step={0.1} onValueChange={([v]) => updateFormat({ lineHeight: v })} />
+                        <p className="text-[10px] text-[#0B1F5B]/50 mt-1 text-center">{textFormat.lineHeight}</p>
                       </PopoverContent>
                     </Popover>
 
@@ -2385,6 +2536,28 @@ export default function EmbedPdfViewerPage() {
                       const win = window.open("", "_blank");
                       if (win) { win.document.write(`<html dir="rtl"><head><title>הדפסה</title><style>body{font-family:serif;font-size:${textFormat.fontSize}px;line-height:${textFormat.lineHeight};text-align:${textFormat.textAlign};padding:40px;white-space:pre-wrap;}</style></head><body>${fetchedText.replace(/</g,"&lt;").replace(/>/g,"&gt;")}</body></html>`); win.document.close(); win.print(); }
                     }} title="הדפסה"><Printer className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                    {/* Download in multiple formats */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" title="הורד בפורמטים שונים"><FileDown className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-48 p-1.5" align="start" dir="rtl">
+                        <p className="text-[10px] font-semibold text-[#0B1F5B]/70 px-2 py-1">הורדה למחשב</p>
+                        <button className="w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2" onClick={() => handleDownloadFormat("html")}>📄 HTML</button>
+                        <button className="w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2" onClick={() => handleDownloadFormat("txt")}>📝 טקסט (TXT)</button>
+                        <button className="w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2" onClick={() => handleDownloadFormat("docx")}>📘 Word (DOC)</button>
+                        <button className="w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2" onClick={() => handleDownloadFormat("pdf")}>📕 PDF (הדפסה)</button>
+                        <Separator className="my-1 bg-[#D4AF37]/20" />
+                        <p className="text-[10px] font-semibold text-[#0B1F5B]/70 px-2 py-1">הורדה + שמירה בענן</p>
+                        <button className="w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2" onClick={() => handleDownloadAndSaveToCloud("html")}>☁️ HTML + ענן</button>
+                        <button className="w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2" onClick={() => handleDownloadAndSaveToCloud("txt")}>☁️ TXT + ענן</button>
+                      </PopoverContent>
+                    </Popover>
+                    {psakData && (
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={openEditPsakDialog} title="ערוך שם ופרטי פסק דין">
+                        <Pencil className="h-3.5 w-3.5 text-[#0B1F5B]" />
+                      </Button>
+                    )}
                     <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setTextFormat(DEFAULT_FORMAT)} title="אפס"><RotateCcw className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
 
                     <div className="w-px h-5 bg-[#D4AF37]/20" />
@@ -2548,6 +2721,56 @@ export default function EmbedPdfViewerPage() {
                     <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleDuplicateAndCompare('html-embed')} title="שכפול והשוואה">
                       <Columns className="h-3.5 w-3.5 text-[#0B1F5B]" />
                     </Button>
+                    {/* Download in multiple formats */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" title="הורד בפורמטים שונים"><FileDown className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-48 p-1.5" align="start" dir="rtl">
+                        <p className="text-[10px] font-semibold text-[#0B1F5B]/70 px-2 py-1">הורדה למחשב</p>
+                        <button className="w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2" onClick={() => handleDownloadFormat("html")}>📄 HTML</button>
+                        <button className="w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2" onClick={() => handleDownloadFormat("txt")}>📝 טקסט (TXT)</button>
+                        <button className="w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2" onClick={() => handleDownloadFormat("docx")}>📘 Word (DOC)</button>
+                        <button className="w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2" onClick={() => handleDownloadFormat("pdf")}>📕 PDF (הדפסה)</button>
+                        <Separator className="my-1 bg-[#D4AF37]/20" />
+                        <p className="text-[10px] font-semibold text-[#0B1F5B]/70 px-2 py-1">הורדה + שמירה בענן</p>
+                        <button className="w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2" onClick={() => handleDownloadAndSaveToCloud("html")}>☁️ HTML + ענן</button>
+                        <button className="w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2" onClick={() => handleDownloadAndSaveToCloud("txt")}>☁️ TXT + ענן</button>
+                      </PopoverContent>
+                    </Popover>
+                    {psakData && (
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={openEditPsakDialog} title="ערוך שם ופרטי פסק דין">
+                        <Pencil className="h-3.5 w-3.5 text-[#0B1F5B]" />
+                      </Button>
+                    )}
+                    {/* Line spacing slider */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" title="מרווח שורות"><MoveVertical className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-56 p-3" align="start" dir="rtl">
+                        <p className="text-xs font-semibold text-[#0B1F5B] mb-2">מרווח שורות</p>
+                        <div className="space-y-3">
+                          <div>
+                            <label className="text-[10px] text-[#0B1F5B]/60">גובה שורה</label>
+                            <input type="range" min="1" max="3" step="0.1" defaultValue="1.8" className="w-full accent-[#D4AF37]" onChange={e => {
+                              const doc = htmlEmbedIframeRef.current?.contentDocument;
+                              if (doc?.body) doc.body.style.lineHeight = e.target.value;
+                            }} />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-[#0B1F5B]/60">רווח בין פסקאות (px)</label>
+                            <input type="range" min="0" max="40" step="2" defaultValue="10" className="w-full accent-[#D4AF37]" onChange={e => {
+                              const doc = htmlEmbedIframeRef.current?.contentDocument;
+                              if (doc) {
+                                const paras = doc.querySelectorAll('p, div');
+                                paras.forEach(p => (p as HTMLElement).style.marginBottom = e.target.value + 'px');
+                              }
+                            }} />
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
 
                     <div className="w-px h-5 bg-[#D4AF37]/20" />
                     {/* Template Switcher */}
@@ -2971,6 +3194,52 @@ export default function EmbedPdfViewerPage() {
         open={regularViewerOpen}
         onOpenChange={setRegularViewerOpen}
       />
+
+      {/* ═══ EDIT PSAK DIN DIALOG ═══ */}
+      <Dialog open={editPsakOpen} onOpenChange={setEditPsakOpen}>
+        <DialogContent className="sm:max-w-md" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="text-[#0B1F5B] flex items-center gap-2">
+              <Pencil className="h-4 w-4" /> עריכת פרטי פסק דין
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div>
+              <Label className="text-xs text-[#0B1F5B]/70">שם פסק הדין</Label>
+              <Input value={editPsakForm.title} onChange={e => setEditPsakForm(f => ({ ...f, title: e.target.value }))} className="mt-1" />
+            </div>
+            <div>
+              <Label className="text-xs text-[#0B1F5B]/70">בית משפט</Label>
+              <Input value={editPsakForm.court} onChange={e => setEditPsakForm(f => ({ ...f, court: e.target.value }))} className="mt-1" />
+            </div>
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <Label className="text-xs text-[#0B1F5B]/70">שנה</Label>
+                <Input type="number" value={editPsakForm.year} onChange={e => setEditPsakForm(f => ({ ...f, year: Number(e.target.value) }))} className="mt-1" />
+              </div>
+              <div className="flex-1">
+                <Label className="text-xs text-[#0B1F5B]/70">מספר תיק</Label>
+                <Input value={editPsakForm.case_number} onChange={e => setEditPsakForm(f => ({ ...f, case_number: e.target.value }))} className="mt-1" />
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs text-[#0B1F5B]/70">תקציר</Label>
+              <textarea value={editPsakForm.summary} onChange={e => setEditPsakForm(f => ({ ...f, summary: e.target.value }))} className="mt-1 w-full border rounded-md p-2 text-sm min-h-[80px] resize-y focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/40" />
+            </div>
+            <div>
+              <Label className="text-xs text-[#0B1F5B]/70">תגיות (מופרדות בפסיק)</Label>
+              <Input value={editPsakForm.tags} onChange={e => setEditPsakForm(f => ({ ...f, tags: e.target.value }))} className="mt-1" placeholder="דיני חוזים, נזיקין, ..." />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => setEditPsakOpen(false)} className="text-xs">ביטול</Button>
+            <Button onClick={handleSavePsakEdit} disabled={isSavingPsakEdit} className="text-xs bg-[#D4AF37] text-[#0B1F5B] hover:bg-[#D4AF37]/90 gap-1">
+              {isSavingPsakEdit ? <Loader2Icon className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+              שמור שינויים
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

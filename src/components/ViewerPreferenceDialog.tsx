@@ -28,8 +28,6 @@ export function getViewerPreference(): ViewerMode | null {
 
 export function setViewerPreference(mode: ViewerMode) {
   localStorage.setItem(VIEWER_PREF_KEY, mode);
-  const legacyValue = mode === "dialog" ? "regular" : mode === "embedpdf" ? "embedpdf-page" : "newwindow";
-  localStorage.setItem(LEGACY_VIEWER_PREF_KEY, legacyValue);
 }
 
 export function clearViewerPreference() {
