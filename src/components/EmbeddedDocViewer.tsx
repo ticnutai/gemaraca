@@ -321,12 +321,11 @@ export default function EmbeddedDocViewer({ url, title, psakData, onClose, onSwi
     } catch { /* quota exceeded */ }
   }, [url, notes]);
 
-  const handleClearNotes = useCallback(async () => {
+  const handleClearNotes = useCallback(() => {
     setNotes("");
     try { localStorage.removeItem(`edv-notes-${url}`); } catch { /* ignore */ }
-    }
     toast("הערות נמחקו");
-  }, [url, notesRecordId]);
+  }, [url]);
 
   // Bookmark
   const toggleBookmark = useCallback(() => {
