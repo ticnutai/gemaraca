@@ -97,6 +97,11 @@ export const ModernExamplesPanel = ({
   const [showToolbar, setShowToolbar] = useState(false);
   const [showCustomPrompt, setShowCustomPrompt] = useState(false);
   const [customPrompt, setCustomPrompt] = useState('');
+  const [selectedTemplateIds, setSelectedTemplateIds] = useState<string[]>(() => {
+    const saved = localStorage.getItem('selected-prompt-templates');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [templatePrompt, setTemplatePrompt] = useState('');
   const [textSettings, setTextSettings] = useState<TextSettings>(() => {
     const saved = localStorage.getItem(EXAMPLES_TEXT_SETTINGS_KEY);
     return saved ? JSON.parse(saved) : defaultTextSettings;
