@@ -712,7 +712,12 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
               {TEXT_COLORS.map(c => (
                 <button
                   key={c.value}
-                  onClick={() => updateTextSetting('textColor', textSettings.textColor === c.value ? '' : c.value)}
+                  onClick={() => {
+                    if (textEditMode) {
+                      textIframeRef.current?.contentDocument?.execCommand('foreColor', false, c.value);
+                    }
+                    updateTextSetting('textColor', textSettings.textColor === c.value ? '' : c.value);
+                  }}
                   className={`w-6 h-6 rounded-full border-2 shadow-sm hover:scale-125 transition-transform ${textSettings.textColor === c.value ? 'ring-2 ring-primary ring-offset-1' : 'border-border'}`}
                   style={{ backgroundColor: c.value }}
                   title={c.label}
