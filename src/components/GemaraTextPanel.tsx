@@ -480,6 +480,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
     switch (textSettings.textAlign) {
       case 'center': return 'text-center';
       case 'left': return 'text-left';
+      case 'justify': return 'text-justify';
       default: return 'text-right';
     }
   };
