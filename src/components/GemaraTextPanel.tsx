@@ -174,6 +174,8 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
     return defaultTextSettings;
   });
   const { toast } = useToast();
+  const textIframeRef = useRef<HTMLIFrameElement>(null);
+  const [textEditMode, setTextEditMode] = useState(false);
 
   // Cloud editor state
   const cloudIframeRef = useRef<HTMLIFrameElement>(null);
