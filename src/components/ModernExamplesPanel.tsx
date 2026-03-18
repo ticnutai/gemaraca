@@ -450,7 +450,7 @@ export const ModernExamplesPanel = ({
         {isCached && (
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Database className="h-3 w-3" />
-            <span>נטען מהמטמון</span>
+            <span>נטען מהמטמון ומהשרת</span>
           </div>
         )}
         <Button
