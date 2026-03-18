@@ -392,12 +392,8 @@ const SugyaDetail = () => {
 
             {/* Nested tabs for Gemara tools */}
             <Tabs defaultValue="text" className="w-full" dir="rtl">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="text">טקסט מקורי</TabsTrigger>
-                <TabsTrigger value="illustrations" className="flex items-center gap-1">
-                  <Lightbulb className="w-3 h-3" />
-                  המחשות
-                </TabsTrigger>
                 <TabsTrigger value="commentaries">מפרשים</TabsTrigger>
                 <TabsTrigger value="lexicon">מילון</TabsTrigger>
               </TabsList>
@@ -407,17 +403,6 @@ const SugyaDetail = () => {
                   <GemaraTextPanel sugyaId={id || ""} dafYomi={sugya.dafYomi} masechet={sugya.masechet} />
                 </Suspense>
                 </SectionErrorBoundary>
-              </TabsContent>
-              <TabsContent value="illustrations" className="mt-4">
-                <Suspense fallback={<PanelFallback />}>
-                  <ModernExamplesPanel
-                    gemaraText={sugya.gemaraText || sugya.fullText}
-                    sugyaTitle={sugya.title}
-                    dafYomi={sugya.dafYomi}
-                    masechet={sugya.masechet || "בבא בתרא"}
-                    sugyaId={id}
-                  />
-                </Suspense>
               </TabsContent>
               <TabsContent value="commentaries" className="mt-4">
                 <Suspense fallback={<PanelFallback />}>
