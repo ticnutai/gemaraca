@@ -317,24 +317,9 @@ export default function EmbeddedDocViewer({ url, title, psakData, onClose, onSwi
   const handleSaveNotes = useCallback(async () => {
     try {
       localStorage.setItem(`edv-notes-${url}`, notes);
-      if (psakData?.id) {
-        if (notesRecordId) {
-          await supabase
-            .from("psak_din_notes")
-            .update({ note_text: notes, source_url: url })
-            .eq("id", notesRecordId);
-        } else {
-          const { data } = await supabase
-            .from("psak_din_notes")
-            .insert({ psak_din_id: psakData.id, note_text: notes, source_url: url })
-            .select("id")
-            .single();
-          if (data?.id) setNotesRecordId(data.id);
-        }
-      }
-      toast.success("הערות נשמרו (מקומי + מסד נתונים)");
+      toast.success("הערות נשמרו");
     } catch { /* quota exceeded */ }
-  }, [url, notes, notesRecordId, psakData?.id]);
+  }, [url, notes]);
 
   const handleClearNotes = useCallback(async () => {
     setNotes("");
