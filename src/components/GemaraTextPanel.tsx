@@ -759,6 +759,19 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
 
         {sep}
 
+        {/* Columns */}
+        <Button variant={textSettings.columns === 1 ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => updateTextSetting('columns', 1)} title="עמודה אחת">
+          <FileText className="h-3.5 w-3.5" />
+        </Button>
+        <Button variant={textSettings.columns === 2 ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => updateTextSetting('columns', 2)} title="שתי עמודות">
+          <Columns2 className="h-3.5 w-3.5" />
+        </Button>
+        <Button variant={textSettings.columns === 3 ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => updateTextSetting('columns', 3)} title="שלוש עמודות">
+          <Columns3 className="h-3.5 w-3.5" />
+        </Button>
+
+        {sep}
+
         {/* Copy */}
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleCopyText} title="העתק">
           <Copy className="h-3.5 w-3.5" />
