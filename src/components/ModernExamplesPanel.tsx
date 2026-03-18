@@ -12,10 +12,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Sparkles, Loader2, RefreshCw, Lightbulb, Scale, BookOpen, Database, Type, AArrowUp, AArrowDown, AlignRight, AlignCenter, AlignLeft, Bold, Highlighter, Check, Settings2, MousePointer2, Plus } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Sparkles, Loader2, RefreshCw, Lightbulb, Scale, BookOpen, Database, Type, AArrowUp, AArrowDown, AlignRight, AlignCenter, AlignLeft, Bold, Highlighter, Check, Settings2, MousePointer2, Plus, SlidersHorizontal } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { RichTextViewer } from "./RichTextViewer";
+import { PromptTemplateTabs } from "./PromptTemplateTabs";
 
 const FONTS = [
   { value: 'font-serif', label: 'דוד (סריף)' },
@@ -93,6 +95,13 @@ export const ModernExamplesPanel = ({
   const [error, setError] = useState<string | null>(null);
   const [isCached, setIsCached] = useState(false);
   const [showToolbar, setShowToolbar] = useState(false);
+  const [showCustomPrompt, setShowCustomPrompt] = useState(false);
+  const [customPrompt, setCustomPrompt] = useState('');
+  const [selectedTemplateIds, setSelectedTemplateIds] = useState<string[]>(() => {
+    const saved = localStorage.getItem('selected-prompt-templates');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [templatePrompt, setTemplatePrompt] = useState('');
   const [textSettings, setTextSettings] = useState<TextSettings>(() => {
     const saved = localStorage.getItem(EXAMPLES_TEXT_SETTINGS_KEY);
     return saved ? JSON.parse(saved) : defaultTextSettings;
@@ -150,6 +159,7 @@ export const ModernExamplesPanel = ({
             masechet,
             sugyaId: effectiveSugyaId,
             forceRegenerate,
+            customInstructions: [templatePrompt, customPrompt.trim()].filter(Boolean).join('\n') || undefined,
           },
         }
       );
@@ -352,22 +362,56 @@ export const ModernExamplesPanel = ({
   if (!data && !isLoading) {
     return (
       <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5">
-        <CardContent className="p-6 text-center">
-          <div className="mb-4">
+        <CardContent className="p-6 text-center space-y-4">
+          <div className="mb-2">
             <Sparkles className="h-12 w-12 text-primary mx-auto mb-2" />
             <h3 className="text-lg font-bold text-foreground">המחשות מודרניות</h3>
             <p className="text-sm text-muted-foreground mt-1">
               קבל דוגמאות עכשוויות שממחישות את היסודות ההלכתיים מהסוגיה
             </p>
           </div>
-          <Button 
-            onClick={() => generateExamples(false)} 
-            className="gap-2"
-            disabled={isLoading}
-          >
-            <Sparkles className="h-4 w-4" />
-            צור המחשות מודרניות
-          </Button>
+
+          {/* Prompt Template Tabs */}
+          <PromptTemplateTabs
+            selectedIds={selectedTemplateIds}
+            onSelectionChange={(ids, combined) => {
+              setSelectedTemplateIds(ids);
+              setTemplatePrompt(combined);
+            }}
+          />
+
+          <div className="flex items-center gap-2 justify-center">
+            <Button 
+              onClick={() => generateExamples(false)} 
+              className="gap-2"
+              disabled={isLoading}
+            >
+              <Sparkles className="h-4 w-4" />
+              צור המחשות מודרניות
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowCustomPrompt(!showCustomPrompt)}
+              className="gap-1"
+              title="התאם הנחיות ל-AI"
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              כיוון חופשי
+            </Button>
+          </div>
+          {showCustomPrompt && (
+            <div className="space-y-2 text-right">
+              <label className="text-sm text-muted-foreground">פרט לאיזה כיוון ודוגמאות תרצה:</label>
+              <Textarea
+                value={customPrompt}
+                onChange={(e) => setCustomPrompt(e.target.value)}
+                placeholder="למשל: דוגמאות מעולם העסקים, התמקד ביישום מעשי בימינו..."
+                className="min-h-[80px] text-right"
+                dir="rtl"
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
     );
@@ -406,7 +450,7 @@ export const ModernExamplesPanel = ({
         {isCached && (
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Database className="h-3 w-3" />
-            <span>נטען מהמטמון</span>
+            <span>נטען מהמטמון ומהשרת</span>
           </div>
         )}
         <Button

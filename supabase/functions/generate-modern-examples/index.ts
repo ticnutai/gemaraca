@@ -39,7 +39,7 @@ serve(async (req) => {
     
     console.log(`Authenticated user: ${userData.user.id}`);
 
-    const { gemaraText, sugyaTitle, dafYomi, masechet, sugyaId, forceRegenerate, loadMore, existingCount } = await req.json();
+    const { gemaraText, sugyaTitle, dafYomi, masechet, sugyaId, forceRegenerate, loadMore, existingCount, customInstructions } = await req.json();
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -199,6 +199,10 @@ ${gemaraText?.substring(0, 2000) || 'לא זמין'}
   "practicalSummary": "סיכום הלכה למעשה קצר"
 }`;
 
+    const customBlock = customInstructions 
+      ? `\n\nהנחיות מיוחדות מהמשתמש:\n${customInstructions}\n` 
+      : '';
+
     const userPrompt = `בבקשה צור דוגמאות מודרניות עבור:
 
 מסכת: ${masechet}
@@ -207,7 +211,7 @@ ${gemaraText?.substring(0, 2000) || 'לא זמין'}
 
 טקסט הגמרא:
 ${gemaraText?.substring(0, 2000) || 'לא זמין'}
-
+${customBlock}
 צור דוגמאות שממחישות את היסודות ההלכתיים לקוראים בני זמננו.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {

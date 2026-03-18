@@ -15,7 +15,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Loader2, BookOpen, Image, FileText, ExternalLink, Eye, Check, ZoomIn, ZoomOut, Type, AArrowUp, AArrowDown, AlignRight, AlignCenter, AlignLeft, AlignJustify, Bold, Italic, Underline, Strikethrough, Highlighter, MousePointer2, Database, Copy, Printer, MoveVertical, FileDown, Save, Palette, RotateCcw, Scissors } from "lucide-react";
+import { Loader2, BookOpen, Image, FileText, ExternalLink, Eye, Check, ZoomIn, ZoomOut, Type, AArrowUp, AArrowDown, AlignRight, AlignCenter, AlignLeft, AlignJustify, Bold, Italic, Underline, Strikethrough, Highlighter, MousePointer2, Database, Copy, Printer, MoveVertical, FileDown, Save, Palette, RotateCcw, Scissors, Search, Columns2, Columns3 } from "lucide-react";
+import FloatingTextToolbar from "./FloatingTextToolbar";
+import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
 import { toast as sonnerToast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -29,12 +32,23 @@ const FONTS = [
 ];
 
 const HIGHLIGHT_COLORS = [
-  { value: 'bg-yellow-200/60', label: 'צהוב' },
-  { value: 'bg-green-200/60', label: 'ירוק' },
-  { value: 'bg-blue-200/60', label: 'כחול' },
-  { value: 'bg-pink-200/60', label: 'ורוד' },
-  { value: 'bg-orange-200/60', label: 'כתום' },
-  { value: 'bg-transparent', label: 'ללא' },
+  { value: 'bg-yellow-200/60', label: 'צהוב', hex: '#FEF08A' },
+  { value: 'bg-green-200/60', label: 'ירוק', hex: '#BBF7D0' },
+  { value: 'bg-blue-200/60', label: 'כחול', hex: '#BFDBFE' },
+  { value: 'bg-pink-200/60', label: 'ורוד', hex: '#FBCFE8' },
+  { value: 'bg-orange-200/60', label: 'כתום', hex: '#FED7AA' },
+  { value: 'bg-purple-200/60', label: 'סגול', hex: '#E9D5FF' },
+  { value: 'bg-transparent', label: 'ללא', hex: 'transparent' },
+];
+
+const TEXT_COLORS = [
+  { value: '#000000', label: 'שחור' },
+  { value: '#0B1F5B', label: 'כחול כהה' },
+  { value: '#b91c1c', label: 'אדום' },
+  { value: '#15803d', label: 'ירוק' },
+  { value: '#7e22ce', label: 'סגול' },
+  { value: '#b45309', label: 'כתום' },
+  { value: '#D4AF37', label: 'זהב' },
 ];
 
 interface GemaraTextPanelProps {
@@ -118,9 +132,15 @@ const TEXT_SETTINGS_KEY = 'gemara-text-settings';
 interface TextSettings {
   fontSize: number;
   fontFamily: string;
-  textAlign: 'right' | 'center' | 'left';
+  textAlign: 'right' | 'center' | 'left' | 'justify';
   isBold: boolean;
+  isItalic: boolean;
+  isUnderline: boolean;
+  isStrikethrough: boolean;
   highlightColor: string;
+  textColor: string;
+  lineHeight: number;
+  columns: 1 | 2 | 3;
 }
 
 const defaultTextSettings: TextSettings = {
@@ -128,7 +148,13 @@ const defaultTextSettings: TextSettings = {
   fontFamily: 'font-serif',
   textAlign: 'right',
   isBold: false,
+  isItalic: false,
+  isUnderline: false,
+  isStrikethrough: false,
   highlightColor: 'bg-transparent',
+  textColor: '',
+  lineHeight: 1.8,
+  columns: 1 as 1 | 2 | 3,
 };
 
 export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Batra" }: GemaraTextPanelProps) {
@@ -141,10 +167,19 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   });
   const [imageZoom, setImageZoom] = useState(100);
   const [textSettings, setTextSettings] = useState<TextSettings>(() => {
-    const saved = localStorage.getItem(TEXT_SETTINGS_KEY);
-    return saved ? JSON.parse(saved) : defaultTextSettings;
+    try {
+      const saved = localStorage.getItem(TEXT_SETTINGS_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return { ...defaultTextSettings, ...parsed };
+      }
+    } catch {}
+    return defaultTextSettings;
   });
   const { toast } = useToast();
+  const textIframeRef = useRef<HTMLIFrameElement>(null);
+  const textContentRef = useRef<HTMLDivElement>(null);
+  const [textEditMode, setTextEditMode] = useState(false);
 
   // Cloud editor state
   const cloudIframeRef = useRef<HTMLIFrameElement>(null);
@@ -457,6 +492,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
     switch (textSettings.textAlign) {
       case 'center': return 'text-center';
       case 'left': return 'text-left';
+      case 'justify': return 'text-justify';
       default: return 'text-right';
     }
   };
@@ -483,7 +519,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   const renderGemaraText = () => {
     if (!gemaraText) return null;
 
-    const textClasses = `leading-loose ${textSettings.fontFamily} ${getTextAlignClass()} ${textSettings.isBold ? 'font-bold' : ''} ${textSettings.highlightColor}`;
+    const textClasses = `${textSettings.fontFamily} ${getTextAlignClass()} ${textSettings.isBold ? 'font-bold' : ''} ${textSettings.isItalic ? 'italic' : ''} ${textSettings.isUnderline ? 'underline' : ''} ${textSettings.isStrikethrough ? 'line-through' : ''} ${textSettings.highlightColor}`;
     
     return (
       <RichTextViewer
@@ -491,124 +527,286 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
         sourceType="gemara"
         sourceId={sugyaId}
         className={textClasses}
-        baseStyle={{ fontSize: `${textSettings.fontSize}px` }}
+        baseStyle={{
+          fontSize: `${textSettings.fontSize}px`,
+          lineHeight: `${textSettings.lineHeight}`,
+          ...(textSettings.textColor ? { color: textSettings.textColor } : {}),
+        }}
       />
     );
   };
 
+  const handleCopyText = useCallback(() => {
+    if (memoizedPlainText) {
+      navigator.clipboard.writeText(memoizedPlainText);
+      sonnerToast.success("הטקסט הועתק");
+    }
+  }, [memoizedPlainText]);
+
+  const handlePrintText = useCallback(() => {
+    const content = memoizedPlainText;
+    if (!content) return;
+    const win = window.open("", "_blank");
+    if (win) {
+      win.document.write(`<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="utf-8"><title>גמרא - ${dafYomi}</title><style>body{font-family:'David',serif;font-size:${textSettings.fontSize}px;line-height:${textSettings.lineHeight};padding:40px;direction:rtl;white-space:pre-wrap;}</style></head><body>${content}</body></html>`);
+      win.document.close();
+      win.print();
+    }
+  }, [memoizedPlainText, dafYomi, textSettings]);
+
+  const handleDownloadText = useCallback((format: string) => {
+    const content = memoizedPlainText;
+    if (!content) { sonnerToast.error("אין תוכן להורדה"); return; }
+    const title = `gemara_${sugyaId}`;
+    let blob: Blob;
+    let ext: string;
+    if (format === "html") {
+      blob = new Blob([`<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="utf-8"><title>${title}</title></head><body style="font-family:David,serif;font-size:${textSettings.fontSize}px;line-height:${textSettings.lineHeight};white-space:pre-wrap;">${content}</body></html>`], { type: "text/html;charset=utf-8" });
+      ext = "html";
+    } else {
+      blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+      ext = "txt";
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `${title}.${ext}`; a.click();
+    URL.revokeObjectURL(url);
+    sonnerToast.success(`הקובץ ${title}.${ext} הורד בהצלחה`);
+  }, [memoizedPlainText, sugyaId, textSettings]);
+
+  const handleResetSettings = useCallback(() => {
+    setTextSettings(defaultTextSettings);
+    sonnerToast.success("הגדרות העיצוב אופסו");
+  }, []);
+
+  const sep = <div className="w-px h-5 bg-border" />;
+
   const renderTextToolbar = () => (
-    <div className="flex items-center gap-1 flex-wrap p-2 bg-muted/50 rounded-lg border">
-      {/* Hint for word selection */}
-      <div className="flex items-center gap-1 text-xs text-muted-foreground border-l pl-2 ml-1">
-        <MousePointer2 className="h-3 w-3" />
-        <span>סמן מילים לעיצוב</span>
-      </div>
-      {/* Font Size Controls */}
-      <div className="flex items-center gap-1 border-l pl-2 ml-1">
+    <div className="space-y-0">
+      {/* ═══ Main Toolbar Row ═══ */}
+      <div className="flex items-center gap-0.5 flex-wrap p-2 bg-muted/50 rounded-t-lg border border-b-0">
+        {/* Edit Mode Toggle */}
         <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          onClick={() => updateTextSetting('fontSize', Math.max(12, textSettings.fontSize - 2))}
-          title="הקטן גופן"
+          size="sm"
+          variant={textEditMode ? "default" : "outline"}
+          className={`h-7 text-xs gap-1 ${textEditMode ? "bg-primary text-primary-foreground" : ""}`}
+          onClick={() => {
+            const next = !textEditMode;
+            setTextEditMode(next);
+            setTimeout(() => {
+              const doc = textIframeRef.current?.contentDocument;
+              if (doc?.body) doc.designMode = next ? "on" : "off";
+            }, 100);
+          }}
         >
-          <AArrowDown className="h-4 w-4" />
+          <Scissors className="h-3 w-3" />
+          {textEditMode ? "מצב עריכה פעיל" : "ערוך"}
         </Button>
-        <span className="text-xs text-muted-foreground w-8 text-center">{textSettings.fontSize}</span>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          onClick={() => updateTextSetting('fontSize', Math.min(32, textSettings.fontSize + 2))}
-          title="הגדל גופן"
-        >
-          <AArrowUp className="h-4 w-4" />
-        </Button>
-      </div>
 
-      {/* Font Family */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8" title="שנה גופן">
-            <Type className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
-          {FONTS.map(font => (
-            <DropdownMenuItem
-              key={font.value}
-              onClick={() => updateTextSetting('fontFamily', font.value)}
-              className="flex items-center gap-2"
-            >
-              <span className={font.value}>{font.label}</span>
-              {textSettings.fontFamily === font.value && <Check className="h-4 w-4 text-primary" />}
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
+        {sep}
 
-      {/* Text Alignment */}
-      <div className="flex items-center gap-0.5 border-x px-2 mx-1">
-        <Button
-          variant={textSettings.textAlign === 'right' ? 'secondary' : 'ghost'}
-          size="icon"
-          className="h-8 w-8"
-          onClick={() => updateTextSetting('textAlign', 'right')}
-          title="יישור לימין"
-        >
-          <AlignRight className="h-4 w-4" />
-        </Button>
-        <Button
-          variant={textSettings.textAlign === 'center' ? 'secondary' : 'ghost'}
-          size="icon"
-          className="h-8 w-8"
-          onClick={() => updateTextSetting('textAlign', 'center')}
-          title="יישור למרכז"
-        >
-          <AlignCenter className="h-4 w-4" />
-        </Button>
-        <Button
-          variant={textSettings.textAlign === 'left' ? 'secondary' : 'ghost'}
-          size="icon"
-          className="h-8 w-8"
-          onClick={() => updateTextSetting('textAlign', 'left')}
-          title="יישור לשמאל"
-        >
-          <AlignLeft className="h-4 w-4" />
-        </Button>
-      </div>
+        {/* Hint */}
+        <div className="flex items-center gap-1 text-xs text-muted-foreground border-l border-border pl-2 ml-1">
+          <MousePointer2 className="h-3 w-3" />
+          <span>סמן מילים לעיצוב</span>
+        </div>
 
-      {/* Bold */}
-      <Button
-        variant={textSettings.isBold ? 'secondary' : 'ghost'}
-        size="icon"
-        className="h-8 w-8"
-        onClick={() => updateTextSetting('isBold', !textSettings.isBold)}
-        title="הדגשה"
-      >
-        <Bold className="h-4 w-4" />
-      </Button>
+        {sep}
 
-      {/* Highlight Color */}
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8" title="סימון בצבע">
-            <Highlighter className="h-4 w-4" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-48 p-2" align="start">
-          <div className="grid grid-cols-3 gap-1">
-            {HIGHLIGHT_COLORS.map(color => (
-              <button
-                key={color.value}
-                onClick={() => updateTextSetting('highlightColor', color.value)}
-                className={`h-8 rounded border ${color.value} ${textSettings.highlightColor === color.value ? 'ring-2 ring-primary' : ''}`}
-                title={color.label}
-              />
+        {/* Font Size */}
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => updateTextSetting('fontSize', Math.max(10, textSettings.fontSize - 2))} title="הקטן גופן">
+          <AArrowDown className="h-3.5 w-3.5" />
+        </Button>
+        <span className="text-xs text-muted-foreground w-6 text-center font-mono">{textSettings.fontSize}</span>
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => updateTextSetting('fontSize', Math.min(36, textSettings.fontSize + 2))} title="הגדל גופן">
+          <AArrowUp className="h-3.5 w-3.5" />
+        </Button>
+
+        {sep}
+
+        {/* Font Family */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-7 w-7" title="שנה גופן">
+              <Type className="h-3.5 w-3.5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            {FONTS.map(font => (
+              <DropdownMenuItem key={font.value} onClick={() => updateTextSetting('fontFamily', font.value)} className="flex items-center gap-2">
+                <span className={font.value}>{font.label}</span>
+                {textSettings.fontFamily === font.value && <Check className="h-4 w-4 text-primary" />}
+              </DropdownMenuItem>
             ))}
-          </div>
-        </PopoverContent>
-      </Popover>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {sep}
+
+        {/* Text Formatting: Bold, Italic, Underline, Strikethrough */}
+        <Button variant={textSettings.isBold ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onMouseDown={e => e.preventDefault()} onClick={() => { if (textEditMode) textIframeRef.current?.contentDocument?.execCommand('bold'); else updateTextSetting('isBold', !textSettings.isBold); }} title="הדגשה">
+          <Bold className="h-3.5 w-3.5" />
+        </Button>
+        <Button variant={textSettings.isItalic ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onMouseDown={e => e.preventDefault()} onClick={() => { if (textEditMode) textIframeRef.current?.contentDocument?.execCommand('italic'); else updateTextSetting('isItalic', !textSettings.isItalic); }} title="נטוי">
+          <Italic className="h-3.5 w-3.5" />
+        </Button>
+        <Button variant={textSettings.isUnderline ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onMouseDown={e => e.preventDefault()} onClick={() => { if (textEditMode) textIframeRef.current?.contentDocument?.execCommand('underline'); else updateTextSetting('isUnderline', !textSettings.isUnderline); }} title="קו תחתון">
+          <Underline className="h-3.5 w-3.5" />
+        </Button>
+        <Button variant={textSettings.isStrikethrough ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onMouseDown={e => e.preventDefault()} onClick={() => { if (textEditMode) textIframeRef.current?.contentDocument?.execCommand('strikeThrough'); else updateTextSetting('isStrikethrough', !textSettings.isStrikethrough); }} title="קו חוצה">
+          <Strikethrough className="h-3.5 w-3.5" />
+        </Button>
+
+        {sep}
+
+        {/* Alignment: Right, Center, Left, Justify */}
+        <Button variant={textSettings.textAlign === 'right' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onMouseDown={e => e.preventDefault()} onClick={() => { if (textEditMode) textIframeRef.current?.contentDocument?.execCommand('justifyRight'); updateTextSetting('textAlign', 'right'); }} title="ימין">
+          <AlignRight className="h-3.5 w-3.5" />
+        </Button>
+        <Button variant={textSettings.textAlign === 'center' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onMouseDown={e => e.preventDefault()} onClick={() => { if (textEditMode) textIframeRef.current?.contentDocument?.execCommand('justifyCenter'); updateTextSetting('textAlign', 'center'); }} title="מרכז">
+          <AlignCenter className="h-3.5 w-3.5" />
+        </Button>
+        <Button variant={textSettings.textAlign === 'left' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onMouseDown={e => e.preventDefault()} onClick={() => { if (textEditMode) textIframeRef.current?.contentDocument?.execCommand('justifyLeft'); updateTextSetting('textAlign', 'left'); }} title="שמאל">
+          <AlignLeft className="h-3.5 w-3.5" />
+        </Button>
+        <Button variant={textSettings.textAlign === 'justify' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onMouseDown={e => e.preventDefault()} onClick={() => { if (textEditMode) textIframeRef.current?.contentDocument?.execCommand('justifyFull'); updateTextSetting('textAlign', 'justify'); }} title="מלא">
+          <AlignJustify className="h-3.5 w-3.5" />
+        </Button>
+
+        {sep}
+
+        {/* Highlight Color */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-7 w-7" title="סימון בצבע">
+              <Highlighter className="h-3.5 w-3.5" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-2" align="start">
+            <p className="text-xs font-semibold text-foreground mb-2">צבע הדגשה</p>
+            <div className="flex gap-1.5">
+              {HIGHLIGHT_COLORS.map(color => (
+                <button
+                  key={color.value}
+                  onClick={() => {
+                    if (textEditMode && color.hex !== 'transparent') {
+                      textIframeRef.current?.contentDocument?.execCommand('hiliteColor', false, color.hex);
+                    }
+                    updateTextSetting('highlightColor', color.value);
+                  }}
+                  className={`w-6 h-6 rounded-full border-2 shadow-sm hover:scale-125 transition-transform ${textSettings.highlightColor === color.value ? 'ring-2 ring-primary ring-offset-1' : 'border-border'}`}
+                  style={{ backgroundColor: color.hex }}
+                  title={color.label}
+                />
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {/* Text Color */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-7 w-7" title="צבע טקסט">
+              <Palette className="h-3.5 w-3.5" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-2" align="start">
+            <p className="text-xs font-semibold text-foreground mb-2">צבע טקסט</p>
+            <div className="flex gap-1.5">
+              {TEXT_COLORS.map(c => (
+                <button
+                  key={c.value}
+                  onClick={() => {
+                    if (textEditMode) {
+                      textIframeRef.current?.contentDocument?.execCommand('foreColor', false, c.value);
+                    }
+                    updateTextSetting('textColor', textSettings.textColor === c.value ? '' : c.value);
+                  }}
+                  className={`w-6 h-6 rounded-full border-2 shadow-sm hover:scale-125 transition-transform ${textSettings.textColor === c.value ? 'ring-2 ring-primary ring-offset-1' : 'border-border'}`}
+                  style={{ backgroundColor: c.value }}
+                  title={c.label}
+                />
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {sep}
+
+        {/* Line Height / Spacing */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-7 w-7" title="מרווח שורות">
+              <MoveVertical className="h-3.5 w-3.5" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-56 p-3" align="start" dir="rtl">
+            <p className="text-xs font-semibold text-foreground mb-2">מרווח שורות</p>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] text-muted-foreground">גובה שורה</span>
+              <span className="text-[10px] font-mono text-primary">{textSettings.lineHeight.toFixed(1)}</span>
+            </div>
+            <Slider
+              value={[textSettings.lineHeight]}
+              onValueChange={(v) => updateTextSetting('lineHeight', v[0])}
+              min={1}
+              max={3.5}
+              step={0.1}
+              className="[&_[role=slider]]:h-3.5 [&_[role=slider]]:w-3.5"
+            />
+          </PopoverContent>
+        </Popover>
+
+        {sep}
+
+        {/* Columns */}
+        <Button variant={textSettings.columns === 1 ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => updateTextSetting('columns', 1)} title="עמודה אחת">
+          <FileText className="h-3.5 w-3.5" />
+        </Button>
+        <Button variant={textSettings.columns === 2 ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => updateTextSetting('columns', 2)} title="שתי עמודות">
+          <Columns2 className="h-3.5 w-3.5" />
+        </Button>
+        <Button variant={textSettings.columns === 3 ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => updateTextSetting('columns', 3)} title="שלוש עמודות">
+          <Columns3 className="h-3.5 w-3.5" />
+        </Button>
+
+        {sep}
+
+        {/* Copy */}
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleCopyText} title="העתק">
+          <Copy className="h-3.5 w-3.5" />
+        </Button>
+        {/* Print */}
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handlePrintText} title="הדפסה">
+          <Printer className="h-3.5 w-3.5" />
+        </Button>
+        {/* Download */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-7 w-7" title="הורד">
+              <FileDown className="h-3.5 w-3.5" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-40 p-1.5" align="start" dir="rtl">
+            <button className="w-full text-right text-xs px-2 py-1.5 rounded hover:bg-accent flex items-center gap-2" onClick={() => handleDownloadText("html")}>📄 HTML</button>
+            <button className="w-full text-right text-xs px-2 py-1.5 rounded hover:bg-accent flex items-center gap-2" onClick={() => handleDownloadText("txt")}>📝 טקסט (TXT)</button>
+          </PopoverContent>
+        </Popover>
+
+        {sep}
+
+        {/* Remove format (edit mode) */}
+        {textEditMode && (
+          <Button variant="ghost" size="icon" className="h-7 w-7" onMouseDown={e => e.preventDefault()} onClick={() => textIframeRef.current?.contentDocument?.execCommand('removeFormat')} title="הסר עיצוב">
+            <RotateCcw className="h-3.5 w-3.5 text-destructive" />
+          </Button>
+        )}
+
+        {/* Reset */}
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleResetSettings} title="איפוס עיצוב">
+          <RotateCcw className="h-3.5 w-3.5" />
+        </Button>
+      </div>
     </div>
   );
 
@@ -973,11 +1171,45 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
       case 'text':
       default:
         return gemaraText ? (
-          <div className="space-y-3">
+          <div className="space-y-0 relative">
             {renderTextToolbar()}
-            <div className="prose prose-slate max-w-none dark:prose-invert bg-amber-50/30 dark:bg-amber-950/10 p-4 rounded-lg">
-              {renderGemaraText()}
-            </div>
+            {textEditMode ? (
+              <div className="border border-t-0 border-border rounded-b-lg bg-white dark:bg-background overflow-hidden" style={{ minHeight: '500px' }}>
+                <iframe
+                  ref={textIframeRef}
+                  srcDoc={`<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="utf-8"><style>
+                    @import url('https://fonts.googleapis.com/css2?family=David+Libre&family=Frank+Ruhl+Libre&family=Rubik&display=swap');
+                    body { font-family: 'David Libre', 'David', serif; font-size: ${textSettings.fontSize}px; line-height: ${textSettings.lineHeight}; color: hsl(222 47% 11%); padding: 24px; margin: 0; direction: rtl; text-align: ${textSettings.textAlign}; column-count: ${textSettings.columns}; column-gap: 32px; column-rule: 1px solid #e5e7eb; }
+                    ::selection { background: hsl(37 77% 53% / 0.3); }
+                    p, div { margin-bottom: 8px; break-inside: avoid; }
+                  </style></head><body>${memoizedPlainText.split('\n').map(p => `<p>${p || '&nbsp;'}</p>`).join('')}</body></html>`}
+                  className="w-full border-0"
+                  style={{ height: '600px' }}
+                  title="עריכת טקסט גמרא"
+                  onLoad={() => {
+                    const doc = textIframeRef.current?.contentDocument;
+                    if (doc) doc.designMode = "on";
+                  }}
+                />
+                <FloatingTextToolbar
+                  containerRef={textContentRef}
+                  iframeRef={textIframeRef}
+                  editMode={true}
+                />
+              </div>
+            ) : (
+              <div
+                ref={textContentRef}
+                className="prose prose-slate max-w-none dark:prose-invert bg-amber-50/30 dark:bg-amber-950/10 p-4 rounded-b-lg border border-t-0 border-border"
+                style={textSettings.columns > 1 ? { columnCount: textSettings.columns, columnGap: '32px', columnRule: '1px solid hsl(var(--border))' } : undefined}
+              >
+                {renderGemaraText()}
+                <FloatingTextToolbar
+                  containerRef={textContentRef}
+                  editMode={false}
+                />
+              </div>
+            )}
           </div>
         ) : (
           <div className="text-center py-8 text-muted-foreground">
