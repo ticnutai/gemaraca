@@ -1836,7 +1836,6 @@ export default function EmbedPdfViewerPage() {
 
   // Icon toolbar items
   const toolbarItems = [
-    { id: "add", icon: Plus, label: "הוסף מסמך", badge: undefined },
     { id: "docs", icon: BookOpen, label: `מסמכים (${books.length})`, badge: books.length > 0 ? books.length : undefined },
     { id: "annotations", icon: Palette, label: "אנוטציות", badge: annotations.length > 0 ? annotations.length : undefined },
     { id: "bookmarks", icon: Bookmark, label: `סימניות (${bookmarks.length})`, badge: bookmarks.length > 0 ? bookmarks.length : undefined },
@@ -2005,7 +2004,7 @@ export default function EmbedPdfViewerPage() {
                   ? "bg-[#0B1F5B] text-white"
                   : "text-[#0B1F5B]/60 hover:bg-[#D4AF37]/15 hover:text-[#0B1F5B]"
               }`}
-              title={iconBarPinned ? "בטל הצמדת פאנל" : "הצמד פאנל"}
+              title={iconBarPinned ? "בטל הצמדת סרגל צד" : "הצמד סרגל צד פתוח"}
             >
               {iconBarPinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
             </button>
@@ -2055,7 +2054,7 @@ export default function EmbedPdfViewerPage() {
                     size="icon"
                     variant="ghost"
                     className={`h-6 w-6 ${iconBarPinned ? "text-[#0B1F5B] bg-[#D4AF37]/20" : "text-[#0B1F5B]/40"}`}
-                    title={iconBarPinned ? "בטל הצמדת פאנל" : "הצמד פאנל פתוח"}
+                    title={iconBarPinned ? "בטל הצמדת סרגל צד" : "הצמד סרגל צד פתוח"}
                     onClick={() => setIconBarPinned(p => !p)}
                   >
                     {iconBarPinned ? <PinOff className="h-3 w-3" /> : <Pin className="h-3 w-3" />}
@@ -3106,7 +3105,7 @@ export default function EmbedPdfViewerPage() {
               <div className="flex-1 relative bg-[#f8f8f6]">
                 {/* BEAUTIFIED VIEW */}
                 {leftTemplateHtml && !beautifiedHtml ? (
-                  <iframe srcDoc={leftTemplateHtml} className="absolute inset-0 w-full h-full border-0" title="Template View" sandbox="allow-same-origin allow-scripts allow-popups" />
+                  <iframe ref={beautifyIframeRef} srcDoc={leftTemplateHtml} className="absolute inset-0 w-full h-full border-0" title="Template View" sandbox="allow-same-origin allow-scripts allow-popups" />
                 ) : beautifiedHtml && activePanel === "beautify" ? (
                   <iframe
                     ref={beautifyIframeRef}

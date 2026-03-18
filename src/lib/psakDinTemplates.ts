@@ -494,7 +494,6 @@ const SEARCH_WIDGET_SCRIPT = `
     if (!target) return;
     lastScrollY = window.scrollY;
     target.scrollIntoView({ behavior: 'auto', block: 'start' });
-    if (history && history.replaceState) history.replaceState(null, '', '#' + anchorId);
   }
 
   function currentSectionIndex() {
@@ -518,14 +517,26 @@ const SEARCH_WIDGET_SCRIPT = `
   }
 
   document.querySelectorAll('.toc-link').forEach(function (link) {
-    link.addEventListener('mousedown', function (event) {
+    link.addEventListener('click', function (event) {
+      event.preventDefault();
+      event.stopPropagation();
       var href = link.getAttribute('href') || '';
       if (!href.startsWith('#')) return;
       var id = href.slice(1);
       if (!id) return;
-      event.preventDefault();
       jumpToAnchor(id);
     });
+  });
+
+  // Intercept all anchor clicks inside the document to prevent iframe navigation
+  document.addEventListener('click', function (event) {
+    var anchor = event.target && event.target.closest ? event.target.closest('a[href^="#"]') : null;
+    if (!anchor) return;
+    event.preventDefault();
+    event.stopPropagation();
+    var href = anchor.getAttribute('href') || '';
+    var id = href.slice(1);
+    if (id) jumpToAnchor(id);
   });
 
   input.addEventListener('input', function () { highlightTerm(input.value.trim()); });
