@@ -778,6 +778,13 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
 
         {sep}
 
+        {/* Remove format (edit mode) */}
+        {textEditMode && (
+          <Button variant="ghost" size="icon" className="h-7 w-7" onMouseDown={e => e.preventDefault()} onClick={() => textIframeRef.current?.contentDocument?.execCommand('removeFormat')} title="הסר עיצוב">
+            <RotateCcw className="h-3.5 w-3.5 text-destructive" />
+          </Button>
+        )}
+
         {/* Reset */}
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleResetSettings} title="איפוס עיצוב">
           <RotateCcw className="h-3.5 w-3.5" />
