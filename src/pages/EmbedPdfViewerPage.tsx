@@ -2020,9 +2020,20 @@ export default function EmbedPdfViewerPage() {
                 <h3 className="text-sm font-bold text-[#0B1F5B]">
                   {toolbarItems.find(t => t.id === activePanel)?.label}
                 </h3>
-                <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setActivePanel(null)}>
-                  <Trash2 className="h-3 w-3 text-[#0B1F5B]/40" />
-                </Button>
+                <div className="flex items-center gap-0.5">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className={`h-6 w-6 ${iconBarPinned ? "text-[#0B1F5B] bg-[#D4AF37]/20" : "text-[#0B1F5B]/40"}`}
+                    title={iconBarPinned ? "בטל הצמדת פאנל" : "הצמד פאנל פתוח"}
+                    onClick={() => setIconBarPinned(p => !p)}
+                  >
+                    {iconBarPinned ? <PinOff className="h-3 w-3" /> : <Pin className="h-3 w-3" />}
+                  </Button>
+                  <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setActivePanel(null)}>
+                    <Trash2 className="h-3 w-3 text-[#0B1F5B]/40" />
+                  </Button>
+                </div>
               </div>
 
               {/* ADD DOCUMENT (unified panel) */}
