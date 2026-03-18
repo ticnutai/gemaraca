@@ -716,6 +716,51 @@ export type Database = {
         }
         Relationships: []
       }
+      user_pinned_items: {
+        Row: {
+          amud: string | null
+          color: string | null
+          created_at: string
+          daf: string | null
+          id: string
+          item_id: string
+          item_type: string
+          label: string
+          pin_type: string
+          ref_count: number | null
+          tractate: string | null
+          user_id: string
+        }
+        Insert: {
+          amud?: string | null
+          color?: string | null
+          created_at?: string
+          daf?: string | null
+          id?: string
+          item_id: string
+          item_type: string
+          label: string
+          pin_type?: string
+          ref_count?: number | null
+          tractate?: string | null
+          user_id: string
+        }
+        Update: {
+          amud?: string | null
+          color?: string | null
+          created_at?: string
+          daf?: string | null
+          id?: string
+          item_id?: string
+          item_type?: string
+          label?: string
+          pin_type?: string
+          ref_count?: number | null
+          tractate?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
