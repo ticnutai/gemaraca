@@ -17,6 +17,7 @@ import { Sparkles, Loader2, RefreshCw, Lightbulb, Scale, BookOpen, Database, Typ
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { RichTextViewer } from "./RichTextViewer";
+import { PromptTemplateTabs } from "./PromptTemplateTabs";
 
 const FONTS = [
   { value: 'font-serif', label: 'דוד (סריף)' },
@@ -96,6 +97,11 @@ export const ModernExamplesPanel = ({
   const [showToolbar, setShowToolbar] = useState(false);
   const [showCustomPrompt, setShowCustomPrompt] = useState(false);
   const [customPrompt, setCustomPrompt] = useState('');
+  const [selectedTemplateIds, setSelectedTemplateIds] = useState<string[]>(() => {
+    const saved = localStorage.getItem('selected-prompt-templates');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [templatePrompt, setTemplatePrompt] = useState('');
   const [textSettings, setTextSettings] = useState<TextSettings>(() => {
     const saved = localStorage.getItem(EXAMPLES_TEXT_SETTINGS_KEY);
     return saved ? JSON.parse(saved) : defaultTextSettings;
@@ -153,7 +159,7 @@ export const ModernExamplesPanel = ({
             masechet,
             sugyaId: effectiveSugyaId,
             forceRegenerate,
-            customInstructions: customPrompt.trim() || undefined,
+            customInstructions: [templatePrompt, customPrompt.trim()].filter(Boolean).join('\n') || undefined,
           },
         }
       );
@@ -356,14 +362,24 @@ export const ModernExamplesPanel = ({
   if (!data && !isLoading) {
     return (
       <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5">
-        <CardContent className="p-6 text-center">
-          <div className="mb-4">
+        <CardContent className="p-6 text-center space-y-4">
+          <div className="mb-2">
             <Sparkles className="h-12 w-12 text-primary mx-auto mb-2" />
             <h3 className="text-lg font-bold text-foreground">המחשות מודרניות</h3>
             <p className="text-sm text-muted-foreground mt-1">
               קבל דוגמאות עכשוויות שממחישות את היסודות ההלכתיים מהסוגיה
             </p>
           </div>
+
+          {/* Prompt Template Tabs */}
+          <PromptTemplateTabs
+            selectedIds={selectedTemplateIds}
+            onSelectionChange={(ids, combined) => {
+              setSelectedTemplateIds(ids);
+              setTemplatePrompt(combined);
+            }}
+          />
+
           <div className="flex items-center gap-2 justify-center">
             <Button 
               onClick={() => generateExamples(false)} 
@@ -381,16 +397,16 @@ export const ModernExamplesPanel = ({
               title="התאם הנחיות ל-AI"
             >
               <SlidersHorizontal className="h-4 w-4" />
-              כיוון מותאם
+              כיוון חופשי
             </Button>
           </div>
           {showCustomPrompt && (
-            <div className="mt-4 space-y-2 text-right">
+            <div className="space-y-2 text-right">
               <label className="text-sm text-muted-foreground">פרט לאיזה כיוון ודוגמאות תרצה:</label>
               <Textarea
                 value={customPrompt}
                 onChange={(e) => setCustomPrompt(e.target.value)}
-                placeholder="למשל: דוגמאות מעולם העסקים, התמקד ביישום מעשי בימינו, דוגמאות מתחום הטכנולוגיה..."
+                placeholder="למשל: דוגמאות מעולם העסקים, התמקד ביישום מעשי בימינו..."
                 className="min-h-[80px] text-right"
                 dir="rtl"
               />
