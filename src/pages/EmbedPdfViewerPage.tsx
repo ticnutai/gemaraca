@@ -823,6 +823,10 @@ export default function EmbedPdfViewerPage() {
   const [toolbarTarget, setToolbarTarget] = useState<"left" | "right">("left");
   const [iconBarPinned, setIconBarPinned] = useState(false);
 
+  // ── Column layout ──
+  const [columnCount, setColumnCount] = useState(1);
+  const [rightColumnCount, setRightColumnCount] = useState(1);
+
   // ── Template switcher per pane ──
   const [leftTemplate, setLeftTemplate] = useState<string | null>(null);
   const [rightTemplate, setRightTemplate] = useState<string | null>(null);
@@ -2535,6 +2539,29 @@ export default function EmbedPdfViewerPage() {
                         <p className="text-[10px] text-[#0B1F5B]/50 mt-1.5 text-center">0px — 40px</p>
                       </PopoverContent>
                     </Popover>
+                    {/* Column layout */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button size="icon" variant="ghost" className={`h-7 w-7 ${columnCount > 1 ? 'bg-[#D4AF37]/20' : ''}`} title="עמודות"><Columns className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-48 p-3" align="start" dir="rtl">
+                        <p className="text-xs font-semibold text-[#0B1F5B] mb-2">מספר עמודות</p>
+                        <div className="flex gap-1.5">
+                          {[1, 2, 3, 4].map(n => (
+                            <button key={n} onClick={() => {
+                              setColumnCount(n);
+                              const doc = beautifyIframeRef.current?.contentDocument;
+                              if (doc?.body) {
+                                doc.body.style.columnCount = String(n);
+                                doc.body.style.columnGap = n > 1 ? '24px' : '';
+                                doc.body.style.columnRule = n > 1 ? '1px solid #D4AF3740' : '';
+                              }
+                            }} className={`flex-1 h-8 rounded-md border text-sm font-bold transition-colors ${columnCount === n ? 'bg-[#0B1F5B] text-white border-[#0B1F5B]' : 'border-[#D4AF37]/40 text-[#0B1F5B] hover:bg-[#D4AF37]/10'}`}>{n}</button>
+                          ))}
+                        </div>
+                        <p className="text-[10px] text-[#0B1F5B]/50 mt-2 text-center">בחר כמה עמודות להציג</p>
+                      </PopoverContent>
+                    </Popover>
 
                     <div className="w-px h-5 bg-[#D4AF37]/20" />
                     {/* Template Switcher */}
@@ -2862,6 +2889,29 @@ export default function EmbedPdfViewerPage() {
                             }} />
                           </div>
                         </div>
+                      </PopoverContent>
+                    </Popover>
+                    {/* Column layout */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button size="icon" variant="ghost" className={`h-7 w-7 ${columnCount > 1 ? 'bg-[#D4AF37]/20' : ''}`} title="עמודות"><Columns className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-48 p-3" align="start" dir="rtl">
+                        <p className="text-xs font-semibold text-[#0B1F5B] mb-2">מספר עמודות</p>
+                        <div className="flex gap-1.5">
+                          {[1, 2, 3, 4].map(n => (
+                            <button key={n} onClick={() => {
+                              setColumnCount(n);
+                              const doc = htmlEmbedIframeRef.current?.contentDocument;
+                              if (doc?.body) {
+                                doc.body.style.columnCount = String(n);
+                                doc.body.style.columnGap = n > 1 ? '24px' : '';
+                                doc.body.style.columnRule = n > 1 ? '1px solid #D4AF3740' : '';
+                              }
+                            }} className={`flex-1 h-8 rounded-md border text-sm font-bold transition-colors ${columnCount === n ? 'bg-[#0B1F5B] text-white border-[#0B1F5B]' : 'border-[#D4AF37]/40 text-[#0B1F5B] hover:bg-[#D4AF37]/10'}`}>{n}</button>
+                          ))}
+                        </div>
+                        <p className="text-[10px] text-[#0B1F5B]/50 mt-2 text-center">בחר כמה עמודות להציג</p>
                       </PopoverContent>
                     </Popover>
 
@@ -3313,6 +3363,29 @@ export default function EmbedPdfViewerPage() {
                               }} />
                             </div>
                           </div>
+                        </PopoverContent>
+                      </Popover>
+                      {/* Column layout */}
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button size="icon" variant="ghost" className={`h-7 w-7 ${rightColumnCount > 1 ? 'bg-[#D4AF37]/20' : ''}`} title="עמודות"><Columns className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-48 p-3" align="end" dir="rtl">
+                          <p className="text-xs font-semibold text-[#0B1F5B] mb-2">מספר עמודות</p>
+                          <div className="flex gap-1.5">
+                            {[1, 2, 3, 4].map(n => (
+                              <button key={n} onClick={() => {
+                                setRightColumnCount(n);
+                                const doc = rightIframeRef.current?.contentDocument;
+                                if (doc?.body) {
+                                  doc.body.style.columnCount = String(n);
+                                  doc.body.style.columnGap = n > 1 ? '24px' : '';
+                                  doc.body.style.columnRule = n > 1 ? '1px solid #D4AF3740' : '';
+                                }
+                              }} className={`flex-1 h-8 rounded-md border text-sm font-bold transition-colors ${rightColumnCount === n ? 'bg-[#0B1F5B] text-white border-[#0B1F5B]' : 'border-[#D4AF37]/40 text-[#0B1F5B] hover:bg-[#D4AF37]/10'}`}>{n}</button>
+                            ))}
+                          </div>
+                          <p className="text-[10px] text-[#0B1F5B]/50 mt-2 text-center">בחר כמה עמודות להציג</p>
                         </PopoverContent>
                       </Popover>
                     </>
