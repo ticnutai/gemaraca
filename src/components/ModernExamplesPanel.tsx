@@ -159,7 +159,7 @@ export const ModernExamplesPanel = ({
             masechet,
             sugyaId: effectiveSugyaId,
             forceRegenerate,
-            customInstructions: customPrompt.trim() || undefined,
+            customInstructions: [templatePrompt, customPrompt.trim()].filter(Boolean).join('\n') || undefined,
           },
         }
       );
