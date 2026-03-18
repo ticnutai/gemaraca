@@ -164,8 +164,14 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   });
   const [imageZoom, setImageZoom] = useState(100);
   const [textSettings, setTextSettings] = useState<TextSettings>(() => {
-    const saved = localStorage.getItem(TEXT_SETTINGS_KEY);
-    return saved ? JSON.parse(saved) : defaultTextSettings;
+    try {
+      const saved = localStorage.getItem(TEXT_SETTINGS_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return { ...defaultTextSettings, ...parsed };
+      }
+    } catch {}
+    return defaultTextSettings;
   });
   const { toast } = useToast();
 
