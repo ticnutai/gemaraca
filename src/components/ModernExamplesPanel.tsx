@@ -93,6 +93,8 @@ export const ModernExamplesPanel = ({
   const [error, setError] = useState<string | null>(null);
   const [isCached, setIsCached] = useState(false);
   const [showToolbar, setShowToolbar] = useState(false);
+  const [showCustomPrompt, setShowCustomPrompt] = useState(false);
+  const [customPrompt, setCustomPrompt] = useState('');
   const [textSettings, setTextSettings] = useState<TextSettings>(() => {
     const saved = localStorage.getItem(EXAMPLES_TEXT_SETTINGS_KEY);
     return saved ? JSON.parse(saved) : defaultTextSettings;
