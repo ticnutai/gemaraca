@@ -1,9 +1,12 @@
 import { useState, useMemo, memo } from 'react';
+import { Pin, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import RefCard from './RefCard';
 import { TalmudRefWithPsak, TRACTATES, toHebrewDaf, ValidationStatus } from './types';
+import { usePinnedItems } from '@/hooks/usePinnedItems';
 
 interface Props {
   grouped: Record<string, TalmudRefWithPsak[]>;
