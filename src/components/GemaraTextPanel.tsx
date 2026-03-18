@@ -164,10 +164,18 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   });
   const [imageZoom, setImageZoom] = useState(100);
   const [textSettings, setTextSettings] = useState<TextSettings>(() => {
-    const saved = localStorage.getItem(TEXT_SETTINGS_KEY);
-    return saved ? JSON.parse(saved) : defaultTextSettings;
+    try {
+      const saved = localStorage.getItem(TEXT_SETTINGS_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return { ...defaultTextSettings, ...parsed };
+      }
+    } catch {}
+    return defaultTextSettings;
   });
   const { toast } = useToast();
+  const textIframeRef = useRef<HTMLIFrameElement>(null);
+  const [textEditMode, setTextEditMode] = useState(false);
 
   // Cloud editor state
   const cloudIframeRef = useRef<HTMLIFrameElement>(null);
@@ -573,6 +581,26 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
     <div className="space-y-0">
       {/* ═══ Main Toolbar Row ═══ */}
       <div className="flex items-center gap-0.5 flex-wrap p-2 bg-muted/50 rounded-t-lg border border-b-0">
+        {/* Edit Mode Toggle */}
+        <Button
+          size="sm"
+          variant={textEditMode ? "default" : "outline"}
+          className={`h-7 text-xs gap-1 ${textEditMode ? "bg-primary text-primary-foreground" : ""}`}
+          onClick={() => {
+            const next = !textEditMode;
+            setTextEditMode(next);
+            setTimeout(() => {
+              const doc = textIframeRef.current?.contentDocument;
+              if (doc?.body) doc.designMode = next ? "on" : "off";
+            }, 100);
+          }}
+        >
+          <Scissors className="h-3 w-3" />
+          {textEditMode ? "מצב עריכה פעיל" : "ערוך"}
+        </Button>
+
+        {sep}
+
         {/* Hint */}
         <div className="flex items-center gap-1 text-xs text-muted-foreground border-l border-border pl-2 ml-1">
           <MousePointer2 className="h-3 w-3" />
@@ -612,32 +640,32 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
         {sep}
 
         {/* Text Formatting: Bold, Italic, Underline, Strikethrough */}
-        <Button variant={textSettings.isBold ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => updateTextSetting('isBold', !textSettings.isBold)} title="הדגשה">
+        <Button variant={textSettings.isBold ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onMouseDown={e => e.preventDefault()} onClick={() => { if (textEditMode) textIframeRef.current?.contentDocument?.execCommand('bold'); else updateTextSetting('isBold', !textSettings.isBold); }} title="הדגשה">
           <Bold className="h-3.5 w-3.5" />
         </Button>
-        <Button variant={textSettings.isItalic ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => updateTextSetting('isItalic', !textSettings.isItalic)} title="נטוי">
+        <Button variant={textSettings.isItalic ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onMouseDown={e => e.preventDefault()} onClick={() => { if (textEditMode) textIframeRef.current?.contentDocument?.execCommand('italic'); else updateTextSetting('isItalic', !textSettings.isItalic); }} title="נטוי">
           <Italic className="h-3.5 w-3.5" />
         </Button>
-        <Button variant={textSettings.isUnderline ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => updateTextSetting('isUnderline', !textSettings.isUnderline)} title="קו תחתון">
+        <Button variant={textSettings.isUnderline ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onMouseDown={e => e.preventDefault()} onClick={() => { if (textEditMode) textIframeRef.current?.contentDocument?.execCommand('underline'); else updateTextSetting('isUnderline', !textSettings.isUnderline); }} title="קו תחתון">
           <Underline className="h-3.5 w-3.5" />
         </Button>
-        <Button variant={textSettings.isStrikethrough ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => updateTextSetting('isStrikethrough', !textSettings.isStrikethrough)} title="קו חוצה">
+        <Button variant={textSettings.isStrikethrough ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onMouseDown={e => e.preventDefault()} onClick={() => { if (textEditMode) textIframeRef.current?.contentDocument?.execCommand('strikeThrough'); else updateTextSetting('isStrikethrough', !textSettings.isStrikethrough); }} title="קו חוצה">
           <Strikethrough className="h-3.5 w-3.5" />
         </Button>
 
         {sep}
 
         {/* Alignment: Right, Center, Left, Justify */}
-        <Button variant={textSettings.textAlign === 'right' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => updateTextSetting('textAlign', 'right')} title="ימין">
+        <Button variant={textSettings.textAlign === 'right' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onMouseDown={e => e.preventDefault()} onClick={() => { if (textEditMode) textIframeRef.current?.contentDocument?.execCommand('justifyRight'); updateTextSetting('textAlign', 'right'); }} title="ימין">
           <AlignRight className="h-3.5 w-3.5" />
         </Button>
-        <Button variant={textSettings.textAlign === 'center' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => updateTextSetting('textAlign', 'center')} title="מרכז">
+        <Button variant={textSettings.textAlign === 'center' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onMouseDown={e => e.preventDefault()} onClick={() => { if (textEditMode) textIframeRef.current?.contentDocument?.execCommand('justifyCenter'); updateTextSetting('textAlign', 'center'); }} title="מרכז">
           <AlignCenter className="h-3.5 w-3.5" />
         </Button>
-        <Button variant={textSettings.textAlign === 'left' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => updateTextSetting('textAlign', 'left')} title="שמאל">
+        <Button variant={textSettings.textAlign === 'left' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onMouseDown={e => e.preventDefault()} onClick={() => { if (textEditMode) textIframeRef.current?.contentDocument?.execCommand('justifyLeft'); updateTextSetting('textAlign', 'left'); }} title="שמאל">
           <AlignLeft className="h-3.5 w-3.5" />
         </Button>
-        <Button variant={textSettings.textAlign === 'justify' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => updateTextSetting('textAlign', 'justify')} title="מלא">
+        <Button variant={textSettings.textAlign === 'justify' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onMouseDown={e => e.preventDefault()} onClick={() => { if (textEditMode) textIframeRef.current?.contentDocument?.execCommand('justifyFull'); updateTextSetting('textAlign', 'justify'); }} title="מלא">
           <AlignJustify className="h-3.5 w-3.5" />
         </Button>
 
@@ -656,7 +684,12 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
               {HIGHLIGHT_COLORS.map(color => (
                 <button
                   key={color.value}
-                  onClick={() => updateTextSetting('highlightColor', color.value)}
+                  onClick={() => {
+                    if (textEditMode && color.hex !== 'transparent') {
+                      textIframeRef.current?.contentDocument?.execCommand('hiliteColor', false, color.hex);
+                    }
+                    updateTextSetting('highlightColor', color.value);
+                  }}
                   className={`w-6 h-6 rounded-full border-2 shadow-sm hover:scale-125 transition-transform ${textSettings.highlightColor === color.value ? 'ring-2 ring-primary ring-offset-1' : 'border-border'}`}
                   style={{ backgroundColor: color.hex }}
                   title={color.label}
@@ -679,7 +712,12 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
               {TEXT_COLORS.map(c => (
                 <button
                   key={c.value}
-                  onClick={() => updateTextSetting('textColor', textSettings.textColor === c.value ? '' : c.value)}
+                  onClick={() => {
+                    if (textEditMode) {
+                      textIframeRef.current?.contentDocument?.execCommand('foreColor', false, c.value);
+                    }
+                    updateTextSetting('textColor', textSettings.textColor === c.value ? '' : c.value);
+                  }}
                   className={`w-6 h-6 rounded-full border-2 shadow-sm hover:scale-125 transition-transform ${textSettings.textColor === c.value ? 'ring-2 ring-primary ring-offset-1' : 'border-border'}`}
                   style={{ backgroundColor: c.value }}
                   title={c.label}
@@ -739,6 +777,13 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
         </Popover>
 
         {sep}
+
+        {/* Remove format (edit mode) */}
+        {textEditMode && (
+          <Button variant="ghost" size="icon" className="h-7 w-7" onMouseDown={e => e.preventDefault()} onClick={() => textIframeRef.current?.contentDocument?.execCommand('removeFormat')} title="הסר עיצוב">
+            <RotateCcw className="h-3.5 w-3.5 text-destructive" />
+          </Button>
+        )}
 
         {/* Reset */}
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleResetSettings} title="איפוס עיצוב">
@@ -1111,9 +1156,30 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
         return gemaraText ? (
           <div className="space-y-0">
             {renderTextToolbar()}
-            <div className="prose prose-slate max-w-none dark:prose-invert bg-amber-50/30 dark:bg-amber-950/10 p-4 rounded-b-lg border border-t-0 border-border">
-              {renderGemaraText()}
-            </div>
+            {textEditMode ? (
+              <div className="border border-t-0 border-border rounded-b-lg bg-white dark:bg-background overflow-hidden" style={{ minHeight: '500px' }}>
+                <iframe
+                  ref={textIframeRef}
+                  srcDoc={`<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="utf-8"><style>
+                    @import url('https://fonts.googleapis.com/css2?family=David+Libre&family=Frank+Ruhl+Libre&family=Rubik&display=swap');
+                    body { font-family: 'David Libre', 'David', serif; font-size: ${textSettings.fontSize}px; line-height: ${textSettings.lineHeight}; color: hsl(222 47% 11%); padding: 24px; margin: 0; direction: rtl; text-align: ${textSettings.textAlign}; }
+                    ::selection { background: hsl(37 77% 53% / 0.3); }
+                    p, div { margin-bottom: 8px; }
+                  </style></head><body>${memoizedPlainText.split('\n').map(p => `<p>${p || '&nbsp;'}</p>`).join('')}</body></html>`}
+                  className="w-full border-0"
+                  style={{ height: '600px' }}
+                  title="עריכת טקסט גמרא"
+                  onLoad={() => {
+                    const doc = textIframeRef.current?.contentDocument;
+                    if (doc) doc.designMode = "on";
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="prose prose-slate max-w-none dark:prose-invert bg-amber-50/30 dark:bg-amber-950/10 p-4 rounded-b-lg border border-t-0 border-border">
+                {renderGemaraText()}
+              </div>
+            )}
           </div>
         ) : (
           <div className="text-center py-8 text-muted-foreground">
