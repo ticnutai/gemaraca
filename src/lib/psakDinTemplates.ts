@@ -18,10 +18,21 @@ function cleanReadableText(value: string | undefined | null): string {
 
   return value
     .replace(/\r\n?/g, "\n")
+    // Strip CSS/HTML artifacts that leak from textContent extraction
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<[^>]*>/g, "")
     .replace(/\t+/g, " ")
     .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
     .replace(/[�□▪■¤]/g, "")
     .replace(/[A-Za-z][A-Za-z0-9._\-/]*/g, "")
+    // Strip leftover CSS blocks: { ... } with colons/semicolons inside
+    .replace(/\{[^}]{0,500}\}/g, "")
+    .replace(/@[^{;\n]{0,200}[{;]/g, "")
+    // Strip lines that are only CSS-like syntax (colons, semicolons, braces)
+    .replace(/^[\s:;{},.#()@'"\d%/\\*!>~+\[\]=|&^]+$/gm, "")
+    // Strip footer boilerplate
+    .replace(/מעוצב אוטומטית.*שמורות/g, "")
     .replace(/[ ]{2,}/g, " ")
     .replace(/\n[ \t]+/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
@@ -686,7 +697,7 @@ function buildTableOfContents(data: ParsedPsakDin): { tocHtml: string; sectionAn
 
   const tocHtml = items.length > 0
     ? `<div class="toc">
-        <div class="toc-title">📑 תוכן עניינים</div>
+        <div class="toc-title">תוכן עניינים</div>
         <ol class="toc-list">${items.join("\n          ")}</ol>
       </div>`
     : "";
@@ -712,7 +723,12 @@ function isUiArtifactLine(line: string): boolean {
   const navHebrew = /^(דף\s+בית|מפתח\s+פסקי\s+הדין|חיפוש\s+מתקדם|מאמרים\s+ועיונים|צור\s+קשר|אודות|english)$/i;
   const onlyLatin = /^[A-Za-z0-9 .,_'"\-:/()]+$/;
   const hasUiEmoji = /[\u2600-\u27BF\u{1F000}-\u{1FAFF}]/u;
-  return navHebrew.test(trimmed) || onlyLatin.test(trimmed) || hasUiEmoji.test(trimmed);
+  // Detect CSS artifact lines (leftover from style blocks)
+  const cssArtifact = /^[\s:;{},.#()@'"\d%/\\*!>~+\[\]=|&^]+$/;
+  const cssPropertyLine = /^\.[\w-]+\s*\{|^\s*[a-z-]+\s*:/i;
+  // Detect footer/signature boilerplate
+  const footerBoilerplate = /^מעוצב\s+אוטומטית|^\u00a9|^כל\s+הזכויות\s+שמורות/;
+  return navHebrew.test(trimmed) || onlyLatin.test(trimmed) || hasUiEmoji.test(trimmed) || cssArtifact.test(trimmed) || cssPropertyLine.test(trimmed) || footerBoilerplate.test(trimmed);
 }
 
 function applyNbspToTail(text: string): string {
@@ -795,11 +811,18 @@ function renderCourtBlocks(content: string): string {
       continue;
     }
 
+    // Lines ending with ":" are potential sub-headings,
+    // but skip empty metadata labels (e.g. "שם בית דין:" or "תאריך:" with no value)
     if (/^[^.]{2,80}:$/.test(line)) {
-      flushParagraph();
-      flushOrdered();
-      flushBullets();
-      out.push(`<h4 class="inline-heading">${esc(line)}</h4>`);
+      const isEmptyMetaLabel = /^(שם\s*בית\s*דין|תאריך|כותרת|שנה|מספר\s*תיק|דיינים):$/i.test(line);
+      if (!isEmptyMetaLabel) {
+        flushParagraph();
+        flushOrdered();
+        flushBullets();
+        out.push(`<h4 class="inline-heading">${esc(line)}</h4>`);
+        continue;
+      }
+      // Empty metadata labels are skipped entirely
       continue;
     }
 
@@ -2061,12 +2084,17 @@ function renderAuthenticBlocks(content: string): string {
     }
 
     // Inline sub-heading (short line ending with ":")
+    // but skip empty metadata labels
     if (/^[^.]{2,80}:$/.test(line)) {
-      flushParagraph();
-      flushHebrewList();
-      flushOrdered();
-      flushBullets();
-      out.push(`<h4 class="auth-subhead">${esc(line)}</h4>`);
+      const isEmptyMetaLabel = /^(שם\s*בית\s*דין|תאריך|כותרת|שנה|מספר\s*תיק|דיינים):$/i.test(line);
+      if (!isEmptyMetaLabel) {
+        flushParagraph();
+        flushHebrewList();
+        flushOrdered();
+        flushBullets();
+        out.push(`<h4 class="auth-subhead">${esc(line)}</h4>`);
+        continue;
+      }
       continue;
     }
 

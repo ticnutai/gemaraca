@@ -46,11 +46,21 @@ export function parsePsakDinText(text: string): ParsedPsakDin {
   }
 
   // Extract title
-  const title = headerMap['title'] || extractByPattern(bodyText, /^(.+?)(?:\s*-\s*אתר פסקי דין רבניים)?$/m) || 'פסק דין';
+  let title = headerMap['title'] || extractByPattern(bodyText, /^(.+?)(?:\s*-\s*אתר פסקי דין רבניים)?$/m) || 'פסק דין';
+  // Clean filename-like titles: strip file extensions, UUIDs, and numeric suffixes
+  title = title
+    .replace(/\.(html?|pdf|docx?|txt)$/i, '')
+    .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, '')
+    .replace(/-\d{10,}/, '')
+    .replace(/[_-]+/g, ' ')
+    .trim();
+  if (!title || title.length < 2) title = 'פסק דין';
   
   // Extract court - clean HTML artifacts like </span>
-  let court = headerMap['court'] || extractByPattern(bodyText, /שם בית דין:\s*\n?\s*(.+)/);
+  let court = headerMap['court'] || extractByPattern(bodyText, /שם ?בית ?דין:\s*\n?\s*(.+)/);
   court = court.replace(/<[^>]*>/g, '').trim();
+  // If court is empty or looks like another field label, clear it
+  if (/^תאריך:?$|^כותרת:?$|^פסק:?$/.test(court)) court = '';
 
   // Extract date
   const date = headerMap['date']?.replace(/^תאריך:\s*/, '') || 

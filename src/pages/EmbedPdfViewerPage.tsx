@@ -1241,6 +1241,8 @@ export default function EmbedPdfViewerPage() {
       if (!rawText && fetchedHtml) {
         const tmp = document.createElement('div');
         tmp.innerHTML = fetchedHtml;
+        // Remove style/script elements before extracting text to prevent CSS leaking
+        tmp.querySelectorAll('style, script, link, meta, noscript').forEach(el => el.remove());
         rawText = tmp.textContent || '';
       }
       if (!rawText && psakData?.full_text) rawText = psakData.full_text;
@@ -1261,6 +1263,8 @@ export default function EmbedPdfViewerPage() {
       if (rightFetchedHtml) {
         const tmp = document.createElement('div');
         tmp.innerHTML = rightFetchedHtml;
+        // Remove style/script elements before extracting text to prevent CSS leaking
+        tmp.querySelectorAll('style, script, link, meta, noscript').forEach(el => el.remove());
         rawText = tmp.textContent || '';
       }
       if (!rawText && psakData?.full_text) rawText = psakData.full_text;
