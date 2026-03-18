@@ -140,6 +140,7 @@ interface TextSettings {
   highlightColor: string;
   textColor: string;
   lineHeight: number;
+  columns: 1 | 2 | 3;
 }
 
 const defaultTextSettings: TextSettings = {
