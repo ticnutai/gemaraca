@@ -3,6 +3,7 @@ import { useAppContext } from "@/contexts/AppContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { SectionErrorBoundary } from "@/components/SectionErrorBoundary";
+import PinnedItemsBar from "@/components/PinnedItemsBar";
 
 // Lazy-loaded tab components (code splitting)
 const SedarimNavigator = lazy(() => import("@/components/SedarimNavigator"));
