@@ -8,7 +8,7 @@ import {
   RotateCcw, Printer, StickyNote, Scissors, ClipboardPaste, Sparkles, Eye, Strikethrough,
   ListOrdered, WrapText, PilcrowSquare, ArrowRight, Link, BarChart3,
   Upload, HardDrive, Database, Loader2 as Loader2Icon, Save, CopyPlus, Columns, GripVertical, Lock, Unlock,
-  Pencil, FileDown, FileType, SlidersHorizontal, MoveVertical
+  Pencil, FileDown, FileType, SlidersHorizontal, MoveVertical, ArrowRightLeft, Pin, PinOff, X
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -660,6 +660,12 @@ export default function EmbedPdfViewerPage() {
   const [currentSearchIdx, setCurrentSearchIdx] = useState(0);
   const [showTextSearch, setShowTextSearch] = useState(false);
 
+  // ── Doc search state (for beautified psak din sidebar panel) ──
+  const [docSearchQuery, setDocSearchQuery] = useState('');
+  const [docSearchCount, setDocSearchCount] = useState(0);
+  const [docSearchCurrent, setDocSearchCurrent] = useState(0);
+  const [docSearchSection, setDocSearchSection] = useState('');
+
   // Persist viewMode
   useEffect(() => {
     try { localStorage.setItem(VIEW_MODE_STORAGE_KEY, viewMode); } catch (e) { /* ignore */ }
@@ -687,6 +693,24 @@ export default function EmbedPdfViewerPage() {
     deleteBookmark,
     isLoading: annotationsLoading,
   } = usePDFAnnotations(canPersist ? selectedPdf!.id : null);
+
+  // ── Post message to beautify iframe (sidebar controls) ──
+  const sendBeautifyCmd = useCallback((msg: object) => {
+    beautifyIframeRef.current?.contentWindow?.postMessage(msg, '*');
+  }, []);
+
+  // Listen for state updates from beautify iframe
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      if (!e.data || typeof e.data !== 'object') return;
+      if (e.data.type === 'psak-search-state') {
+        setDocSearchCount(e.data.count ?? 0);
+        setDocSearchCurrent(e.data.current ?? 0);
+      }
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, []);
 
   // Source URLs
   const leftSourceUrl = manualUrl.trim() || selectedPdf?.file_url || "";
@@ -815,6 +839,18 @@ export default function EmbedPdfViewerPage() {
   const [rightFetchedHtml, setRightFetchedHtml] = useState<string | null>(null);
   const [rightFetchingHtml, setRightFetchingHtml] = useState(false);
   const rightIframeRef = useRef<HTMLIFrameElement>(null);
+
+  // ── Right pane edit mode ──
+  const [rightHtmlEditMode, setRightHtmlEditMode] = useState(false);
+
+  // ── Panel toolbar target (which side the icons affect) ──
+  const [toolbarTarget, setToolbarTarget] = useState<"left" | "right">("left");
+  const [iconBarPinned, setIconBarPinned] = useState(false);
+
+  // ── Column layout ──
+  const [columnCount, setColumnCount] = useState(1);
+  const [rightColumnCount, setRightColumnCount] = useState(1);
+  const [textColumnCount, setTextColumnCount] = useState(1);
 
   // ── Template switcher per pane ──
   const [leftTemplate, setLeftTemplate] = useState<string | null>(null);
@@ -1090,6 +1126,58 @@ export default function EmbedPdfViewerPage() {
       setIsSavingHtmlEmbed(false);
     }
   }, [psakData, fetchedHtml, selectedPdf?.title, addBook]);
+
+  // ── Right pane content helper ──
+  const getRightContent = useCallback((): { html: string; text: string; title: string } => {
+    const title = psakData?.title || selectedPdf?.title || "document";
+    const rDoc = rightIframeRef.current?.contentDocument;
+    if (rDoc?.body?.innerHTML) {
+      return { html: rDoc.documentElement.outerHTML, text: rDoc.body.innerText || "", title: `${title} (ימין)` };
+    }
+    return { html: rightFetchedHtml || "", text: "", title: `${title} (ימין)` };
+  }, [psakData?.title, selectedPdf?.title, rightFetchedHtml]);
+
+  const handleRightDownloadFormat = useCallback((format: "html" | "txt" | "docx" | "pdf") => {
+    const { html, text, title } = getRightContent();
+    const safeName = title.replace(/[/\\?%*:|"<>]/g, "_").slice(0, 80);
+    if (format === "html") {
+      const content = html || `<html dir="rtl"><head><meta charset="utf-8"><title>${title}</title></head><body style="font-family:serif;padding:40px;line-height:1.8;white-space:pre-wrap;">${text.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</body></html>`;
+      downloadBlob(content, `${safeName}.html`, "text/html;charset=utf-8");
+      toast.success("הקובץ הורד כ-HTML");
+    } else if (format === "txt") {
+      downloadBlob(text || "אין תוכן טקסט", `${safeName}.txt`, "text/plain;charset=utf-8");
+      toast.success("הקובץ הורד כטקסט");
+    } else if (format === "docx") {
+      const bodyContent = rightIframeRef.current?.contentDocument?.body?.innerHTML || text.replace(/\n/g, "<br>");
+      const wordHtml = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>${title}</title><!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml><![endif]--><style>body{font-family:'David Libre',David,serif;font-size:14pt;line-height:1.8;direction:rtl;padding:2cm;}h1,h2,h3{color:#0B1F5B;}</style></head><body dir="rtl">${bodyContent}</body></html>`;
+      const blob = new Blob(['\ufeff', wordHtml], { type: "application/msword" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url; a.download = `${safeName}.doc`; a.click();
+      URL.revokeObjectURL(url);
+      toast.success("הקובץ הורד כ-Word");
+    } else if (format === "pdf") {
+      const content = html || `<html dir="rtl"><head><meta charset="utf-8"><title>${title}</title><style>body{font-family:serif;padding:40px;line-height:1.8;}</style></head><body>${text.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>")}</body></html>`;
+      const win = window.open("", "_blank");
+      if (win) { win.document.write(content); win.document.close(); setTimeout(() => win.print(), 500); }
+      toast.info("שמור כ-PDF דרך חלון ההדפסה");
+    }
+  }, [getRightContent]);
+
+  const handleRightSaveHtmlEmbed = useCallback(async () => {
+    setIsSavingHtmlEmbed(true);
+    try {
+      const doc = rightIframeRef.current?.contentDocument;
+      const currentHtml = doc?.documentElement?.outerHTML || rightFetchedHtml || "";
+      const fileName = `html-embed/right-${Date.now()}.html`;
+      const blob = new Blob([currentHtml], { type: "text/html;charset=utf-8" });
+      await supabase.storage.from("psakei-din-files").upload(fileName, blob, { contentType: "text/html", upsert: true });
+      toast.success("מסמך צד ימין נשמר בענן");
+    } catch {
+      toast.error("שגיאה בשמירת מסמך צד ימין");
+    } finally {
+      setIsSavingHtmlEmbed(false);
+    }
+  }, [rightFetchedHtml]);
 
   // ── Duplicate & open in compare mode ──
   const handleDuplicateAndCompare = useCallback(async (source: 'beautify' | 'html-embed') => {
@@ -1599,7 +1687,10 @@ export default function EmbedPdfViewerPage() {
 
   // ─── Active panel state ──
   const [activePanel, setActivePanel] = useState<string | null>(null);
-  const togglePanel = (id: string) => setActivePanel(prev => prev === id ? null : id);
+  const togglePanel = (id: string) => setActivePanel(prev => {
+    if (prev === id) return iconBarPinned ? id : null;
+    return id;
+  });
 
   // ─── Render ────────────────────────────────────────────────
 
@@ -1747,6 +1838,7 @@ export default function EmbedPdfViewerPage() {
     { id: "bookmarks", icon: Bookmark, label: `סימניות (${bookmarks.length})`, badge: bookmarks.length > 0 ? bookmarks.length : undefined },
     { id: "stats", icon: BarChart3, label: "סטטיסטיקות", badge: undefined },
     ...(psakIdParam ? [{ id: "beautify", icon: Sparkles, label: "עצב פסק דין", badge: beautifiedHtml ? 1 : undefined }] : []),
+    ...(beautifiedHtml ? [{ id: "doc-search", icon: Search, label: "חיפוש במסמך", badge: undefined }] : []),
   ];
 
   // Hidden file input
@@ -1882,6 +1974,37 @@ export default function EmbedPdfViewerPage() {
                 )}
               </button>
             ))}
+            {/* L/R target toggle - only in split/compare mode */}
+            {viewMode !== "single" && (
+              <>
+                <div className="w-px h-4 bg-[#D4AF37]/30" />
+                <button
+                  onClick={() => setToolbarTarget(t => t === "left" ? "right" : "left")}
+                  className={`relative p-1.5 rounded-md transition-all ${
+                    toolbarTarget === "right"
+                      ? "bg-[#D4AF37] text-[#0B1F5B]"
+                      : "text-[#0B1F5B]/60 hover:bg-[#D4AF37]/15 hover:text-[#0B1F5B]"
+                  }`}
+                  title={`פעולות על צד ${toolbarTarget === "left" ? "שמאל" : "ימין"} — לחץ להחלפה`}
+                >
+                  <ArrowRightLeft className="h-4 w-4" />
+                  <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 text-[7px] font-bold leading-none">{toolbarTarget === "left" ? "ש" : "י"}</span>
+                </button>
+              </>
+            )}
+            {/* Pin/unpin sidebar */}
+            <div className="w-px h-4 bg-[#D4AF37]/30" />
+            <button
+              onClick={() => setIconBarPinned(p => !p)}
+              className={`p-1.5 rounded-md transition-all ${
+                iconBarPinned
+                  ? "bg-[#0B1F5B] text-white"
+                  : "text-[#0B1F5B]/60 hover:bg-[#D4AF37]/15 hover:text-[#0B1F5B]"
+              }`}
+              title={iconBarPinned ? "בטל הצמדת פאנל" : "הצמד פאנל"}
+            >
+              {iconBarPinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
+            </button>
           </div>
 
           {/* Fullscreen toggle */}
@@ -1923,9 +2046,20 @@ export default function EmbedPdfViewerPage() {
                 <h3 className="text-sm font-bold text-[#0B1F5B]">
                   {toolbarItems.find(t => t.id === activePanel)?.label}
                 </h3>
-                <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setActivePanel(null)}>
-                  <Trash2 className="h-3 w-3 text-[#0B1F5B]/40" />
-                </Button>
+                <div className="flex items-center gap-0.5">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className={`h-6 w-6 ${iconBarPinned ? "text-[#0B1F5B] bg-[#D4AF37]/20" : "text-[#0B1F5B]/40"}`}
+                    title={iconBarPinned ? "בטל הצמדת פאנל" : "הצמד פאנל פתוח"}
+                    onClick={() => setIconBarPinned(p => !p)}
+                  >
+                    {iconBarPinned ? <PinOff className="h-3 w-3" /> : <Pin className="h-3 w-3" />}
+                  </Button>
+                  <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setActivePanel(null)}>
+                    <Trash2 className="h-3 w-3 text-[#0B1F5B]/40" />
+                  </Button>
+                </div>
               </div>
 
               {/* ADD DOCUMENT (unified panel) */}
@@ -2285,6 +2419,73 @@ export default function EmbedPdfViewerPage() {
                   )}
                 </div>
               )}
+
+              {/* DOC SEARCH */}
+              {activePanel === "doc-search" && beautifiedHtml && (
+                <div className="space-y-3">
+                  <p className="text-xs font-semibold text-[#0B1F5B]">🔍 חיפוש במסמך המעוצב</p>
+                  <div className="flex gap-1 items-center">
+                    <Search className="h-3.5 w-3.5 text-[#D4AF37] flex-shrink-0" />
+                    <Input
+                      value={docSearchQuery}
+                      onChange={e => { setDocSearchQuery(e.target.value); sendBeautifyCmd({ cmd: 'search', query: e.target.value }); }}
+                      placeholder="חפש בתוך פסק הדין..."
+                      className="h-7 text-xs flex-1 border-[#D4AF37]/30 focus-visible:ring-[#D4AF37]"
+                      dir="rtl"
+                    />
+                  </div>
+                  {docSearchCount > 0 && (
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] text-[#0B1F5B]/60 flex-1">{docSearchCurrent}/{docSearchCount} תוצאות</span>
+                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => sendBeautifyCmd({ cmd: 'prev' })} title="קודם"><ChevronUp className="h-3 w-3" /></Button>
+                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => sendBeautifyCmd({ cmd: 'next' })} title="הבא"><ChevronDown className="h-3 w-3" /></Button>
+                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => { setDocSearchQuery(''); sendBeautifyCmd({ cmd: 'clear' }); setDocSearchCount(0); }} title="נקה"><X className="h-3 w-3" /></Button>
+                    </div>
+                  )}
+                  {docSearchQuery && docSearchCount === 0 && (
+                    <p className="text-[10px] text-red-500">לא נמצאו תוצאות</p>
+                  )}
+                  {psakData?.sections && psakData.sections.length > 0 && (
+                    <div>
+                      <p className="text-[10px] text-[#0B1F5B]/60 mb-1">חיפוש בסעיף:</p>
+                      <select
+                        value={docSearchSection}
+                        onChange={e => { setDocSearchSection(e.target.value); sendBeautifyCmd({ cmd: 'section', value: e.target.value }); }}
+                        className="w-full text-xs border rounded-md px-2 py-1 border-[#D4AF37]/30 text-[#0B1F5B] bg-white"
+                        dir="rtl"
+                      >
+                        <option value="">כל המסמך</option>
+                        {psakData.sections.map((sec, i) => (
+                          <option key={i} value={`sec-${i}`}>{sec.title}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  <Separator className="bg-[#D4AF37]/20" />
+                  <div className="flex gap-1">
+                    <Button size="sm" variant="outline" className="text-xs h-7 border-[#D4AF37]/40 flex-1" onClick={() => sendBeautifyCmd({ cmd: 'prev-sec' })}>← סעיף קודם</Button>
+                    <Button size="sm" variant="outline" className="text-xs h-7 border-[#D4AF37]/40 flex-1" onClick={() => sendBeautifyCmd({ cmd: 'next-sec' })}>סעיף הבא →</Button>
+                  </div>
+                  <div className="flex gap-1">
+                    <Button size="sm" variant="ghost" className="text-xs h-7 flex-1 border border-[#D4AF37]/20" onClick={() => sendBeautifyCmd({ cmd: 'expand' })}>פתח הכל</Button>
+                    <Button size="sm" variant="ghost" className="text-xs h-7 flex-1 border border-[#D4AF37]/20" onClick={() => sendBeautifyCmd({ cmd: 'collapse' })}>כווץ הכל</Button>
+                  </div>
+                  {psakData && (
+                    <>
+                      <Separator className="bg-[#D4AF37]/20" />
+                      <p className="text-[10px] font-semibold text-[#0B1F5B]/70">📑 תוכן עניינים</p>
+                      <div className="space-y-0.5 max-h-64 overflow-y-auto">
+                        <button onClick={() => sendBeautifyCmd({ cmd: 'jump', anchor: 'sec-details' })} className="w-full text-right text-xs px-2 py-1 rounded hover:bg-[#D4AF37]/10 text-[#0B1F5B] block">פרטי התיק</button>
+                        {psakData.summary && <button onClick={() => sendBeautifyCmd({ cmd: 'jump', anchor: 'sec-summary' })} className="w-full text-right text-xs px-2 py-1 rounded hover:bg-[#D4AF37]/10 text-[#0B1F5B] block">תקציר</button>}
+                        {psakData.sections.map((sec, i) => (
+                          <button key={i} onClick={() => sendBeautifyCmd({ cmd: 'jump', anchor: `sec-${i}` })} className="w-full text-right text-xs px-2 py-1 rounded hover:bg-[#D4AF37]/10 text-[#0B1F5B] block">{sec.title}</button>
+                        ))}
+                        {(psakData.judges?.length ?? 0) > 0 && <button onClick={() => sendBeautifyCmd({ cmd: 'jump', anchor: 'sec-signature' })} className="w-full text-right text-xs px-2 py-1 rounded hover:bg-[#D4AF37]/10 text-[#0B1F5B] block">חתימה</button>}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           </aside>
         )}
@@ -2442,6 +2643,29 @@ export default function EmbedPdfViewerPage() {
                         <p className="text-[10px] text-[#0B1F5B]/50 mt-1.5 text-center">0px — 40px</p>
                       </PopoverContent>
                     </Popover>
+                    {/* Column layout */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button size="icon" variant="ghost" className={`h-7 w-7 ${columnCount > 1 ? 'bg-[#D4AF37]/20' : ''}`} title="עמודות"><Columns className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-48 p-3" align="start" dir="rtl">
+                        <p className="text-xs font-semibold text-[#0B1F5B] mb-2">מספר עמודות</p>
+                        <div className="flex gap-1.5">
+                          {[1, 2, 3, 4].map(n => (
+                            <button key={n} onClick={() => {
+                              setColumnCount(n);
+                              const doc = beautifyIframeRef.current?.contentDocument;
+                              if (doc?.body) {
+                                doc.body.style.columnCount = String(n);
+                                doc.body.style.columnGap = n > 1 ? '24px' : '';
+                                doc.body.style.columnRule = n > 1 ? '1px solid #D4AF3740' : '';
+                              }
+                            }} className={`flex-1 h-8 rounded-md border text-sm font-bold transition-colors ${columnCount === n ? 'bg-[#0B1F5B] text-white border-[#0B1F5B]' : 'border-[#D4AF37]/40 text-[#0B1F5B] hover:bg-[#D4AF37]/10'}`}>{n}</button>
+                          ))}
+                        </div>
+                        <p className="text-[10px] text-[#0B1F5B]/50 mt-2 text-center">בחר כמה עמודות להציג</p>
+                      </PopoverContent>
+                    </Popover>
 
                     <div className="w-px h-5 bg-[#D4AF37]/20" />
                     {/* Template Switcher */}
@@ -2520,6 +2744,21 @@ export default function EmbedPdfViewerPage() {
                     <div className="w-px h-5 bg-[#D4AF37]/20" />
                     <Button size="icon" variant="ghost" className={`h-7 w-7 ${textFormat.showLineNumbers ? "bg-[#D4AF37]/20" : ""}`} onClick={() => updateFormat({ showLineNumbers: !textFormat.showLineNumbers })}><ListOrdered className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
                     <Button size="icon" variant="ghost" className={`h-7 w-7 ${textFormat.wordWrap ? "bg-[#D4AF37]/20" : ""}`} onClick={() => updateFormat({ wordWrap: !textFormat.wordWrap })}><WrapText className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                    {/* Columns picker for text view */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button size="icon" variant="ghost" className={`h-7 w-7 ${textColumnCount > 1 ? 'bg-[#D4AF37]/20' : ''}`} title="עמודות"><Columns className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-48 p-3" align="start" dir="rtl">
+                        <p className="text-xs font-semibold text-[#0B1F5B] mb-2">מספר עמודות</p>
+                        <div className="flex gap-1.5">
+                          {[1, 2, 3, 4].map(n => (
+                            <button key={n} onClick={() => setTextColumnCount(n)} className={`flex-1 h-8 rounded-md border text-sm font-bold transition-colors ${textColumnCount === n ? 'bg-[#0B1F5B] text-white border-[#0B1F5B]' : 'border-[#D4AF37]/40 text-[#0B1F5B] hover:bg-[#D4AF37]/10'}`}>{n}</button>
+                          ))}
+                        </div>
+                        <p className="text-[10px] text-[#0B1F5B]/50 mt-2 text-center">בחר כמה עמודות להציג</p>
+                      </PopoverContent>
+                    </Popover>
                     <Button size="icon" variant="ghost" className={`h-7 w-7 ${showTextSearch ? "bg-[#D4AF37]/20" : ""}`} onClick={() => setShowTextSearch(v => !v)}><Search className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
 
                     {!isTextEditing ? (
@@ -2771,6 +3010,29 @@ export default function EmbedPdfViewerPage() {
                         </div>
                       </PopoverContent>
                     </Popover>
+                    {/* Column layout */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button size="icon" variant="ghost" className={`h-7 w-7 ${columnCount > 1 ? 'bg-[#D4AF37]/20' : ''}`} title="עמודות"><Columns className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-48 p-3" align="start" dir="rtl">
+                        <p className="text-xs font-semibold text-[#0B1F5B] mb-2">מספר עמודות</p>
+                        <div className="flex gap-1.5">
+                          {[1, 2, 3, 4].map(n => (
+                            <button key={n} onClick={() => {
+                              setColumnCount(n);
+                              const doc = htmlEmbedIframeRef.current?.contentDocument;
+                              if (doc?.body) {
+                                doc.body.style.columnCount = String(n);
+                                doc.body.style.columnGap = n > 1 ? '24px' : '';
+                                doc.body.style.columnRule = n > 1 ? '1px solid #D4AF3740' : '';
+                              }
+                            }} className={`flex-1 h-8 rounded-md border text-sm font-bold transition-colors ${columnCount === n ? 'bg-[#0B1F5B] text-white border-[#0B1F5B]' : 'border-[#D4AF37]/40 text-[#0B1F5B] hover:bg-[#D4AF37]/10'}`}>{n}</button>
+                          ))}
+                        </div>
+                        <p className="text-[10px] text-[#0B1F5B]/50 mt-2 text-center">בחר כמה עמודות להציג</p>
+                      </PopoverContent>
+                    </Popover>
 
                     <div className="w-px h-5 bg-[#D4AF37]/20" />
                     {/* Template Switcher */}
@@ -2896,7 +3158,7 @@ export default function EmbedPdfViewerPage() {
                             />
                           </div>
                         ) : (
-                          <div ref={textViewerRef} onMouseUp={() => handleTextSelection('text')} className={`p-4 text-[#0B1F5B] ${textFormat.fontFamily} select-text`} dir="rtl" style={{ fontSize: `${textFormat.fontSize}px`, lineHeight: textFormat.lineHeight, textAlign: textFormat.textAlign, fontWeight: textFormat.isBold ? "bold" : "normal", fontStyle: textFormat.isItalic ? "italic" : "normal", textDecoration: textFormat.isUnderline ? "underline" : "none", whiteSpace: textFormat.wordWrap ? "pre-wrap" : "pre" }}>
+                          <div ref={textViewerRef} onMouseUp={() => handleTextSelection('text')} className={`p-4 text-[#0B1F5B] ${textFormat.fontFamily} select-text`} dir="rtl" style={{ fontSize: `${textFormat.fontSize}px`, lineHeight: textFormat.lineHeight, textAlign: textFormat.textAlign, fontWeight: textFormat.isBold ? "bold" : "normal", fontStyle: textFormat.isItalic ? "italic" : "normal", textDecoration: textFormat.isUnderline ? "underline" : "none", whiteSpace: textFormat.wordWrap ? "pre-wrap" : "pre", columnCount: textColumnCount > 1 ? textColumnCount : undefined, columnGap: textColumnCount > 1 ? '24px' : undefined, columnRule: textColumnCount > 1 ? '1px solid #D4AF3740' : undefined }}>
                             {textFormat.showLineNumbers ? (
                               <div className="flex">
                                 <div className="pr-3 pl-3 border-l-2 border-[#D4AF37]/20 text-[#0B1F5B]/25 text-right select-none" style={{ fontSize: `${Math.max(10, textFormat.fontSize - 2)}px`, minWidth: "3rem" }}>
@@ -3090,9 +3352,165 @@ export default function EmbedPdfViewerPage() {
             rightSourceUrl ? (
               <div className={`${viewMode !== "split" ? "h-[400px]" : ""} border-t-2 sm:border-t-0 border-[#D4AF37]/30 relative bg-[#f8f8f6] flex flex-col min-w-0`} style={viewMode === "split" ? { flex: `${100 - splitRatio} 1 0%` } : {}}>
                 {/* ── Right pane toolbar ── */}
-                <div className="flex-shrink-0 bg-white/80 backdrop-blur-sm border-b border-[#D4AF37]/20 px-2 py-1 flex items-center gap-1">
-                  <span className="text-[10px] text-[#0B1F5B]/50 truncate flex-1" dir="ltr">{rightSourceUrl.split('/').pop()?.split('?')[0] || 'מסמך'}</span>
-                  {/* Template switcher */}
+                <div className="flex-shrink-0 bg-white/80 backdrop-blur-sm border-b border-[#D4AF37]/20 px-2 py-1 flex items-center gap-1 flex-wrap">
+                  <span className="text-[10px] text-[#0B1F5B]/50 truncate max-w-[100px]" dir="ltr">{rightSourceUrl.split('/').pop()?.split('?')[0] || 'מסמך'}</span>
+                  <div className="w-px h-5 bg-[#D4AF37]/20" />
+
+                  {rightContentType === 'html-embed' && rightFetchedHtml && (
+                    <>
+                      <Button size="sm" variant={rightHtmlEditMode ? "default" : "outline"} className={`h-7 text-xs gap-1 ${rightHtmlEditMode ? "bg-[#D4AF37] text-[#0B1F5B]" : "border-[#D4AF37]/40"}`} onClick={() => {
+                        const next = !rightHtmlEditMode;
+                        setRightHtmlEditMode(next);
+                        const doc = rightIframeRef.current?.contentDocument;
+                        if (doc?.body) doc.designMode = next ? "on" : "off";
+                      }}>
+                        <Scissors className="h-3 w-3" />
+                        {rightHtmlEditMode ? "עריכה פעיל" : "ערוך"}
+                      </Button>
+
+                      {rightHtmlEditMode && (
+                        <>
+                          <div className="w-px h-5 bg-[#D4AF37]/20" />
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button size="icon" variant="ghost" className="h-7 w-7" title="עיצוב טקסט"><Type className="h-4 w-4 text-[#D4AF37]" /></Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-2" align="start" side="bottom">
+                              <TypographyPopover iframeRef={rightIframeRef} source="html-embed-right" />
+                            </PopoverContent>
+                          </Popover>
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { rightIframeRef.current?.contentDocument?.execCommand("fontSize", false, "2"); }}><AArrowDown className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { rightIframeRef.current?.contentDocument?.execCommand("fontSize", false, "5"); }}><AArrowUp className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+
+                          <div className="w-px h-5 bg-[#D4AF37]/20" />
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { rightIframeRef.current?.contentDocument?.execCommand("bold"); }}><Bold className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { rightIframeRef.current?.contentDocument?.execCommand("italic"); }}><Italic className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { rightIframeRef.current?.contentDocument?.execCommand("underline"); }}><Underline className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+
+                          <div className="w-px h-5 bg-[#D4AF37]/20" />
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { rightIframeRef.current?.contentDocument?.execCommand("justifyRight"); }}><AlignRight className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { rightIframeRef.current?.contentDocument?.execCommand("justifyCenter"); }}><AlignCenter className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { rightIframeRef.current?.contentDocument?.execCommand("justifyLeft"); }}><AlignLeft className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { rightIframeRef.current?.contentDocument?.execCommand("justifyFull"); }}><AlignJustify className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+
+                          <div className="w-px h-5 bg-[#D4AF37]/20" />
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button size="icon" variant="ghost" className="h-7 w-7"><Highlighter className="h-3.5 w-3.5 text-[#D4AF37]" /></Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-2" align="start">
+                              <div className="flex gap-1.5">
+                                {HIGHLIGHT_COLORS.map((c) => (
+                                  <button key={c.value} className="w-6 h-6 rounded-full border-2 border-white shadow-sm hover:scale-125 transition-transform" style={{ backgroundColor: c.value }} onClick={() => {
+                                    rightIframeRef.current?.contentDocument?.execCommand("hiliteColor", false, c.value);
+                                  }} />
+                                ))}
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button size="icon" variant="ghost" className="h-7 w-7"><Palette className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-2" align="start">
+                              <div className="flex gap-1.5">
+                                {["#000000", "#0B1F5B", "#b91c1c", "#15803d", "#7e22ce", "#b45309", "#D4AF37"].map((color) => (
+                                  <button key={color} className="w-6 h-6 rounded-full border-2 border-white shadow-sm hover:scale-125 transition-transform" style={{ backgroundColor: color }} onClick={() => {
+                                    rightIframeRef.current?.contentDocument?.execCommand("foreColor", false, color);
+                                  }} />
+                                ))}
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+
+                          <div className="w-px h-5 bg-[#D4AF37]/20" />
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { rightIframeRef.current?.contentDocument?.execCommand("removeFormat"); }} title="הסר עיצוב"><RotateCcw className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { rightIframeRef.current?.contentDocument?.execCommand("undo"); }} title="בטל"><RefreshCw className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                        </>
+                      )}
+
+                      <div className="w-px h-5 bg-[#D4AF37]/20" />
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
+                        const sel = rightIframeRef.current?.contentDocument?.getSelection()?.toString() || rightFetchedHtml || "";
+                        if (sel) { navigator.clipboard.writeText(sel); toast.success("הועתק"); }
+                      }} title="העתק"><Copy className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
+                        const html = rightIframeRef.current?.contentDocument?.documentElement?.outerHTML || rightFetchedHtml;
+                        if (html) { const win = window.open("", "_blank"); if (win) { win.document.write(html); win.document.close(); win.print(); } }
+                      }} title="הדפסה"><Printer className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+
+                      <div className="w-px h-5 bg-[#D4AF37]/20" />
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleRightSaveHtmlEmbed} disabled={isSavingHtmlEmbed} title="שמור (ענן)">
+                        {isSavingHtmlEmbed ? <Loader2Icon className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5 text-[#0B1F5B]" />}
+                      </Button>
+                      {/* Download in multiple formats */}
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button size="icon" variant="ghost" className="h-7 w-7" title="הורד בפורמטים שונים"><FileDown className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-48 p-1.5" align="end" dir="rtl">
+                          <p className="text-[10px] font-semibold text-[#0B1F5B]/70 px-2 py-1">הורדה למחשב</p>
+                          <button className="w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2" onClick={() => handleRightDownloadFormat("html")}>📄 HTML</button>
+                          <button className="w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2" onClick={() => handleRightDownloadFormat("txt")}>📝 טקסט (TXT)</button>
+                          <button className="w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2" onClick={() => handleRightDownloadFormat("docx")}>📘 Word (DOC)</button>
+                          <button className="w-full text-right text-xs px-2 py-1.5 rounded hover:bg-[#D4AF37]/10 flex items-center gap-2" onClick={() => handleRightDownloadFormat("pdf")}>📕 PDF (הדפסה)</button>
+                        </PopoverContent>
+                      </Popover>
+                      {/* Line spacing slider */}
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button size="icon" variant="ghost" className="h-7 w-7" title="מרווח שורות"><MoveVertical className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-56 p-3" align="end" dir="rtl">
+                          <p className="text-xs font-semibold text-[#0B1F5B] mb-2">מרווח שורות</p>
+                          <div className="space-y-3">
+                            <div>
+                              <label className="text-[10px] text-[#0B1F5B]/60">גובה שורה</label>
+                              <input type="range" min="1" max="3" step="0.1" defaultValue="1.8" className="w-full accent-[#D4AF37]" onChange={e => {
+                                const doc = rightIframeRef.current?.contentDocument;
+                                if (doc?.body) doc.body.style.lineHeight = e.target.value;
+                              }} />
+                            </div>
+                            <div>
+                              <label className="text-[10px] text-[#0B1F5B]/60">רווח בין פסקאות (px)</label>
+                              <input type="range" min="0" max="40" step="2" defaultValue="10" className="w-full accent-[#D4AF37]" onChange={e => {
+                                const doc = rightIframeRef.current?.contentDocument;
+                                if (doc) {
+                                  const paras = doc.querySelectorAll('p, div');
+                                  paras.forEach(p => (p as HTMLElement).style.marginBottom = e.target.value + 'px');
+                                }
+                              }} />
+                            </div>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                      {/* Column layout */}
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button size="icon" variant="ghost" className={`h-7 w-7 ${rightColumnCount > 1 ? 'bg-[#D4AF37]/20' : ''}`} title="עמודות"><Columns className="h-3.5 w-3.5 text-[#0B1F5B]" /></Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-48 p-3" align="end" dir="rtl">
+                          <p className="text-xs font-semibold text-[#0B1F5B] mb-2">מספר עמודות</p>
+                          <div className="flex gap-1.5">
+                            {[1, 2, 3, 4].map(n => (
+                              <button key={n} onClick={() => {
+                                setRightColumnCount(n);
+                                const doc = rightIframeRef.current?.contentDocument;
+                                if (doc?.body) {
+                                  doc.body.style.columnCount = String(n);
+                                  doc.body.style.columnGap = n > 1 ? '24px' : '';
+                                  doc.body.style.columnRule = n > 1 ? '1px solid #D4AF3740' : '';
+                                }
+                              }} className={`flex-1 h-8 rounded-md border text-sm font-bold transition-colors ${rightColumnCount === n ? 'bg-[#0B1F5B] text-white border-[#0B1F5B]' : 'border-[#D4AF37]/40 text-[#0B1F5B] hover:bg-[#D4AF37]/10'}`}>{n}</button>
+                            ))}
+                          </div>
+                          <p className="text-[10px] text-[#0B1F5B]/50 mt-2 text-center">בחר כמה עמודות להציג</p>
+                        </PopoverContent>
+                      </Popover>
+                    </>
+                  )}
+
+                  {/* Template switcher - always visible */}
                   <Popover>
                     <PopoverTrigger asChild>
                       <button className="p-1 rounded text-[#0B1F5B]/50 hover:text-[#D4AF37] hover:bg-[#D4AF37]/10 transition-colors" title="החלף תבנית עיצוב">
