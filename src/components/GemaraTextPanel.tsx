@@ -640,16 +640,16 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
         {sep}
 
         {/* Text Formatting: Bold, Italic, Underline, Strikethrough */}
-        <Button variant={textSettings.isBold ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => updateTextSetting('isBold', !textSettings.isBold)} title="הדגשה">
+        <Button variant={textSettings.isBold ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onMouseDown={e => e.preventDefault()} onClick={() => { if (textEditMode) textIframeRef.current?.contentDocument?.execCommand('bold'); else updateTextSetting('isBold', !textSettings.isBold); }} title="הדגשה">
           <Bold className="h-3.5 w-3.5" />
         </Button>
-        <Button variant={textSettings.isItalic ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => updateTextSetting('isItalic', !textSettings.isItalic)} title="נטוי">
+        <Button variant={textSettings.isItalic ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onMouseDown={e => e.preventDefault()} onClick={() => { if (textEditMode) textIframeRef.current?.contentDocument?.execCommand('italic'); else updateTextSetting('isItalic', !textSettings.isItalic); }} title="נטוי">
           <Italic className="h-3.5 w-3.5" />
         </Button>
-        <Button variant={textSettings.isUnderline ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => updateTextSetting('isUnderline', !textSettings.isUnderline)} title="קו תחתון">
+        <Button variant={textSettings.isUnderline ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onMouseDown={e => e.preventDefault()} onClick={() => { if (textEditMode) textIframeRef.current?.contentDocument?.execCommand('underline'); else updateTextSetting('isUnderline', !textSettings.isUnderline); }} title="קו תחתון">
           <Underline className="h-3.5 w-3.5" />
         </Button>
-        <Button variant={textSettings.isStrikethrough ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => updateTextSetting('isStrikethrough', !textSettings.isStrikethrough)} title="קו חוצה">
+        <Button variant={textSettings.isStrikethrough ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onMouseDown={e => e.preventDefault()} onClick={() => { if (textEditMode) textIframeRef.current?.contentDocument?.execCommand('strikeThrough'); else updateTextSetting('isStrikethrough', !textSettings.isStrikethrough); }} title="קו חוצה">
           <Strikethrough className="h-3.5 w-3.5" />
         </Button>
 
