@@ -324,13 +324,6 @@ export default function EmbeddedDocViewer({ url, title, psakData, onClose, onSwi
   const handleClearNotes = useCallback(async () => {
     setNotes("");
     try { localStorage.removeItem(`edv-notes-${url}`); } catch { /* ignore */ }
-    try {
-      if (notesRecordId) {
-        await supabase.from("psak_din_notes").delete().eq("id", notesRecordId);
-        setNotesRecordId(null);
-      }
-    } catch {
-      // Ignore remote clear errors, local clear already done
     }
     toast("הערות נמחקו");
   }, [url, notesRecordId]);
