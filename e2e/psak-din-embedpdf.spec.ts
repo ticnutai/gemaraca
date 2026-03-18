@@ -8,7 +8,7 @@ async function goHome(page: Page) {
 }
 
 async function openPsakeiDinTab(page: Page) {
-  const btn = page.getByRole("button", { name: /פסקי דין/ });
+  const btn = page.getByRole("button", { name: "פסקי דין", exact: true }).first();
   await btn.waitFor({ state: "attached", timeout: 10_000 });
   await btn.evaluate((el) => {
     el.scrollIntoView({ block: "center" });
