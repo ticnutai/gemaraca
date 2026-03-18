@@ -304,6 +304,16 @@ const SEARCH_WIDGET_SCRIPT = `
 
   if (!input || !prevBtn || !nextBtn || !clearBtn || !countEl || !exactEl || !normalizedEl || !sectionFilterEl) return;
 
+  // In iframe context: hide widget so parent sidebar controls take over
+  if (window.parent !== window) {
+    var _sw = document.querySelector('.search-widget');
+    if (_sw) _sw.style.display = 'none';
+  }
+
+  function postState() {
+    try { window.parent.postMessage({ type: 'psak-search-state', count: hits.length, current: hits.length ? activeIndex + 1 : 0 }, '*'); } catch (e) {}
+  }
+
   var lastScrollY = 0;
   var hits = [];
   var activeIndex = -1;
@@ -341,6 +351,7 @@ const SEARCH_WIDGET_SCRIPT = `
     hits = [];
     activeIndex = -1;
     countEl.textContent = '0/0';
+    postState();
   }
 
   function collectTextNodes(node) {
@@ -425,6 +436,7 @@ const SEARCH_WIDGET_SCRIPT = `
     current.classList.add('active-hit');
     current.scrollIntoView({ behavior: 'auto', block: 'center' });
     countEl.textContent = String(activeIndex + 1) + '/' + String(hits.length);
+    postState();
   }
 
   function updateActiveToc() {
@@ -471,7 +483,7 @@ const SEARCH_WIDGET_SCRIPT = `
   }
 
   document.querySelectorAll('.toc-link').forEach(function (link) {
-    link.addEventListener('click', function (event) {
+    link.addEventListener('mousedown', function (event) {
       var href = link.getAttribute('href') || '';
       if (!href.startsWith('#')) return;
       var id = href.slice(1);
@@ -549,6 +561,37 @@ const SEARCH_WIDGET_SCRIPT = `
       try { localStorage.setItem(key, notesEl.value || ''); } catch (e) { }
     });
   }
+
+  // Listen for commands from parent frame (sidebar controls)
+  window.addEventListener('message', function (ev) {
+    if (!ev.data || typeof ev.data !== 'object') return;
+    var c = ev.data.cmd;
+    if (!c) return;
+    if (c === 'search') {
+      if (input) { input.value = ev.data.query || ''; highlightTerm(input.value.trim()); }
+    } else if (c === 'next') {
+      focusHit(activeIndex + 1);
+    } else if (c === 'prev') {
+      focusHit(activeIndex - 1);
+    } else if (c === 'clear') {
+      if (input) input.value = '';
+      clearHighlights();
+    } else if (c === 'jump') {
+      if (ev.data.anchor) jumpToAnchor(ev.data.anchor);
+    } else if (c === 'expand') {
+      document.querySelectorAll('.doc-section-content').forEach(function (el) { el.classList.remove('section-collapsed'); });
+    } else if (c === 'collapse') {
+      document.querySelectorAll('.doc-section-content').forEach(function (el) { el.classList.add('section-collapsed'); });
+    } else if (c === 'prev-sec') {
+      if (!allSecAnchors.length) return;
+      var pidx = Math.max(0, currentSectionIndex() - 1);
+      jumpToAnchor(allSecAnchors[pidx].id);
+    } else if (c === 'next-sec') {
+      if (!allSecAnchors.length) return;
+      var nidx = Math.min(allSecAnchors.length - 1, currentSectionIndex() + 1);
+      jumpToAnchor(allSecAnchors[nidx].id);
+    }
+  });
 
   document.addEventListener('scroll', updateActiveToc, { passive: true });
   updateActiveToc();
