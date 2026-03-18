@@ -307,33 +307,11 @@ export default function EmbeddedDocViewer({ url, title, psakData, onClose, onSwi
   }, [url, title]);
 
   useEffect(() => {
-    let active = true;
-    const loadNotes = async () => {
-      if (!psakData?.id) return;
-      try {
-        const { data, error } = await supabase
-          .from("psak_din_notes")
-          .select("id, note_text")
-          .eq("psak_din_id", psakData.id)
-          .order("updated_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (error || !active) return;
-        if (data?.note_text) {
-          setNotes(data.note_text);
-          setNotesRecordId(data.id);
-        }
-      } catch {
-        // Keep local fallback silently
-      }
-    };
-
-    void loadNotes();
-    return () => {
-      active = false;
-    };
-  }, [psakData?.id]);
+    try {
+      const saved = localStorage.getItem(`edv-notes-${url}`);
+      if (saved) setNotes(saved);
+    } catch { /* ignore */ }
+  }, [url]);
 
   // Notes
   const handleSaveNotes = useCallback(async () => {
