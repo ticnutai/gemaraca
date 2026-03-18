@@ -1,9 +1,12 @@
 import { useState, useMemo, memo } from 'react';
+import { Pin, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import RefCard from './RefCard';
 import { TalmudRefWithPsak, TRACTATES, toHebrewDaf, ValidationStatus } from './types';
+import { usePinnedItems } from '@/hooks/usePinnedItems';
 
 interface Props {
   grouped: Record<string, TalmudRefWithPsak[]>;
@@ -97,6 +100,7 @@ export default memo(function GenealogyTreeView({ grouped, onValidate, onClickRef
   const [expandedTractate, setExpandedTractate] = useState<string | null>(null);
   const [expandedDaf, setExpandedDaf] = useState<string | null>(null);
   const [expandedAmud, setExpandedAmud] = useState<string | null>(null);
+  const { togglePin, toggleFavorite, isPinned, isFavorite } = usePinnedItems();
 
   const sortedTractates = useMemo(() =>
     Object.keys(grouped).sort((a, b) => {
@@ -164,6 +168,45 @@ export default memo(function GenealogyTreeView({ grouped, onValidate, onClickRef
                       {refs.length}
                     </Badge>
                     <span className="text-[9px] text-muted-foreground">{sortedDafs.length} דפים</span>
+                  </div>
+                  {/* Pin & Favorite buttons */}
+                  <div className="flex items-center justify-center gap-1 mt-1" onClick={e => e.stopPropagation()}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => togglePin({ type: 'tractate', id: tractate, label: tractate, tractate, refCount: refs.length, color })}
+                          className={cn(
+                            'p-0.5 rounded transition-all',
+                            isPinned(tractate, 'tractate')
+                              ? 'text-primary'
+                              : 'text-muted-foreground/40 hover:text-primary/70'
+                          )}
+                        >
+                          <Pin className={cn('h-3 w-3', isPinned(tractate, 'tractate') && 'fill-current')} />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="text-[10px]">
+                        {isPinned(tractate, 'tractate') ? 'הסר הצמדה' : 'הצמד לדף הבית'}
+                      </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => toggleFavorite({ type: 'tractate', id: tractate, label: tractate, tractate, refCount: refs.length, color })}
+                          className={cn(
+                            'p-0.5 rounded transition-all',
+                            isFavorite(tractate, 'tractate')
+                              ? 'text-amber-500'
+                              : 'text-muted-foreground/40 hover:text-amber-400'
+                          )}
+                        >
+                          <Star className={cn('h-3 w-3', isFavorite(tractate, 'tractate') && 'fill-current')} />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="text-[10px]">
+                        {isFavorite(tractate, 'tractate') ? 'הסר מועדף' : 'הוסף למועדפים'}
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                   <div className={cn(
                     'text-[10px] mt-0.5 transition-transform',
