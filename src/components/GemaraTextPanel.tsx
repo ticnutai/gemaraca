@@ -581,6 +581,26 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
     <div className="space-y-0">
       {/* ═══ Main Toolbar Row ═══ */}
       <div className="flex items-center gap-0.5 flex-wrap p-2 bg-muted/50 rounded-t-lg border border-b-0">
+        {/* Edit Mode Toggle */}
+        <Button
+          size="sm"
+          variant={textEditMode ? "default" : "outline"}
+          className={`h-7 text-xs gap-1 ${textEditMode ? "bg-primary text-primary-foreground" : ""}`}
+          onClick={() => {
+            const next = !textEditMode;
+            setTextEditMode(next);
+            setTimeout(() => {
+              const doc = textIframeRef.current?.contentDocument;
+              if (doc?.body) doc.designMode = next ? "on" : "off";
+            }, 100);
+          }}
+        >
+          <Scissors className="h-3 w-3" />
+          {textEditMode ? "מצב עריכה פעיל" : "ערוך"}
+        </Button>
+
+        {sep}
+
         {/* Hint */}
         <div className="flex items-center gap-1 text-xs text-muted-foreground border-l border-border pl-2 ml-1">
           <MousePointer2 className="h-3 w-3" />
