@@ -656,16 +656,16 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
         {sep}
 
         {/* Alignment: Right, Center, Left, Justify */}
-        <Button variant={textSettings.textAlign === 'right' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => updateTextSetting('textAlign', 'right')} title="ימין">
+        <Button variant={textSettings.textAlign === 'right' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onMouseDown={e => e.preventDefault()} onClick={() => { if (textEditMode) textIframeRef.current?.contentDocument?.execCommand('justifyRight'); updateTextSetting('textAlign', 'right'); }} title="ימין">
           <AlignRight className="h-3.5 w-3.5" />
         </Button>
-        <Button variant={textSettings.textAlign === 'center' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => updateTextSetting('textAlign', 'center')} title="מרכז">
+        <Button variant={textSettings.textAlign === 'center' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onMouseDown={e => e.preventDefault()} onClick={() => { if (textEditMode) textIframeRef.current?.contentDocument?.execCommand('justifyCenter'); updateTextSetting('textAlign', 'center'); }} title="מרכז">
           <AlignCenter className="h-3.5 w-3.5" />
         </Button>
-        <Button variant={textSettings.textAlign === 'left' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => updateTextSetting('textAlign', 'left')} title="שמאל">
+        <Button variant={textSettings.textAlign === 'left' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onMouseDown={e => e.preventDefault()} onClick={() => { if (textEditMode) textIframeRef.current?.contentDocument?.execCommand('justifyLeft'); updateTextSetting('textAlign', 'left'); }} title="שמאל">
           <AlignLeft className="h-3.5 w-3.5" />
         </Button>
-        <Button variant={textSettings.textAlign === 'justify' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => updateTextSetting('textAlign', 'justify')} title="מלא">
+        <Button variant={textSettings.textAlign === 'justify' ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onMouseDown={e => e.preventDefault()} onClick={() => { if (textEditMode) textIframeRef.current?.contentDocument?.execCommand('justifyFull'); updateTextSetting('textAlign', 'justify'); }} title="מלא">
           <AlignJustify className="h-3.5 w-3.5" />
         </Button>
 
