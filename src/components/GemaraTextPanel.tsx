@@ -15,7 +15,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Loader2, BookOpen, Image, FileText, ExternalLink, Eye, Check, ZoomIn, ZoomOut, Type, AArrowUp, AArrowDown, AlignRight, AlignCenter, AlignLeft, AlignJustify, Bold, Italic, Underline, Strikethrough, Highlighter, MousePointer2, Database, Copy, Printer, MoveVertical, FileDown, Save, Palette, RotateCcw, Scissors, Search } from "lucide-react";
+import { Loader2, BookOpen, Image, FileText, ExternalLink, Eye, Check, ZoomIn, ZoomOut, Type, AArrowUp, AArrowDown, AlignRight, AlignCenter, AlignLeft, AlignJustify, Bold, Italic, Underline, Strikethrough, Highlighter, MousePointer2, Database, Copy, Printer, MoveVertical, FileDown, Save, Palette, RotateCcw, Scissors, Search, Columns2, Columns3 } from "lucide-react";
+import FloatingTextToolbar from "./FloatingTextToolbar";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { toast as sonnerToast } from "sonner";
@@ -139,6 +140,7 @@ interface TextSettings {
   highlightColor: string;
   textColor: string;
   lineHeight: number;
+  columns: 1 | 2 | 3;
 }
 
 const defaultTextSettings: TextSettings = {
@@ -152,6 +154,7 @@ const defaultTextSettings: TextSettings = {
   highlightColor: 'bg-transparent',
   textColor: '',
   lineHeight: 1.8,
+  columns: 1 as 1 | 2 | 3,
 };
 
 export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Batra" }: GemaraTextPanelProps) {
@@ -175,6 +178,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   });
   const { toast } = useToast();
   const textIframeRef = useRef<HTMLIFrameElement>(null);
+  const textContentRef = useRef<HTMLDivElement>(null);
   const [textEditMode, setTextEditMode] = useState(false);
 
   // Cloud editor state
@@ -755,6 +759,19 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
 
         {sep}
 
+        {/* Columns */}
+        <Button variant={textSettings.columns === 1 ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => updateTextSetting('columns', 1)} title="עמודה אחת">
+          <FileText className="h-3.5 w-3.5" />
+        </Button>
+        <Button variant={textSettings.columns === 2 ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => updateTextSetting('columns', 2)} title="שתי עמודות">
+          <Columns2 className="h-3.5 w-3.5" />
+        </Button>
+        <Button variant={textSettings.columns === 3 ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => updateTextSetting('columns', 3)} title="שלוש עמודות">
+          <Columns3 className="h-3.5 w-3.5" />
+        </Button>
+
+        {sep}
+
         {/* Copy */}
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleCopyText} title="העתק">
           <Copy className="h-3.5 w-3.5" />
@@ -1154,7 +1171,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
       case 'text':
       default:
         return gemaraText ? (
-          <div className="space-y-0">
+          <div className="space-y-0 relative">
             {renderTextToolbar()}
             {textEditMode ? (
               <div className="border border-t-0 border-border rounded-b-lg bg-white dark:bg-background overflow-hidden" style={{ minHeight: '500px' }}>
@@ -1162,9 +1179,9 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
                   ref={textIframeRef}
                   srcDoc={`<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="utf-8"><style>
                     @import url('https://fonts.googleapis.com/css2?family=David+Libre&family=Frank+Ruhl+Libre&family=Rubik&display=swap');
-                    body { font-family: 'David Libre', 'David', serif; font-size: ${textSettings.fontSize}px; line-height: ${textSettings.lineHeight}; color: hsl(222 47% 11%); padding: 24px; margin: 0; direction: rtl; text-align: ${textSettings.textAlign}; }
+                    body { font-family: 'David Libre', 'David', serif; font-size: ${textSettings.fontSize}px; line-height: ${textSettings.lineHeight}; color: hsl(222 47% 11%); padding: 24px; margin: 0; direction: rtl; text-align: ${textSettings.textAlign}; column-count: ${textSettings.columns}; column-gap: 32px; column-rule: 1px solid #e5e7eb; }
                     ::selection { background: hsl(37 77% 53% / 0.3); }
-                    p, div { margin-bottom: 8px; }
+                    p, div { margin-bottom: 8px; break-inside: avoid; }
                   </style></head><body>${memoizedPlainText.split('\n').map(p => `<p>${p || '&nbsp;'}</p>`).join('')}</body></html>`}
                   className="w-full border-0"
                   style={{ height: '600px' }}
@@ -1174,10 +1191,23 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
                     if (doc) doc.designMode = "on";
                   }}
                 />
+                <FloatingTextToolbar
+                  containerRef={textContentRef}
+                  iframeRef={textIframeRef}
+                  editMode={true}
+                />
               </div>
             ) : (
-              <div className="prose prose-slate max-w-none dark:prose-invert bg-amber-50/30 dark:bg-amber-950/10 p-4 rounded-b-lg border border-t-0 border-border">
+              <div
+                ref={textContentRef}
+                className="prose prose-slate max-w-none dark:prose-invert bg-amber-50/30 dark:bg-amber-950/10 p-4 rounded-b-lg border border-t-0 border-border"
+                style={textSettings.columns > 1 ? { columnCount: textSettings.columns, columnGap: '32px', columnRule: '1px solid hsl(var(--border))' } : undefined}
+              >
                 {renderGemaraText()}
+                <FloatingTextToolbar
+                  containerRef={textContentRef}
+                  editMode={false}
+                />
               </div>
             )}
           </div>
