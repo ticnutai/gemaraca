@@ -31,12 +31,23 @@ const FONTS = [
 ];
 
 const HIGHLIGHT_COLORS = [
-  { value: 'bg-yellow-200/60', label: 'צהוב' },
-  { value: 'bg-green-200/60', label: 'ירוק' },
-  { value: 'bg-blue-200/60', label: 'כחול' },
-  { value: 'bg-pink-200/60', label: 'ורוד' },
-  { value: 'bg-orange-200/60', label: 'כתום' },
-  { value: 'bg-transparent', label: 'ללא' },
+  { value: 'bg-yellow-200/60', label: 'צהוב', hex: '#FEF08A' },
+  { value: 'bg-green-200/60', label: 'ירוק', hex: '#BBF7D0' },
+  { value: 'bg-blue-200/60', label: 'כחול', hex: '#BFDBFE' },
+  { value: 'bg-pink-200/60', label: 'ורוד', hex: '#FBCFE8' },
+  { value: 'bg-orange-200/60', label: 'כתום', hex: '#FED7AA' },
+  { value: 'bg-purple-200/60', label: 'סגול', hex: '#E9D5FF' },
+  { value: 'bg-transparent', label: 'ללא', hex: 'transparent' },
+];
+
+const TEXT_COLORS = [
+  { value: '#000000', label: 'שחור' },
+  { value: '#0B1F5B', label: 'כחול כהה' },
+  { value: '#b91c1c', label: 'אדום' },
+  { value: '#15803d', label: 'ירוק' },
+  { value: '#7e22ce', label: 'סגול' },
+  { value: '#b45309', label: 'כתום' },
+  { value: '#D4AF37', label: 'זהב' },
 ];
 
 interface GemaraTextPanelProps {
