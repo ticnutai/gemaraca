@@ -15,7 +15,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Loader2, BookOpen, Image, FileText, ExternalLink, Eye, Check, ZoomIn, ZoomOut, Type, AArrowUp, AArrowDown, AlignRight, AlignCenter, AlignLeft, AlignJustify, Bold, Italic, Underline, Strikethrough, Highlighter, MousePointer2, Database, Copy, Printer, MoveVertical, FileDown, Save, Palette, RotateCcw, Scissors } from "lucide-react";
+import { Loader2, BookOpen, Image, FileText, ExternalLink, Eye, Check, ZoomIn, ZoomOut, Type, AArrowUp, AArrowDown, AlignRight, AlignCenter, AlignLeft, AlignJustify, Bold, Italic, Underline, Strikethrough, Highlighter, MousePointer2, Database, Copy, Printer, MoveVertical, FileDown, Save, Palette, RotateCcw, Scissors, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
 import { toast as sonnerToast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
