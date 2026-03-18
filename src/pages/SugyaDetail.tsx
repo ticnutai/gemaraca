@@ -425,6 +425,7 @@ const SugyaDetail = () => {
                 sugyaTitle={sugya.title}
                 dafYomi={sugya.dafYomi}
                 masechet={sugya.masechet || "בבא בתרא"}
+                sugyaId={id}
               />
             </Suspense>
 
