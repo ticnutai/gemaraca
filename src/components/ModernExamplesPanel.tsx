@@ -152,6 +152,7 @@ export const ModernExamplesPanel = ({
             masechet,
             sugyaId: effectiveSugyaId,
             forceRegenerate,
+            customInstructions: customPrompt.trim() || undefined,
           },
         }
       );
