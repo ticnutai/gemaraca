@@ -1156,9 +1156,30 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
         return gemaraText ? (
           <div className="space-y-0">
             {renderTextToolbar()}
-            <div className="prose prose-slate max-w-none dark:prose-invert bg-amber-50/30 dark:bg-amber-950/10 p-4 rounded-b-lg border border-t-0 border-border">
-              {renderGemaraText()}
-            </div>
+            {textEditMode ? (
+              <div className="border border-t-0 border-border rounded-b-lg bg-white dark:bg-background overflow-hidden" style={{ minHeight: '500px' }}>
+                <iframe
+                  ref={textIframeRef}
+                  srcDoc={`<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="utf-8"><style>
+                    @import url('https://fonts.googleapis.com/css2?family=David+Libre&family=Frank+Ruhl+Libre&family=Rubik&display=swap');
+                    body { font-family: 'David Libre', 'David', serif; font-size: ${textSettings.fontSize}px; line-height: ${textSettings.lineHeight}; color: hsl(222 47% 11%); padding: 24px; margin: 0; direction: rtl; text-align: ${textSettings.textAlign}; }
+                    ::selection { background: hsl(37 77% 53% / 0.3); }
+                    p, div { margin-bottom: 8px; }
+                  </style></head><body>${memoizedPlainText.split('\n').map(p => `<p>${p || '&nbsp;'}</p>`).join('')}</body></html>`}
+                  className="w-full border-0"
+                  style={{ height: '600px' }}
+                  title="עריכת טקסט גמרא"
+                  onLoad={() => {
+                    const doc = textIframeRef.current?.contentDocument;
+                    if (doc) doc.designMode = "on";
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="prose prose-slate max-w-none dark:prose-invert bg-amber-50/30 dark:bg-amber-950/10 p-4 rounded-b-lg border border-t-0 border-border">
+                {renderGemaraText()}
+              </div>
+            )}
           </div>
         ) : (
           <div className="text-center py-8 text-muted-foreground">
