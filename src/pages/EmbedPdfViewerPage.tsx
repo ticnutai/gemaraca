@@ -3276,9 +3276,6 @@ export default function EmbedPdfViewerPage() {
                           <p className="text-sm text-[#0B1F5B]/70">לא ניתן לטעון את המסמך</p>
                           <div className="flex gap-2 justify-center flex-wrap">
                             <Button size="sm" variant="outline" className="border-[#D4AF37]" onClick={() => { setIframeError(false); setIframeLoaded(false); }}><RefreshCw className="h-3.5 w-3.5 ml-1" /> נסה שוב</Button>
-                            {leftContentType !== 'docx' && (
-                              <Button size="sm" variant="outline" className="border-[#D4AF37]" onClick={() => { setIframeError(false); setIframeLoaded(false); setManualUrl(`https://docs.google.com/gview?url=${encodeURIComponent(leftSourceUrl)}&embedded=true`); }}>Google Viewer</Button>
-                            )}
                             <a href={leftSourceUrl} target="_blank" rel="noopener noreferrer"><Button size="sm" className="bg-[#0B1F5B] text-white border-2 border-[#D4AF37]"><ExternalLink className="h-3.5 w-3.5 ml-1" /> חלון חדש</Button></a>
                           </div>
                         </div>

@@ -46,7 +46,7 @@ const AppLayoutInner = ({ children }: AppLayoutProps) => {
   });
 
   const handleTabChange = (tab: string) => {
-    if (tab === "embedpdf-viewer") {
+    if (tab === "embedpdf-viewer" || tab === "pdf-viewer") {
       navigate("/embedpdf-viewer");
       return;
     }

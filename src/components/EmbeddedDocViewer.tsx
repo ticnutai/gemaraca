@@ -61,9 +61,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 /* ─── strategy types ─── */
 type Strategy = "direct" | "google-viewer" | "allorigins" | "embedpdf";
-const STRATEGY_LABELS: Record<Strategy, string> = {
+const STRATEGY_LABELS: Record<Exclude<Strategy, "google-viewer">, string> = {
   "direct": "טעינה ישירה",
-  "google-viewer": "Google Docs Viewer",
   "allorigins": "פרוקסי חיצוני",
   "embedpdf": "EmbedPDF (pdfium)",
 };
@@ -107,7 +106,7 @@ const stripHtmlToText = (input: string): string => {
   return text.replace(/[ \t]+/g, " ").replace(/\n[ \t]*/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
 };
 
-export default function EmbeddedDocViewer({ url, title, psakData, onClose, onSwitchToRegular, initialStrategy = "google-viewer" }: EmbeddedDocViewerProps) {
+export default function EmbeddedDocViewer({ url, title, psakData, onClose, onSwitchToRegular, initialStrategy = "embedpdf" }: EmbeddedDocViewerProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const embedRef = useRef<HTMLEmbedElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -218,8 +217,6 @@ export default function EmbeddedDocViewer({ url, title, psakData, onClose, onSwi
         if (strategy === "embedpdf") {
           setStrategy("direct");
         } else if (strategy === "direct") {
-          setStrategy("google-viewer");
-        } else if (strategy === "google-viewer") {
           setStrategy("allorigins");
         } else {
           setLoadState("error");
@@ -238,8 +235,6 @@ export default function EmbeddedDocViewer({ url, title, psakData, onClose, onSwi
     if (strategy === "embedpdf") {
       setStrategy("direct");
     } else if (strategy === "direct") {
-      setStrategy("google-viewer");
-    } else if (strategy === "google-viewer") {
       setStrategy("allorigins");
     } else {
       setLoadState("error");
@@ -435,7 +430,7 @@ export default function EmbeddedDocViewer({ url, title, psakData, onClose, onSwi
             <DropdownMenuContent align="center">
               <DropdownMenuLabel className="text-[10px]">שיטת טעינה</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {(Object.keys(STRATEGY_LABELS) as Strategy[]).map(s => (
+              {(Object.keys(STRATEGY_LABELS) as Exclude<Strategy, "google-viewer">[]).map(s => (
                 <DropdownMenuItem key={s} onClick={() => handleForceStrategy(s)} className="gap-2 text-xs">
                   {STRATEGY_LABELS[s]}
                   {strategy === s && <Badge variant="default" className="text-[8px] mr-auto">פעיל</Badge>}

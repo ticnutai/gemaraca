@@ -619,12 +619,6 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
 
   // For Google Docs Viewer for Word files
   const getPreviewUrl = (url: string, type: string): string => {
-    if (type === 'pdf') {
-      return url;
-    }
-    if (type === 'doc') {
-      return `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
-    }
     return url;
   };
 

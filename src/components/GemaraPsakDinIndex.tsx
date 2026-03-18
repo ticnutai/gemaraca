@@ -465,7 +465,7 @@ const GemaraPsakDinIndex = () => {
     switch (mode) {
       case "embedpdf":
         if (sourceUrl) {
-          navigate(`/embedpdf-viewer?url=${encodeURIComponent(sourceUrl)}`);
+          navigate(`/embedpdf-viewer?url=${encodeURIComponent(sourceUrl)}&psakId=${psak.psak_din_id || psak.id}`);
         } else {
           setDialogPsak(psak);
           setDialogOpen(true);
@@ -497,12 +497,7 @@ const GemaraPsakDinIndex = () => {
       psakei_din: psak,
     };
     const saved = getViewerPreference();
-    if (saved) {
-      openWithMode(psakLink, saved);
-    } else {
-      setPendingPsak(psakLink);
-      setPrefDialogOpen(true);
-    }
+    openWithMode(psakLink, saved ?? "embedpdf");
   }, [openWithMode]);
 
   const toggleViewerPreference = useCallback(() => {

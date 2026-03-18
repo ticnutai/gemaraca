@@ -174,7 +174,7 @@ const LinkedPsakimSection = ({ sugyaId, masechet, dafNumber }: LinkedPsakimSecti
     
     if (!data) return;
 
-    const preferred = getViewerPreference() ?? "dialog";
+    const preferred = getViewerPreference() ?? "embedpdf";
     if (preferred === "newwindow" && data.source_url) {
       window.open(data.source_url, "_blank");
       return;

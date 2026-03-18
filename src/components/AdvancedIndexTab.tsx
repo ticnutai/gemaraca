@@ -155,12 +155,7 @@ export default function AdvancedIndexTab() {
 
   const openPsakDialog = useCallback(async (ref: TalmudRefWithPsak) => {
     const saved = getViewerPreference();
-    if (saved) {
-      openWithMode(ref, saved);
-    } else {
-      setPendingRef(ref);
-      setPrefDialogOpen(true);
-    }
+    openWithMode(ref, saved ?? "embedpdf");
   }, [openWithMode]);
 
   const toggleViewerPreference = useCallback(() => {

@@ -70,16 +70,10 @@ const menuItems = [
     description: "הורדת כל הש\"ס לענן",
   },
   {
-    id: "pdf-viewer",
-    title: "צפיין PDF",
-    icon: FileText,
-    description: "צפייה והשוואת מסמכי PDF",
-  },
-  {
     id: "embedpdf-viewer",
-    title: "צפיין EmbedPDF",
+    title: "צפיין מסמכים",
     icon: FileType,
-    description: "צפיין PDF מתקדם עם אנוטציות",
+    description: "צפיין PDF מתקדם עם הערות, סימניות ועיצוב",
   },
   {
     id: "weekly-planner",
