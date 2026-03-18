@@ -17,6 +17,7 @@ import { Sparkles, Loader2, RefreshCw, Lightbulb, Scale, BookOpen, Database, Typ
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { RichTextViewer } from "./RichTextViewer";
+import { PromptTemplateTabs } from "./PromptTemplateTabs";
 
 const FONTS = [
   { value: 'font-serif', label: 'דוד (סריף)' },
