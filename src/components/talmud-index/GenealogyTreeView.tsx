@@ -218,143 +218,142 @@ export default memo(function GenealogyTreeView({ grouped, onValidate, onClickRef
 
                 {/* Expanded: DAF level branches */}
                 {isExpanded && (
-                  <div className="flex flex-col items-center animate-in fade-in slide-in-from-top-2 duration-300">
-                    <BranchConnector count={Math.min(sortedDafs.length, 8)} color={color} />
+                  <div className="w-full animate-in fade-in slide-in-from-top-2 duration-300 mt-2">
+                    <VLine height={20} color={color} />
 
-                    <div className="flex flex-wrap justify-center gap-2 max-w-[500px]">
+                    {/* Daf grid - full width, responsive columns */}
+                    <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-2 w-full max-w-[900px] mx-auto">
                       {sortedDafs.map((daf) => {
                         const dafRefs = byDaf[daf];
                         const dafKey = `${tractate}-${daf}`;
                         const isDafExpanded = expandedDaf === dafKey;
 
-                        // Group by amud
-                        const byAmud: Record<string, TalmudRefWithPsak[]> = {};
-                        for (const r of dafRefs) {
-                          const aKey = r.amud || '_none';
-                          if (!byAmud[aKey]) byAmud[aKey] = [];
-                          byAmud[aKey].push(r);
-                        }
-                        const amudOrder = ['a', 'b', '_none'].filter(k => byAmud[k]);
-                        const hasAmudim = amudOrder.length > 1 || (amudOrder.length === 1 && amudOrder[0] !== '_none');
-
                         return (
-                          <div key={dafKey} className="flex flex-col items-center">
-                            <VLine height={12} color={color} />
-
-                            {/* Daf node */}
-                            <TreeNode
-                              isLeaf={!isDafExpanded}
-                              color={color}
-                              onClick={() => {
-                                setExpandedDaf(isDafExpanded ? null : dafKey);
-                                setExpandedAmud(null);
-                              }}
-                              className={cn(
-                                'min-w-[60px]',
-                                isDafExpanded && 'ring-1 ring-offset-1'
-                              )}
-                            >
-                              <span className="font-semibold text-xs" style={{ color }}>
-                                דף {toHebrewDaf(daf)}
-                              </span>
-                              <Badge variant="secondary" className="text-[9px] px-1 py-0 mt-0.5 block mx-auto w-fit">
-                                {dafRefs.length}
-                              </Badge>
-                            </TreeNode>
-
-                            {/* Expanded: amud level */}
-                            {isDafExpanded && hasAmudim && (
-                              <div className="flex flex-col items-center animate-in fade-in duration-200">
-                                <BranchConnector count={amudOrder.length} color={color} />
-                                <div className="flex gap-3 justify-center">
-                                  {amudOrder.map(amudKey => {
-                                    const amudRefs = byAmud[amudKey];
-                                    const amudNodeKey = `${dafKey}-${amudKey}`;
-                                    const isAmudExpanded = expandedAmud === amudNodeKey;
-                                    const amudLabel = amudKey === 'a' ? 'ע״א' : amudKey === 'b' ? 'ע״ב' : 'לא צוין';
-
-                                    return (
-                                      <div key={amudNodeKey} className="flex flex-col items-center">
-                                        <VLine height={12} color={color} />
-                                        <TreeNode
-                                          isLeaf={!isAmudExpanded}
-                                          color={color}
-                                          onClick={() => setExpandedAmud(isAmudExpanded ? null : amudNodeKey)}
-                                          className={cn(
-                                            'min-w-[50px]',
-                                            isAmudExpanded && 'ring-1 ring-offset-1'
-                                          )}
-                                        >
-                                          <span className="font-medium text-xs" style={{ color }}>{amudLabel}</span>
-                                          <Badge variant="secondary" className="text-[8px] px-1 py-0 mt-0.5 block mx-auto w-fit">
-                                            {amudRefs.length}
-                                          </Badge>
-                                        </TreeNode>
-
-                                        {isAmudExpanded && (
-                                          <div className="flex flex-col items-center animate-in fade-in duration-200">
-                                            <VLine height={12} color={color} />
-                                            <div
-                                              className="border-r-2 pr-3 mr-1 space-y-2 max-w-[400px]"
-                                              style={{ borderColor: color }}
-                                            >
-                                              {amudRefs.map(ref => (
-                                                <div key={ref.id} className="relative">
-                                                  <div
-                                                    className="absolute top-4 -right-3 w-3"
-                                                    style={{ height: 2, backgroundColor: color }}
-                                                  />
-                                                  <RefCard
-                                                    data={ref}
-                                                    onValidate={onValidate}
-                                                    onClickRef={onClickRef}
-                                                    onCorrect={onCorrect}
-                                                    highlightColor={highlightColor}
-                                                    highlightBg={highlightBg}
-                                                  />
-                                                </div>
-                                              ))}
-                                            </div>
-                                          </div>
-                                        )}
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
+                          <TreeNode
+                            key={dafKey}
+                            isLeaf={!isDafExpanded}
+                            color={color}
+                            onClick={() => {
+                              setExpandedDaf(isDafExpanded ? null : dafKey);
+                              setExpandedAmud(null);
+                            }}
+                            className={cn(
+                              'min-w-0',
+                              isDafExpanded && 'ring-2 ring-offset-1 shadow-md col-span-full'
                             )}
-
-                            {/* Expanded: no amud info — show refs directly */}
-                            {isDafExpanded && !hasAmudim && (
-                              <div className="flex flex-col items-center animate-in fade-in duration-200">
-                                <VLine height={12} color={color} />
-                                <div
-                                  className="border-r-2 pr-3 mr-1 space-y-2 max-w-[400px]"
-                                  style={{ borderColor: color }}
-                                >
-                                  {dafRefs.map(ref => (
-                                    <div key={ref.id} className="relative">
-                                      <div
-                                        className="absolute top-4 -right-3 w-3"
-                                        style={{ height: 2, backgroundColor: color }}
-                                      />
-                                      <RefCard
-                                        data={ref}
-                                        onValidate={onValidate}
-                                        onClickRef={onClickRef}
-                                        onCorrect={onCorrect}
-                                        highlightColor={highlightColor}
-                                        highlightBg={highlightBg}
-                                      />
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </div>
+                          >
+                            <span className="font-semibold text-xs" style={{ color }}>
+                              דף {toHebrewDaf(daf)}
+                            </span>
+                            <Badge variant="secondary" className="text-[9px] px-1 py-0 mt-0.5 block mx-auto w-fit">
+                              {dafRefs.length}
+                            </Badge>
+                          </TreeNode>
                         );
                       })}
                     </div>
+
+                    {/* Expanded daf: amud & refs panel below the grid */}
+                    {expandedDaf && expandedDaf.startsWith(tractate + '-') && (() => {
+                      const dafNum = expandedDaf.split('-').slice(1).join('-');
+                      const dafRefs = byDaf[dafNum];
+                      if (!dafRefs) return null;
+
+                      const byAmud: Record<string, TalmudRefWithPsak[]> = {};
+                      for (const r of dafRefs) {
+                        const aKey = r.amud || '_none';
+                        if (!byAmud[aKey]) byAmud[aKey] = [];
+                        byAmud[aKey].push(r);
+                      }
+                      const amudOrder = ['a', 'b', '_none'].filter(k => byAmud[k]);
+                      const hasAmudim = amudOrder.length > 1 || (amudOrder.length === 1 && amudOrder[0] !== '_none');
+
+                      return (
+                        <div className="mt-3 animate-in fade-in slide-in-from-top-2 duration-200 w-full max-w-[900px] mx-auto">
+                          <VLine height={16} color={color} />
+
+                          {hasAmudim ? (
+                            <div className="flex gap-4 justify-center flex-wrap">
+                              {amudOrder.map(amudKey => {
+                                const amudRefs = byAmud[amudKey];
+                                const amudNodeKey = `${expandedDaf}-${amudKey}`;
+                                const isAmudExpanded = expandedAmud === amudNodeKey;
+                                const amudLabel = amudKey === 'a' ? 'ע״א' : amudKey === 'b' ? 'ע״ב' : 'לא צוין';
+
+                                return (
+                                  <div key={amudNodeKey} className="flex flex-col items-center flex-1 min-w-[200px] max-w-[440px]">
+                                    <TreeNode
+                                      isLeaf={!isAmudExpanded}
+                                      color={color}
+                                      onClick={() => setExpandedAmud(isAmudExpanded ? null : amudNodeKey)}
+                                      className={cn(
+                                        'w-full',
+                                        isAmudExpanded && 'ring-1 ring-offset-1'
+                                      )}
+                                    >
+                                      <span className="font-medium text-xs" style={{ color }}>{amudLabel}</span>
+                                      <Badge variant="secondary" className="text-[8px] px-1 py-0 mt-0.5 block mx-auto w-fit">
+                                        {amudRefs.length}
+                                      </Badge>
+                                    </TreeNode>
+
+                                    {isAmudExpanded && (
+                                      <div className="w-full animate-in fade-in duration-200 mt-2">
+                                        <VLine height={12} color={color} />
+                                        <div
+                                          className="border-r-2 pr-3 mr-1 space-y-2 w-full"
+                                          style={{ borderColor: color }}
+                                        >
+                                          {amudRefs.map(ref => (
+                                            <div key={ref.id} className="relative">
+                                              <div
+                                                className="absolute top-4 -right-3 w-3"
+                                                style={{ height: 2, backgroundColor: color }}
+                                              />
+                                              <RefCard
+                                                data={ref}
+                                                onValidate={onValidate}
+                                                onClickRef={onClickRef}
+                                                onCorrect={onCorrect}
+                                                highlightColor={highlightColor}
+                                                highlightBg={highlightBg}
+                                              />
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            /* No amud info — show refs directly */
+                            <div
+                              className="border-r-2 pr-3 mr-1 space-y-2 w-full max-w-[600px] mx-auto"
+                              style={{ borderColor: color }}
+                            >
+                              {dafRefs.map(ref => (
+                                <div key={ref.id} className="relative">
+                                  <div
+                                    className="absolute top-4 -right-3 w-3"
+                                    style={{ height: 2, backgroundColor: color }}
+                                  />
+                                  <RefCard
+                                    data={ref}
+                                    onValidate={onValidate}
+                                    onClickRef={onClickRef}
+                                    onCorrect={onCorrect}
+                                    highlightColor={highlightColor}
+                                    highlightBg={highlightBg}
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
