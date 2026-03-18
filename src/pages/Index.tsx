@@ -47,6 +47,9 @@ const Index = () => {
 
   return (
     <div className="p-2 md:p-6 space-y-3 md:space-y-4 max-w-full" data-active-tab={activeTab}>
+      {/* Pinned & Favorite items bar */}
+      {showNavigator && <PinnedItemsBar />}
+
       {/* Sedarim Navigator - lazy loaded, hidden on mobile when non-gemara tab active */}
       {showNavigator && (
         <SectionErrorBoundary section="ניווט סדרים">
