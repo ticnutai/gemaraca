@@ -39,7 +39,7 @@ serve(async (req) => {
     
     console.log(`Authenticated user: ${userData.user.id}`);
 
-    const { gemaraText, sugyaTitle, dafYomi, masechet, sugyaId, forceRegenerate, loadMore, existingCount } = await req.json();
+    const { gemaraText, sugyaTitle, dafYomi, masechet, sugyaId, forceRegenerate, loadMore, existingCount, customInstructions } = await req.json();
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
