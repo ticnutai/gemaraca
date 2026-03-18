@@ -28,3 +28,7 @@ clever-doc-indexer-main/
 
 # Supabase temp
 supabase/.temp/
+
+# Playwright test results
+test-results/
+playwright-report/
