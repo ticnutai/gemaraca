@@ -123,7 +123,7 @@ export default function EmbeddedDocViewer({ url, title, psakData, onClose, onSwi
   const [notes, setNotes] = useState(() => {
     try { return localStorage.getItem(`edv-notes-${url}`) || ""; } catch { return ""; }
   });
-  const [notesRecordId, setNotesRecordId] = useState<string | null>(null);
+  
   const [isBookmarked, setIsBookmarked] = useState(() => {
     try {
       const bm = JSON.parse(localStorage.getItem("edv-bookmarks") || "[]") as string[];
