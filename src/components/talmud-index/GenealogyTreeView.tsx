@@ -100,6 +100,7 @@ export default memo(function GenealogyTreeView({ grouped, onValidate, onClickRef
   const [expandedTractate, setExpandedTractate] = useState<string | null>(null);
   const [expandedDaf, setExpandedDaf] = useState<string | null>(null);
   const [expandedAmud, setExpandedAmud] = useState<string | null>(null);
+  const { togglePin, toggleFavorite, isPinned, isFavorite } = usePinnedItems();
 
   const sortedTractates = useMemo(() =>
     Object.keys(grouped).sort((a, b) => {
