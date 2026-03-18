@@ -154,6 +154,7 @@ const defaultTextSettings: TextSettings = {
   highlightColor: 'bg-transparent',
   textColor: '',
   lineHeight: 1.8,
+  columns: 1 as 1 | 2 | 3,
 };
 
 export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Batra" }: GemaraTextPanelProps) {
