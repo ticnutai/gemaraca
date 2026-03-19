@@ -483,7 +483,7 @@ function downloadBlob(content: string, filename: string, mime: string) {
 // ─── Component ───────────────────────────────────────────────
 
 export default function EmbedPdfViewerPage() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const [selectedPdfId, setSelectedPdfId] = useState<string | null>(null);
   const [comparePdfId, setComparePdfId] = useState<string | null>(null);
@@ -694,9 +694,11 @@ export default function EmbedPdfViewerPage() {
     isLoading: annotationsLoading,
   } = usePDFAnnotations(canPersist ? selectedPdf!.id : null);
 
-  // ── Post message to beautify iframe (sidebar controls) ──
+  // ── Post message to active iframe (sidebar controls) ──
   const sendBeautifyCmd = useCallback((msg: object) => {
-    beautifyIframeRef.current?.contentWindow?.postMessage(msg, '*');
+    // Try beautify iframe first, then fall back to html-embed iframe
+    const target = beautifyIframeRef.current?.contentWindow ?? htmlEmbedIframeRef.current?.contentWindow;
+    target?.postMessage(msg, '*');
   }, []);
 
   // Listen for state updates from beautify iframe
@@ -887,6 +889,12 @@ export default function EmbedPdfViewerPage() {
     setFetchHtmlError(null);
     setIsTextEditing(false);
     setTextEditBuffer("");
+    setBeautifiedHtml(null);
+    setLeftTemplate(null);
+    setLeftTemplateHtml(null);
+    setDocSearchQuery('');
+    setDocSearchCount(0);
+    setDocSearchCurrent(0);
   }, [leftSourceUrl]);
 
   // ── Download in multiple formats ──
@@ -1873,7 +1881,7 @@ export default function EmbedPdfViewerPage() {
     { id: "bookmarks", icon: Bookmark, label: `סימניות (${bookmarks.length})`, badge: bookmarks.length > 0 ? bookmarks.length : undefined },
     { id: "stats", icon: BarChart3, label: "סטטיסטיקות", badge: undefined },
     ...(psakIdParam ? [{ id: "beautify", icon: Sparkles, label: "עצב פסק דין", badge: beautifiedHtml ? 1 : undefined }] : []),
-    ...(beautifiedHtml ? [{ id: "doc-search", icon: Search, label: "חיפוש במסמך", badge: undefined }] : []),
+    ...((beautifiedHtml || leftTemplateHtml || (leftContentType === 'html-embed' && fetchedHtml)) ? [{ id: "doc-search", icon: Search, label: "חיפוש במסמך", badge: undefined }] : []),
   ];
 
   // Hidden file input
@@ -2237,6 +2245,12 @@ export default function EmbedPdfViewerPage() {
                               className="w-full flex items-start gap-2 px-2 py-2 text-right hover:bg-[#D4AF37]/10 transition-colors"
                               onClick={() => {
                                 assignSourceToTarget(doc.source_url, null);
+                                // Update URL params so psakId and url reflect the new document
+                                const newParams = new URLSearchParams();
+                                newParams.set("url", doc.source_url);
+                                newParams.set("psakId", doc.id);
+                                setSearchParams(newParams, { replace: true });
+                                setPsakData(doc);
                                 if (!iconBarPinned) setActivePanel(null);
                                 toast.success(`נטען: ${doc.title || "מסמך"}`);
                               }}
@@ -2482,7 +2496,7 @@ export default function EmbedPdfViewerPage() {
               )}
 
               {/* DOC SEARCH */}
-              {activePanel === "doc-search" && beautifiedHtml && (
+              {activePanel === "doc-search" && (beautifiedHtml || leftTemplateHtml || (leftContentType === 'html-embed' && fetchedHtml)) && (
                 <div className="space-y-3">
                   <p className="text-xs font-semibold text-[#0B1F5B]">🔍 חיפוש במסמך המעוצב</p>
                   <div className="flex gap-1 items-center">
