@@ -1136,14 +1136,40 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
           )}
         </div>
 
+        {/* Auto-save indicator for cloud */}
+        {cloudAutoSave.isSaving && (
+          <div className="absolute top-12 left-2 z-10 flex items-center gap-1 text-[10px] text-muted-foreground bg-muted/80 px-2 py-0.5 rounded-full">
+            <Save className="h-3 w-3 animate-pulse" />
+            שומר...
+          </div>
+        )}
+
         {/* ═══ CLOUD CONTENT AREA ═══ */}
         <div className="border-2 border-[#D4AF37]/30 rounded-b-xl bg-white overflow-hidden shadow-lg" style={{ minHeight: '500px' }}>
           <iframe
             ref={cloudIframeRef}
-            srcDoc={cloudHtml}
+            srcDoc={cloudAutoSave.savedHtml ? `<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="utf-8"><style>
+              body { font-family: 'David', 'Times New Roman', serif; font-size: 18px; line-height: ${cloudLineHeight}; color: #0B1F5B; padding: 24px; margin: 0; background: #fff; direction: rtl; }
+              p, div { margin-bottom: ${cloudParagraphSpacing}px; }
+              ::selection { background: #D4AF3744; }
+            </style></head><body>${cloudAutoSave.savedHtml}</body></html>` : cloudHtml}
             className="w-full border-0"
             style={{ height: '600px' }}
             title="תצוגת גמרא מהענן"
+            onLoad={() => {
+              const doc = cloudIframeRef.current?.contentDocument;
+              if (doc && cloudEditMode) {
+                doc.designMode = "on";
+              }
+              // Attach auto-save listener
+              cloudAutoSave.attachIframeAutoSave(cloudIframeRef);
+            }}
+          />
+          <FloatingTextToolbar
+            containerRef={textContentRef}
+            iframeRef={cloudIframeRef}
+            editMode={cloudEditMode}
+            onAfterFormat={() => cloudAutoSave.saveFromIframe(cloudIframeRef)}
           />
         </div>
       </div>
