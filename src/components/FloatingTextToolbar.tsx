@@ -59,7 +59,8 @@ export default function FloatingTextToolbar({ containerRef, iframeRef, editMode,
   const exec = useCallback((cmd: string, val?: string) => {
     const doc = getDoc();
     doc.execCommand(cmd, false, val);
-  }, [getDoc]);
+    onAfterFormat?.();
+  }, [getDoc, onAfterFormat]);
 
   const handleSelectionChange = useCallback(() => {
     const sel = getSelection();
