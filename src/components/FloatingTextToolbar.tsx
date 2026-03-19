@@ -37,7 +37,7 @@ interface FloatingTextToolbarProps {
   onAfterFormat?: () => void;
 }
 
-export default function FloatingTextToolbar({ containerRef, iframeRef, editMode, onAnnotate }: FloatingTextToolbarProps) {
+export default function FloatingTextToolbar({ containerRef, iframeRef, editMode, onAnnotate, onAfterFormat }: FloatingTextToolbarProps) {
   const [visible, setVisible] = useState(false);
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const [selectedText, setSelectedText] = useState("");
