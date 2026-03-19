@@ -53,6 +53,7 @@ const NEW_TEMPLATE_IDS = [
   "scholarly-halachic",
   "executive-brief",
   "clean-sidebar",
+  "luxury",
 ];
 
 describe("5 תבניות חדשות — רישום ב-TEMPLATES", () => {

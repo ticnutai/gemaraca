@@ -13,6 +13,13 @@ function esc(str: string): string {
     .replace(/"/g, '&quot;');
 }
 
+function stripEmojis(str: string): string {
+  return str
+    .replace(/[\u2600-\u27BF\u{1F000}-\u{1FAFF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2702}-\u{27B0}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
 function cleanReadableText(value: string | undefined | null): string {
   if (!value) return "";
 
@@ -191,6 +198,14 @@ export const TEMPLATES: TemplateInfo[] = [
     hasIndex: true,
   },
   {
+    id: "luxury",
+    name: "יוקרתי",
+    description: "עיצוב יוקרתי ונקי ללא אייקונים, כותרות סעיפים מודגשות בבולד, חיפוש וניווט בפאנל צד",
+    requiresAi: false,
+    icon: "",
+    hasIndex: true,
+  },
+  {
     id: "ai-enhanced",
     name: "שיפור AI מלא",
     description: "AI מעצב, מסכם ומשפר את הטקסט, מוסיף מבנה מקצועי",
@@ -356,7 +371,7 @@ const SEARCH_WIDGET_CSS = `
 const SEARCH_WIDGET_SCRIPT = `
 <script>
 (function () {
-  var root = document.querySelector('.container') || document.body;
+  var root = document.querySelector('.container, .cs-container') || document.body;
   if (!root) return;
 
   var input = document.getElementById('psak-search-input');
@@ -435,7 +450,7 @@ const SEARCH_WIDGET_SCRIPT = `
       acceptNode: function (textNode) {
         var parent = textNode.parentElement;
         if (!parent) return NodeFilter.FILTER_REJECT;
-        if (parent.closest('.search-widget')) return NodeFilter.FILTER_REJECT;
+        if (parent.closest('.search-widget, .cs-sidebar')) return NodeFilter.FILTER_REJECT;
         if (parent.closest('.toc')) return NodeFilter.FILTER_REJECT;
         if (parent.closest('script, style, mark')) return NodeFilter.FILTER_REJECT;
         if (!(textNode.nodeValue || '').trim()) return NodeFilter.FILTER_REJECT;
@@ -690,7 +705,7 @@ function renderSearchWidget(data: ParsedPsakDin): string {
     `<option value="">כל המסמך</option>`,
     `<option value="sec-details">פרטי תיק</option>`,
     data.summary ? `<option value="sec-summary">תקציר</option>` : "",
-    ...data.sections.map((sec, i) => `<option value="sec-${i}">${esc(sec.title)}</option>`),
+    ...data.sections.map((sec, i) => `<option value="sec-${i}">${esc(stripEmojis(sec.title))}</option>`),
     data.judges.length > 0 ? `<option value="sec-signature">חתימה</option>` : "",
   ].join("");
 
@@ -739,7 +754,7 @@ function buildTableOfContents(data: ParsedPsakDin): { tocHtml: string; sectionAn
   data.sections.forEach((sec, i) => {
     const anchor = `sec-${i}`;
     anchors.set(i, anchor);
-    items.push(`<li><a href="#${anchor}" class="toc-link">${esc(sec.title)}</a></li>`);
+    items.push(`<li><a href="#${anchor}" class="toc-link">${esc(stripEmojis(sec.title))}</a></li>`);
   });
 
   if (data.judges.length > 0) {
@@ -3142,7 +3157,7 @@ function renderSidebarSearchWidget(data: ParsedPsakDin): string {
     `<option value="">כל המסמך</option>`,
     `<option value="sec-details">פרטי תיק</option>`,
     data.summary ? `<option value="sec-summary">תקציר</option>` : "",
-    ...data.sections.map((sec, i) => `<option value="sec-${i}">${esc(sec.title)}</option>`),
+    ...data.sections.map((sec, i) => `<option value="sec-${i}">${esc(stripEmojis(sec.title))}</option>`),
     data.judges.length > 0 ? `<option value="sec-signature">חתימה</option>` : "",
   ].join("");
 
@@ -3187,9 +3202,10 @@ function generateCleanSidebarHtml(data: ParsedPsakDin): string {
 
   const sectionsHtml = data.sections.map((section, i) => {
     const anchor = sectionAnchors.get(i) || `sec-${i}`;
+    const cleanTitle = stripEmojis(section.title);
     const contentHtml = renderAuthenticBlocks(section.content);
-    return `<section class="cs-section" data-search-scope="${anchor}" data-search-label="${esc(section.title)}">
-      <h3 id="${anchor}" class="cs-section-head">${esc(section.title)} <a href="#toc-top" class="cs-back" title="חזרה לתוכן עניינים">&#x25B2;</a></h3>
+    return `<section class="cs-section" data-search-scope="${anchor}" data-search-label="${esc(cleanTitle)}">
+      <h3 id="${anchor}" class="cs-section-head">${esc(cleanTitle)} <a href="#toc-top" class="cs-back" title="חזרה לתוכן עניינים">&#x25B2;</a></h3>
       <div class="cs-section-body doc-section-content">${contentHtml}</div>
     </section>`;
   }).join("\n");
@@ -3328,6 +3344,155 @@ function generateCleanSidebarHtml(data: ParsedPsakDin): string {
 </html>`;
 }
 
+// ═══════════════════════════════════════════════════════
+// ═══ TEMPLATE: LUXURY (יוקרתי) ═══════════════════════
+// ═══════════════════════════════════════════════════════
+function generateLuxuryHtml(data: ParsedPsakDin): string {
+  const { tocHtml, sectionAnchors } = buildTableOfContents(data);
+
+  const sectionsHtml = data.sections.map((section, i) => {
+    const anchor = sectionAnchors.get(i) || `sec-${i}`;
+    const cleanTitle = stripEmojis(section.title);
+    const contentHtml = renderAuthenticBlocks(section.content);
+    return `<section class="lx-section" data-search-scope="${anchor}" data-search-label="${esc(cleanTitle)}">
+      <h3 id="${anchor}" class="lx-section-head"><strong>${esc(cleanTitle)}</strong> <a href="#toc-top" class="lx-back" title="חזרה לתוכן עניינים">&#x25B2;</a></h3>
+      <div class="lx-section-body doc-section-content">${contentHtml}</div>
+    </section>`;
+  }).join("\n");
+
+  const fallbackBody = data.sections.length ? "" : renderAuthenticBlocks(data.rawText);
+
+  const judgesHtml = data.judges.length > 0
+    ? `<div id="sec-signature" class="lx-signature" data-search-scope="sec-signature" data-search-label="חתימה">
+        <div class="lx-sig-grid">
+          ${data.judges.map((j) => `<div class="lx-sig-item"><div class="lx-sig-line"></div><div class="lx-sig-name">${esc(j)}</div></div>`).join("\n          ")}
+        </div>
+      </div>`
+    : "";
+
+  const caseLabel = data.caseNumber ? `תיק מספר ${esc(data.caseNumber)}` : "";
+  const serialLabel = data.sourceId ? `מס. סידורי: ${esc(data.sourceId)}` : "";
+
+  return `<!DOCTYPE html>
+<html lang="he-IL" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>פסק דין: ${esc(data.title)}</title>
+  <style>
+    :root { --navy: #0B1F5B; --gold: #D4AF37; --bg: #FDFCF9; --text: #1a1a2e; --sidebar-w: 240px; }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: 'David', 'Frank Ruhl Libre', 'Noto Serif Hebrew', Georgia, serif; background: #f4f2ed; color: var(--text); line-height: 1.9; margin: 0; padding: 0; direction: rtl; }
+    .lx-layout { display: flex; min-height: 100vh; }
+    .cs-sidebar { width: var(--sidebar-w); position: fixed; top: 0; right: 0; height: 100vh; overflow-y: auto; background: #f8f9fb; border-left: 1px solid #ddd; padding: 16px 14px; z-index: 50; display: flex; flex-direction: column; gap: 8px; }
+    .cs-sidebar-title { color: var(--navy); font-weight: bold; font-size: 1.05em; text-align: center; padding-bottom: 8px; border-bottom: 2px solid var(--gold); margin-bottom: 4px; }
+    .cs-search-input { border: 1px solid #d1d5db; border-radius: 6px; padding: 7px 10px; font-size: 13px; direction: rtl; width: 100%; background: #fff; }
+    .cs-search-select { border: 1px solid #d1d5db; border-radius: 6px; padding: 6px 8px; font-size: 13px; direction: rtl; width: 100%; background: #fff; }
+    .cs-check-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .cs-check { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: #334155; }
+    .cs-btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
+    .cs-btn { border: 1px solid #d1d5db; background: #fff; border-radius: 6px; padding: 5px 8px; cursor: pointer; font-size: 12px; flex: 1; text-align: center; }
+    .cs-btn:hover { background: #eef2f7; }
+    .cs-btn-full { width: 100%; }
+    .cs-count { font-size: 12px; color: #475569; text-align: center; }
+    .cs-divider { border: none; border-top: 1px solid #e2e8f0; margin: 4px 0; }
+    .cs-breadcrumbs { font-size: 11px; color: #475569; background: #f0f2f5; border-radius: 4px; padding: 4px 8px; }
+    .cs-notes { border: 1px solid #d1d5db; border-radius: 6px; padding: 7px 10px; font-size: 12px; direction: rtl; width: 100%; min-height: 60px; resize: vertical; background: #fff; }
+
+    .lx-main { margin-right: var(--sidebar-w); flex: 1; padding: 30px 50px; }
+    .lx-container { max-width: 780px; margin: 0 auto; background: var(--bg); border: 1px solid #d5cbb3; border-radius: 8px; padding: 55px 60px; box-shadow: 0 4px 20px rgba(0,0,0,.06); }
+    .lx-bsd { text-align: center; font-size: 1.3em; font-weight: bold; color: var(--navy); margin-bottom: 6px; letter-spacing: 1px; }
+    .lx-serial { text-align: left; font-size: 0.85em; color: #999; margin-bottom: 20px; }
+    .lx-main-title { text-align: center; font-size: 2.2em; font-weight: 800; color: var(--navy); margin: 20px 0 8px; letter-spacing: 3px; }
+    .lx-case-title { text-align: center; font-size: 1.25em; color: var(--gold); margin-bottom: 12px; font-weight: 700; }
+    .lx-gold-rule { border: none; height: 2px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 20px 0; }
+    .lx-meta-table { width: 100%; border-collapse: collapse; margin: 20px 0 35px; }
+    .lx-meta-table td { padding: 8px 16px; border-bottom: 1px solid #e8e4d8; font-size: 0.93em; vertical-align: top; }
+    .lx-meta-table td:first-child { font-weight: bold; color: var(--navy); width: 130px; white-space: nowrap; }
+    .lx-summary-box { background: #f7f5ee; border-right: 4px solid var(--gold); padding: 18px 24px; margin: 24px 0 35px; border-radius: 0 8px 8px 0; }
+    .lx-summary-box h4 { color: var(--navy); margin: 0 0 10px; font-size: 1.1em; font-weight: bold; }
+    .lx-section { margin-bottom: 32px; }
+    .lx-section-head { color: var(--navy); font-size: 1.3em; font-weight: 800; padding-bottom: 8px; border-bottom: 2px solid var(--gold); margin-bottom: 16px; scroll-margin-top: 20px; letter-spacing: 0.5px; }
+    .lx-back { color: var(--gold); text-decoration: none; font-size: 0.6em; margin-right: 8px; }
+    .lx-section-body { padding-right: 14px; }
+    .auth-paragraph { text-indent: 1.5em; margin: 0 0 12px; text-align: justify; }
+    .heb-list { list-style: none; padding: 0; margin: 10px 0; }
+    .heb-list li { margin-bottom: 8px; padding-right: 10px; }
+    .heb-marker { color: var(--gold); font-weight: bold; font-size: 1.05em; }
+    .num-list { list-style: none; padding: 0; margin: 10px 0; }
+    .num-list li { margin-bottom: 8px; padding-right: 10px; }
+    .num-marker { color: var(--navy); font-weight: bold; }
+    .bullet-list { padding-right: 20px; margin: 10px 0; }
+    .auth-subhead { color: var(--navy); font-size: 1.08em; font-weight: bold; margin: 20px 0 8px; border-bottom: 1px solid var(--gold); display: inline-block; padding-bottom: 3px; }
+    .source-ref { background: rgba(212,175,55,.12); padding: 1px 4px; border-radius: 3px; color: var(--navy); font-weight: 600; }
+    .lx-signature { text-align: center; margin: 50px 0 30px; padding-top: 22px; border-top: 2px solid var(--navy); }
+    .lx-sig-grid { display: flex; justify-content: center; gap: 60px; flex-wrap: wrap; }
+    .lx-sig-item { text-align: center; min-width: 140px; }
+    .lx-sig-line { border-bottom: 1px solid var(--navy); margin-bottom: 6px; width: 100%; }
+    .lx-sig-name { font-weight: bold; color: var(--navy); font-size: 0.95em; }
+    .lx-footer { text-align: center; font-size: 0.8em; color: #aaa; margin-top: 35px; padding-top: 18px; border-top: 1px solid #e0d9c8; }
+
+    /* Search & TOC */
+    .search-widget { display: none !important; }
+    ${TOC_CSS}
+    mark.psak-hit { background: #fde68a; color: #111827; border-radius: 2px; padding: 0 1px; }
+    mark.psak-hit.active-hit { background: #f59e0b; color: #111827; }
+    [id^="sec-"], #toc-top { scroll-margin-top: 20px; }
+    .doc-section-content.section-collapsed { display: none; }
+    .toc-link.toc-active { color: #b45309; font-weight: 700; text-decoration: underline; }
+
+    ${PRINT_CSS}
+    @media print {
+      .cs-sidebar { display: none; }
+      .lx-main { margin-right: 0; }
+    }
+    @media (max-width: 700px) {
+      .cs-sidebar { position: static; width: 100%; height: auto; border-left: none; border-bottom: 1px solid #ddd; }
+      .lx-main { margin-right: 0; padding: 16px; }
+      .lx-layout { flex-direction: column; }
+      .lx-container { padding: 28px 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="lx-layout">
+    ${renderSidebarSearchWidget(data)}
+    <div class="lx-main">
+      <div class="lx-container">
+        <div class="lx-bsd">בס"ד</div>
+        ${serialLabel ? `<div class="lx-serial">${serialLabel}</div>` : ""}
+        <div class="lx-main-title">פסק דין</div>
+        <hr class="lx-gold-rule" />
+        <div class="lx-case-title">${esc(stripEmojis(data.title))}</div>
+        ${caseLabel ? `<div style="text-align:center;font-size:0.9em;color:#777;margin-bottom:20px;">${caseLabel}</div>` : ""}
+
+        <section id="sec-details" data-search-scope="sec-details" data-search-label="פרטי התיק">
+          <table class="lx-meta-table">
+            ${data.court ? `<tr><td><strong>שם בית דין:</strong></td><td>${esc(data.court)}</td></tr>` : ""}
+            ${data.judges.length ? `<tr><td><strong>דיינים:</strong></td><td>${data.judges.map(j => esc(j)).join("&ensp;|&ensp;")}</td></tr>` : ""}
+            ${data.date ? `<tr><td><strong>תאריך:</strong></td><td>${esc(data.date)}</td></tr>` : ""}
+            ${data.topics ? `<tr><td><strong>נושאים:</strong></td><td>${esc(data.topics)}</td></tr>` : ""}
+            ${data.sourceUrl ? `<tr><td><strong>מקור:</strong></td><td><a href="${esc(data.sourceUrl)}" target="_blank" rel="noopener noreferrer" style="color:var(--navy);">קישור לפסק המקורי</a></td></tr>` : ""}
+          </table>
+        </section>
+
+        ${data.summary ? `<section id="sec-summary" data-search-scope="sec-summary" data-search-label="תקציר">
+          <div class="lx-summary-box"><h4><strong>תקציר</strong></h4><p style="margin:0;">${esc(data.summary)}</p></div>
+        </section>` : ""}
+
+        <div id="toc-top">${tocHtml}</div>
+        ${sectionsHtml}
+        ${fallbackBody ? `<section class="lx-section" data-search-scope="sec-fallback"><div class="lx-section-body">${fallbackBody}</div></section>` : ""}
+        ${judgesHtml}
+        <div class="lx-footer">עוצב בסגנון יוקרתי -- ${new Date().toLocaleDateString("he-IL")}</div>
+      </div>
+    </div>
+  </div>
+  ${SEARCH_WIDGET_SCRIPT}
+</body>
+</html>`;
+}
+
 function highlightSourcesStatic(escaped: string): string {
   return escaped.replace(
     /(שו&quot;ע|שו&quot;ת|רמב&quot;ם|רמ&quot;א|גמ(?:רא|&#39;)|טור|ב&quot;[קמגפ]|משנה\s+ברורה|חו&quot;מ|אה&quot;ע|או&quot;ח|יו&quot;ד)/g,
@@ -3354,6 +3519,7 @@ export function generateFromTemplate(templateId: string, data: ParsedPsakDin): s
     case "scholarly-halachic": return generateScholarlyHalachicHtml(sanitizedData);
     case "executive-brief": return generateExecutiveBriefHtml(sanitizedData);
     case "clean-sidebar": return generateCleanSidebarHtml(sanitizedData);
+    case "luxury": return generateLuxuryHtml(sanitizedData);
     case "classic":
     default:
       return generateClassicHtml(sanitizedData);
