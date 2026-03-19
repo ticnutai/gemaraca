@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   FileText,
   Monitor,
-  Globe,
   X,
   Star,
   StarOff,
@@ -53,7 +53,7 @@ const STORAGE_KEYS = {
   recentUrls: "pdf-viewer-recent-urls-v1",
 } as const;
 
-type ViewerEngine = "browser" | "embedpdf" | "google-docs";
+type ViewerEngine = "browser" | "embedpdf";
 type ViewMode = "single" | "split" | "compare";
 type ThemeKey = "cobalt" | "sand" | "noir";
 
@@ -79,13 +79,6 @@ const VIEWER_OPTIONS: ViewerOption[] = [
     label: "EmbedPDF (pdfium)",
     description: "מנוע PDF מתקדם — רינדור מקורי עם סרגל כלים מובנה",
     icon: FileText,
-    available: true,
-  },
-  {
-    id: "google-docs",
-    label: "Google Docs Viewer",
-    description: "צפייה דרך Google — תמיכה רחבה בפורמטים",
-    icon: Globe,
     available: true,
   },
 ];
@@ -123,12 +116,13 @@ function isValidUrl(s: string): boolean {
 
 /* ─── Component ─── */
 const PdfViewerTab = () => {
+  const navigate = useNavigate();
   // Viewer engine
   const [defaultViewer, setDefaultViewer] = useState<ViewerEngine | null>(() =>
     loadFromStorage<ViewerEngine | null>(STORAGE_KEYS.defaultViewer, null)
   );
   const [activeViewer, setActiveViewer] = useState<ViewerEngine>(
-    () => defaultViewer ?? "browser"
+    () => defaultViewer ?? "embedpdf"
   );
 
   // View mode & theme
@@ -261,28 +255,6 @@ const PdfViewerTab = () => {
       );
     }
 
-    if (engine === "google-docs") {
-      // Google Docs viewer — only works with public URLs (not blob URLs)
-      if (url.startsWith("blob:")) {
-        return (
-          <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
-            <Globe className="h-12 w-12 opacity-40" />
-            <p className="text-sm">צפיין Google Docs תומך רק בקישורים ציבוריים</p>
-            <p className="text-xs">העלאת קובץ מקומי עובדת רק עם הצפיין המובנה</p>
-          </div>
-        );
-      }
-      const encodedUrl = encodeURIComponent(url);
-      return (
-        <iframe
-          src={`https://docs.google.com/gview?url=${encodedUrl}&embedded=true`}
-          className="w-full h-full border-0 rounded-lg"
-          title="Google Docs PDF Viewer"
-          sandbox="allow-scripts allow-same-origin allow-popups"
-        />
-      );
-    }
-
     // Browser native viewer (default)
     return (
       <iframe
@@ -298,6 +270,13 @@ const PdfViewerTab = () => {
 
   return (
     <div className="p-3 md:p-6 space-y-4">
+      {/* Banner — suggest full EmbedPDF page */}
+      <div className="bg-[#0B1F5B]/5 border border-[#D4AF37]/40 rounded-xl p-3 flex items-center justify-between gap-3">
+        <p className="text-sm text-[#0B1F5B]/80">לחוויה מתקדמת יותר עם הערות, סימניות, ערכות נושא ועוד</p>
+        <Button size="sm" className="bg-[#0B1F5B] text-white border border-[#D4AF37] whitespace-nowrap gap-1" onClick={() => navigate('/embedpdf-viewer')}>
+          <FileText className="h-4 w-4" /> פתח צפיין מתקדם
+        </Button>
+      </div>
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>

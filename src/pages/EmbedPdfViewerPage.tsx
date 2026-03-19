@@ -483,7 +483,7 @@ function downloadBlob(content: string, filename: string, mime: string) {
 // ─── Component ───────────────────────────────────────────────
 
 export default function EmbedPdfViewerPage() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const [selectedPdfId, setSelectedPdfId] = useState<string | null>(null);
   const [comparePdfId, setComparePdfId] = useState<string | null>(null);
@@ -694,9 +694,11 @@ export default function EmbedPdfViewerPage() {
     isLoading: annotationsLoading,
   } = usePDFAnnotations(canPersist ? selectedPdf!.id : null);
 
-  // ── Post message to beautify iframe (sidebar controls) ──
+  // ── Post message to active iframe (sidebar controls) ──
   const sendBeautifyCmd = useCallback((msg: object) => {
-    beautifyIframeRef.current?.contentWindow?.postMessage(msg, '*');
+    // Try beautify iframe first, then fall back to html-embed iframe
+    const target = beautifyIframeRef.current?.contentWindow ?? htmlEmbedIframeRef.current?.contentWindow;
+    target?.postMessage(msg, '*');
   }, []);
 
   // Listen for state updates from beautify iframe
@@ -887,6 +889,12 @@ export default function EmbedPdfViewerPage() {
     setFetchHtmlError(null);
     setIsTextEditing(false);
     setTextEditBuffer("");
+    setBeautifiedHtml(null);
+    setLeftTemplate(null);
+    setLeftTemplateHtml(null);
+    setDocSearchQuery('');
+    setDocSearchCount(0);
+    setDocSearchCurrent(0);
   }, [leftSourceUrl]);
 
   // ── Download in multiple formats ──
@@ -1241,6 +1249,8 @@ export default function EmbedPdfViewerPage() {
       if (!rawText && fetchedHtml) {
         const tmp = document.createElement('div');
         tmp.innerHTML = fetchedHtml;
+        // Remove style/script elements before extracting text to prevent CSS leaking
+        tmp.querySelectorAll('style, script, link, meta, noscript').forEach(el => el.remove());
         rawText = tmp.textContent || '';
       }
       if (!rawText && psakData?.full_text) rawText = psakData.full_text;
@@ -1261,6 +1271,8 @@ export default function EmbedPdfViewerPage() {
       if (rightFetchedHtml) {
         const tmp = document.createElement('div');
         tmp.innerHTML = rightFetchedHtml;
+        // Remove style/script elements before extracting text to prevent CSS leaking
+        tmp.querySelectorAll('style, script, link, meta, noscript').forEach(el => el.remove());
         rawText = tmp.textContent || '';
       }
       if (!rawText && psakData?.full_text) rawText = psakData.full_text;
@@ -1682,7 +1694,7 @@ export default function EmbedPdfViewerPage() {
     assignSourceToTarget(newBookUrl.trim(), result.id);
     setNewBookTitle("");
     setNewBookUrl("");
-    setActivePanel(null);
+    if (!iconBarPinned) setActivePanel(null);
   }, [newBookTitle, newBookUrl, addBook, assignSourceToTarget]);
 
   // ─── Active panel state ──
@@ -1732,7 +1744,7 @@ export default function EmbedPdfViewerPage() {
         fileUrl: publicUrl,
       });
       assignSourceToTarget(publicUrl, result.id);
-      setActivePanel(null);
+      if (!iconBarPinned) setActivePanel(null);
       toast.success(`הקובץ "${file.name}" הועלה בהצלחה`);
     } catch (err: any) {
       console.error("Upload error:", err);
@@ -1787,13 +1799,27 @@ export default function EmbedPdfViewerPage() {
   const [cloudSearch, setCloudSearch] = useState("");
   const [cloudCourtFilter, setCloudCourtFilter] = useState("all");
   const [cloudYearFilter, setCloudYearFilter] = useState("all");
+  const [cloudFileTypeFilter, setCloudFileTypeFilter] = useState("all");
+  const [cloudTagFilter, setCloudTagFilter] = useState("all");
+
+  // Derive file type from source_url
+  const getFileType = useCallback((url: string | null): string => {
+    if (!url) return "אחר";
+    const lower = url.toLowerCase();
+    if (lower.includes('.pdf')) return "PDF";
+    if (lower.includes('.html') || lower.includes('.htm')) return "HTML";
+    if (lower.includes('.txt')) return "TXT";
+    if (lower.includes('.doc') || lower.includes('.docx')) return "DOCX";
+    if (lower.match(/\.(png|jpg|jpeg|webp|gif|svg)/)) return "תמונה";
+    return "אחר";
+  }, []);
 
   const loadCloudDocs = useCallback(async () => {
     setLoadingCloudDocs(true);
     try {
       const { data, error } = await supabase
         .from('psakei_din')
-        .select('id, title, source_url, court, year')
+        .select('id, title, source_url, court, year, tags')
         .not('source_url', 'is', null)
         .order('created_at', { ascending: false })
         .limit(200);
@@ -1806,7 +1832,7 @@ export default function EmbedPdfViewerPage() {
     }
   }, []);
 
-  // Derived: unique courts and years for filters
+  // Derived: unique courts, years, file types, tags for filters
   const cloudCourts = useMemo(() => {
     const courts = new Set<string>();
     cloudDocs.forEach(d => { if (d.court) courts.add(d.court); });
@@ -1819,6 +1845,22 @@ export default function EmbedPdfViewerPage() {
     return Array.from(years).sort((a, b) => b - a);
   }, [cloudDocs]);
 
+  const cloudFileTypes = useMemo(() => {
+    const types = new Set<string>();
+    cloudDocs.forEach(d => types.add(getFileType(d.source_url)));
+    return Array.from(types).sort();
+  }, [cloudDocs, getFileType]);
+
+  const cloudTags = useMemo(() => {
+    const tags = new Set<string>();
+    cloudDocs.forEach(d => {
+      if (d.tags && Array.isArray(d.tags)) {
+        d.tags.forEach((t: string) => tags.add(t));
+      }
+    });
+    return Array.from(tags).sort((a, b) => a.localeCompare(b, 'he'));
+  }, [cloudDocs]);
+
   // Filtered cloud docs
   const filteredCloudDocs = useMemo(() => {
     return cloudDocs.filter(doc => {
@@ -1826,19 +1868,20 @@ export default function EmbedPdfViewerPage() {
         doc.title?.toLowerCase().includes(cloudSearch.toLowerCase());
       const matchesCourt = cloudCourtFilter === "all" || doc.court === cloudCourtFilter;
       const matchesYear = cloudYearFilter === "all" || String(doc.year) === cloudYearFilter;
-      return matchesSearch && matchesCourt && matchesYear;
+      const matchesFileType = cloudFileTypeFilter === "all" || getFileType(doc.source_url) === cloudFileTypeFilter;
+      const matchesTag = cloudTagFilter === "all" || (doc.tags && doc.tags.includes(cloudTagFilter));
+      return matchesSearch && matchesCourt && matchesYear && matchesFileType && matchesTag;
     });
-  }, [cloudDocs, cloudSearch, cloudCourtFilter, cloudYearFilter]);
+  }, [cloudDocs, cloudSearch, cloudCourtFilter, cloudYearFilter, cloudFileTypeFilter, cloudTagFilter, getFileType]);
 
   // Icon toolbar items
   const toolbarItems = [
-    { id: "add", icon: Plus, label: "הוסף מסמך", badge: undefined },
     { id: "docs", icon: BookOpen, label: `מסמכים (${books.length})`, badge: books.length > 0 ? books.length : undefined },
     { id: "annotations", icon: Palette, label: "אנוטציות", badge: annotations.length > 0 ? annotations.length : undefined },
     { id: "bookmarks", icon: Bookmark, label: `סימניות (${bookmarks.length})`, badge: bookmarks.length > 0 ? bookmarks.length : undefined },
     { id: "stats", icon: BarChart3, label: "סטטיסטיקות", badge: undefined },
     ...(psakIdParam ? [{ id: "beautify", icon: Sparkles, label: "עצב פסק דין", badge: beautifiedHtml ? 1 : undefined }] : []),
-    ...(beautifiedHtml ? [{ id: "doc-search", icon: Search, label: "חיפוש במסמך", badge: undefined }] : []),
+    ...((beautifiedHtml || leftTemplateHtml || (leftContentType === 'html-embed' && fetchedHtml)) ? [{ id: "doc-search", icon: Search, label: "חיפוש במסמך", badge: undefined }] : []),
   ];
 
   // Hidden file input
@@ -2001,7 +2044,7 @@ export default function EmbedPdfViewerPage() {
                   ? "bg-[#0B1F5B] text-white"
                   : "text-[#0B1F5B]/60 hover:bg-[#D4AF37]/15 hover:text-[#0B1F5B]"
               }`}
-              title={iconBarPinned ? "בטל הצמדת פאנל" : "הצמד פאנל"}
+              title={iconBarPinned ? "בטל הצמדת סרגל צד" : "הצמד סרגל צד פתוח"}
             >
               {iconBarPinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
             </button>
@@ -2051,7 +2094,7 @@ export default function EmbedPdfViewerPage() {
                     size="icon"
                     variant="ghost"
                     className={`h-6 w-6 ${iconBarPinned ? "text-[#0B1F5B] bg-[#D4AF37]/20" : "text-[#0B1F5B]/40"}`}
-                    title={iconBarPinned ? "בטל הצמדת פאנל" : "הצמד פאנל פתוח"}
+                    title={iconBarPinned ? "בטל הצמדת סרגל צד" : "הצמד סרגל צד פתוח"}
                     onClick={() => setIconBarPinned(p => !p)}
                   >
                     {iconBarPinned ? <PinOff className="h-3 w-3" /> : <Pin className="h-3 w-3" />}
@@ -2155,6 +2198,29 @@ export default function EmbedPdfViewerPage() {
                       </select>
                     </div>
 
+                    <div className="flex gap-1">
+                      <select
+                        value={cloudFileTypeFilter}
+                        onChange={(e) => setCloudFileTypeFilter(e.target.value)}
+                        className="flex-1 h-6 text-[10px] rounded border border-[#D4AF37]/30 bg-white text-[#0B1F5B] px-1"
+                      >
+                        <option value="all">סוג קובץ</option>
+                        {cloudFileTypes.map(ft => (
+                          <option key={ft} value={ft}>{ft}</option>
+                        ))}
+                      </select>
+                      <select
+                        value={cloudTagFilter}
+                        onChange={(e) => setCloudTagFilter(e.target.value)}
+                        className="flex-1 h-6 text-[10px] rounded border border-[#D4AF37]/30 bg-white text-[#0B1F5B] px-1"
+                      >
+                        <option value="all">מסכת / תגית</option>
+                        {cloudTags.map(t => (
+                          <option key={t} value={t}>{t}</option>
+                        ))}
+                      </select>
+                    </div>
+
                     {cloudDocs.length > 0 && (
                       <p className="text-[10px] text-[#0B1F5B]/40">
                         {filteredCloudDocs.length} מתוך {cloudDocs.length} מסמכים
@@ -2179,14 +2245,23 @@ export default function EmbedPdfViewerPage() {
                               className="w-full flex items-start gap-2 px-2 py-2 text-right hover:bg-[#D4AF37]/10 transition-colors"
                               onClick={() => {
                                 assignSourceToTarget(doc.source_url, null);
-                                setActivePanel(null);
+                                // Update URL params so psakId and url reflect the new document
+                                const newParams = new URLSearchParams();
+                                newParams.set("url", doc.source_url);
+                                newParams.set("psakId", doc.id);
+                                setSearchParams(newParams, { replace: true });
+                                setPsakData(doc);
+                                if (!iconBarPinned) setActivePanel(null);
                                 toast.success(`נטען: ${doc.title || "מסמך"}`);
                               }}
                             >
                               <FileText className="h-4 w-4 text-[#D4AF37] shrink-0 mt-0.5" />
                               <div className="flex-1 min-w-0 text-right">
                                 <p className="text-xs font-medium truncate" style={{ color: "#0B1F5B" }}>{doc.title || "ללא כותרת"}</p>
-                                <p className="text-[10px]" style={{ color: "#0B1F5B99" }}>{doc.court || "—"} · {doc.year || "—"}</p>
+                                <div className="flex items-center gap-1 flex-wrap">
+                                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#D4AF37]/15 text-[#0B1F5B]/70 font-medium">{getFileType(doc.source_url)}</span>
+                                  <span className="text-[10px]" style={{ color: "#0B1F5B99" }}>{doc.court || "—"} · {doc.year || "—"}</span>
+                                </div>
                               </div>
                             </button>
                           ))}
@@ -2263,7 +2338,7 @@ export default function EmbedPdfViewerPage() {
                                 setSelectedPdfId(book.id);
                                 setManualUrl("");
                               }
-                              setActivePanel(null);
+                              if (!iconBarPinned) setActivePanel(null);
                             }}
                           >
                             <span className="truncate flex-1 text-[#0B1F5B]">{book.title}</span>
@@ -2421,7 +2496,7 @@ export default function EmbedPdfViewerPage() {
               )}
 
               {/* DOC SEARCH */}
-              {activePanel === "doc-search" && beautifiedHtml && (
+              {activePanel === "doc-search" && (beautifiedHtml || leftTemplateHtml || (leftContentType === 'html-embed' && fetchedHtml)) && (
                 <div className="space-y-3">
                   <p className="text-xs font-semibold text-[#0B1F5B]">🔍 חיפוש במסמך המעוצב</p>
                   <div className="flex gap-1 items-center">
@@ -3102,7 +3177,7 @@ export default function EmbedPdfViewerPage() {
               <div className="flex-1 relative bg-[#f8f8f6]">
                 {/* BEAUTIFIED VIEW */}
                 {leftTemplateHtml && !beautifiedHtml ? (
-                  <iframe srcDoc={leftTemplateHtml} className="absolute inset-0 w-full h-full border-0" title="Template View" sandbox="allow-same-origin allow-scripts allow-popups" />
+                  <iframe ref={beautifyIframeRef} srcDoc={leftTemplateHtml} className="absolute inset-0 w-full h-full border-0" title="Template View" sandbox="allow-same-origin allow-scripts allow-popups" />
                 ) : beautifiedHtml && activePanel === "beautify" ? (
                   <iframe
                     ref={beautifyIframeRef}
@@ -3273,9 +3348,6 @@ export default function EmbedPdfViewerPage() {
                           <p className="text-sm text-[#0B1F5B]/70">לא ניתן לטעון את המסמך</p>
                           <div className="flex gap-2 justify-center flex-wrap">
                             <Button size="sm" variant="outline" className="border-[#D4AF37]" onClick={() => { setIframeError(false); setIframeLoaded(false); }}><RefreshCw className="h-3.5 w-3.5 ml-1" /> נסה שוב</Button>
-                            {leftContentType !== 'docx' && (
-                              <Button size="sm" variant="outline" className="border-[#D4AF37]" onClick={() => { setIframeError(false); setIframeLoaded(false); setManualUrl(`https://docs.google.com/gview?url=${encodeURIComponent(leftSourceUrl)}&embedded=true`); }}>Google Viewer</Button>
-                            )}
                             <a href={leftSourceUrl} target="_blank" rel="noopener noreferrer"><Button size="sm" className="bg-[#0B1F5B] text-white border-2 border-[#D4AF37]"><ExternalLink className="h-3.5 w-3.5 ml-1" /> חלון חדש</Button></a>
                           </div>
                         </div>

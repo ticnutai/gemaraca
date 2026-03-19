@@ -76,13 +76,13 @@ const ViewerPreferenceDialog = ({ open, onOpenChange, onSelect }: ViewerPreferen
 
           <Button
             variant="outline"
-            className="w-full justify-start gap-3 h-14 text-base"
+            className="w-full justify-start gap-3 h-14 text-base ring-2 ring-[#D4AF37] bg-[#D4AF37]/5"
             onClick={() => handleSelect("embedpdf")}
           >
             <FileText className="h-5 w-5 text-primary" />
             <div className="text-right">
-              <div className="font-semibold">EmbedPDF</div>
-              <div className="text-xs text-muted-foreground">תצוגת PDF מתקדמת בדף נפרד</div>
+              <div className="font-semibold">EmbedPDF <span className="text-[10px] text-[#D4AF37] mr-1">מומלץ</span></div>
+              <div className="text-xs text-muted-foreground">תצוגת PDF מתקדמת עם הערות, סימניות ועוד</div>
             </div>
           </Button>
 

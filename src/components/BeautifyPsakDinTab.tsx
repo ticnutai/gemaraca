@@ -1459,7 +1459,7 @@ const BeautifyPsakDinTab = () => {
                     ref={previewIframeRef}
                     srcDoc={htmlResult}
                     className="w-full min-h-[400px] border rounded-md bg-white"
-                    sandbox="allow-same-origin"
+                    sandbox="allow-same-origin allow-scripts"
                     title="תצוגה מקדימה של פסק דין מעוצב"
                     onLoad={applyPreviewTypography}
                     style={{ pointerEvents: isPreviewLocked ? "none" : "auto" }}
