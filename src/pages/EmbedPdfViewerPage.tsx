@@ -1686,7 +1686,7 @@ export default function EmbedPdfViewerPage() {
     assignSourceToTarget(newBookUrl.trim(), result.id);
     setNewBookTitle("");
     setNewBookUrl("");
-    setActivePanel(null);
+    if (!iconBarPinned) setActivePanel(null);
   }, [newBookTitle, newBookUrl, addBook, assignSourceToTarget]);
 
   // ─── Active panel state ──
@@ -1736,7 +1736,7 @@ export default function EmbedPdfViewerPage() {
         fileUrl: publicUrl,
       });
       assignSourceToTarget(publicUrl, result.id);
-      setActivePanel(null);
+      if (!iconBarPinned) setActivePanel(null);
       toast.success(`הקובץ "${file.name}" הועלה בהצלחה`);
     } catch (err: any) {
       console.error("Upload error:", err);
@@ -1791,13 +1791,27 @@ export default function EmbedPdfViewerPage() {
   const [cloudSearch, setCloudSearch] = useState("");
   const [cloudCourtFilter, setCloudCourtFilter] = useState("all");
   const [cloudYearFilter, setCloudYearFilter] = useState("all");
+  const [cloudFileTypeFilter, setCloudFileTypeFilter] = useState("all");
+  const [cloudTagFilter, setCloudTagFilter] = useState("all");
+
+  // Derive file type from source_url
+  const getFileType = useCallback((url: string | null): string => {
+    if (!url) return "אחר";
+    const lower = url.toLowerCase();
+    if (lower.includes('.pdf')) return "PDF";
+    if (lower.includes('.html') || lower.includes('.htm')) return "HTML";
+    if (lower.includes('.txt')) return "TXT";
+    if (lower.includes('.doc') || lower.includes('.docx')) return "DOCX";
+    if (lower.match(/\.(png|jpg|jpeg|webp|gif|svg)/)) return "תמונה";
+    return "אחר";
+  }, []);
 
   const loadCloudDocs = useCallback(async () => {
     setLoadingCloudDocs(true);
     try {
       const { data, error } = await supabase
         .from('psakei_din')
-        .select('id, title, source_url, court, year')
+        .select('id, title, source_url, court, year, tags')
         .not('source_url', 'is', null)
         .order('created_at', { ascending: false })
         .limit(200);
@@ -1810,7 +1824,7 @@ export default function EmbedPdfViewerPage() {
     }
   }, []);
 
-  // Derived: unique courts and years for filters
+  // Derived: unique courts, years, file types, tags for filters
   const cloudCourts = useMemo(() => {
     const courts = new Set<string>();
     cloudDocs.forEach(d => { if (d.court) courts.add(d.court); });
@@ -1823,6 +1837,22 @@ export default function EmbedPdfViewerPage() {
     return Array.from(years).sort((a, b) => b - a);
   }, [cloudDocs]);
 
+  const cloudFileTypes = useMemo(() => {
+    const types = new Set<string>();
+    cloudDocs.forEach(d => types.add(getFileType(d.source_url)));
+    return Array.from(types).sort();
+  }, [cloudDocs, getFileType]);
+
+  const cloudTags = useMemo(() => {
+    const tags = new Set<string>();
+    cloudDocs.forEach(d => {
+      if (d.tags && Array.isArray(d.tags)) {
+        d.tags.forEach((t: string) => tags.add(t));
+      }
+    });
+    return Array.from(tags).sort((a, b) => a.localeCompare(b, 'he'));
+  }, [cloudDocs]);
+
   // Filtered cloud docs
   const filteredCloudDocs = useMemo(() => {
     return cloudDocs.filter(doc => {
@@ -1830,9 +1860,11 @@ export default function EmbedPdfViewerPage() {
         doc.title?.toLowerCase().includes(cloudSearch.toLowerCase());
       const matchesCourt = cloudCourtFilter === "all" || doc.court === cloudCourtFilter;
       const matchesYear = cloudYearFilter === "all" || String(doc.year) === cloudYearFilter;
-      return matchesSearch && matchesCourt && matchesYear;
+      const matchesFileType = cloudFileTypeFilter === "all" || getFileType(doc.source_url) === cloudFileTypeFilter;
+      const matchesTag = cloudTagFilter === "all" || (doc.tags && doc.tags.includes(cloudTagFilter));
+      return matchesSearch && matchesCourt && matchesYear && matchesFileType && matchesTag;
     });
-  }, [cloudDocs, cloudSearch, cloudCourtFilter, cloudYearFilter]);
+  }, [cloudDocs, cloudSearch, cloudCourtFilter, cloudYearFilter, cloudFileTypeFilter, cloudTagFilter, getFileType]);
 
   // Icon toolbar items
   const toolbarItems = [
@@ -2158,6 +2190,29 @@ export default function EmbedPdfViewerPage() {
                       </select>
                     </div>
 
+                    <div className="flex gap-1">
+                      <select
+                        value={cloudFileTypeFilter}
+                        onChange={(e) => setCloudFileTypeFilter(e.target.value)}
+                        className="flex-1 h-6 text-[10px] rounded border border-[#D4AF37]/30 bg-white text-[#0B1F5B] px-1"
+                      >
+                        <option value="all">סוג קובץ</option>
+                        {cloudFileTypes.map(ft => (
+                          <option key={ft} value={ft}>{ft}</option>
+                        ))}
+                      </select>
+                      <select
+                        value={cloudTagFilter}
+                        onChange={(e) => setCloudTagFilter(e.target.value)}
+                        className="flex-1 h-6 text-[10px] rounded border border-[#D4AF37]/30 bg-white text-[#0B1F5B] px-1"
+                      >
+                        <option value="all">מסכת / תגית</option>
+                        {cloudTags.map(t => (
+                          <option key={t} value={t}>{t}</option>
+                        ))}
+                      </select>
+                    </div>
+
                     {cloudDocs.length > 0 && (
                       <p className="text-[10px] text-[#0B1F5B]/40">
                         {filteredCloudDocs.length} מתוך {cloudDocs.length} מסמכים
@@ -2182,14 +2237,17 @@ export default function EmbedPdfViewerPage() {
                               className="w-full flex items-start gap-2 px-2 py-2 text-right hover:bg-[#D4AF37]/10 transition-colors"
                               onClick={() => {
                                 assignSourceToTarget(doc.source_url, null);
-                                setActivePanel(null);
+                                if (!iconBarPinned) setActivePanel(null);
                                 toast.success(`נטען: ${doc.title || "מסמך"}`);
                               }}
                             >
                               <FileText className="h-4 w-4 text-[#D4AF37] shrink-0 mt-0.5" />
                               <div className="flex-1 min-w-0 text-right">
                                 <p className="text-xs font-medium truncate" style={{ color: "#0B1F5B" }}>{doc.title || "ללא כותרת"}</p>
-                                <p className="text-[10px]" style={{ color: "#0B1F5B99" }}>{doc.court || "—"} · {doc.year || "—"}</p>
+                                <div className="flex items-center gap-1 flex-wrap">
+                                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#D4AF37]/15 text-[#0B1F5B]/70 font-medium">{getFileType(doc.source_url)}</span>
+                                  <span className="text-[10px]" style={{ color: "#0B1F5B99" }}>{doc.court || "—"} · {doc.year || "—"}</span>
+                                </div>
                               </div>
                             </button>
                           ))}
@@ -2266,7 +2324,7 @@ export default function EmbedPdfViewerPage() {
                                 setSelectedPdfId(book.id);
                                 setManualUrl("");
                               }
-                              setActivePanel(null);
+                              if (!iconBarPinned) setActivePanel(null);
                             }}
                           >
                             <span className="truncate flex-1 text-[#0B1F5B]">{book.title}</span>
