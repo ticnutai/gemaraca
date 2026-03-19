@@ -52,9 +52,10 @@ const NEW_TEMPLATE_IDS = [
   "court-decree",
   "scholarly-halachic",
   "executive-brief",
+  "clean-sidebar",
 ];
 
-describe("4 תבניות חדשות — רישום ב-TEMPLATES", () => {
+describe("5 תבניות חדשות — רישום ב-TEMPLATES", () => {
   for (const id of NEW_TEMPLATE_IDS) {
     it(`"${id}" רשומה במערך TEMPLATES`, () => {
       const tmpl = TEMPLATES.find((t) => t.id === id);
@@ -63,7 +64,6 @@ describe("4 תבניות חדשות — רישום ב-TEMPLATES", () => {
       expect(tmpl!.hasIndex).toBe(true);
       expect(tmpl!.name).toBeTruthy();
       expect(tmpl!.description).toBeTruthy();
-      expect(tmpl!.icon).toBeTruthy();
     });
   }
 });
@@ -239,4 +239,61 @@ describe("יצירת HTML ללא נתונים — graceful fallback", () => {
       expect(html).toContain("</html>");
     });
   }
+});
+
+describe("תבנית clean-sidebar — מאפיינים ייחודיים", () => {
+  const html = generateFromTemplate("clean-sidebar", SAMPLE_DATA);
+
+  it("כוללת layout דו-עמודי עם sidebar", () => {
+    expect(html).toContain("cs-layout");
+    expect(html).toContain("cs-sidebar");
+    expect(html).toContain("cs-main");
+  });
+
+  it("לא כוללת אימוג'ים או אייקונים", () => {
+    const tmpl = TEMPLATES.find((t) => t.id === "clean-sidebar");
+    expect(tmpl!.icon).toBe("");
+    // Verify no emoji in doc body
+    const emojiRe = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u;
+    expect(emojiRe.test(html)).toBe(false);
+  });
+
+  it("חיפוש מוצג ב-sidebar ולא ב-sticky top", () => {
+    expect(html).toContain("cs-sidebar");
+    expect(html).toContain("cs-search-input");
+    // Default search widget is hidden
+    expect(html).toContain(".search-widget { display: none !important; }");
+  });
+
+  it("כוללת כפתורי חיפוש וניווט ב-sidebar", () => {
+    expect(html).toContain("psak-search-prev");
+    expect(html).toContain("psak-search-next");
+    expect(html).toContain("psak-search-clear");
+    expect(html).toContain("psak-prev-sec");
+    expect(html).toContain("psak-next-sec");
+    expect(html).toContain("psak-expand-all");
+    expect(html).toContain("psak-collapse-all");
+  });
+
+  it("כוללת שדה הערות ב-sidebar", () => {
+    expect(html).toContain("psak-notes");
+    expect(html).toContain("psak-save-notes");
+  });
+
+  it("sidebar מוסתר בהדפסה", () => {
+    expect(html).toContain("@media print");
+    expect(html).toContain(".cs-sidebar { display: none; }");
+  });
+
+  it("responsive — sidebar הופך לרצועה עליונה במסך צר", () => {
+    expect(html).toContain("@media (max-width: 700px)");
+  });
+
+  it("כוללת חתימות דיינים ללא אייקונים", () => {
+    expect(html).toContain("cs-sig-grid");
+    expect(html).toContain("cs-sig-name");
+    for (const judge of SAMPLE_DATA.judges) {
+      expect(html).toContain(judge);
+    }
+  });
 });
