@@ -94,6 +94,39 @@ export type Database = {
         }
         Relationships: []
       }
+      gemara_edit_snapshots: {
+        Row: {
+          created_at: string
+          edited_html: string
+          id: string
+          sugya_id: string
+          text_settings: Json | null
+          updated_at: string
+          user_id: string
+          view_mode: string
+        }
+        Insert: {
+          created_at?: string
+          edited_html?: string
+          id?: string
+          sugya_id: string
+          text_settings?: Json | null
+          updated_at?: string
+          user_id: string
+          view_mode?: string
+        }
+        Update: {
+          created_at?: string
+          edited_html?: string
+          id?: string
+          sugya_id?: string
+          text_settings?: Json | null
+          updated_at?: string
+          user_id?: string
+          view_mode?: string
+        }
+        Relationships: []
+      }
       gemara_pages: {
         Row: {
           book: string | null
