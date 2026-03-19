@@ -33,6 +33,8 @@ interface FloatingTextToolbarProps {
   editMode?: boolean;
   /** Callback to apply annotation to selection for non-edit mode */
   onAnnotate?: (styles: Record<string, string>) => void;
+  /** Called after any formatting command is applied (for auto-save) */
+  onAfterFormat?: () => void;
 }
 
 export default function FloatingTextToolbar({ containerRef, iframeRef, editMode, onAnnotate }: FloatingTextToolbarProps) {
