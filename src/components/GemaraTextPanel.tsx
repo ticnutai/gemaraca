@@ -1178,6 +1178,13 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
         return gemaraText ? (
           <div className="space-y-0 relative">
             {renderTextToolbar()}
+            {/* Auto-save indicator */}
+            {textAutoSave.isSaving && (
+              <div className="absolute top-1 left-2 z-10 flex items-center gap-1 text-[10px] text-muted-foreground bg-muted/80 px-2 py-0.5 rounded-full">
+                <Save className="h-3 w-3 animate-pulse" />
+                שומר...
+              </div>
+            )}
             {textEditMode ? (
               <div className="border border-t-0 border-border rounded-b-lg bg-white dark:bg-background overflow-hidden" style={{ minHeight: '500px' }}>
                 <iframe
@@ -1187,19 +1194,24 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
                     body { font-family: 'David Libre', 'David', serif; font-size: ${textSettings.fontSize}px; line-height: ${textSettings.lineHeight}; color: hsl(222 47% 11%); padding: 24px; margin: 0; direction: rtl; text-align: ${textSettings.textAlign}; column-count: ${textSettings.columns}; column-gap: 32px; column-rule: 1px solid #e5e7eb; }
                     ::selection { background: hsl(37 77% 53% / 0.3); }
                     p, div { margin-bottom: 8px; break-inside: avoid; }
-                  </style></head><body>${memoizedPlainText.split('\n').map(p => `<p>${p || '&nbsp;'}</p>`).join('')}</body></html>`}
+                  </style></head><body>${textAutoSave.savedHtml || memoizedPlainText.split('\n').map(p => `<p>${p || '&nbsp;'}</p>`).join('')}</body></html>`}
                   className="w-full border-0"
                   style={{ height: '600px' }}
                   title="עריכת טקסט גמרא"
                   onLoad={() => {
                     const doc = textIframeRef.current?.contentDocument;
-                    if (doc) doc.designMode = "on";
+                    if (doc) {
+                      doc.designMode = "on";
+                      // Attach auto-save listener
+                      textAutoSave.attachIframeAutoSave(textIframeRef, textSettings as any);
+                    }
                   }}
                 />
                 <FloatingTextToolbar
                   containerRef={textContentRef}
                   iframeRef={textIframeRef}
                   editMode={true}
+                  onAfterFormat={() => textAutoSave.saveFromIframe(textIframeRef, textSettings as any)}
                 />
               </div>
             ) : (
