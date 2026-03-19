@@ -180,7 +180,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   const { toast } = useToast();
   const textIframeRef = useRef<HTMLIFrameElement>(null);
   const textContentRef = useRef<HTMLDivElement>(null);
-  const [textEditMode, setTextEditMode] = useState(false);
+  const [textEditMode, setTextEditMode] = useState(true);
 
   // Auto-save hooks for text and cloud views
   const textAutoSave = useGemaraAutoSave(sugyaId, 'text');
