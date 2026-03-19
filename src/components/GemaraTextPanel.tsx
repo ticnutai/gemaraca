@@ -1243,13 +1243,25 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
             ) : (
               <div
                 ref={textContentRef}
-                className="prose prose-slate max-w-none dark:prose-invert bg-amber-50/30 dark:bg-amber-950/10 p-4 rounded-b-lg border border-t-0 border-border"
+                contentEditable
+                suppressContentEditableWarning
+                className="prose prose-slate max-w-none dark:prose-invert bg-amber-50/30 dark:bg-amber-950/10 p-4 rounded-b-lg border border-t-0 border-border outline-none"
                 style={textSettings.columns > 1 ? { columnCount: textSettings.columns, columnGap: '32px', columnRule: '1px solid hsl(var(--border))' } : undefined}
+                onInput={() => {
+                  if (textContentRef.current) {
+                    textAutoSave.saveToCloud(textContentRef.current.innerHTML, textSettings as any);
+                  }
+                }}
               >
                 {renderGemaraText()}
                 <FloatingTextToolbar
                   containerRef={textContentRef}
-                  editMode={false}
+                  editMode={true}
+                  onAfterFormat={() => {
+                    if (textContentRef.current) {
+                      textAutoSave.saveToCloud(textContentRef.current.innerHTML, textSettings as any);
+                    }
+                  }}
                 />
               </div>
             )}
