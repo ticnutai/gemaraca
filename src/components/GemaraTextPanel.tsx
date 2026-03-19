@@ -182,6 +182,10 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   const textContentRef = useRef<HTMLDivElement>(null);
   const [textEditMode, setTextEditMode] = useState(false);
 
+  // Auto-save hooks for text and cloud views
+  const textAutoSave = useGemaraAutoSave(sugyaId, 'text');
+  const cloudAutoSave = useGemaraAutoSave(sugyaId, 'cloud');
+
   // Cloud editor state
   const cloudIframeRef = useRef<HTMLIFrameElement>(null);
   const [cloudEditMode, setCloudEditMode] = useState(false);
