@@ -151,6 +151,38 @@ export const TEMPLATES: TemplateInfo[] = [
     hasIndex: true,
   },
   {
+    id: "psakim-formal",
+    name: "פסקים רשמי (בסגנון פסקים.אורג)",
+    description: "תבנית נאמנה לפורמט פסקים.אורג: מספור בעברית, ציטוט בבלוק, מקרא-החלטה, חתימות עם קו תחתון",
+    requiresAi: false,
+    icon: "📋",
+    hasIndex: true,
+  },
+  {
+    id: "court-decree",
+    name: "גזר דין סמכותי",
+    description: "עיצוב סמכותי עם חותמת בית דין, כותרות מודגשות, תיבת החלטה בולטת ופסקאות ממוספרות",
+    requiresAi: false,
+    icon: "🏛️",
+    hasIndex: true,
+  },
+  {
+    id: "scholarly-halachic",
+    name: "עיוני הלכתי",
+    description: "דגש על מקורות הלכתיים: הבלטת ציטוטים, פאנלים למקורות, רקע קלף חמים ואותיות עבריות",
+    requiresAi: false,
+    icon: "📚",
+    hasIndex: true,
+  },
+  {
+    id: "executive-brief",
+    name: "תמצית מנהלים",
+    description: "כרטיס סיכום בראש, נקודות מפתח מודגשות, תיבת החלטה בולטת וזרימה חזותית בין סעיפים",
+    requiresAi: false,
+    icon: "📊",
+    hasIndex: true,
+  },
+  {
     id: "ai-enhanced",
     name: "שיפור AI מלא",
     description: "AI מעצב, מסכם ומשפר את הטקסט, מוסיף מבנה מקצועי",
@@ -2536,6 +2568,564 @@ function generateRabbinicAuthenticHtml(data: ParsedPsakDin): string {
 </html>`;
 }
 
+// ═════════════════════════════════════════════════════
+// TEMPLATE 1: Psakim Formal (בסגנון פסקים.אורג)
+// ═════════════════════════════════════════════════════
+function generatePsakimFormalHtml(data: ParsedPsakDin): string {
+  const { tocHtml, sectionAnchors } = buildTableOfContents(data);
+
+  const sectionsHtml = data.sections.map((section, i) => {
+    const anchor = sectionAnchors.get(i) || `sec-${i}`;
+    const contentHtml = renderAuthenticBlocks(section.content);
+    return `<section class="pf-section" data-search-scope="${anchor}" data-search-label="${esc(section.title)}">
+      <h3 id="${anchor}" class="pf-section-head">${esc(section.title)} <a href="#toc-top" class="pf-back" title="חזרה לתוכן עניינים">▲</a></h3>
+      <div class="pf-section-body">${contentHtml}</div>
+    </section>`;
+  }).join("\n");
+
+  const fallbackBody = data.sections.length ? "" : renderAuthenticBlocks(data.rawText);
+
+  const judgesHtml = data.judges.length > 0
+    ? `<div id="sec-signature" class="pf-signature" data-search-scope="sec-signature" data-search-label="חתימה">
+        <div class="pf-sig-verse">"וְהָאֱמֶת וְהַשָּׁלוֹם אֱהָבוּ"</div>
+        <div class="pf-sig-grid">
+          ${data.judges.map((j) => `<div class="pf-sig-item"><div class="pf-sig-line"></div><div class="pf-sig-name">${esc(j)}</div></div>`).join("\n          ")}
+        </div>
+      </div>`
+    : "";
+
+  const caseLabel = data.caseNumber ? `תיק מספר ${esc(data.caseNumber)}` : "";
+  const serialLabel = data.sourceId ? `מס. סידורי: ${esc(data.sourceId)}` : "";
+
+  return `<!DOCTYPE html>
+<html lang="he-IL" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>פסק דין: ${esc(data.title)}</title>
+  <style>
+    :root { --navy: #0B1F5B; --gold: #D4AF37; --bg: #FDFCF9; --text: #1a1a2e; }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: 'David', 'Frank Ruhl Libre', 'Noto Serif Hebrew', Georgia, serif; background: #eee; color: var(--text); line-height: 1.85; margin: 0; padding: 20px; direction: rtl; }
+    .pf-container { max-width: 780px; margin: 0 auto; background: var(--bg); border: 1px solid #ccc; border-radius: 6px; padding: 50px 55px; box-shadow: 0 2px 12px rgba(0,0,0,.08); }
+    .pf-bsd { text-align: center; font-size: 1.3em; font-weight: bold; color: var(--navy); margin-bottom: 6px; }
+    .pf-serial { text-align: left; font-size: 0.85em; color: #888; margin-bottom: 20px; }
+    .pf-main-title { text-align: center; font-size: 2em; font-weight: bold; color: var(--navy); margin: 18px 0 6px; letter-spacing: 2px; }
+    .pf-case-title { text-align: center; font-size: 1.25em; color: var(--gold); margin-bottom: 10px; font-weight: 600; }
+    .pf-meta-table { width: 100%; border-collapse: collapse; margin: 18px 0 30px; }
+    .pf-meta-table td { padding: 6px 14px; border-bottom: 1px solid #e8e4d8; font-size: 0.92em; vertical-align: top; }
+    .pf-meta-table td:first-child { font-weight: bold; color: var(--navy); width: 130px; white-space: nowrap; }
+    .pf-summary-box { background: #f5f3ec; border-right: 4px solid var(--gold); padding: 16px 22px; margin: 20px 0 30px; border-radius: 0 6px 6px 0; }
+    .pf-summary-box h4 { color: var(--navy); margin: 0 0 8px; font-size: 1.05em; }
+    .pf-section { margin-bottom: 28px; }
+    .pf-section-head { color: var(--navy); font-size: 1.3em; font-weight: bold; padding-bottom: 6px; border-bottom: 2px solid var(--gold); margin-bottom: 14px; scroll-margin-top: 98px; }
+    .pf-back { color: var(--gold); text-decoration: none; font-size: 0.65em; margin-right: 8px; }
+    .pf-section-body { padding-right: 12px; }
+    .auth-paragraph { text-indent: 1.5em; margin: 0 0 10px; text-align: justify; }
+    .heb-list { list-style: none; padding: 0; margin: 10px 0; }
+    .heb-list li { margin-bottom: 8px; padding-right: 10px; }
+    .heb-marker { color: var(--gold); font-weight: bold; font-size: 1.05em; }
+    .num-list { list-style: none; padding: 0; margin: 10px 0; }
+    .num-list li { margin-bottom: 8px; padding-right: 10px; }
+    .num-marker { color: var(--navy); font-weight: bold; }
+    .bullet-list { padding-right: 20px; margin: 10px 0; }
+    .auth-subhead { color: var(--navy); font-size: 1.05em; margin: 18px 0 6px; border-bottom: 1px dotted var(--gold); display: inline-block; padding-bottom: 2px; }
+    .source-ref { background: rgba(212,175,55,.12); padding: 1px 4px; border-radius: 3px; color: var(--navy); font-weight: 600; }
+    .pf-signature { text-align: center; margin: 45px 0 30px; padding-top: 20px; border-top: 2px solid var(--navy); }
+    .pf-sig-verse { font-style: italic; color: var(--gold); font-size: 1.1em; margin-bottom: 20px; }
+    .pf-sig-grid { display: flex; justify-content: center; gap: 60px; flex-wrap: wrap; }
+    .pf-sig-item { text-align: center; min-width: 140px; }
+    .pf-sig-line { border-bottom: 1px solid var(--navy); margin-bottom: 6px; width: 100%; }
+    .pf-sig-name { font-weight: bold; color: var(--navy); font-size: 0.95em; }
+    .pf-footer { text-align: center; font-size: 0.8em; color: #999; margin-top: 30px; padding-top: 15px; border-top: 1px solid #e0d9c8; }
+    ${TOC_CSS}
+    ${SEARCH_WIDGET_CSS}
+    ${PRINT_CSS}
+  </style>
+</head>
+<body>
+  <div class="pf-container">
+    <div class="pf-bsd">בס"ד</div>
+    ${serialLabel ? `<div class="pf-serial">${serialLabel}</div>` : ""}
+    <div class="pf-main-title">פסק דין</div>
+    <div class="pf-case-title">${esc(data.title)}</div>
+    ${caseLabel ? `<div style="text-align:center;font-size:0.9em;color:#666;margin-bottom:18px;">${caseLabel}</div>` : ""}
+
+    <section id="sec-details" data-search-scope="sec-details" data-search-label="פרטי התיק">
+      <table class="pf-meta-table">
+        ${data.court ? `<tr><td>שם בית דין:</td><td>${esc(data.court)}</td></tr>` : ""}
+        ${data.judges.length ? `<tr><td>דיינים:</td><td>${data.judges.map(j => esc(j)).join("&ensp;|&ensp;")}</td></tr>` : ""}
+        ${data.date ? `<tr><td>תאריך:</td><td>${esc(data.date)}</td></tr>` : ""}
+        ${data.topics ? `<tr><td>נושאים:</td><td>${esc(data.topics)}</td></tr>` : ""}
+        ${data.sourceUrl ? `<tr><td>מקור:</td><td><a href="${esc(data.sourceUrl)}" target="_blank" rel="noopener noreferrer" style="color:var(--navy);">קישור לפסק המקורי</a></td></tr>` : ""}
+      </table>
+    </section>
+
+    ${data.summary ? `<section id="sec-summary" data-search-scope="sec-summary" data-search-label="תקציר">
+      <div class="pf-summary-box"><h4>תקציר:</h4><p style="margin:0;">${esc(data.summary)}</p></div>
+    </section>` : ""}
+
+    <div id="toc-top">${tocHtml}</div>
+    ${renderSearchWidget(data)}
+    ${sectionsHtml}
+    ${fallbackBody ? `<section class="pf-section" data-search-scope="sec-fallback"><div class="pf-section-body">${fallbackBody}</div></section>` : ""}
+    ${judgesHtml}
+    <div class="pf-footer">עוצב בסגנון פסקים.אורג • ${new Date().toLocaleDateString("he-IL")}</div>
+  </div>
+  ${SEARCH_WIDGET_SCRIPT}
+</body>
+</html>`;
+}
+
+// ═════════════════════════════════════════════════════
+// TEMPLATE 2: Court Decree (גזר דין סמכותי)
+// ═════════════════════════════════════════════════════
+function generateCourtDecreeHtml(data: ParsedPsakDin): string {
+  const { tocHtml, sectionAnchors } = buildTableOfContents(data);
+
+  const sectionsHtml = data.sections.map((section, i) => {
+    const anchor = sectionAnchors.get(i) || `sec-${i}`;
+    const contentHtml = renderCourtBlocks(section.content);
+    const isDecision = /פסק|החלט|הכרע|גזר|מסקנ/.test(section.title);
+    return `<section class="cd-section${isDecision ? " cd-decision-section" : ""}" data-search-scope="${anchor}" data-search-label="${esc(section.title)}">
+      <h3 id="${anchor}" class="cd-section-head"><span class="cd-head-marker"></span>${esc(section.title)} <a href="#toc-top" class="cd-back" title="חזרה לתוכן">↑</a></h3>
+      <div class="cd-section-body">${contentHtml}</div>
+    </section>`;
+  }).join("\n");
+
+  const fallbackBody = data.sections.length ? "" : renderCourtBlocks(data.rawText);
+
+  const judgesHtml = data.judges.length > 0
+    ? `<div id="sec-signature" class="cd-signature" data-search-scope="sec-signature" data-search-label="חתימה">
+        <div class="cd-seal">⚖</div>
+        <div class="cd-sig-label">ניתן היום ${data.date ? esc(data.date) : new Date().toLocaleDateString("he-IL")}</div>
+        <div class="cd-sig-grid">
+          ${data.judges.map((j) => `<div class="cd-sig-item"><div class="cd-sig-line"></div><div class="cd-sig-name">${esc(j)}</div></div>`).join("\n          ")}
+        </div>
+      </div>`
+    : "";
+
+  return `<!DOCTYPE html>
+<html lang="he-IL" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>פסק דין: ${esc(data.title)}</title>
+  <style>
+    :root { --navy: #0B1F5B; --gold: #D4AF37; --dark-navy: #071340; --light-gold: rgba(212,175,55,.08); }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: 'David', 'Frank Ruhl Libre', 'Noto Serif Hebrew', Georgia, serif; background: #e8e8ec; color: #1e1e2e; line-height: 1.8; margin: 0; padding: 20px; direction: rtl; }
+    .cd-container { max-width: 780px; margin: 0 auto; background: #fff; border-radius: 0; box-shadow: 0 4px 24px rgba(0,0,0,.12); overflow: hidden; }
+    .cd-header { background: linear-gradient(135deg, var(--dark-navy) 0%, var(--navy) 100%); color: #fff; text-align: center; padding: 35px 40px 28px; position: relative; }
+    .cd-header::after { content: ""; position: absolute; bottom: 0; right: 0; left: 0; height: 4px; background: linear-gradient(90deg, var(--gold), transparent, var(--gold)); }
+    .cd-header .cd-bsd { font-size: 1em; color: rgba(255,255,255,.6); margin-bottom: 10px; }
+    .cd-header .cd-emblem { font-size: 2.5em; margin-bottom: 8px; }
+    .cd-header .cd-main-title { font-size: 2.2em; font-weight: bold; letter-spacing: 3px; margin-bottom: 6px; }
+    .cd-header .cd-sub-title { color: var(--gold); font-size: 1.15em; font-weight: 500; }
+    .cd-header .cd-case-num { font-size: 0.85em; color: rgba(255,255,255,.5); margin-top: 8px; }
+    .cd-body { padding: 40px 50px; }
+    .cd-meta-strip { display: flex; flex-wrap: wrap; gap: 18px; background: var(--light-gold); border: 1px solid rgba(212,175,55,.2); border-radius: 6px; padding: 14px 20px; margin-bottom: 28px; }
+    .cd-meta-item { font-size: 0.9em; }
+    .cd-meta-item strong { color: var(--navy); margin-left: 4px; }
+    .cd-section { margin-bottom: 28px; }
+    .cd-section-head { color: var(--navy); font-size: 1.25em; font-weight: bold; padding: 8px 14px; background: linear-gradient(90deg, rgba(11,31,91,.06), transparent); border-right: 4px solid var(--navy); margin-bottom: 14px; scroll-margin-top: 98px; }
+    .cd-head-marker { display: inline-block; width: 8px; height: 8px; background: var(--gold); border-radius: 50%; margin-left: 10px; vertical-align: middle; }
+    .cd-back { color: var(--gold); text-decoration: none; font-size: 0.6em; margin-right: 8px; }
+    .cd-section-body { padding-right: 18px; }
+    .cd-decision-section { background: linear-gradient(180deg, rgba(212,175,55,.04), rgba(212,175,55,.1)); border: 1px solid rgba(212,175,55,.3); border-radius: 8px; padding: 20px; margin: 30px 0; }
+    .cd-decision-section .cd-section-head { border-right-color: var(--gold); color: var(--gold); background: none; }
+    .doc-paragraph { text-align: justify; margin: 0 0 10px; }
+    .list { list-style: none; padding: 0; margin: 10px 0; }
+    .list li { margin-bottom: 6px; padding-right: 8px; }
+    .marker { color: var(--navy); font-weight: bold; margin-left: 4px; }
+    .inline-heading { color: var(--navy); font-size: 1em; margin: 16px 0 6px; }
+    .cd-signature { text-align: center; margin: 40px 0 25px; padding-top: 25px; border-top: 3px double var(--navy); }
+    .cd-seal { font-size: 3em; margin-bottom: 10px; }
+    .cd-sig-label { color: #666; font-size: 0.9em; margin-bottom: 18px; }
+    .cd-sig-grid { display: flex; justify-content: center; gap: 50px; flex-wrap: wrap; }
+    .cd-sig-item { text-align: center; min-width: 130px; }
+    .cd-sig-line { border-bottom: 2px solid var(--navy); margin-bottom: 6px; width: 100%; }
+    .cd-sig-name { font-weight: bold; color: var(--navy); font-size: 1em; }
+    .cd-footer { text-align: center; font-size: 0.78em; color: #aaa; padding: 18px; background: #f8f8fa; border-top: 1px solid #eee; }
+    ${TOC_CSS}
+    ${SEARCH_WIDGET_CSS}
+    ${PRINT_CSS}
+  </style>
+</head>
+<body>
+  <div class="cd-container">
+    <div class="cd-header">
+      <div class="cd-bsd">בס"ד</div>
+      <div class="cd-emblem">⚖</div>
+      <div class="cd-main-title">פסק דין</div>
+      <div class="cd-sub-title">${esc(data.title)}</div>
+      ${data.caseNumber ? `<div class="cd-case-num">תיק ${esc(data.caseNumber)}</div>` : ""}
+    </div>
+    <div class="cd-body">
+      <section id="sec-details" data-search-scope="sec-details" data-search-label="פרטי התיק">
+        <div class="cd-meta-strip">
+          ${data.court ? `<div class="cd-meta-item"><strong>בית דין:</strong> ${esc(data.court)}</div>` : ""}
+          ${data.date ? `<div class="cd-meta-item"><strong>תאריך:</strong> ${esc(data.date)}</div>` : ""}
+          ${data.judges.length ? `<div class="cd-meta-item"><strong>דיינים:</strong> ${data.judges.map(j => esc(j)).join(", ")}</div>` : ""}
+        </div>
+      </section>
+
+      ${data.summary ? `<section id="sec-summary" data-search-scope="sec-summary" data-search-label="תקציר">
+        <div style="background:var(--light-gold);border-right:4px solid var(--gold);padding:16px 22px;border-radius:0 6px 6px 0;margin-bottom:26px;">
+          <h4 style="color:var(--navy);margin:0 0 8px;font-size:1.05em;">תקציר</h4>
+          <p style="margin:0;">${esc(data.summary)}</p>
+        </div>
+      </section>` : ""}
+
+      <div id="toc-top">${tocHtml}</div>
+      ${renderSearchWidget(data)}
+      ${sectionsHtml}
+      ${fallbackBody ? `<section class="cd-section" data-search-scope="sec-fallback"><div class="cd-section-body">${fallbackBody}</div></section>` : ""}
+      ${judgesHtml}
+    </div>
+    <div class="cd-footer">עוצב בסגנון גזר דין סמכותי • ${new Date().toLocaleDateString("he-IL")}</div>
+  </div>
+  ${SEARCH_WIDGET_SCRIPT}
+</body>
+</html>`;
+}
+
+// ═════════════════════════════════════════════════════
+// TEMPLATE 3: Scholarly Halachic (עיוני הלכתי)
+// ═════════════════════════════════════════════════════
+function renderScholarlyBlocks(content: string): string {
+  const lines = content.replace(/\r\n?/g, "\n").split("\n").map(l => l.trim());
+  const out: string[] = [];
+  let paragraphBuffer: string[] = [];
+  let inBlockquote = false;
+  let blockquoteBuffer: string[] = [];
+
+  const highlightSources = (text: string): string => {
+    const escaped = esc(text);
+    return escaped.replace(
+      /(שו&quot;ע|שו&quot;ת|רמב&quot;ם|רמ&quot;א|גמ(?:רא|&#39;)|טור|ב&quot;[קמגפ]|משנה\s+ברורה|חו&quot;מ|אה&quot;ע|או&quot;ח|יו&quot;ד|שו&quot;ע\s+(?:אורח\s+חיים|יורה\s+דעה|אבן\s+העזר|חושן\s+משפט)|בבא\s+(?:קמא|מציעא|בתרא)|שולחן\s+ערוך|משנה|תוספות|רש&quot;י|רשב&quot;ם|סמ&quot;ע|ערוך\s+השולחן|מסכת\s+\S+)/g,
+      '<span class="sh-source-ref">$1</span>'
+    );
+  };
+
+  const flushParagraph = () => {
+    if (!paragraphBuffer.length) return;
+    const merged = applyNbspToTail(paragraphBuffer.join(" "));
+    if (merged) out.push(`<p class="sh-paragraph">${highlightSources(merged)}</p>`);
+    paragraphBuffer = [];
+  };
+
+  const flushBlockquote = () => {
+    if (!blockquoteBuffer.length) return;
+    const merged = blockquoteBuffer.join(" ");
+    out.push(`<blockquote class="sh-citation"><span class="sh-cite-icon">❝</span>${highlightSources(applyNbspToTail(merged))}</blockquote>`);
+    blockquoteBuffer = [];
+    inBlockquote = false;
+  };
+
+  for (const line of lines) {
+    if (!line) {
+      if (inBlockquote) flushBlockquote();
+      flushParagraph();
+      continue;
+    }
+
+    if (isUiArtifactLine(line)) continue;
+
+    // Detect blockquote-like lines (quoted halachic text in psakim.org format)
+    if (line.startsWith('"') || line.startsWith('״') || line.startsWith('«')) {
+      flushParagraph();
+      inBlockquote = true;
+      blockquoteBuffer.push(line);
+      continue;
+    }
+    if (inBlockquote && (line.endsWith('"') || line.endsWith('״') || line.endsWith('»'))) {
+      blockquoteBuffer.push(line);
+      flushBlockquote();
+      continue;
+    }
+    if (inBlockquote) {
+      blockquoteBuffer.push(line);
+      continue;
+    }
+
+    // Hebrew letter markers
+    const hebLetterMatch = line.match(/^\s*[\u05D0-\u05EA]{1,2}[\.\'\)\u05F3\u05F4]\s+(.+)$/);
+    if (hebLetterMatch) {
+      flushParagraph();
+      const markerEnd = line.indexOf(" ");
+      const marker = line.slice(0, markerEnd).trim();
+      const text = line.slice(markerEnd).trim();
+      out.push(`<div class="sh-heb-item"><span class="sh-heb-marker">${esc(marker)}</span> ${highlightSources(applyNbspToTail(text))}</div>`);
+      continue;
+    }
+
+    // Numbered items
+    const orderedMatch = line.match(/^\s*(\d+)[\.\)]\s+(.+)$/);
+    if (orderedMatch) {
+      flushParagraph();
+      out.push(`<div class="sh-num-item"><span class="sh-num-marker">${esc(orderedMatch[1])}.</span> ${highlightSources(applyNbspToTail(orderedMatch[2].trim()))}</div>`);
+      continue;
+    }
+
+    // Sub-heading
+    if (/^[^.]{2,80}:$/.test(line)) {
+      const isEmptyMetaLabel = /^(שם\s*בית\s*דין|תאריך|כותרת|שנה|מספר\s*תיק|דיינים):$/i.test(line);
+      if (!isEmptyMetaLabel) {
+        flushParagraph();
+        out.push(`<h4 class="sh-subhead">${esc(line)}</h4>`);
+        continue;
+      }
+      continue;
+    }
+
+    paragraphBuffer.push(line);
+  }
+
+  flushBlockquote();
+  flushParagraph();
+  return out.join("\n");
+}
+
+function generateScholarlyHalachicHtml(data: ParsedPsakDin): string {
+  const { tocHtml, sectionAnchors } = buildTableOfContents(data);
+
+  const sectionTypeIcon = (title: string): string => {
+    const t = title.trim();
+    if (/עובד|רקע|תיאור/.test(t)) return "📋";
+    if (/טענ/.test(t)) return "💬";
+    if (/דיון|ניתוח|הלכ/.test(t)) return "📖";
+    if (/מקור|מרא/.test(t)) return "🔍";
+    if (/פסק|החלט|הכרע|מסקנ/.test(t)) return "⚖";
+    return "§";
+  };
+
+  const sectionsHtml = data.sections.map((section, i) => {
+    const anchor = sectionAnchors.get(i) || `sec-${i}`;
+    const contentHtml = renderScholarlyBlocks(section.content);
+    const icon = sectionTypeIcon(section.title);
+    return `<section class="sh-section" data-search-scope="${anchor}" data-search-label="${esc(section.title)}">
+      <h3 id="${anchor}" class="sh-section-head"><span class="sh-sec-icon">${icon}</span>${esc(section.title)} <a href="#toc-top" class="sh-back" title="חזרה לתוכן">▲</a></h3>
+      <div class="sh-section-body">${contentHtml}</div>
+    </section>`;
+  }).join("\n");
+
+  const fallbackBody = data.sections.length ? "" : renderScholarlyBlocks(data.rawText);
+
+  const judgesHtml = data.judges.length > 0
+    ? `<div id="sec-signature" class="sh-signature" data-search-scope="sec-signature" data-search-label="חתימה">
+        <div class="sh-sig-title">באנו על החתום</div>
+        <div class="sh-sig-grid">
+          ${data.judges.map((j) => `<div class="sh-sig-card"><div class="sh-sig-name">${esc(j)}</div></div>`).join("\n          ")}
+        </div>
+      </div>`
+    : "";
+
+  return `<!DOCTYPE html>
+<html lang="he-IL" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>פסק דין: ${esc(data.title)}</title>
+  <style>
+    :root { --navy: #0B1F5B; --gold: #D4AF37; --parchment: #FAF6ED; --text: #2c2416; --border: #e0d5c0; }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: 'David', 'Frank Ruhl Libre', 'Noto Serif Hebrew', Georgia, serif; background: linear-gradient(180deg, #e8dfc8 0%, #d4c8a8 100%); color: var(--text); line-height: 1.9; margin: 0; padding: 20px; direction: rtl; }
+    .sh-container { max-width: 800px; margin: 0 auto; background: var(--parchment); border: 2px solid var(--border); border-radius: 4px; padding: 50px 55px; box-shadow: 0 4px 20px rgba(0,0,0,.1), inset 0 0 80px rgba(212,175,55,.03); }
+    .sh-header { text-align: center; margin-bottom: 30px; position: relative; }
+    .sh-header::after { content: "✡"; font-size: 1.6em; color: var(--gold); display: block; margin: 8px 0; }
+    .sh-bsd { font-size: 1.1em; color: var(--navy); margin-bottom: 4px; }
+    .sh-main-title { font-size: 1.9em; font-weight: bold; color: var(--navy); margin: 8px 0 4px; }
+    .sh-case-title { font-size: 1.15em; color: var(--gold); font-weight: 600; }
+    .sh-meta-panel { background: rgba(11,31,91,.03); border: 1px solid var(--border); border-radius: 6px; padding: 16px 22px; margin: 20px 0 30px; }
+    .sh-meta-row { display: flex; gap: 8px; margin-bottom: 4px; font-size: 0.9em; }
+    .sh-meta-label { font-weight: bold; color: var(--navy); min-width: 90px; }
+    .sh-summary { background: #fffaf0; border: 1px solid var(--gold); border-radius: 6px; padding: 18px 24px; margin: 20px 0 30px; position: relative; }
+    .sh-summary::before { content: "תקציר"; position: absolute; top: -10px; right: 16px; background: var(--gold); color: #fff; padding: 2px 14px; border-radius: 10px; font-size: 0.82em; font-weight: bold; }
+    .sh-section { margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px dashed var(--border); }
+    .sh-section:last-of-type { border-bottom: none; }
+    .sh-section-head { color: var(--navy); font-size: 1.3em; font-weight: bold; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; scroll-margin-top: 98px; }
+    .sh-sec-icon { font-size: 0.85em; }
+    .sh-back { color: var(--gold); text-decoration: none; font-size: 0.55em; margin-right: auto; }
+    .sh-section-body { padding-right: 8px; }
+    .sh-paragraph { text-indent: 1.5em; text-align: justify; margin: 0 0 12px; }
+    .sh-citation { background: rgba(212,175,55,.08); border-right: 4px solid var(--gold); padding: 14px 22px; margin: 16px 0; border-radius: 0 6px 6px 0; font-style: italic; position: relative; }
+    .sh-cite-icon { font-size: 1.4em; color: var(--gold); position: absolute; top: 8px; left: 12px; font-style: normal; }
+    .sh-source-ref { background: linear-gradient(180deg, rgba(212,175,55,.15), rgba(212,175,55,.25)); padding: 1px 6px; border-radius: 3px; color: var(--navy); font-weight: 700; border-bottom: 1px solid var(--gold); }
+    .sh-heb-item { margin-bottom: 10px; padding-right: 8px; }
+    .sh-heb-marker { color: var(--gold); font-weight: bold; font-size: 1.1em; }
+    .sh-num-item { margin-bottom: 10px; padding-right: 8px; }
+    .sh-num-marker { color: var(--navy); font-weight: bold; }
+    .sh-subhead { color: var(--navy); font-size: 1.05em; margin: 20px 0 8px; padding: 4px 10px; background: rgba(11,31,91,.04); border-radius: 4px; display: inline-block; }
+    .sh-signature { text-align: center; margin: 40px 0 20px; padding-top: 20px; border-top: 2px solid var(--navy); }
+    .sh-sig-title { color: var(--navy); font-size: 1.1em; font-weight: bold; margin-bottom: 16px; }
+    .sh-sig-grid { display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; }
+    .sh-sig-card { background: rgba(11,31,91,.04); border: 1px solid var(--border); border-radius: 6px; padding: 12px 24px; min-width: 130px; }
+    .sh-sig-name { font-weight: bold; color: var(--navy); }
+    .sh-footer { text-align: center; font-size: 0.8em; color: #999; margin-top: 25px; padding-top: 15px; border-top: 1px solid var(--border); }
+    ${TOC_CSS}
+    ${SEARCH_WIDGET_CSS}
+    ${PRINT_CSS}
+  </style>
+</head>
+<body>
+  <div class="sh-container">
+    <div class="sh-header">
+      <div class="sh-bsd">בס"ד</div>
+      <div class="sh-main-title">${esc(data.title)}</div>
+      <div class="sh-case-title">${data.court ? esc(data.court) : "פסק דין"}</div>
+    </div>
+
+    <section id="sec-details" data-search-scope="sec-details" data-search-label="פרטי התיק">
+      <div class="sh-meta-panel">
+        ${data.caseNumber ? `<div class="sh-meta-row"><span class="sh-meta-label">תיק:</span><span>${esc(data.caseNumber)}</span></div>` : ""}
+        ${data.date ? `<div class="sh-meta-row"><span class="sh-meta-label">תאריך:</span><span>${esc(data.date)}</span></div>` : ""}
+        ${data.judges.length ? `<div class="sh-meta-row"><span class="sh-meta-label">דיינים:</span><span>${data.judges.map(j => esc(j)).join("&ensp;•&ensp;")}</span></div>` : ""}
+        ${data.topics ? `<div class="sh-meta-row"><span class="sh-meta-label">נושאים:</span><span>${esc(data.topics)}</span></div>` : ""}
+      </div>
+    </section>
+
+    ${data.summary ? `<section id="sec-summary" data-search-scope="sec-summary" data-search-label="תקציר">
+      <div class="sh-summary"><p style="margin:0;padding-top:6px;">${esc(data.summary)}</p></div>
+    </section>` : ""}
+
+    <div id="toc-top">${tocHtml}</div>
+    ${renderSearchWidget(data)}
+    ${sectionsHtml}
+    ${fallbackBody ? `<section class="sh-section" data-search-scope="sec-fallback"><div class="sh-section-body">${fallbackBody}</div></section>` : ""}
+    ${judgesHtml}
+    <div class="sh-footer">עוצב בסגנון עיוני הלכתי • ${new Date().toLocaleDateString("he-IL")}</div>
+  </div>
+  ${SEARCH_WIDGET_SCRIPT}
+</body>
+</html>`;
+}
+
+// ═════════════════════════════════════════════════════
+// TEMPLATE 4: Executive Brief (תמצית מנהלים)
+// ═════════════════════════════════════════════════════
+function generateExecutiveBriefHtml(data: ParsedPsakDin): string {
+  const { tocHtml, sectionAnchors } = buildTableOfContents(data);
+
+  // Find the ruling/decision section for the highlight card
+  const decisionSection = data.sections.find(s => /פסק|החלט|הכרע|מסקנ|גזר/.test(s.title));
+
+  const sectionsHtml = data.sections.map((section, i) => {
+    const anchor = sectionAnchors.get(i) || `sec-${i}`;
+    const contentHtml = renderCourtBlocks(section.content);
+    const isDecision = /פסק|החלט|הכרע|מסקנ|גזר/.test(section.title);
+    return `<section class="eb-section" data-search-scope="${anchor}" data-search-label="${esc(section.title)}">
+      <div class="eb-section-marker"></div>
+      <h3 id="${anchor}" class="eb-section-head">${esc(section.title)} <a href="#toc-top" class="eb-back" title="חזרה">↑</a></h3>
+      <div class="eb-section-body${isDecision ? " eb-decision-body" : ""}">${contentHtml}</div>
+    </section>`;
+  }).join("\n");
+
+  const fallbackBody = data.sections.length ? "" : renderCourtBlocks(data.rawText);
+
+  // Extract first 200 chars of decision for the card
+  const decisionSnippet = decisionSection
+    ? esc(decisionSection.content.replace(/\s+/g, " ").trim().slice(0, 200)) + (decisionSection.content.length > 200 ? "..." : "")
+    : "";
+
+  const judgesHtml = data.judges.length > 0
+    ? `<div id="sec-signature" class="eb-signature" data-search-scope="sec-signature" data-search-label="חתימה">
+        <div class="eb-sig-grid">
+          ${data.judges.map((j) => `<span class="eb-sig-badge">${esc(j)}</span>`).join("\n          ")}
+        </div>
+      </div>`
+    : "";
+
+  return `<!DOCTYPE html>
+<html lang="he-IL" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>פסק דין: ${esc(data.title)}</title>
+  <style>
+    :root { --navy: #0B1F5B; --gold: #D4AF37; --bg: #F7F8FC; --card: #fff; }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: 'Segoe UI', 'Noto Sans Hebrew', 'Arial', sans-serif; background: var(--bg); color: #2d2d3a; line-height: 1.75; margin: 0; padding: 20px; direction: rtl; }
+    .eb-container { max-width: 800px; margin: 0 auto; }
+    .eb-hero { background: linear-gradient(135deg, var(--navy), #1a3a8a); border-radius: 12px; padding: 32px 40px; color: #fff; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(11,31,91,.2); }
+    .eb-hero-bsd { font-size: 0.85em; color: rgba(255,255,255,.5); }
+    .eb-hero-title { font-size: 1.8em; font-weight: 700; margin: 8px 0 6px; }
+    .eb-hero-subtitle { color: var(--gold); font-size: 1.1em; }
+    .eb-hero-meta { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 14px; font-size: 0.85em; color: rgba(255,255,255,.7); }
+    .eb-hero-meta span::before { content: "•"; margin-left: 6px; color: var(--gold); }
+    .eb-cards-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+    @media (max-width: 600px) { .eb-cards-row { grid-template-columns: 1fr; } }
+    .eb-card { background: var(--card); border-radius: 10px; padding: 20px 24px; box-shadow: 0 2px 10px rgba(0,0,0,.05); border-top: 3px solid var(--gold); }
+    .eb-card-title { color: var(--navy); font-size: 1em; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+    .eb-card p { margin: 0; font-size: 0.92em; color: #555; }
+    .eb-decision-card { grid-column: 1 / -1; border-top-color: var(--navy); background: linear-gradient(180deg, rgba(11,31,91,.03), rgba(212,175,55,.06)); }
+    .eb-decision-card .eb-card-title { color: var(--gold); font-size: 1.1em; }
+    .eb-main { background: var(--card); border-radius: 10px; padding: 35px 40px; box-shadow: 0 2px 10px rgba(0,0,0,.05); margin-bottom: 20px; }
+    .eb-section { margin-bottom: 28px; position: relative; padding-right: 18px; }
+    .eb-section-marker { position: absolute; right: 0; top: 4px; width: 4px; height: 100%; background: linear-gradient(180deg, var(--gold), transparent); border-radius: 4px; }
+    .eb-section-head { color: var(--navy); font-size: 1.2em; font-weight: 700; margin-bottom: 12px; scroll-margin-top: 98px; }
+    .eb-back { color: var(--gold); text-decoration: none; font-size: 0.55em; margin-right: 8px; }
+    .eb-section-body { }
+    .eb-decision-body { background: rgba(212,175,55,.06); border: 1px solid rgba(212,175,55,.2); border-radius: 8px; padding: 16px; }
+    .doc-paragraph { text-align: justify; margin: 0 0 10px; }
+    .list { list-style: none; padding: 0; margin: 10px 0; }
+    .list li { margin-bottom: 6px; padding-right: 8px; }
+    .marker { color: var(--navy); font-weight: bold; margin-left: 4px; }
+    .inline-heading { color: var(--navy); font-size: 1em; margin: 16px 0 6px; }
+    .eb-signature { text-align: center; margin: 10px 0 20px; }
+    .eb-sig-grid { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+    .eb-sig-badge { background: var(--navy); color: #fff; padding: 6px 18px; border-radius: 20px; font-size: 0.88em; font-weight: 600; }
+    .eb-footer { text-align: center; font-size: 0.78em; color: #aaa; margin-top: 10px; }
+    ${TOC_CSS}
+    ${SEARCH_WIDGET_CSS}
+    ${PRINT_CSS}
+  </style>
+</head>
+<body>
+  <div class="eb-container">
+    <div class="eb-hero">
+      <div class="eb-hero-bsd">בס"ד</div>
+      <div class="eb-hero-title">${esc(data.title)}</div>
+      <div class="eb-hero-subtitle">${data.court ? esc(data.court) : "פסק דין"}</div>
+      <div class="eb-hero-meta">
+        ${data.caseNumber ? `<span>תיק ${esc(data.caseNumber)}</span>` : ""}
+        ${data.date ? `<span>${esc(data.date)}</span>` : ""}
+        ${data.judges.length ? `<span>${data.judges.length} דיינים</span>` : ""}
+        ${data.sections.length ? `<span>${data.sections.length} סעיפים</span>` : ""}
+      </div>
+    </div>
+
+    <div class="eb-cards-row">
+      ${data.summary ? `<div class="eb-card">
+        <div class="eb-card-title">📋 תקציר</div>
+        <p>${esc(data.summary)}</p>
+      </div>` : ""}
+      ${data.topics ? `<div class="eb-card">
+        <div class="eb-card-title">📌 נושאים</div>
+        <p>${esc(data.topics)}</p>
+      </div>` : ""}
+      ${decisionSnippet ? `<div class="eb-card eb-decision-card">
+        <div class="eb-card-title">⚖ עיקר ההחלטה</div>
+        <p>${decisionSnippet}</p>
+      </div>` : ""}
+    </div>
+
+    <div class="eb-main">
+      <section id="sec-details" data-search-scope="sec-details" data-search-label="פרטי התיק" style="display:none;"></section>
+      ${data.summary ? `<section id="sec-summary" data-search-scope="sec-summary" data-search-label="תקציר" style="display:none;"></section>` : ""}
+      <div id="toc-top">${tocHtml}</div>
+      ${renderSearchWidget(data)}
+      ${sectionsHtml}
+      ${fallbackBody ? `<section class="eb-section" data-search-scope="sec-fallback"><div class="eb-section-body">${fallbackBody}</div></section>` : ""}
+      ${judgesHtml}
+    </div>
+    <div class="eb-footer">עוצב בסגנון תמצית מנהלים • ${new Date().toLocaleDateString("he-IL")}</div>
+  </div>
+  ${SEARCH_WIDGET_SCRIPT}
+</body>
+</html>`;
+}
+
 function highlightSourcesStatic(escaped: string): string {
   return escaped.replace(
     /(שו&quot;ע|שו&quot;ת|רמב&quot;ם|רמ&quot;א|גמ(?:רא|&#39;)|טור|ב&quot;[קמגפ]|משנה\s+ברורה|חו&quot;מ|אה&quot;ע|או&quot;ח|יו&quot;ד)/g,
@@ -2557,6 +3147,10 @@ export function generateFromTemplate(templateId: string, data: ParsedPsakDin): s
     case "indexed": return generateIndexedHtml(sanitizedData);
     case "academic": return generateAcademicHtml(sanitizedData);
     case "clean-merged": return generateCleanMergedHtml(sanitizedData);
+    case "psakim-formal": return generatePsakimFormalHtml(sanitizedData);
+    case "court-decree": return generateCourtDecreeHtml(sanitizedData);
+    case "scholarly-halachic": return generateScholarlyHalachicHtml(sanitizedData);
+    case "executive-brief": return generateExecutiveBriefHtml(sanitizedData);
     case "classic":
     default:
       return generateClassicHtml(sanitizedData);
