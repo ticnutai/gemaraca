@@ -24,6 +24,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getCachedGemaraText, setCachedGemaraText } from "@/lib/pageCache";
 import { RichTextViewer } from "./RichTextViewer";
+import { useGemaraAutoSave } from "@/hooks/useGemaraAutoSave";
 
 const FONTS = [
   { value: 'font-serif', label: 'דוד (סריף)' },
