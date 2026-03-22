@@ -1672,8 +1672,7 @@ const BeautifyPsakDinTab = () => {
                       )}
                       <div className="text-xs text-muted-foreground mt-0.5 flex gap-2 flex-wrap">
                         <span>{item.court}</span>
-                        <span>•</span>
-                        <span>{item.year}</span>
+                        {item.year > 0 && <><span>•</span><span>{item.year}</span></>}
                       </div>
                       {item.summary && (
                         <div className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.summary}</div>

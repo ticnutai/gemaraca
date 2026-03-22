@@ -1026,7 +1026,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
-        className={`flex flex-col bg-card border-border ${
+        className={`flex flex-col overflow-hidden bg-card border-border ${
           isFullscreen 
             ? 'max-w-[95vw] max-h-[95vh] w-[95vw] h-[95vh]' 
             : 'max-w-4xl max-h-[90vh]'
@@ -1107,7 +1107,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
 
           {renderSearchBar()}
 
-          <TabsContent value="info" className="flex-1 min-h-0 mt-4">
+          <TabsContent value="info" className="flex-1 min-h-0 mt-4 flex flex-col">
             <div className="flex items-center justify-between mb-2">
               {!isEditing ? renderTextToolbar() : <div />}
               <div className="flex gap-2">
@@ -1147,7 +1147,7 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
                 )}
               </div>
             </div>
-            <ScrollArea ref={infoScrollAreaRef} className="h-full border border-border rounded-lg">
+            <ScrollArea ref={infoScrollAreaRef} className="flex-1 min-h-0 border border-border rounded-lg">
               <div 
                 ref={contentRef}
                 className={`p-4 space-y-4 ${isEditing ? '' : textClasses}`} 

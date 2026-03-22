@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+  <meta charset="utf-8">
+  <title>סתימת חלון של מחסן בהרחבת בנייה</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=David+Libre:wght@400;700&family=Frank+Ruhl+Libre:wght@400;700&display=swap');
+    :root{--primary:#1a237e;--primary-light:#3949ab;--accent:#c5a55a;--bg:#fafafa;--card:#fff;--text:#212121;--text-secondary:#555;--border:#e0e0e0}
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{font-size:16px}
+    body{font-family:'David Libre','Frank Ruhl Libre',serif;background:var(--bg);color:var(--text);line-height:1.9;direction:rtl}
+    .psak-header{background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;padding:40px 20px 30px;text-align:center;position:relative}
+    .psak-header::after{content:'';position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);width:60px;height:4px;background:var(--accent);border-radius:2px}
+    .psak-header h1{font-size:2rem;font-weight:700;margin-bottom:8px;font-family:'Frank Ruhl Libre',serif}
+    .psak-header .subtitle{font-size:.95rem;opacity:.85}
+    .meta-bar{max-width:850px;margin:40px auto 20px;display:flex;flex-wrap:wrap;gap:12px;justify-content:center;padding:0 20px}
+    .meta-item{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 18px;font-size:.85rem;display:flex;align-items:center;gap:6px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+    .meta-item .label{font-weight:700;color:var(--primary)}
+    .psak-body{max-width:850px;margin:30px auto;padding:0 20px}
+    .psak-card{background:var(--card);border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.07);padding:40px 45px;margin-bottom:30px}
+    h1{font-size:1.8rem;color:var(--primary);margin:30px 0 15px;font-family:'Frank Ruhl Libre',serif}
+    h2{font-size:1.4rem;color:var(--primary);margin:28px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--accent);font-family:'Frank Ruhl Libre',serif}
+    h3{font-size:1.15rem;color:var(--primary-light);margin:20px 0 10px}
+    p,div.section,.toggle-title{margin-bottom:14px;text-align:justify}
+    span{font-family:inherit!important;color:inherit!important}
+    .section-title{font-weight:700;font-size:1.1rem;color:var(--primary);margin-bottom:6px}
+    .toggle-title{font-weight:600;color:var(--primary-light);cursor:default}
+    .toggle-title:before{content:''!important}
+    .file-title{background:var(--primary)!important;color:#fff!important;padding:8px 20px!important;border-radius:6px!important;font-size:1.2rem!important;display:inline-block!important;position:static!important;right:auto!important;margin-bottom:15px}
+    #file-num{font-size:.9rem!important;color:var(--text-secondary);float:none!important}
+    .pagename{font-size:1.6rem!important;color:var(--primary)!important;text-align:center;margin:15px 0!important}
+    a.file-tag{background:var(--primary-light)!important;border-radius:4px;font-size:.8rem}
+    .ogen{background-color:rgba(197,165,90,.2)!important;border-radius:2px}
+    .ogen::after{content:''!important}
+    .highlight{background-color:rgba(255,235,59,.4)!important}
+    .selOgen:before{display:none!important}
+    hr{border:none;border-top:1px solid var(--border);margin:25px 0}
+    blockquote{border-right:4px solid var(--accent);padding:12px 20px;margin:15px 0;background:rgba(197,165,90,.06);border-radius:0 8px 8px 0}
+    .psak-footer{text-align:center;padding:20px;color:#999;font-size:.75rem;border-top:1px solid var(--border);margin-top:20px}
+    .psak-footer a{color:var(--primary-light)}
+    @media print{body{background:#fff}.psak-header{background:var(--primary);-webkit-print-color-adjust:exact;print-color-adjust:exact}.psak-card{box-shadow:none;border:1px solid #ddd}}
+    @media(max-width:600px){.psak-card{padding:20px 18px}.psak-header h1{font-size:1.5rem}h2{font-size:1.2rem}}
+  </style>
+</head>
+<body>
+  <header class="psak-header">
+    <h1>סתימת חלון של מחסן בהרחבת בנייה</h1>
+    <div class="subtitle">דרכי תורה - בראשות הרב אשר וייס · מס׳ סידורי 2471</div>
+  </header>
+  <div class="meta-bar">
+    
+    <div class="meta-item"><span class="label">תאריך</span> כ"ו אייר תשע"ז</div>
+    <div class="meta-item"><span class="label">דיינים</span> הרב וייס אשר, הרב טולדאנו עובדיה יוסף, הרב לנדמן צבי</div>
+    <div class="meta-item"><span class="label">בית דין</span> דרכי תורה - בראשות הרב אשר וייס</div>
+  </div>
+  <main class="psak-body">
+    <article class="psak-card">
+      <h2 class="MsoNormal" dir="RTL"><b>פסק דין<o:p></o:p></b></h2><p class="MsoNormal" dir="RTL">בפנינו תביעה בגין החשכה וסתימת חלונות.
+התובע רכש לפני כחמש עשרה שנה מחסן בקומת המחסנים שבבניין בו מתגורר הנתבע. במועד
+רכישת מחסן זה היה בבעלות התובע מחסן נוסף צמוד למחסן זה.<o:p></o:p></p><p class="MsoNormal" dir="RTL">הנתבע ביצע עבודות בניה והרחבה של דירתו
+בהתאם להיתר בניה שקיבל מעיריית ירושלים תוך הסתרת שני החלונות של מחסן התובע.
+התובע הציג בפנינו חוו"ד ממהנדס המצביעה על ליקויים הקיימים לכאורה בהיתר
+הבניה שבידי הנתבע, בין היתר בשל העובדה שבהיתר הבניה מופיע כי במחסן נשוא התביעה
+אין כלל חלונות, כאשר מנגד טענת התובע היא כי חלונות אלו קיימים מזה כארבעים וחמש
+שנה ולפיכך תובע הוא תשלום כספי בגין ירידת ערך המחסנים וכן הוצאות שנגרמו לו בגין
+תביעה זו.<o:p></o:p></p><p class="MsoNormal" dir="RTL">מנגד, טענת הנתבע כי היתר הבניה שבידו מבוסס
+על תב"ע משנת 1985 לפיה אושרה הבניה הנוכחית על אף ולמרות קיומם של שני
+החלונות. הנתבע טען כי במסגרת חלוקת שטחים בבניין ניתן לו לשימוש בלעדי חלק מהשטח
+המשותף, וכמו כן הציג בפנינו תמונות מהם עולה כי במסגרת השימוש שנעשה על ידו בשטח
+זה במשך שנים רבות,נחסמו על ידו חלונות אלו&nbsp;באמצעות הנחת חפצים שונים. עוד הוסיף הנתבע, כי נאמר לו ע"י השוכרים ששכרו
+את המחסן שאין כל שימוש בחלונות אלו מאחר ומחסן זה משמש לאיחסון בלבד, נוכח העובדה
+כי לא ניתן להשתמש שם במים וחשמל [השייכים לבעלי הדירות מהם רכש את המחסנים]. כמו
+כן, הנתבע אף העלה את שאלת החוקיות שבהחזקת מחסן בבניין בו אין לבעל המחסן דירת
+מגורים, וכן את שאלת הנזק שבהסתרת חלונות במחסן שאינו מיועד למגורים ואין אפשרות
+לשנות את יעודו למגורים.<o:p></o:p></p><p class="MsoNormal" dir="RTL">ביה"ד ניסה להביא את הצדדים לידי
+הסכמות לפתרון המחלוקת.<o:p></o:p></p><p class="MsoNormal" dir="RTL">ביום כ"ג אדר תשע"ז ניתנה החלטת
+ביניים לפיה מונה שמאי לשם מתן חוו"ד בעניין שווי המחסנים בטרם סתימת החלונות
+במחסן נשוא התביעה ולאחר מכן, בעניין שווי השטח שמתחת המדרגות שבבעלות הנתבע, וכן
+בשאלת ההיתכנות להצמיד שטח זה לחלקו של התובע ובכך להשיב את שווי המחסנים למצב
+הראשוני. עלות חוו"ד השמאי הוטלה על שני הצדדים. <o:p></o:p></p><p class="MsoNormal" dir="RTL">נציגי ביה"ד והשמאי ביקרו במקום בנוכחות הצדדים.<o:p></o:p></p><p class="MsoNormal" dir="RTL">השמאי העביר לביה"ד את חוו"ד, בה
+נקבע כי מחיר מ"ר למחסנים אלו כפי שהיו לפני סגירת החלונות הוא 14 אש"ח,
+ובס"ה 308 אלף ₪ (22 מ"ר * 14 אש"ח). בנוסף, קבע השמאי כי סתימת
+החלון למחסן הגדול גרמה להפחתה של 20% מערכו, ס"ה הפחתת ערך של 36,400 ₪ (13
+מ"ר * 2,800 ₪), לדעת השמאי ניתן להשלים הפחתת ערך זו באמצעות הגדלת המחסן של
+התובע במטר וחצי מתחת גרם המדרגות שבבניה החדשה בנוסף לפריצת הקיר ופתיחת חלון.<o:p></o:p></p><h2 class="MsoNormal" dir="RTL"><b>לאחר קבלת חוות הדעת ולאחר עיון בסוגיות
+ההלכה הוחלט כדלהלן:<o:p></o:p></b></h2><p class="MsoNormal" dir="RTL"><span id="ogen1" class="ogen ogen1-dest"><span id="ogen2" class="ogen ogen2-dest">תביעתו העקרונית של התו</span>בע לפיצוי בגין
+סתימת החלונות במחסן שרכש מתקבלת, זאת למרות שבמשך השנים לא היה שימוש בפועל
+בחלונות ואף הוצגו בפנינו תמונות על חפצים שהונחו כנגד החלונות טרם הריסתם, אך
+סתימת החלונות ומניעת האפשרות העתידית להשתמש בהם מהווה נזק למחסן ולערכו ועל כן
+על הנתבע לפצות את התובע בגין כך.<o:p></o:p></span></p><p class="MsoNormal" dir="RTL">אמנם, מתקבלת עקרונית גם טענת הנתבע כי
+רשיון הבניה שהתקבל כדין, ניתן לאחר חלוקת השטחים המשותפים בין השכנים, וכי אין
+לשום את ירידת ערכו של מחסן זה כירידת ערך של מחסן העומד לשימוש כיחידת דיור, הן
+מפני שהדייר לא מתגורר בבניין זה ועפ"י החוק לא ניתן למכור מחסן לדייר שאינו
+מתגורר בבניין והן מפני שהמחסנים עומדים לאחסון חפצים ואין השכנים מחוייבים לאפשר
+שימוש בלתי חוקי בהם. אשר על כן קובע ביה"ד כפשרה הקרובה לדין כדלהלן:<o:p></o:p></p><p class="MsoListParagraphCxSpFirst" dir="RTL"><!--[if !supportLists]--><b>א.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></b><!--[endif]-->הצדדים
+ינהלו מו"מ על האפשרות שהנתבע ירכוש מהתובע את שני המחסנים כפי הערך שקבע להם
+השמאי בסך 308,000 ₪.<o:p></o:p></p><p class="MsoListParagraphCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b>ב.<span>&nbsp;&nbsp;&nbsp;</span></b>ככל
+שהצדדים לא יגיעו לכלל הסכמה למכירת/רכישת המחסנים כאמור בסעיף א', הפיצוי המגיע
+לנתבע בגין סתימת החלון לאור האמור לעיל הינו בסך: 20,000 ₪.<o:p></o:p></p><p class="MsoListParagraphCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b>ג.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></b>למרות
+האמור בסעיף ב' זכאי הנתבע להגדיל לתובע את המחסן במטר וחצי מתחת גרם המדרגות
+שבהרחבת הבניה בנוסף לפריצת הקיר ופתיחת חלון ובכך להיפטר מתשלום הסכום הנ"ל.<o:p></o:p></p><p class="MsoListParagraphCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b>ד.<span>&nbsp;&nbsp;&nbsp;&nbsp;</span></b>על הצדדים להודיע
+לביה"ד תוך 7 ימים אם הגיעו לידי הסכמה על מכירת המחסנים. באם לא יגיעו
+הצדדים לידי הסכמה יודיע הנתבע על בחירתו עפ"י האמור לעיל סעיף ג' תוך 14
+יום.<o:p></o:p></p><p class="MsoListParagraphCxSpLast" dir="RTL"><!--[if !supportLists]--><b>ה.<span>&nbsp;&nbsp;&nbsp;&nbsp; </span></b><!--[endif]-->יתר
+התביעות נדחות.<o:p></o:p></p><h2 class="MsoNormal" dir="RTL"><b>באעה"ח ביום&nbsp; כ"ו אייר תשע"ז&nbsp; (22-7-2017) <o:p></o:p></b></h2><h3><b>( - ) צבי לנדמן - דיין&nbsp;&nbsp;&nbsp; ( - ) אשר וייס - גאב"ד&nbsp;&nbsp; ( - ) עובדיה יוסף טולדאנו - דיין<o:p></o:p></b></h3><p class="MsoNormal" dir="RTL"><b>העתק נאמן
+למקור</b><b><o:p></o:p></b></p>
+    </article>
+  </main>
+  <footer class="psak-footer">
+    מקור: <a href="https://www.psakim.org/Psakim/File/2471" target="_blank">psakim.org — פסק 2471</a>
+  </footer>
+</body>
+</html>

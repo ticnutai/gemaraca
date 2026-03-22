@@ -165,7 +165,7 @@ export default function GlobalSearchTab() {
             type: "psak",
             title: p.title,
             snippet: p.summary?.slice(0, 120) + (p.summary?.length > 120 ? "..." : ""),
-            meta: `${p.court} • ${p.year}`,
+            meta: `${p.court}${p.year ? ` • ${p.year}` : ''}`,
           });
         }
       }

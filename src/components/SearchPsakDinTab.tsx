@@ -153,7 +153,7 @@ const SearchPsakDinTab = () => {
   };
 
   const handlePsakClick = (psak: SearchResult) => {
-    const preferred = getViewerPreference() ?? "dialog";
+    const preferred = getViewerPreference() ?? "embedpdf";
 
     if (preferred === "newwindow" && psak.sourceUrl) {
       window.open(psak.sourceUrl, "_blank");
@@ -171,7 +171,7 @@ const SearchPsakDinTab = () => {
 
   const handleSwitchViewer = (psak: SearchResult, e: React.MouseEvent) => {
     e.stopPropagation();
-    const current = getViewerPreference() ?? "dialog";
+    const current = getViewerPreference() ?? "embedpdf";
     const next: ViewerMode = current === "dialog" ? "embedpdf" : "dialog";
     setViewerPreference(next);
 

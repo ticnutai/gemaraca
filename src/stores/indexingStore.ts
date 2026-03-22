@@ -21,6 +21,34 @@ export interface IndexingError {
   timestamp: number;
 }
 
+export interface SavedProgress {
+  offset: number;
+  stats: IndexingStats;
+  savedAt: number;
+  concurrency: number;
+  batchSize: number;
+  skipIndexed: boolean;
+  useAI: boolean;
+}
+
+const SAVE_KEY = 'indexing-saved-progress';
+
+function loadSavedProgress(): SavedProgress | null {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as SavedProgress;
+  } catch { return null; }
+}
+
+function persistProgress(progress: SavedProgress | null) {
+  if (progress) {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(progress));
+  } else {
+    localStorage.removeItem(SAVE_KEY);
+  }
+}
+
 interface IndexingState {
   status: IndexingStatus;
   stats: IndexingStats;
@@ -29,6 +57,8 @@ interface IndexingState {
   batchSize: number;
   skipIndexed: boolean;
   useAI: boolean;
+  savedProgress: SavedProgress | null;
+  _currentOffset: number;
   // Internal
   _abortController: AbortController | null;
   _pauseResolver: (() => void) | null;
@@ -45,11 +75,15 @@ interface IndexingActions {
   resume: () => void;
   cancel: () => void;
   reset: () => void;
+  saveProgress: () => void;
+  clearSavedProgress: () => void;
+  startFromSaved: () => void;
   // Internal - called by the engine
   _setStatus: (s: IndexingStatus) => void;
   _updateStats: (patch: Partial<IndexingStats>) => void;
   _addError: (err: IndexingError) => void;
   _setAbortController: (ac: AbortController | null) => void;
+  _setCurrentOffset: (offset: number) => void;
 }
 
 const initialStats: IndexingStats = {
@@ -71,6 +105,8 @@ export const useIndexingStore = create<IndexingState & IndexingActions>((set, ge
   batchSize: 50,
   skipIndexed: true,
   useAI: false,
+  savedProgress: loadSavedProgress(),
+  _currentOffset: 0,
   _abortController: null,
   _pauseResolver: null,
   _pausePromise: null,
@@ -86,10 +122,50 @@ export const useIndexingStore = create<IndexingState & IndexingActions>((set, ge
       status: 'running',
       stats: { ...initialStats, startedAt: Date.now() },
       errors: [],
+      _currentOffset: 0,
       _abortController: ac,
       _pauseResolver: null,
       _pausePromise: null,
     });
+  },
+
+  startFromSaved: () => {
+    const saved = get().savedProgress;
+    if (!saved) return;
+    const ac = new AbortController();
+    set({
+      status: 'running',
+      stats: { ...saved.stats, startedAt: Date.now() },
+      errors: [],
+      concurrency: saved.concurrency,
+      batchSize: saved.batchSize,
+      skipIndexed: saved.skipIndexed,
+      useAI: saved.useAI,
+      _currentOffset: saved.offset,
+      _abortController: ac,
+      _pauseResolver: null,
+      _pausePromise: null,
+    });
+  },
+
+  saveProgress: () => {
+    const { stats, _currentOffset, concurrency, batchSize, skipIndexed, useAI } = get();
+    const progress: SavedProgress = {
+      offset: _currentOffset,
+      stats,
+      savedAt: Date.now(),
+      concurrency,
+      batchSize,
+      skipIndexed,
+      useAI,
+    };
+    persistProgress(progress);
+    set({ savedProgress: progress });
+  },
+
+  clearSavedProgress: () => {
+    persistProgress(null);
+    set({ savedProgress: null });
   },
 
   pause: () => {
@@ -114,6 +190,8 @@ export const useIndexingStore = create<IndexingState & IndexingActions>((set, ge
 
   cancel: () => {
     const { _abortController, _pauseResolver } = get();
+    // Auto-save progress before cancelling
+    get().saveProgress();
     if (_abortController) _abortController.abort();
     if (_pauseResolver) _pauseResolver(); // unblock if paused
     set({
@@ -124,14 +202,19 @@ export const useIndexingStore = create<IndexingState & IndexingActions>((set, ge
     });
   },
 
-  reset: () => set({
-    status: 'idle',
-    stats: { ...initialStats },
-    errors: [],
-    _abortController: null,
-    _pausePromise: null,
-    _pauseResolver: null,
-  }),
+  reset: () => {
+    persistProgress(null);
+    set({
+      status: 'idle',
+      stats: { ...initialStats },
+      errors: [],
+      savedProgress: null,
+      _currentOffset: 0,
+      _abortController: null,
+      _pausePromise: null,
+      _pauseResolver: null,
+    });
+  },
 
   _setStatus: (s) => set({ status: s }),
   _updateStats: (patch) => set(state => ({
@@ -142,4 +225,5 @@ export const useIndexingStore = create<IndexingState & IndexingActions>((set, ge
     stats: { ...state.stats, errors: state.stats.errors + 1 },
   })),
   _setAbortController: (ac) => set({ _abortController: ac }),
+  _setCurrentOffset: (offset) => set({ _currentOffset: offset }),
 }));

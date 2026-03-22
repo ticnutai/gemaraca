@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+  <meta charset="utf-8">
+  <title>מנהל ארגון התובע הוצאות מהארגון</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=David+Libre:wght@400;700&family=Frank+Ruhl+Libre:wght@400;700&display=swap');
+    :root{--primary:#1a237e;--primary-light:#3949ab;--accent:#c5a55a;--bg:#fafafa;--card:#fff;--text:#212121;--text-secondary:#555;--border:#e0e0e0}
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{font-size:16px}
+    body{font-family:'David Libre','Frank Ruhl Libre',serif;background:var(--bg);color:var(--text);line-height:1.9;direction:rtl}
+    .psak-header{background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;padding:40px 20px 30px;text-align:center;position:relative}
+    .psak-header::after{content:'';position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);width:60px;height:4px;background:var(--accent);border-radius:2px}
+    .psak-header h1{font-size:2rem;font-weight:700;margin-bottom:8px;font-family:'Frank Ruhl Libre',serif}
+    .psak-header .subtitle{font-size:.95rem;opacity:.85}
+    .meta-bar{max-width:850px;margin:40px auto 20px;display:flex;flex-wrap:wrap;gap:12px;justify-content:center;padding:0 20px}
+    .meta-item{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 18px;font-size:.85rem;display:flex;align-items:center;gap:6px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+    .meta-item .label{font-weight:700;color:var(--primary)}
+    .psak-body{max-width:850px;margin:30px auto;padding:0 20px}
+    .psak-card{background:var(--card);border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.07);padding:40px 45px;margin-bottom:30px}
+    h1{font-size:1.8rem;color:var(--primary);margin:30px 0 15px;font-family:'Frank Ruhl Libre',serif}
+    h2{font-size:1.4rem;color:var(--primary);margin:28px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--accent);font-family:'Frank Ruhl Libre',serif}
+    h3{font-size:1.15rem;color:var(--primary-light);margin:20px 0 10px}
+    p,div.section,.toggle-title{margin-bottom:14px;text-align:justify}
+    span{font-family:inherit!important;color:inherit!important}
+    .section-title{font-weight:700;font-size:1.1rem;color:var(--primary);margin-bottom:6px}
+    .toggle-title{font-weight:600;color:var(--primary-light);cursor:default}
+    .toggle-title:before{content:''!important}
+    .file-title{background:var(--primary)!important;color:#fff!important;padding:8px 20px!important;border-radius:6px!important;font-size:1.2rem!important;display:inline-block!important;position:static!important;right:auto!important;margin-bottom:15px}
+    #file-num{font-size:.9rem!important;color:var(--text-secondary);float:none!important}
+    .pagename{font-size:1.6rem!important;color:var(--primary)!important;text-align:center;margin:15px 0!important}
+    a.file-tag{background:var(--primary-light)!important;border-radius:4px;font-size:.8rem}
+    .ogen{background-color:rgba(197,165,90,.2)!important;border-radius:2px}
+    .ogen::after{content:''!important}
+    .highlight{background-color:rgba(255,235,59,.4)!important}
+    .selOgen:before{display:none!important}
+    hr{border:none;border-top:1px solid var(--border);margin:25px 0}
+    blockquote{border-right:4px solid var(--accent);padding:12px 20px;margin:15px 0;background:rgba(197,165,90,.06);border-radius:0 8px 8px 0}
+    .psak-footer{text-align:center;padding:20px;color:#999;font-size:.75rem;border-top:1px solid var(--border);margin-top:20px}
+    .psak-footer a{color:var(--primary-light)}
+    @media print{body{background:#fff}.psak-header{background:var(--primary);-webkit-print-color-adjust:exact;print-color-adjust:exact}.psak-card{box-shadow:none;border:1px solid #ddd}}
+    @media(max-width:600px){.psak-card{padding:20px 18px}.psak-header h1{font-size:1.5rem}h2{font-size:1.2rem}}
+  </style>
+</head>
+<body>
+  <header class="psak-header">
+    <h1>מנהל ארגון התובע הוצאות מהארגון</h1>
+    <div class="subtitle">ארץ חמדה גזית רמת גן · מס׳ סידורי 1126</div>
+  </header>
+  <div class="meta-bar">
+    
+    
+    <div class="meta-item"><span class="label">דיינים</span> הרב כ"ץ אהרן, הרב רכניץ עדו, הרב פלדמן אהרן</div>
+    <div class="meta-item"><span class="label">בית דין</span> ארץ חמדה גזית רמת גן</div>
+  </div>
+  <main class="psak-body">
+    <article class="psak-card">
+      <p class="MsoNormal" dir="RTL"><br></p><p class="MsoNormal" dir="RTL"><br></p><p class="MsoNormal" align="right" dir="RTL">ב"ה, ‏‏‏‏‏כ"ז תשרי תשע"ה<o:p></o:p></p><p class="MsoNormal" align="right" dir="RTL">‏‏21 אוקטובר 2014<o:p></o:p></p><p class="MsoNormal" align="right" dir="RTL">תיק מס' 73141, רמת גן<o:p></o:p></p><p class="MsoNormal" align="center" dir="RTL"><b><span lang="HE">פסק דין ביניים</b><o:p></o:p></span></p><table class="MsoNormalTable mce-item-table" dir="rtl" border="0" cellspacing="0" cellpadding="0">
+ <tbody><tr>
+  <td width="284" valign="top">
+  <p class="MsoNormal" dir="RTL"><b><span lang="HE">בעניין שבין <o:p></o:p></b></span></p>
+  <p class="MsoNormal" dir="RTL"><b><span lang="HE">התובעת<o:p></o:p></b></span></p>
+  <p class="MsoNormal" dir="RTL"><b><span lang="HE">התובע<o:p></o:p></b></span></p>
+  <p class="MsoNormal" dir="RTL"><o:p>&nbsp;</o:p></p>
+  </td>
+  <td width="284" valign="top">
+  <p class="MsoNormal" dir="RTL"><b><span lang="HE">לבין <o:p></o:p></b></span></p>
+  <p class="MsoNormal" dir="RTL"><b><span lang="HE">הנתבע <o:p></o:p></b></span></p>
+  <p class="MsoNormal" dir="RTL"><o:p>&nbsp;</o:p></p>
+  <p class="MsoNormal" dir="RTL"><o:p>&nbsp;</o:p></p>
+  </td>
+ </tr>
+</tbody></table>
+
+<h2 dir="RTL"><!--[if !supportLists]--><span lang="HE">א.<span>&nbsp;&nbsp;&nbsp;&nbsp;
+</span><!--[endif]-->רקע והחלטות קודמות<o:p></o:p></span></h2><p class="MsoNormal" dir="RTL">כל המעורבים היו חברים בארגון התנדבותי, להלן, הארגון, ושלושתם רשומים
+כשותפים בחשבון בנק של הארגון. בחשבון היו כ- 19,000 ₪. התובעים לא יכלו למשוך
+כספים מהחשבון ללא חתימתו של הנתבע. והנתבע לא יכול היה למשוך כספים ללא חתימת אחד
+התובעים. <o:p></o:p></p><p class="MsoNormal" dir="RTL">התובעים דרשו שהנתבע יעביר את החשבון בבנק לבעלות התובעים, ויאפשר את
+הוצאת הכסף מהחשבון.<o:p></o:p></p><p class="MsoNormal" dir="RTL">הנתבע, שהיה ראש הארגון, פרש מתפקידו, והוא דורש לקבל החזרי הוצאות +
+הצמדה בסך 13,473.59 ₪. במכתב שנשלח לבית הדין לאחר הישיבה, תבע הנתבע גם הוצאות
+משפט בסך 4,121.50 ₪. במהלך הישיבה שהתקיימה בבית הדין, הודה הנתבע כי הוא גילה
+בביתו סך של 21,330 ₪ השייכים לארגון.<o:p></o:p></p><p class="MsoNormal" dir="RTL">בתאריך ח' אב תשע"ד התקבלו בין השאר ההחלטות הבאות:<o:p></o:p></p><ol start="1" type="1">
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">הנתבע יעביר את
+     החשבון בבנק לבעלות שני התובעים, ויאפשר את הוצאת הכסף מהחשבון.<o:p></o:p></span></p></li>
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">הנתבע יעביר לתובעים
+     סך 3,735 ₪ מתוך הכסף המזומן שנמצא אצלו, ושעליו אין מחלוקת. הכסף יועבר
+     תמורת קבלה, או בהפקדה לחשבון הבנק של הארגון.<o:p></o:p></span></p></li>
+</ol><p class="MsoNormal" dir="RTL">כעת בית הדין נדרש להחליט בנוגע ליתרת הסכומים המצויים במחלוקת.<o:p></o:p></p><p dir="RTL"><!--[if !supportLists]--><span lang="HE">ב.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span><!--[endif]-->תיאור המחלוקת שבין הצדדים<o:p></o:p></span></p><p class="MsoNormal" dir="RTL">הנתבע היה ראש הארגון מהקמתו בחודש יולי 07' ועד לחודש פברואר 11'. התובעת
+כיהנה כסגניתו של הנתבע וכיום היא יו"ר הארגון, והתובע הוא גזבר הארגון.
+התובעים הציגו לבית הדין ייפוי כוח מצד חברי המזכירות האחרים לנהל את התביעה. <o:p></o:p></p><p class="MsoNormal" dir="RTL">לאחר פרישתו דרש הנתבע לקבל החזרי הוצאות שהיו לו לטענתו משך תקופת
+כהונתו. התובעים, סרבו לתת לו את ההחזרים המבוקשים, ומשכך, הגיעו הצדדים לפני בית
+הדין.<o:p></o:p></p><h2 dir="RTL"><!--[if !supportLists]--><span lang="HE">ג.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span><!--[endif]-->טענות תובעים<o:p></o:p></span></h2><p class="MsoNormal" dir="RTL">לטענת התובעים:<o:p></o:p></p><ol start="1" type="1">
+ <li class="MsoNormal" dir="RTL"><p>המנהג המקובל
+     בקרב מתנדבים מקבילים הוא שלא לקבל החזרים על דלק, פחת רכב וטלפון, למעט החזר
+     על הוצאות מיוחדות שאושרו מראש. ולכן, הסכמת הצדדים היתה למחול על החזר
+     הוצאות אלה.<o:p></o:p></p></li>
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">הוצאות
+     הטלפון מוגזמות כיון שהנתבע בחר במסלול תשלומים יקר, זאת, למרות שהוצע לו כמה
+     פעמים לעבור למסלול בתשלום קבוע ללא הגבלה על מספר השיחות
+     ("גלובאלי"). התובעים דוחים את טענתו של הנתבע על כך שאיכות השירות
+     והשיחות במסלול הגלובאלי אינה מספקת. <o:p></o:p></span></p></li>
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">על שאר
+     ההוצאות, ובכלל זה החזר על נסיעות בתחבורה ציבורית, מוכנים התובעים לתת לנתבע
+     החזר הוצאות, אם יוגשו קבלות, למעט ההוצאות המכונות "החזרים
+     לחברים", שלגביהן הם טוענים שהחזר זה היה צריך לבוא מקופת הארגון ולא
+     מכיסו של היו"ר. <o:p></o:p></span></p></li>
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">התובעים היו
+     מוכנים לתת 3,165 ₪ כנגד הקבלות שבתוקף, ובכתב התביעה הסכימו אף לעגל את
+     הסכום ל 4,000 ₪, כצעד שהוא לפנים משורת הדין. <o:p></o:p></span></p></li>
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">התנהלות
+     התובע, שהחזיק בביתו 21,330 ₪ מעלה שאלות על מידת ההפרדה שהוא עשה בין הכסף
+     הציבורי לבין הכסף הפרטי.<o:p></o:p></span></p></li>
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">סירובו של
+     הנתבע להצעות הפשרה שהוצעו לו במשך השנים, והתנהלותו כנגד הארגון מאז פרש
+     מראשותו, על ידי הקפאת החשבון ואי מתן אפשרות הוצאת כספים ממנו, הם אלו
+     שהובילו לצורך בתביעה זו, ולכן אין הוא זכאי להוצאות משפט.<o:p></o:p></span></p></li>
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">התובעים
+     דורשים לקבל את חשבון הבנק לשליטתם, בתוספת הצמדה, בגלל שמנע את היכולת
+     להשקיע את הכספים שבחשבון. וכן את הכספים שהוא מחזיק בביתו בתוספת הצמדה.<o:p></o:p></span></p></li>
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">התובעים
+     מבקשים לקבל החזר עבור האגרה ששולמה בבית הדין בסך 500 ₪. וכן עבור האגרה
+     אותה שלמו בבית הדין של הרב רצון ערוסי, לאחר שהנתבע ביקש להעביר את הדיון
+     לבית דין זה, בסך 300 ₪ נוספים.<o:p></o:p></span></p></li>
+ <li class="MsoNormal" dir="RTL"><p>התובעים
+     וב"כ הביאו מקורות התומכים בטענותיהם, והם ידונו על פי הצורך בדיון
+     ההלכתי.<o:p></o:p></p></li>
+</ol><h2 dir="RTL"><!--[if !supportLists]--><span lang="HE">ד.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span><!--[endif]-->טענות הנתבע<o:p></o:p></span></h2><ol start="1" type="1">
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">הארגון חדל
+     מלהתקיים, ולראייה הוא הציג הודעה של התובעים ושאר חברי המזכירות על הקפאת
+     הפעילות. <o:p></o:p></span></p></li>
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">הנתבע
+     מוחזק בכסף שנמצא בידיו ויכול היה לשתוק, ולכן הוא נאמן בכל מחלוקת או ספק
+     וכן כאשר אין קבלות.<o:p></o:p></span></p></li>
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">המנהג של
+     הנתבע הוא שלא לוותר על החזרים המגיעים לו, כך גם במקומות אחרים בהם הוא
+     מתנדב. הארגון עצמו החזיר הוצאות נסיעה כפי שהודו התובעים וכן הוצאות אחרות
+     (כגון, דיו למדפסת). הארגון לא פעל במשרדי ארגון-האם ולכן היו לנתבע הוצאות
+     חריגות בהשוואה למתנדבים אחרים ולכן אי אפשר להסיק מהם אליו. כמו כן, היו
+     פעילויות רבות בארגון בהשוואה לארגונים אחרים, ובמיוחד פעילות רבה של הנתבע.
+     כמו כן, מתנדבים במסגרות אחרות מקבלים החזרי נסיעות.<o:p></o:p></span></p></li>
+ <li class="MsoNormal" dir="RTL"><p>כאשר הנתבע
+     קיבל הטבה הוא חילק את ההטבה בין חברי המזכירות.<o:p></o:p></p></li>
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">בתמחור הפעילויות
+     הנתבע כבר רשם הוצאות טלפון וכד'.<o:p></o:p></span></p></li>
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">בשל
+     הפעילות האינטנסיבית הנתבע לא התפנה לדרוש את החזר הוצאותיו עד לעזיבתו את הארגון.<o:p></o:p></span></p></li>
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">הנתבע העלה
+     את נושא ההוצאות בישיבות מזכירות ונאמר לו שיכין חשבונות ו/או קבלות ואז
+     יקבל.<o:p></o:p></span></p></li>
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">קו בתשלום
+     גלובאלי פחות אמין ונוח. אופן חישוב הוצאות טלפון: השוואת גובה התשלום בשנות
+     הפעילות לשנתיים לפני שהחל לשמש בתפקידו.<o:p></o:p></span></p></li>
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">לטענתו, במרץ
+     11' ניסו התובעים להוציא במרמה את הכסף שהיה בחשבון המשותף.<o:p></o:p></span></p></li>
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">לגבי ההוצאות
+     שהוציאו התובעים בבית הדין של הרב ערוסי – הולכים אחר הנתבע, ולכן זכותו
+     להעביר את הדיון לבית דין שבבחירתו.<o:p></o:p></span></p></li>
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">כעת תובע:<o:p></o:p></span></p></li>
+</ol><p class="MsoNormal" dir="RTL"><span dir="RTL"><span dir="RTL">12,912.59
+₪ עבור הוצאות<o:p></o:p></span></span></p><p class="MsoNormal" dir="RTL">501 ₪ עבור הצמדה<o:p></o:p></p><p class="MsoNormal" dir="RTL">4,121.5 ₪ עבור הוצאות משפט<o:p></o:p></p><ol start="12" type="1">
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">החשבון
+     הוקפא ע"י מנהלת הבנק בגלל ניסיון של התובעים למשוך את הכספים שלא כדין,
+     הוא חתם על שלושה שיקים ריקים, ולכן לא הוא גרם להקפאת הפעילות.<o:p></o:p></span></p></li>
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">טוען שלא
+     היתה החלטת מזכירות שהחזר הוצאות יעשה רק בסמוך למועד ההוצאה.<o:p></o:p></span></p></li>
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">דוחה את
+     הטענה שהוא אינו זכאי להחזר על החזרי ביטולים שנתן מכיסו.<o:p></o:p></span></p></li>
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">הנתבע
+     וב"כ הביאו מקורות התומכים בטענותיהם, והם ידונו על פי הצורך בדיון
+     ההלכתי.<o:p></o:p></span></p></li>
+</ol><h2 dir="RTL"><!--[if !supportLists]--><span lang="HE">ה.<span>&nbsp;&nbsp;&nbsp;&nbsp;
+</span><!--[endif]-->נושאי הדיון<o:p></o:p></span></h2><ol start="1" type="1">
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">מעמדו
+     המשפטי של הנתבע.<o:p></o:p></span></p></li>
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">השפעת
+     המוחזקות של הנתבע בכספי הארגון והודאתו בכך.<o:p></o:p></span></p></li>
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">פטור בגלל
+     מנהג.<o:p></o:p></span></p></li>
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">פטור בגלל
+     שיהוי בהגשת התביעה והיעדר קבלות.<o:p></o:p></span></p></li>
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">אופן חישוב
+     הוצאות טלפון.<o:p></o:p></span></p></li>
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">הוצאות
+     משפט והצמדה למדד.<o:p></o:p></span></p></li>
+</ol><h2 dir="RTL"><!--[if !supportLists]--><span lang="HE">ו.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span><!--[endif]-->מעמדו המשפטי של הנתבע<o:p></o:p></span></h2><p class="MsoNormal" dir="RTL"><span id="ogen1" class="ogen">הנתבע הוא מתנדב בארגון, הוא נבחר לעמוד בראש הארגון והוציא הוצאות
+לצורך פעילות הארגון. לפיכך, מעמדו ההלכתי הוא לכל הפחות כשל "יורד
+ברשות" (שו"ע חו"מ סי' שעה סע' ד-ה): <o:p></o:p></span></p><blockquote><p class="MsoNormal" dir="RTL">"היורד לשדה חבירו ברשות, אפילו נטע שדה שאינה עשויה ליטע, שמין
+לו וידו על העליונה, שאם היתה ההוצאה יתירה על השבח נוטל ההוצאה; ואם השבח יתירה על
+ההוצאה, נוטל השבח... <o:p></o:p></p><p class="MsoNormal" dir="RTL">...והשותף בשדה שיש לו חלק בה, כיורד ברשות הן ושמין להם וידם על
+העליונה".<o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">באופן עקרוני "יורד ברשות" זכאי לתשלום שכר על עבודתו, העובדה
+שבנידון כאן אין תביעה לתשלום שכר וברור שהעבודה היתה בהתנדבות, אינה גורעת מזכותו
+הבסיסית לקבל לפחות החזר על הוצאות שהוציא ובלבד שיישבע (שו"ע חו"מ שעה,
+ח). השאלה היא האם במקרה זה, מחד גיסא, ישנן נסיבות מיוחדות הפוטרות את הארגון
+מתשלום החזרי הוצאות, ומאידך גיסא, האם יש סיבה לפטור את הנתבע משבועה.<o:p></o:p></p><p class="MsoNormal" dir="RTL"><b><span lang="HE">לסיכום, הנתבע הוא לכל הפחות יורד ברשות ובאופן עקרוני הוא זכאי
+להחזרים, אלא אם כן יש סיבות לפטור את הארגון מהחזרים אלה.<o:p></o:p></b></span></p><h2 dir="RTL"><!--[if !supportLists]--><span lang="HE">ז.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span><!--[endif]-->השפעת המוחזקות של הנתבע בכספי הארגון והודאתו בכך<o:p></o:p></span></h2><p class="MsoNormal" dir="RTL">הנתבע הודה בדיון כי הוא מחזיק בידו מעל 21,000 ₪ במזומן מכספי הארגון
+והוא נכון להשיבם, למעט הסכומים המגיעים לו.<o:p></o:p></p><p class="MsoNormal" dir="RTL">לפני הדיון במשמעויות המשפטיות של מצב זה, יש להעיר כי צודקים התובעים
+בתמיהה שלהם על כך שחצי מכספי הארגון מוחזקים במזומן בידיו של היו"ר, מבלי
+שהגזבר או כל אדם אחר יודע על כך. יתירה מזו, לדברי הנתבע, הוא עצמו לא ידע על כך,
+והדבר חמור כפליים. על כל המעורבים בפרשה להסיק את המסקנות האישיות ולא להגיע למצב
+כזה, בו כספי ציבור מוחזקים ללא פיקוח ודיווח בידיו של אחד מהמופקדים אליהם.<o:p></o:p></p><p class="MsoNormal" dir="RTL">ביקורת זו אינה פוטרת אותנו מלדון במשמעויות המשפטיות של המצב הקיים. <o:p></o:p></p><p class="MsoNormal" dir="RTL"><span id="ogen2" class="ogen">מצב זו בו אדם מודה שהוא מחזיק כספים שהתובע כלל לא יודע עליהם ולא
+תבע אותם, מכונה בהלכה "משיב אבידה", כפי שמובא בגמרא (כתובות יח, א): <o:p></o:p></span></p><blockquote><p class="MsoNormal" dir="RTL">"תניא, רבי אליעזר בן יעקב אומר: פעמים שאדם נשבע על טענת עצמו,
+כיצד? מנה לאביך בידי והאכלתיו פרס - הרי זה נשבע, וזהו שנשבע על טענת עצמו;
+וחכמים אומרים: אינו אלא כמשיב אבידה ופטור".<o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">דהיינו, כאשר אדם הודה לאדם שהוא היה חייב כסף לאביו, לדעת חכמים הוא
+פטור בלא שבועה, וכך נפסק בשו"ע (חו"מ עה, ג):<o:p></o:p></p><blockquote><p class="MsoNormal" dir="RTL">"אם לא תבעו אדם, אלא הוא מעצמו אומר: מנה היה לאביך בידי ונתתי
+לו חמשים ונשאר לו חמשים, פטור אף משבועת היסת".<o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">נושאי הכלים דנו בפרטי הדין, ובספר נתיבות המשפט (חידושים עה, ז) סיכם
+כך: <o:p></o:p></p><blockquote><p class="MsoNormal" dir="RTL">"ואם אמר "מנה לך בידי", (והנתבע) [והוא] אומר "אתה
+הזכרתני", ג"כ פטור אף משבועת היסת דהוי כמשיב אבידה, דהא מודה שלולא
+שהזכירו לא היה זוכר, אבל אם משיב "ידעתי מזה ודעתי היתה לתבוע לך" – חייב
+היסת לכולי עלמא".<o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">דהיינו, אם התובע מודה שלא ידע על החוב, אזי הנתבע פטור מלשלם ומלהישבע
+שבועת היסת, וכל שכן שפטור משבועת יורד ברשות. בנידון שלפנינו הנתבע הודה בקיומו
+של הכסף, והתובעים הודו שכלל לא ידעו על קיומו, ולכן הנתבע נאמן בטענותיו
+העובדתיות ואינו חייב אפילו שבועת היסת. <o:p></o:p></p><p class="MsoNormal" dir="RTL"><span id="ogen3" class="ogen">יתירה מזו, במקרה שלפנינו הנתבע גם מחזיק בכסף ולכן על פי הכלל הידוע
+"המוציא מחבירו עליו הראיה", על התובעים להוכיח את טענותיהם העובדתיות
+והמשפטיות. העובדה שהנתבע מודה שהכספים בהם הוא מוחזק אינם שלו אלא הופקדו ברשותו,
+אינה מעלה ואינה מורידה לענין שאלת המוחזקות, והוא נחשב למוחזק בכספים
+(מהרי"ק, מהרש"ל וש"ך, הובאו דבריהם בקצות החושן ד, א). <o:p></o:p></span></p><p class="MsoNormal" dir="RTL">אולם, למרות כל זאת, כאשר גם לפי הטענות העובדתיות של הנתבע הוא חייב
+לשלם, אין במצבו המשפטי כדי לפטור אותו. רוצה לומר, אמנם הנתבע נאמן שכך וכך היה,
+אולם, אם על פי העובדות שהוא עצמו מציג על פי הדין הוא חייב לשלם – אין במוחזקות
+שלו ובכך שהודה כדי לפטור אותו.<o:p></o:p></p><p class="MsoNormal" dir="RTL"><b><span lang="HE">לסיכום, הנתבע הוא משיב אבידה ולכן הוא נאמן בטענותיו העובדתיות ללא
+צורך בשבועה, כמו כן הוא מוחזק ולכן על התובעים נטל הראיה כדי להוציא ממנו ממון. <o:p></o:p></b></span></p><h2 dir="RTL"><!--[if !supportLists]--><span lang="HE">ח.<span>&nbsp;&nbsp;&nbsp;&nbsp;
+</span><!--[endif]-->פטור בגלל מנהג <o:p></o:p></span></h2><p class="MsoNormal" dir="RTL">נקודת המחלוקת העיקרית שבין הצדדים היא האם ישנו מנהג שפוטר את הארגון
+מלהחזיר הוצאות למתנדבים. בעניין זה טוענים התובעים כי המנהג הוא שלא להחזיר
+הוצאות טלפון והוצאות דלק ופחת רכב. לתמיכה בטענתם הביאו התובעים מספר תצהירים של
+מתנדבים בארגונים אחרים שכתבו כי אינם מקבלים החזרים על הוצאות כאלה. כמו כן, טענו
+התובעים כי לנתבע היתה תועלת כספית וציבורית מפעילותו והיא שקולה כנגד הוצאותיו.<o:p></o:p></p><p class="MsoNormal" dir="RTL">הנתבע לא סתר את התצהירים שהוגשו, אלא טען:<o:p></o:p></p><ol start="1" type="1">
+ <li class="MsoNormal" dir="RTL"><p>מנהגו
+     האישי של הנתבע הוא לדרוש החזר הוצאות מלא.<o:p></o:p></p></li>
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">הארגון בו
+     פעלו הצדדים שונה מארגונים אחרים בכך שלא קיבל משרד וטלפון, וחייב את הנתבע
+     להפוך את ביתו למשרד ולהשתמש שימוש מוגבר בקו הטלפון הפרטי שלו. מה גם שהיקף
+     הפעילות של הארגון היה גדול ביחס לארגונים אחרים.<o:p></o:p></span></p></li>
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">מתנדבים
+     במסגרות אחרות מקבלים החזרי הוצאות.<o:p></o:p></span></p></li>
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">הנתבע
+     הודיע בישיבות מזכירות כי בכוונתו לקבל החזרים.<o:p></o:p></span></p></li>
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">הנתבע כתב
+     בתחשיבי הפעילויות את הוצאות הטלפון כחלק מן ההוצאות.<o:p></o:p></span></p></li>
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">הארגון
+     החזיר הוצאות לחברי מזכירות, כגון, הוצאות על דיו למדפסת או החזר נסיעות
+     בתחבורה ציבורית (לתובעת). אף הוחזרו הוצאות ברכב פרטי (למר א'). התובעים
+     השיבו על כך כי מדובר היה בהחזר יוצא דופן שאושר מראש.<o:p></o:p></span></p></li>
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">הנתבע זכאי
+     להחזר הוצאות מעבר לחברי מזכירות אחרים כיון שהיה פעיל הרבה מעבר לאחרים.<o:p></o:p></span></p></li>
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">הנתבע טען
+     כי את ההטבות שקיבל חילק בין כלל חברי המזכירות.<o:p></o:p></span></p></li>
+</ol><h2 class="MsoNormal" dir="RTL"><b><span lang="HE">דיון<o:p></o:p></b></span></h2><p class="MsoNormal" dir="RTL"><span id="ogen4" class="ogen">הלכה פסוקה וידועה היא ש"מנהג מבטל הלכה" (רי"ף בבא מציעא
+נב, א), ובוודאי יחסי עובד ומעביד (במקרה הנדון כאן ביחס למתנדב), הם על פי מנהג
+המדינה. ולכן, אם יוכח שישנו מנהג ברור שעל פיו פעלו כל הצדדים שלא להחזיר הוצאות –
+הוא מחייב את הצדדים. על כך כתב הרמ"א (חו"מ שלא, א): <o:p></o:p></span></p><blockquote><p class="MsoNormal" dir="RTL">"ואינו קרוי מנהג אלא דבר השכיח ונעשה הרבה פעמים, אבל דבר שאינו נעשה
+רק פעם אחת או שני פעמים אינו קרוי מנהג"<o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">אלא שהשאלה היא האם יש מנהג ברור במקרה שלפנינו. כאמור, בית הדין סבור
+שהתובעים הצליחו להוכיח כי ישנו מנהג "שכיח ונעשה הרבה פעמים" בקרב
+מתנדבים בארגונים מקבילים שלא לקבל החזרי הוצאות רכב וטלפון. אולם, כנגדם טען
+הנתבע לשוני בין הארגון הנדון כאן לבין הארגונים האחרים.<o:p></o:p></p><p class="MsoNormal" dir="RTL">בית הדין מקבל את טענתנו של הנתבע בעניין זה – מוסכם שהארגון לא קיבל
+את השירותים אותם קבלו ארגונים אחרים, ובכלל זה שירותי משרד וטלפון. שוני זה מחריג
+את הארגון הנדון, ואינו מאפשר להסיק מארגונים אחרים לארגון זה.<o:p></o:p></p><p class="MsoNormal" dir="RTL">אלא שהחרגה זו נוגעת אך ורק להוצאות טלפון, שהרי הוצאות רכב אינן
+תלויות בקיומו של משרד, ואף לא בסבסוד של ארגון-האם לפעילות הארגונים. ובכל זאת,
+מנהג המתנדבים הוא שלא לדרוש ולקבל החזרי הוצאות רכב. <o:p></o:p></p><p class="MsoNormal" dir="RTL">חיזוק נוסף להבחנה בין הוצאות טלפון והוצאות רכב ניתן להביא מתוך
+הנספחים שהגיש הנתבע עצמו. בכל הנספחים המסומנים באות ד' בסיכומי הנתבע, הובאו
+תחשיבי העלויות של הפעילויות אותן ארגן הנתבע. בכולם ישנה התייחסות לעלויות
+הטלפונים (ובחלקם להוצאות נוספות: פקסים, הדפסות, בולים), אך בכולם אין התייחסות
+להוצאות הנסיעות שהיו לנתבע. חשיבותם של התחשיבים בכך שבהם הנתבע הודיע לחברי המזכירות
+כי הוא רואה עצמו זכאי להחזר הוצאות ללא קשר למנהג כזה או אחר. אולם, כאמור, הצהרה
+זו לא כללה התייחסות להוצאות נסיעה ברכבו.<o:p></o:p></p><p class="MsoNormal" dir="RTL">לגבי הוצאות על תחבורה ציבורית – התובעים הודו שהנתבע זכאי לכך. אמנם,
+הנתבע טען שאין להבחין בין הוצאות נסיעה בתחבורה ציבורית להוצאות נסיעה ברכב פרטי,
+אולם, טענתו אינה מתקבלת. ישנו פער כמותי גדול בין ההוצאות, שיכול להסביר מדוע על
+תחבורה ציבורית יש החזר ועל הוצאות נסיעה ברכב אין החזר. אלא שגם אם הנתבע אינו
+זכאי להחזר הוצאות ברכבו הפרטי, מסתבר שהוא זכאי להחזר על אותן נסיעות בשיעור
+העלות בתחבורה ציבורית. שהרי לא יעלה על הדעת שהנתבע יפסיד את המגיע לו בגלל
+שהחליט לנסוע ברכבו. <o:p></o:p></p><p class="MsoNormal" dir="RTL"><span id="ogen5" class="ogen">לגבי טענתו של הנתבע כי מנהגו לגבות החזרי הוצאות בכל תחומי פעילותו –
+טענה זו נדחית. משמעותו של מנהג בכך שהוא ידוע לכל, וכל הצדדים להתקשרות פועלים על
+פיו. גם מנהגו הפרטי של אדם יכול להוות בסיס מוסכם להתקשרות, ובלבד שהמנהג ידוע
+לצד השני (שו"ת אגרות משה א, עה). אך במקרה כמו שלנו, בו לא הוכח שמנהגו
+הפרטי של הנתבע היה ידוע לתובעים, המנהג אינו משפיע על הבנת הצדדים את תוכן
+ההתקשרות. <o:p></o:p></span></p><p class="MsoNormal" dir="RTL">לגבי טענת התובעים כי לנתבע היתה טובת הנאה מפעילותו ולכן הוא אינו
+זכאי להחזרי הוצאות – טענה זו יפה כדי להסביר מדוע הנתבע אינו מקבל החזר הוצאות
+מלא או תשלום עבור טרחתו, אולם, אין בה די כדי לפטור את הארגון מהחזר הוצאות לו
+זכאי הנתבע על פי דין, ובכלל זה הוצאות טלפון.<o:p></o:p></p><p class="MsoNormal" dir="RTL"><b><span lang="HE">לסיכום, הארגון הנדון שונה מארגונים אחרים בכך שלא היה לו משרד, ולכן
+הנתבע זכאי להחזרי הוצאות טלפון, מה גם שהוא הצהיר על כוונתו לקבלן בתחשיבי
+הפעילויות שהגיש. לגבי הוצאות בתחבורה ציבורית אין ויכוח שהנתבע זכאי להן. אולם, לגבי
+החזרי הוצאות נסיעה ברכב מסתבר שחל המנהג הכללי שלא לקבלן, מה גם שהנתבע לא הוכיח
+שהוא הצהיר בכתב שבכוונתו לקבלן. עם זאת, מסתבר שהנתבע זכאי לקבל החזר על נסיעות
+ברכב פרטי בשיעור עלות הנסיעה בתחבורה ציבורית.<o:p></o:p></b></span></p><h2 dir="RTL"><!--[if !supportLists]--><span lang="HE">ט.<span>&nbsp;&nbsp;&nbsp;&nbsp;
+</span><!--[endif]-->פטור בגלל שיהוי בהגשת התביעה והיעדר קבלות<o:p></o:p></span></h2><p class="MsoNormal" dir="RTL">התובעים טענו כי הנתבע אינו זכאי להחזר הוצאות בגלל השיהוי בהגשת
+הבקשה רק לאחר עזיבתו את הארגון ולא בסמוך לביצוע ההוצאות. בתשובה לכך השיב הנתבע
+כי במהלך פעילותו לא התפנה לדרוש את המגיע לו.<o:p></o:p></p><p class="MsoNormal" dir="RTL"><span id="ogen6" class="ogen">בנוגע לטענת שיהוי יש להזכיר כי בהלכה אין התיישנות (שו"ת במראה
+הבזק ז, קיא). אמנם, ניתן היה לשקול האם השיהוי מעיד על מחילה של הנתבע על הכסף
+המגיע לו. <o:p></o:p></span></p><p class="MsoNormal" dir="RTL">במקרה זה טענה זו נדחית. הנתבע כתב בתחשיבי הפעילויות את הוצאות
+הטלפון, כמו כן, הוא טען שהעלה את העניין בישיבות המזכירות. כאמור, בגלל היותו
+בגדר "משיב אבידה" הוא נאמן שכך היה, ולכן, הוא לא איבד את זכותו בגלל
+השיהוי בהגשת התביעה.<o:p></o:p></p><p class="MsoNormal" dir="RTL">לגבי הדרישה לקבלות – הצורך בקבלות בדרך כלל (וכאן לא נטען אחרת) נועד
+כדי לאמת את קיומן של ההוצאות. אלא שכיון שהנתבע נאמן בטענותיו העובדתיות, הוא
+נאמן לטעון שהיו הוצאות. זאת ועוד, התובעים לא הכחישו את קיומן של ההוצאות אלא
+דרשו קבלות, ככל הנראה מסיבה פורמאלית. אלא שאין בכך כדי למנוע מאדם שהוציא הוצאות
+למען הציבור, הוצאות מוסכמות בסך הכל, לקבל עליהן החזר.<o:p></o:p></p><p class="MsoNormal" dir="RTL">בשולי הדברים נתייחס לטענת התובעים כי התובע אינו זכאי להחזר על
+החזרים שנתן לחברים שביטלו הזמנות, כיון שהכסף היה אמור להיות משולם מהקופה
+הציבורית. מדובר בטענה תמוהה ביותר – אם אכן הכסף היה אמור להיות משולם מהקופה
+הציבורית, אזי ברור שהנתבע זכאי עליו להחזר.<o:p></o:p></p><p class="MsoNormal" dir="RTL">אם כוונת התובעים בטענה זו, שאין להאמין לדברי הנתבע שאכן הוציא מכיסו
+את כספי ההחזרים, דין טענתם להידחות. ההסבר שנתן הנתבע להוצאת ההחזרים מכיסו מניח
+את הדעת, וכיון שהנתבע מוחזק בכספים, ואף נאמן בטענותיו העובדתיות מכוח היותו משיב
+אבדה, יש לקבל את דבריו.<o:p></o:p></p><p class="MsoNormal" dir="RTL"><b><span lang="HE">לסיכום סעיף זה, אין בשיהוי או בהיעדר קבלות כדי לפטור את הארגון
+מלהחזיר לנתבע את ההוצאות להן הוא זכאי, ובכלל זה החזר על החזרים שנתן לחברים
+שבטלו הזמנות. <o:p></o:p></b></span></p><h2 dir="RTL"><!--[if !supportLists]--><span lang="HE">י.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span><!--[endif]-->אופן חישוב הוצאות הטלפון ונסיעות<o:p></o:p></span></h2><p class="MsoNormal" dir="RTL">הנתבע דרש לקבל את ההפרש בין הוצאות הטלפון בתקופה בה לא התנדב בתא,
+לבין ההוצאות בתקופה בה התנדב בתא, סה"כ 5040 ₪. כנגדו טענו התובעים כי הנתבע
+היה יכול לבחור במסלול בתשלום "גלובאלי" ולחסוך בהוצאות. על כך השיב
+הנתבע כי השירות בחברות שמספקות מסלול כזה הוא פחות טוב באופן משמעותי מהמסלול
+הנוכחי.<o:p></o:p></p><p class="MsoNormal" dir="RTL">בית הדין מקבל את טענת הנתבע שאין זה סביר לדרוש ממנו להעביר את הקו
+המשמש לצרכיו הפרטיים לחברה שאינה נוחה לו, כדי לחסוך בהוצאות הארגון. אולם, הנתבע
+יכול היה להזמין קו נוסף עבור הארגון שיותקן בביתו, ללא תלות ברכישת שירותי
+אינטרנט. <o:p></o:p></p><p class="MsoNormal" dir="RTL">מבדיקה שערך בית הדין, ובהסתמך על השוואה בין מחירי טלפון שביצע עיתון
+גלובס בשנים 2008-2010 עולה שמחירי קו טלפון 'גלובלי' עמדו על כ-80 ₪ לחודש + עלות
+התקנה בסך 228 ₪<a href="#_ftn1" name="_ftnref1" title=""><span class="MsoFootnoteReference"><span dir="LTR"><!--[if !supportFootnotes]--><span class="MsoFootnoteReference"><span>[1]</span><!--[endif]--></span></span></a>.
+ולכן תביעת הנתבע לקבל 80 ₪ לחודש עבור טלפון (בזק וסלולרי) היא מוצדקת.<o:p></o:p></span></p><p class="MsoNormal" dir="RTL">אלא שעדיין ישנו ויכוח בין הצדדים לגבי מספר החודשים עליהם זכאי הנתבע
+להחזר. הנתבע דורש לקבל החזר עבור 63 חודשים, מינואר 06' עד סוף אפריל 11', כאשר
+הוא סיים את ריכוז החוגים בתאריך 03.05.11.<o:p></o:p></p><p class="MsoNormal" dir="RTL">התובעים הגיבו על כך שכל המעורבים נבחרו לראשונה לכהן במזכירות הארגון
+רק ביולי 07', ובפברואר 11' הנתבע התפטר מתפקידו בארגון ולאחר מכן סיים את ריכוז
+חוגי המחשבים בהם החל.<o:p></o:p></p><p class="MsoNormal" dir="RTL">ב"כ הנתבע כתב זאת בעצמו בכתב התביעה שכנגד שהגיש (ללא תאריך,
+נשמרה בתאריך 15.05.14), שם כתב שהבחירות התקיימו בתאריך 09.07.07, וכן שהוא התפטר
+מתפקידו בתאריך 14.02.11.<o:p></o:p></p><p class="MsoNormal" dir="RTL">הנתבע נימק וטען כי הוא זכאי להחזר הוצאות על פעילותו הרבה באותה
+תקופה (ואף הציג רשימה של הפעילות עד לבחירות) כשם שמקובל לתת מימון מפלגות גם על
+תקופת הבחירות. <o:p></o:p></p><p class="MsoNormal" dir="RTL">ביה"ד אינו מקבל את טענת הנתבע שאדם זכאי להחזר על הוצאות שהוציא
+כדי להיבחר לתפקיד בארגון. שהרי יכול היה להיבחר גם אדם אחר ואז ברור שלא היתה
+אפשרות להחזר. אם הנתבע יוכיח שהארגון מקבל תקציב למימון הוצאות הבחירות כפי שמקובל
+בבחירות הכללית – אזי ביה"ד ישקול שוב את החלטתו בעניין זה.<o:p></o:p></p><p class="MsoNormal" dir="RTL">לגבי תקופת ההתנדבות לאחר ההתפטרות, ביה"ד מזכה על דרך פשרה
+במחצית מהסכום הנתבע, לאור ההנחה שסביר שהיתה פעילות שהצריכה ניהול שיחות טלפון,
+אך פעילות זו היתה בהיקף קטן יותר.<o:p></o:p></p><p class="MsoNormal" dir="RTL">החישוב יעשה על דרך פשרה בחודשים שלמים:<o:p></o:p></p><p class="MsoNormal" dir="RTL">80 ₪ עבור 43 חודשי התנדבות (יולי 07' עד פבר' 11'), סה"כ 3440
+₪.<o:p></o:p></p><p class="MsoNormal" dir="RTL">40 ₪ עבור 3 חודשי התנדבות (פבר' 11' עד מרץ 11') סה"כ 120 ₪ <o:p></o:p></p><p class="MsoNormal" dir="RTL">סה"כ החזר עבור הוצאות טלפון 3560 ₪. <o:p></o:p></p><p class="MsoNormal" dir="RTL">בנוגע לנסיעות שביצע הנתבע ברכבו ביה"ד במסגרת סמכותו מזכה את
+הנתבע ב-500 ₪, כאומדן שיעור עלות הנסיעה בתחבורה ציבורית, וזאת לאור העובדה
+שמדובר בגמלאי שזכאי להנחה בנסיעה בתחבורה ציבורית.<o:p></o:p></p><p class="MsoNormal" dir="RTL">לגבי הטענה על כך שאין לשלם לנתבע על נסיעה במונית כיון שבטעות טעה
+במקום הפגישה – טוב היה אילו טענה זו לא היתה נטענת. זו התנהלות סבירה שמזכה בהחזר
+הוצאות. <o:p></o:p></p><p class="MsoNormal" dir="RTL"><b><span lang="HE">לסיכום, בית הדין מקבל את תביעת הנתבע לקבל החזר בסך 3840</b> <b>₪ עבור הוצאות טלפון, והחזר בסך 500 ₪ עבור נסיעות ברכב פרטי.</b><b><o:p></o:p></b></span></p><h2 dir="RTL"><!--[if !supportLists]--><span lang="HE">יא.<span>&nbsp; </span><!--[endif]-->הוצאות משפט והצמדות<o:p></o:p></span></h2><p class="MsoNormal" dir="RTL">הצדדים האריכו לתאר עד כמה הצד השני גרם להם נזק באופן התנהלותו.<o:p></o:p></p><p class="MsoNormal" dir="RTL">כידוע על פי ההלכה אין חיוב אוטומטי בהוצאות משפט (שו"ע
+חו"מ יד, ה) למעט מקרים של פעולה זדונית שגרמה נזק. <o:p></o:p></p><p class="MsoNormal" dir="RTL">במקרה זה בית הדין סבור ששני הצדדים נהגו שלא על פי שורת הדין, כגון
+בכך שהתובעים ניסו להוציא את כספי הארגון ללא ידיעתו של הנתבע, ובכך שהנתבע הגיב
+לתביעה באיחור גדול מאד. כיון ששני הצדדים תרמו במידה לא מבוטלת לליבוי הלהבות
+ולהוצאות הנגררות עקב הסכסוך, במקום להביא לפתרון בדרכי נעם, בית הדין רואה בכל צד
+אחראי להוצאות של עצמו.<o:p></o:p></p><p class="MsoNormal" dir="RTL">דרישת הצדדים להצמדה נדחית גם היא. הקפאת החשבון של הארגון נגרמה
+באשמת התובעים ואין מקום לתבוע את הנתבע על כך. דרישת הנתבע להצמדה נדחית, כיון שבמעשיו
+גרם לשיהוי בבירור העניין.<o:p></o:p></p><p class="MsoNormal" dir="RTL"><b><span lang="HE">לפיכך, בית הדין אינו מחייב את שני הצדדים בהוצאותיהם או בהצמדה. <o:p></o:p></b></span></p><h2 dir="RTL"><!--[if !supportLists]--><span lang="HE">יב.<span>&nbsp;&nbsp;
+</span><!--[endif]-->חישוב החזר ההוצאות לו זכאי הנתבע <o:p></o:p></span></h2><p class="MsoNormal" align="center" dir="RTL">[הושמט לצורך פרסום פסק הדין]<o:p></o:p></p><p class="MsoNormal" dir="RTL">הצדדים רשאים להגיב לתחשיב תוך 14 יום.<o:p></o:p></p><h2 dir="RTL"><!--[if !supportLists]--><span lang="HE">יג.<span>&nbsp;&nbsp;&nbsp;
+</span><!--[endif]-->סיכום החישובים<o:p></o:p></span></h2><ol start="1" type="1">
+ <li class="MsoNormal" dir="RTL"><p>הנתבע זכאי
+     להחזר עבור הוצאות למעט הוצאות נסיעה ברכב.<o:p></o:p></p></li>
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">סה"כ
+     זכאי הנתבע להחזר בסך <b><span dir="LTR">8431.54</span></b>₪.<o:p></o:p></span></p></li>
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">ע"פ
+     הצהרתו הנתבע החזיק בסך 21,330 ₪ והוא כבר העביר לחשבון הארגון ע"פ
+     הוראות ביה"ד סך 3735
+     ₪ .<o:p></o:p></span></p></li>
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">לפיכך על
+     הנתבע להעביר לאחד משני התובעים תמורת קבלה או לחשבון הבנק של הארגון סך 9163.5
+     ₪.<o:p></o:p></span></p></li>
+</ol><h2 dir="RTL"><!--[if !supportLists]--><span lang="HE">יד.<span>&nbsp;&nbsp;
+</span><!--[endif]-->החלטות<o:p></o:p></span></h2><ol start="1" type="1">
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">הצדדים
+     רשאים להגיב לסיכומי ביה"ד תוך 14 יום מיום קבלת פס"ד בדוא"ל.<o:p></o:p></span></p></li>
+ <li class="MsoNormal" dir="RTL"><p>הנתבע רשאי
+     להוכיח כי הארגון קיבל מימון הוצאות הבחירות, או כל הוכחה מקבילה אחרת, עד
+     למועד הנ"ל.<o:p></o:p></p></li>
+ <li class="MsoNormal" dir="RTL"><p><span lang="HE">אם לא
+     יתקבלו הערות, על הנתבע להעביר לאחד משני התובעים תמורת קבלה או לחשבון הבנק החדש
+     של הארגון סך 9163.5 ₪ תוך 30 יום מהתאריך הנקוב על פסק הדין.<o:p></o:p></span></p></li>
+</ol><p class="MsoNormal" align="center" dir="RTL">והאמת והשלום אהבו<o:p></o:p></p><p class="MsoNormal" align="center" dir="RTL">פסק הדין ניתן ביום ‏כ"ז תשרי תשע"ה, ‏21 אוקטובר 2014<o:p></o:p></p><p class="MsoNormal" align="center" dir="RTL">בזאת באנו על החתום<o:p></o:p></p><table class="MsoNormalTable mce-item-table" dir="rtl" border="0" cellspacing="0" cellpadding="0">
+ <tbody><tr>
+  <td width="189" valign="top">
+  <p class="MsoNormal" align="center" dir="RTL">______________<o:p></o:p></p>
+  <h3>הרב אהרן פלדמן<o:p></o:p></h3>
+  </td>
+  <td width="190" valign="top">
+  <p class="MsoNormal" align="center" dir="RTL">______________<o:p></o:p></p>
+  <h3>הרב אהרן כ"ץ, אב"ד<o:p></o:p></h3>
+  </td>
+  <td width="190" valign="top">
+  <p class="MsoNormal" align="center" dir="RTL">______________<o:p></o:p></p>
+  <h3>הרב עדו רכניץ<o:p></o:p></h3>
+  </td>
+ </tr>
+</tbody></table>
+
+<p class="MsoNormal" dir="RTL"><o:p>&nbsp;</o:p></p>
+
+<p><!--[if !supportFootnotes]--><br clear="all">
+
+</p><hr align="right" size="1" width="33%">
+
+<!--[endif]-->
+
+<div id="ftn1">
+
+<p class="MsoFootnoteText" dir="RTL"><a href="#_ftnref1" name="_ftn1" title=""><span class="MsoFootnoteReference"><span dir="LTR"><!--[if !supportFootnotes]--><span><span class="MsoFootnoteReference"><span>[1]</span><!--[endif]--></span></span></span></a><span dir="RTL"><span dir="RTL"> ראו בקישורים הבאים:<o:p></o:p></span></span></span></p>
+
+<p class="MsoFootnoteText" dir="LTR"><a href="http://www.globes.co.il/news/article.aspx?did=1000352408#FromSearchPage">http://www.globes.co.il/news/article.aspx?did=1000352408#FromSearchPage</a><o:p></o:p></p>
+
+<p class="MsoFootnoteText" dir="LTR"><span><a href="http://www.globes.co.il/news/article.aspx?did=1000576251#FromSearchPage">http://www.globes.co.il/news/article.aspx?did=1000576251#FromSearchPage</a><o:p></o:p></span></p>
+
+</div>
+    </article>
+  </main>
+  <footer class="psak-footer">
+    מקור: <a href="https://www.psakim.org/Psakim/File/1126" target="_blank">psakim.org — פסק 1126</a>
+  </footer>
+</body>
+</html>

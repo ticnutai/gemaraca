@@ -138,7 +138,7 @@ const RelatedPsakimSidebar = ({ sugyaId }: RelatedPsakimSidebarProps) => {
 
   const handleSwitchViewer = useCallback((psak: typeof psakim[number], e: React.MouseEvent) => {
     e.stopPropagation();
-    const current = getViewerPreference() ?? "dialog";
+    const current = getViewerPreference() ?? "embedpdf";
     const next: ViewerMode = current === "dialog" ? "embedpdf" : "dialog";
     setViewerPreference(next);
 

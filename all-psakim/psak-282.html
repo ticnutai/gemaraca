@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+  <meta charset="utf-8">
+  <title>גביה בהוצאה לפועל</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=David+Libre:wght@400;700&family=Frank+Ruhl+Libre:wght@400;700&display=swap');
+    :root{--primary:#1a237e;--primary-light:#3949ab;--accent:#c5a55a;--bg:#fafafa;--card:#fff;--text:#212121;--text-secondary:#555;--border:#e0e0e0}
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{font-size:16px}
+    body{font-family:'David Libre','Frank Ruhl Libre',serif;background:var(--bg);color:var(--text);line-height:1.9;direction:rtl}
+    .psak-header{background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;padding:40px 20px 30px;text-align:center;position:relative}
+    .psak-header::after{content:'';position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);width:60px;height:4px;background:var(--accent);border-radius:2px}
+    .psak-header h1{font-size:2rem;font-weight:700;margin-bottom:8px;font-family:'Frank Ruhl Libre',serif}
+    .psak-header .subtitle{font-size:.95rem;opacity:.85}
+    .meta-bar{max-width:850px;margin:40px auto 20px;display:flex;flex-wrap:wrap;gap:12px;justify-content:center;padding:0 20px}
+    .meta-item{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 18px;font-size:.85rem;display:flex;align-items:center;gap:6px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+    .meta-item .label{font-weight:700;color:var(--primary)}
+    .psak-body{max-width:850px;margin:30px auto;padding:0 20px}
+    .psak-card{background:var(--card);border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.07);padding:40px 45px;margin-bottom:30px}
+    h1{font-size:1.8rem;color:var(--primary);margin:30px 0 15px;font-family:'Frank Ruhl Libre',serif}
+    h2{font-size:1.4rem;color:var(--primary);margin:28px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--accent);font-family:'Frank Ruhl Libre',serif}
+    h3{font-size:1.15rem;color:var(--primary-light);margin:20px 0 10px}
+    p,div.section,.toggle-title{margin-bottom:14px;text-align:justify}
+    span{font-family:inherit!important;color:inherit!important}
+    .section-title{font-weight:700;font-size:1.1rem;color:var(--primary);margin-bottom:6px}
+    .toggle-title{font-weight:600;color:var(--primary-light);cursor:default}
+    .toggle-title:before{content:''!important}
+    .file-title{background:var(--primary)!important;color:#fff!important;padding:8px 20px!important;border-radius:6px!important;font-size:1.2rem!important;display:inline-block!important;position:static!important;right:auto!important;margin-bottom:15px}
+    #file-num{font-size:.9rem!important;color:var(--text-secondary);float:none!important}
+    .pagename{font-size:1.6rem!important;color:var(--primary)!important;text-align:center;margin:15px 0!important}
+    a.file-tag{background:var(--primary-light)!important;border-radius:4px;font-size:.8rem}
+    .ogen{background-color:rgba(197,165,90,.2)!important;border-radius:2px}
+    .ogen::after{content:''!important}
+    .highlight{background-color:rgba(255,235,59,.4)!important}
+    .selOgen:before{display:none!important}
+    hr{border:none;border-top:1px solid var(--border);margin:25px 0}
+    blockquote{border-right:4px solid var(--accent);padding:12px 20px;margin:15px 0;background:rgba(197,165,90,.06);border-radius:0 8px 8px 0}
+    .psak-footer{text-align:center;padding:20px;color:#999;font-size:.75rem;border-top:1px solid var(--border);margin-top:20px}
+    .psak-footer a{color:var(--primary-light)}
+    @media print{body{background:#fff}.psak-header{background:var(--primary);-webkit-print-color-adjust:exact;print-color-adjust:exact}.psak-card{box-shadow:none;border:1px solid #ddd}}
+    @media(max-width:600px){.psak-card{padding:20px 18px}.psak-header h1{font-size:1.5rem}h2{font-size:1.2rem}}
+  </style>
+</head>
+<body>
+  <header class="psak-header">
+    <h1>גביה בהוצאה לפועל</h1>
+    <div class="subtitle">ארץ חמדה גזית רמת גן · מס׳ סידורי 282</div>
+  </header>
+  <div class="meta-bar">
+    
+    <div class="meta-item"><span class="label">תאריך</span> כ"ד ניסן תש"ע</div>
+    <div class="meta-item"><span class="label">דיינים</span> הרב אריאל יעקב, הרב אישון שלמה, הרב כ"ץ אהרן</div>
+    <div class="meta-item"><span class="label">בית דין</span> ארץ חמדה גזית רמת גן</div>
+  </div>
+  <main class="psak-body">
+    <article class="psak-card">
+      <p class="Bodytext0" dir="RTL">תיק מס' 70020</p><p class="Bodytext0" dir="RTL"><span><span lang="HE">התובע</span>:
+א, שוכרי הדירה&nbsp;</span></p><p class="Bodytext0" dir="RTL"><span><span lang="HE">הנתבע</span>: ב, בעלי הדירה</span></p><h2 class="MsoNormal" dir="RTL"><span class="bodytext9"><span lang="HE">עובדות וטענות</span></span></h2><h2 class="MsoNormal" dir="RTL"><span class="bodytext9"><span lang="HE">א</span><span lang="HE">. הרקע
+העובדתי</span><span dir="LTR"><span dir="LTR">:</span></span><o:p></o:p></span></h2><p class="Bodytext0" align="left" dir="RTL"><span class="Bodytext"><span lang="HE">במהלך
+חודש מאי 2005 נחתם חוזה שכירות דירה בין השוכר (להלן התובע) ובין המשכיר (להלן
+הנתבע). על פי החוזה הדירה היתה אמורה להימסר לרשות התובע מרוהטת חלקית וממוזגת
+ביום 01.06.05. כמו כן סוכם כי התובע ישלם את תשלום הארנונה. ביום מסירת הדירה
+התעכבה העברת הדירה בכמה שעות מפאת חוסר הבנה בין התובע והנתבע. במשך כל תקופת
+השכירות לא שילם התובע את תשלום הארנונה המוטל עליו. במשך תקופת השכירות התגלו
+מספר ליקויים בדירה אשר הסבו נזק לתובע אם כי טופלו באופן מיידי ע״י הנתבע ובכללם
+מתקפת טרמיטים אשר פגעה לטענת התובעים בחלק מן הרהיטים וכן מזגן אשר נתגלו בו מספר
+תקלות אשר טופלו באמצעות טכנאי ששלח הנתבע. לאחר תום תקופת השכירות גילה הנתבע כי
+דמי הארנונה עבור השנתיים בהם גרו התובעים בדירה העומדים על סך של 8220 ₪ לא שולמו
+ע״י התובעים כנדרש על פי החוזה.</span><o:p></o:p></span></p><p class="Bodytext0" align="left" dir="RTL"><span class="Bodytext"><span lang="HE">אשר על כן הלך הנתבע ושילם את דמי הארנונה לעירית בני ברק ולאחר מכן
+תבע את התובעים לשלם לו את חובם. בעקבות סירובם של התובעים פתח הנתבע בהליכי הוצאה
+לפועל אשר גרמו לו להוצאות נוספות ולהגדלת החוב של התובעים בהול״פ לסך של כ14000
+₪. כתוצאה מפעילות זו שילם התובע 2000 ₪ להוצאה לפועל על חשבון חובו.</span><o:p></o:p></span></p><h2 class="Bodytext91" align="left" dir="RTL"><span lang="HE">ב. טענות ותביעות הצדדים</span></h2><p class="Bodytext0" align="left" dir="RTL"><span class="BodytextBold"><span lang="HE">לטענת התובע, </span><span lang="HE">חוב הארנונה לא שולם במשך תקופת השכירות מתוך רשלנות אך לאחר תום
+תקופת השכירות ביקש להסדיר חוב זה ובהיות שלדעתו זכאי הוא להנחה משמעותית נדרש היה
+ממנו להציג חוזה שכירות מקורי על כל תקופת השכירות.</span><o:p></o:p></span></p><p class="Bodytext0" align="left" dir="RTL"><span class="Bodytext"><span lang="HE">מכיוון
+שבידו היה חוזה מקורי רק על שנת השכירות הראשונה ביקש חוזה גם על השנה השניה ולא
+קיבל.</span><o:p></o:p></span></p><p class="Bodytext0" align="left" dir="RTL"><span class="Bodytext"><span lang="HE">את העיכוב
+בתשלום להולצ״פ אשר גרם לתפיחת החוב מנמק התובע מכך שלפי חוות דעת הלכתית שקיבל
+אסור היה לו לשלם סכומים אלו. אי לכך דורש התובע לבטל את הליכי ההוצל״פ ולחייבו רק
+בסכום המקורי בניכוי מה שכבר שילם סך הכל 6220 ₪. בנוסף תובע התובע לקזז מתשלום זה
+תשלום שמגיע לו עבור הנזקים שנגרמו לו כדלהלן:</span><o:p></o:p></span></p><p class="Bodytext0" align="left" dir="RTL"><o:p>&nbsp;</o:p></p><p class="Bodytext0" align="left" dir="RTL"><!--[if !supportLists]--><span dir="RTL">1.<span>&nbsp;&nbsp;&nbsp;&nbsp;
+</span><!--[endif]--><span lang="HE"><span dir="RTL">400 ₪ </span></span><span lang="HE">עבור האיחור במסירת הדירה שגרם לעיכוב הפועלים ולתשלום נוסף.</span><o:p></o:p></span></p><p class="Bodytext0" align="left" dir="RTL"><!--[if !supportLists]--><span dir="RTL">2.<span>&nbsp;&nbsp;&nbsp;&nbsp;
+</span><!--[endif]--><span lang="HE"><span dir="RTL">$100 עבור כל חודש מחדשי הקיץ בתקופת השכירות בהם המזגן עבד חלקית
+ס״ה </span></span><span lang="HE">$400.</span><o:p></o:p></span></p><p class="Bodytext0" align="left" dir="RTL"><!--[if !supportLists]--><span dir="RTL">3.<span>&nbsp;&nbsp;&nbsp;&nbsp;
+</span><!--[endif]--><span lang="HE"><span dir="RTL">1000 ₪ עבור הפגיעה שנגרמה לרהיטים כתוצאה ממתקפת הטרמיטים.</span></span><o:p></o:p></span></p><p class="Bodytext0" align="left" dir="RTL"><!--[if !supportLists]--><span dir="RTL">4.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span lang="HE">120 ₪ ששולמו לערבים בעקבות העיקול שהוטל על חשבונותיהם ע״י ההול״פ
+אשר גרם להחזרת שתי המחאות בגין אי כיסוי מספיק.</span></span></p><p class="Bodytext0" align="left" dir="RTL"><span lang="HE"><br data-mce-bogus="1"></span></p><p class="Bodytext0" align="left" dir="RTL"><span lang="HE"><span lang="HE" dir="RTL">תביעת התובעים היא שהנתבעים יסירו את תביעתם בהוצאה
+לפועל. סך הכל מוכנים התובעים לשלם לנתבעים 3020₪ בלבד.<br></span></span></p><p class="Bodytext0" align="left" dir="RTL"><span class="BodytextBold"><span lang="HE">לטענת הנתבע, </span><span lang="HE">האחריות על תשלום הארנונה מוטלת לפתחו של התובע בלבד היות והוא אינו
+אחראי לעיכוב בתשלום. לטענתו נמסר על ידי ביתם חוזה מתוקן על כל התקופה ביום עזיבת
+הדירה. לפניה מאוחרת יותר שהגיעה אליהם לקבלת חוזה על תקופה שהתובעים כבר לא גרו
+בדירה נתקלה בסירוב מצידם היות ומדובר בחוזה שיקרי הפוגע בזכותו של הדייר החדש. אי
+לכך לא נותרה להם ברירה אלא לפנות להליכי הוצל״פ והאחריות על כל העיכובים
+והתשלומים שנגרמו בעקבותם מוטלת על כתפי התובעים בלבד. אשר על כן דורש הנתבע מעבר
+לתשלום הארנונה בו הודו התובעים תשלום ההוצאות שנגרמו לו בגין העיכוב בתשלום
+וההליכים בהוצל״פ תשלום העומד על סך של 2,000 ₪ כמפורט:</span><o:p></o:p></span></p><p class="Bodytext0" align="left" dir="RTL"><!--[if !supportLists]--><span dir="RTL">1.<span>&nbsp;&nbsp;&nbsp;&nbsp;
+</span><!--[endif]--><span lang="HE"><span dir="RTL">1140 ₪ עבור הוצאות בהול״פ.</span></span><o:p></o:p></span></p><p class="Bodytext0" align="left" dir="RTL"><!--[if !supportLists]--><span dir="RTL">2.<span>&nbsp;&nbsp;&nbsp;&nbsp;
+</span><!--[endif]--><span lang="HE"><span dir="RTL">300 ₪ עבור אבדן שני ימי עבודה.</span></span><o:p></o:p></span></p><p class="Bodytext0" align="left" dir="RTL"><!--[if !supportLists]--><span dir="RTL">3.<span>&nbsp;&nbsp;&nbsp;&nbsp;
+</span><!--[endif]--><span lang="HE"><span dir="RTL">154 ₪ עבור נסיעות ללשכת ההוצאה לפועל ובית המשפט.</span></span><o:p></o:p></span></p><p class="Bodytext0" align="left" dir="RTL"><!--[if !supportLists]--><span dir="RTL">4.<span>&nbsp;&nbsp;&nbsp;&nbsp;
+</span><!--[endif]--><span lang="HE"><span dir="RTL">406 ₪ סכום משוער בגין שיחות טלפון למרכז מידע של בית המשפט
+ולשי״ל.</span></span><o:p></o:p></span></p><p class="Bodytext0" align="left" dir="RTL"><span class="Bodytext"><span lang="HE">בנוסף תובע הנתבע עבור נזק שנגרם לרהיטים שהשאיר בדירה שאוחסנו
+לטענתו באופן שאינו ראוי ובניגוד לדעתו. התובע מעריך את הנזק ב 5000 ₪ אם כי הערכה
+זו נובעת כתוצאה מחישוב ירידת ערך הדירה בעקבות אבדן הרהיטים בעוד שהנזק שנגרם
+לרהיטים באופן ישיר קטן בהרבה. לטענת התובע הורדת הרהיטים נעשתה באישורו של הנתבע.
+סך הכל דורש הנתבע סכום של 13,220 ₪.</span><o:p></o:p></span></p><p class="Bodytext0" align="left" dir="RTL"><span class="Bodytext"><span lang="HE">בתשובה
+לטענות הנוספות של התובעים טוענים הנתבעים:</span><o:p></o:p></span></p><p class="Bodytext0" align="left" dir="RTL"><!--[if !supportLists]--><span>1.<span>&nbsp;&nbsp;&nbsp;&nbsp; </span><!--[endif]--><span lang="HE">העיכוב במסירת הדירה נגרם כתוצאה
+מחוסר אמון בתובעים.</span><o:p></o:p></span></p><p class="Bodytext0" align="left" dir="RTL"><!--[if !supportLists]--><span>2.<span>&nbsp;&nbsp;&nbsp;&nbsp; </span><!--[endif]--><span lang="HE">המזגן תקין וכאשר נתגלו בו ליקויים
+טופלו מייד.</span><o:p></o:p></span></p><p class="Bodytext0" align="left" dir="RTL"><!--[if !supportLists]--><span>3.<span>&nbsp;&nbsp;&nbsp;&nbsp;
+</span><!--[endif]--><span lang="HE">הטרמיטים
+טופלו מיידית.</span></span></p><p class="Bodytext0" align="left" dir="RTL">סיכום התביעות:</p><p class="Bodytext0" align="left" dir="RTL">הדיון העיקרי הינו סביב שאלת תשלום
+ההוצאות שנגרמו בעקבות הפניה להליכי ההוצל״פ. הצדדים חלוקים בשאלה על מי מוטלת
+האחריות על העיכוב בתשלום הארנונה החל ממועד עזיבת הדירה.</p><p class="Bodytext0" align="left" dir="RTL"><span class="Bodytext"><span lang="HE">בנוסף ישנן תביעות הדדיות נוספות בהן הצדדים חלוקים
+בשאלות הבאות:</span><b><o:p></o:p></b></span></p><p class="Bodytext0" align="left" dir="RTL"><!--[if !supportLists]--><span>1.<span>&nbsp;&nbsp;&nbsp;&nbsp; </span><!--[endif]--><span lang="HE">על מי
+מוטלת האשמה בפינוי הדירה המאוחר.</span><b><o:p></o:p></b></span></p><p class="Bodytext0" align="left" dir="RTL"><!--[if !supportLists]--><span>2.<span>&nbsp;&nbsp;&nbsp;&nbsp; </span><!--[endif]--><span lang="HE">על מי
+מוטלת</span><span lang="HE"> האשמה בנזקי הטרמיטים לרהיטי
+התובע.</span><o:p></o:p></span></p><p class="Bodytext0" align="left" dir="RTL"><!--[if !supportLists]--><span>3.<span>&nbsp;&nbsp;&nbsp;&nbsp; </span><!--[endif]--><span lang="HE">האם המזגן עבד באופן סביר.</span><o:p></o:p></span></p><p class="Bodytext0" align="left" dir="RTL"><!--[if !supportLists]--><span>4.<span>&nbsp;&nbsp;&nbsp;&nbsp;
+</span><!--[endif]--><span lang="HE">על
+מי מוטלת האשמה בנזק שנגרם לרהיטי הנתבע.</span></span></p><h1 class="Bodytext91" align="left" dir="RTL"><span><span lang="HE">פסק דין<o:p></o:p></span></span></h1><p class="Bodytext91" align="left" dir="RTL"><span lang="HE"><o:p>&nbsp;</o:p></span></p><h5 class="Bodytext91" dir="RTL" align="left"><span lang="HE"></span></h5><h2 class="Bodytext91" dir="RTL" align="left"><span lang="HE"><span id="ogen2" class="ogen"><span class="Bodytext9"><span lang="HE">ג.</span><span lang="HE"> טענת השוכרים על הסכם שלא ניתן להם אחרי תקופת השכירות</span></span>.</span></span></h2><p class="Bodytext91" dir="RTL" align="left"><span class="Bodytext"><span lang="HE">עיקרו של הדיון העומד בפנינו הוא סביב ההוצאות שנגרמו למשכירי הדירה אחרי שפנו להוצאה לפועל על מנת לגבות את החוב המגיע להם עבור תשלומי הארנונה שלא שולמו במועדם. התובעים טענו בפני בית הדין שהם יכלו לקבל הנחה בעירייה עקב מיעוט הכנסות. אמנם לצורך קבלת ההנחה היה עליהם להציג חוזה כתוב בין הצדדים על כל התקופה. התובע טען שהם היו יכולים לקבל הנחה </span><span lang="HE">״לכל הפחות של 50<sup>%</sup>״ </span><span lang="HE">ועל כן הם מבקשים שבית הדין ינכה סכום זה מחובם לארנונה. הנתבעים טוענים לעומת זאת שחוזה אחד היה מעודכן על כל התקופה, וניתן לתובעים על ידי ביתם של הנתבעים ביום שעזבו את הדירה. בהמשך טען הנתבע שמספר חודשים אחרי שעזבו התובעים את הדירה התקשר התובע וביקש חוזה פיקטיבי. לטענתו אמר לתובע שהוא אינו משקר ואינו רוצה לפגוע בדייר שכבר גר בדירה. למעשה נאמרו בפני בית הדין טענות וטענות שכנגד, בשאלה מי אשם שלא נמסר לתובעים חוזה שכירות על הדירה לאחר שהם עזבו כבר את הדירה. מכיון שלא הוצגו בפני בית הדין שום ראיות לטענת הצדדים בית הדין איננו יכולים לדעת מי מהצדדים מדייק יותר בעובדות. לעומת זאת אנו יכולים לקבוע בבירור וללא כל ספק שחתימת החוזה בין הצדדים חייבה את התובעים לשלם את הארנונה כסדרה. בידי התובעים היה חוזה מסודר לשנת השכירות הראשונה שלהם בדירה והם לא שילמו ולא דאגו להסדרת חובם בעירית בני ברק. הם לא דרשו חוזה שכירות חדש עם תקופת השכירות הראשונה לתקופת שכירות נוספת משום שבמהלכה של אותה שנה הם לא התכוונו לשלם את חובם לעירית בני ברק. רק אחרי שהם עזבו את הדירה הם ביקשו לטענתם חוזה שכירות שבכל מקרה הינו חוזה פיקטיבי.</span></span></p><p class="Bodytext0" align="left" dir="RTL"><span class="Bodytext"><span lang="HE"><span id="ogen3" class="ogen">מכיון שהחוזה אמור להציג מצג לא אמיתי&nbsp;כאילו הוא נחתם בתחילת חודש
+יוני של שנת 06, עד שאנו דנים בשאלה האם יש אשמה לנתבעים בכך שהתובעים לא צוידו
+בחוזה פיקטיבי אחרי צאתם את הדירה יש מקום לדיון בשאלה האם מותר בכלל לחתום על
+חוזה מוקדם. על פי ההלכה הפשוטה בש״ס ופוסקים ״שטרי חוב המוקדמים פסולים״. הטעם
+הוא משום שבחתימתו של שטר כזה נגרם נזק לצד שלישי (לקוחות) שיבואו לגבות מהם שלא
+כדין. במקרה שלפנינו אמנם החוזה אינו מציג מציאות שקרית שהרי השוכרים גרו באותה
+תקופה. אלו המשכירים היו מסרבים למסור להם חוזה שכירות בראשית שנת השכירות השנייה
+היה מקום לדון באחריותם לנזק שהיה נגרם לשוכרים בהפסד הנחה שאולי היו זכאים לקבל
+בגין השתכרות נמוכה.</span></span><o:p></o:p></span></p><p class="Bodytext0" align="left" dir="RTL"><span class="Bodytext"><span lang="HE"><span id="ogen4" class="ogen">שאלת הצגתו של שטר שאינו אמת&nbsp;הוזכרה כבר בדברי התוספות במסכת בבא בתרא בדף ל״ב עמוד ב׳
+גבי אדם היושב בשדה והציג שטר מזוייף "אמר ליה רב יוסף: אמאי סמכת אהאי
+שטרא?, האי שטרא חספא בעלמא הוא!״. וביארו שם התוספות "ונראה לר״י דטעמא דרב
+יוסף דלא אמרי' מיגו הכא כיון דלית ליה הכא מיגו אא״כ שקר תחלה שהוצרך לשקר תחלה
+ולומר והא שטרא" והיינו גם לדבריו שהיה לו שטר אמיתי ואבד אסור לו להציג שטר
+מזוייף ועל כן איבד טענת מיגו בטענתו. גם בהלכות עדות קבע הרמ״א שאין להעיד אפילו
+בדבר אמת כאשר העד השני לא יודע דבר ומעיד למעשה עדות שקר (ראה חו״מ סימן ל״ד
+ס"א המבוסס על לשון הרמב״ם בהלכות עדות ודברי הש״ך שם). ברור הדבר שהמקרה
+שבפנינו חמור יותר.</span></span><o:p></o:p></span></p><p class="Bodytext0" align="left" dir="RTL"><span class="Bodytext"><span lang="HE">לסיכום, השוכרים נהגו שלא כדין ולא פעלו לסלק את חובם בזמן ובכך גרמו
+נזק למשכירים שנאלצו לסלק את חובם שלהם, ועתה הם באים בטענה מדוע לא סייעתם לנו
+לנסח שטר שלא היה קיים קודם לכן. אין להם להלין אלא על עצמם ואנו לא יכולים לקבל
+כל טענה של אחריות המשכירים להפסד שהשוכרים הביאו על עצמם.</span><o:p></o:p></span></p><h5 class="Bodytext91" dir="RTL" align="left"><span lang="HE"></span></h5><h2 class="Bodytext91" dir="RTL" align="left"><span class="Bodytext9"><span lang="HE">ד.</span><span lang="HE"> פנייתם של המשכירים להוצאה לפועל</span></span></h2><h5 class="Bodytext91" dir="RTL" align="left"><span class="Bodytext"><span lang="HE"><span id="ogen6" class="">במהלך הדיון העלו השוכרים מספר פעמים את הטענה שאסור היה למשכירים לפנות להוצאה לפועל על מנת לגבות את התשלום. לטענתו התובע דיבר עם דיין שהורה לו שאסור לשלם להוצאה לפועל. לדברי הנתבע </span></span><span lang="HE">"מעולם לא פנו אלינו לבוא לבית הדין. הם שתקו יותר משנה היה לי שטר חוב והיות ולא רצו לשלם נאלצתי לשלם מימשתי את השטר בהוצאה לפועל".</span></span><br></h5><p class="Bodytext0" align="left" dir="RTL"><span lang="HE">האם דין הפנייה להוצאה לפועל כדין פנייה לערכאות? למעשה יש לשאול, אם
+אותו הדיין שבו נועץ התובע מכהן בבית דין מה הוא עושה כאשר הוא מבקש לממש את פסקי
+הדין שהוא כותב? עיון בספרות הנרחבת של פסקי בתי הדין הרבניים מלמדת אותנו שמעשים
+בכל יום שבתי הדין הרבניים מפנים למימוש פסקי הדין שלהם אשר יש צורך לכפותם, אל
+משרד ההוצאה לפועל. לשם המחשה, נאמר כי כבר בשנת תש״ד עוד לפני הקמת המדינה, כאשר
+מערכת ניהול המשפט נוהלה בידי השלטון האנגלי שבארץ ישראל הוגש ערעור על הוצאות
+גבייה בהוצאה לפועל. בדין ישבו שני הרבנים הראשיים לישראל דאז, הרב הרצוג
+זצ"ל והרב עוזיאל זצ"ל יחד עם הדיין הרב אליהו מרדכי וילקובסקי
+זצ"ל. בית הדין לא חייב את הבנק בהחזר הוצאות על פעולת הגבייה והסביר שפעולה
+זו אינה חשובה כפנייה לערכאות (אוסף פסקי הדין של הרה״ר לארץ ישראל א' עמודים נ״ה
+- נ״ו):</span></p><blockquote><p class="Bodytext0" align="left" dir="RTL">"שזה אינו
+בגדר משפט כיון שהחוב ברור על ידי שטר ואין זאת כי אם פעולה להביא את השטר לידי
+גוביינא, מעין שטר העומד ליגבות כגבוי דמי... מאידך גיסא צריך להביא בחשבון שהתובע
+גרם בעצמו להפסדו בהזנחתו שלו".</p></blockquote><p class="Bodytext0" align="left" dir="RTL"><span class="Bodytext"><span lang="HE">ושוב
+במסקנות שם:</span><o:p></o:p></span></p><blockquote><p class="MsoNoSpacing" align="left" dir="RTL"><em><span lang="HE"><span id="ogen5" class="ogen">"בהתחשבות במנהג שפונים לערכאות&nbsp;(אפילו פנייה לבתי הדין וכל שכן להוצאה לפועל) לגביית שטרות
+העומדים לגוביינא מבלי לפנות תחילה לבית דין תורני אין לראות בפנייה זו משום הליכה
+לערכאות של עכו"ם ואין לתבוע על כך לדין".</span></em><em><o:p></o:p></em></span></p></blockquote><p class="Bodytext0" align="left" dir="RTL"><span class="Bodytext"><span lang="HE">בפסקי דין
+רבניים חלק ג פס״ד בעמוד 65 שניתן בבית הדין הרבני הגדול ירושלים ערעור תשי״ח -
+/עשר/ בפני כב׳ הדיינים: הרב עבדיה הדאייה, הרב יצחק מאיר בן - מנחם, הרב יעקב הדס
+כתבו דייני בית הדין הרבני העליון</span><span lang="HE">:</span><o:p></o:p></span></p><blockquote><p class="Bodytext160" align="left" dir="RTL"><span dir="RTL"><em><span dir="RTL">"אין
+אנו רואים יסוד לכך דעל ביה"ד הרבני לפסוק רק בדברים הניתנים תיכף לביצוע
+ולהוצאה לפועל דרך הרשות בית הדין התייחס למוסד של הוצאה לפועל של הרשות ככלי
+ראשון לביצוע פסקי הדין ולא כפנייה לערכאות".</span></em><em><o:p></o:p></em></span></p></blockquote><p class="Bodytext0" align="left" dir="RTL"><span class="Bodytext"><span lang="HE"><span id="ogen8" class="ogen">בפסק דין שכתב בית הדין הרבני&nbsp;פסקי דין רבניים חלק יא עמוד 269 הסביר בית הדין את הצורך
+בחתימת הצדדים על שטר הבוררות והסביר:</span></span><o:p></o:p></span></p><blockquote><p class="Bodytext160" align="left" dir="RTL"><span dir="RTL"><span lang="HE"><span dir="RTL">"לאור האמור, מבואר שבאמת אין בית הדין זקוק לחתימת הצדדים על
+שטר בוררין כדי שתהיה לו הסמכות לדון בתביעה. הצורך בחתימה על שטר הבוררין היא כדי
+שהצדדים לא יוכלו לחזור בהם מהפניה לביה"ד </span></span><span lang="HE">(שו״ת אבן השהם,
+סי׳ נ״ט) </span><span lang="HE">וכדי שפסק הדין יהיה ניתן להוצאה לפועל".</span><o:p></o:p></span></p></blockquote><p class="Bodytext160" align="left" dir="RTL"><span class="Bodytext16"><span lang="HE"><span id="ogen16" class="ogen">לצרכים אלה ניתן אף לכוף את הצדדים לחתימת שטר בוררין&nbsp;</span></span><span lang="HE">(שו״ת הרי בשמים, סי׳
+צ״ט)&nbsp;</span>הנחת בית
+הדין היא שהוא ישתמש בהוצאה לפועל ככלי לביצוע פסק הדין ולא חלילה כפנייה לערכאות.</span></p><p class="Bodytext0" align="left" dir="RTL"><span class="Bodytext"><span lang="HE">גם הגאון
+הרב שמואל וואזנר שליט״א נשאל בעניין זה על ידי הרב הדיין ר׳ אליעזר שטרן והשיב
+בשו״ת שבט הלוי חלק י סימן רסג</span><span lang="HE">:<o:p></o:p></span></span></p><blockquote><p class="Bodytext0" align="left" dir="RTL"><span class="Bodytext16"><span lang="HE">&nbsp;"בנדון השאלה אם מותר לפנות להוצאה לפועל
+בעניין שק שהנתבע אינו רוצה לשלם, יראה דאם אינו רוצה לשלם והחוב ברור, ואין ברירה
+למצות הדין כהלכה, מותר להתיר לו לפנות להוצאה לפועל בתנאי שלא ייסתר ע"י
+הוצאה לפועל דין המבואר בחו"מ סי' צ"ז סכ"ג דהיינו פרטי דינים של
+סדור בע"ח כשכבר הגיע זמן הפירעון".</span><o:p></o:p></span></p></blockquote><p class="Bodytext0" align="left" dir="RTL"><span class="Bodytext"><span lang="HE">גם הגאון
+ר׳ עובדיה יוסף כתב בשו״ת יחווה דעת שלו בחלק ג׳ סימן מ״ו שההוצאה לפועל היא דרך
+נאותה לביצוע פסקים מבוררים.</span><o:p></o:p></span></p><p class="Bodytext0" align="left" dir="RTL"><span lang="HE"><span id="ogen9" class="ogen">גם בנידון שלנו שבו התעלמו השוכרים מחובתם הברורה, המעוגנת הן בשטר
+ההסכם שהיה בין הצדדים והן במנהג הרווח והפשוט שהדייר הוא המשלם את תשלומי הארנונה
+לשירות העירוני שהוא זוכה לו יום יום על ידי הרשות המקומית. השוכרים עזבו את הדירה
+כשהם מטילים את חובם על אנשים אחרים, ומתעלמים זמן ארוך ביותר מחובתם, ולא היתה
+למשכירים שום ברירה שכן הם היו חשופים לתביעתה של הרשות המקומית שפוסקת חיובי
+ריבית והצמדה על החוב ומטילה עיקול על הנכס. הם היו רשאים לשלם את החוב ולתובעו.
+אנו גם סבורים שהיה עליהם לנסות לכתחילה להביאם לבית הדין ולגבות את חובם בבית דין
+של תורה. מאידך עמדתם של דייני ישראל, על פי מסורת הפסיקה שההוצאה לפועל היא אמצעי
+כשר לגביית חובות ברורים שאין עליהם צורך בפסיקה נוספת, ולא נוכל לשחרר את התובעים
+מלשלם לנתבעים את מלא הסכום שנאלצו הם לשלם על מנת להפטר מחובם כולל ההוצאות
+הישירות שנתבעו לשלם במשרדי ההוצאה לפועל. יתרת החוב שחובת השוכרים לשלם למשכירים
+עבור הארנונה היא 6,220 ₪.</span></span></p><p class="Bodytext0" align="left" dir="RTL"><span class="Bodytext"><span lang="HE">כמו כן
+הוצגו בפני בית הדין קבלות על הוצאות ישירות לגביית החוב על ידי ההוצאה לפועל על
+סך 1140 ₪. כמו כן השתכנע בית הדין שהיו לנתבע הוצאות נוספות ישירות על נסיעות
+טלפונים וימים שבהם בילה במוסדות המשפטיים של לפחות 300 ₪.</span><o:p></o:p></span></p><p class="Bodytext0" align="left" dir="RTL"><span class="Bodytext"><span lang="HE">לסיכום, הכרעת בית הדין היא שעל התובעים לשלם לנתבעים את הסכום של
+7,660 ₪. כל הסכום הזה נוגע לחובתם לשלם עבור תשלומי הארנונה וההוצאות שהם גרמו
+ישירות לנתבעים בגלל העובדה שהתעלמו מחובתם לשלם את התשלומים שהיו מוטלים עליהם.</span><o:p></o:p></span></p><h2 class="Bodytext91" align="left" dir="RTL"><span class="Bodytext9"><span lang="HE">ה.</span><span lang="HE"> תשלומי הוצאות האם אין בהם משום גרמא בנזיקין</span></span></h2><p class="Bodytext0" align="left" dir="RTL"><span class="Bodytext"><span lang="HE">בפני בית
+הדין עמדה השאלה האם החיוב שאנו מטילים על התובע לשלם לנתבע את ההוצאות שהיו לו
+בהוצאה לפועל אינן בגדר של גרמא בנזיקין שבהם המזיק פטור בידי אדם אף שהוא חייב
+בהם בידי שמים. נקדים ונאמר שאין ספק שיש חיוב בידי שמים על התובעים לשלם את
+הנזקים שהם גרמו לנתבעים בכך שלא שילמו חובם הברור, זמן רב אחרי שהיה מוטל עליהם
+לעשות כן, שהרי גם בחיובי גרמא יש חובה לצאת ידי שמים. לדעת בית הדין אנו רשאים
+להטיל עליהם לעשות כן כחובה בידי אדם.</span><o:p></o:p></span></p><p class="Bodytext0" align="left" dir="RTL"><span class="Bodytext"><span lang="HE">כבר נפסק
+בשולחן ערוך חושן משפט סימן ק״ו סעיף א׳:</span><o:p></o:p></span></p><blockquote><p class="Bodytext0" align="left" dir="RTL"><span dir="RTL"><span lang="HE"><span dir="RTL">"מלוה שבא
+ליפרע בשטר מקויים שבידו, שלא בפני לוה, אם יכולים בית דין לשלוח לו ולהודיעו עד
+שיעמוד עמו בדין, שולחים ומודיעין לו, אם הוא בכדי שילך השליח ויחזור תוך ל׳ יום,
+והמלוה יתן שכר השליחות, ויגבנו נוסף על חובו. ואם הוא במקום שאין השליח יכול לילך
+ולחזור תוך שלשים יום, מגבין לו חובו מיד״.</span></span><o:p></o:p></span></p></blockquote><p class="Bodytext0" align="left" dir="RTL"><span class="Bodytext"><span lang="HE"><span id="ogen11" class="ogen">הנחת השולחן ערוך היא שהמלווה זכאי להחזר הוצאות הגבייה מן הלווה.&nbsp;אמנם הפוסקים שם דנו
+בסוג ההוצאות שבהם נתחייב הלווה. אך מתשובת הרמ״ע מפאנו למדנו שחיוב גמור יש על
+הוצאות עיקול כאשר עצם החיוב הוא ברור. זה לשון שו״ת הרמ״ע מפאנו סימן פט</span></span><span lang="HE">:</span><o:p></o:p></span></p><blockquote><p class="Bodytext0" align="left" dir="RTL"><span dir="RTL"><span lang="HE"><span dir="RTL">"אין
+הנתבע חייב לפרוע ההוצאות שגרם לתובע שאין זה אלא גרמא בנזקין דפטור שהרי הגורם
+נזקים אלו לא עשה מעשה בממון חברו אלא התובע הוא שהוציא, </span></span>וכן כתב
+הרא״ש ז״ל בתשובה ומהרי״ק ג״כ בשרש י״א בשם מהר״ם ז״ל שאין לנתבע לפרוע ההוצאות
+שעשה התובע אלא כשהנתבע מסרב לעשות צווי ב״ד דאז הוא כעין סרבנות ומשום הכי קנסינן
+ליה, אבל באופן אחר לא כל שלא נשתעבד על כך מתחלה<span class="Bodytext"><span>". <o:p></o:p></span></span></span></p></blockquote><p class="Bodytext0" align="left" dir="RTL"><span class="Bodytext"><span lang="HE">ברור אם כן מה שביאר ברמ״ע מפאנו שאין לפטור את החייב מלשלם את
+הוצאות הגבייה רק כאשר לא נמצא פגם בהתנהגותו של החייב. אך כאשר הלה מסרב לשלם שטר
+שאין כלל ספק בחיוב יהיה זכאי התובע להחזר הוצאות אלו. כמו בדין המסרב לבא לדין
+שכבר הוזכר בדברי הפוסקים. בדרך מפורשת זו גם פסק המהרשד״ם שהעיר בתוך תשובה ל״ה
+בחלק חושן משפט שכתב שעל כיוצא בזה אמרינן:</span></span></p><blockquote><p class="Bodytext0" align="left" dir="RTL"><span class="Bodytext"><span lang="HE">״קרית חברך ולא ענך ארבא שדי עלויה ובכי
+האי גוונא לא מיבעיא שאם גבה ההוצאות ראובן שאין מוציאין מידו אלא אפילו לא גבה
+עדיין בית דין מחייבין לשמעון שיפרע ההוצאות לראובן״.</span><o:p></o:p></span></p></blockquote><p class="Bodytext0" align="left" dir="RTL"><span class="Bodytext"><span lang="HE"><span id="ogen12" class="ogen">צריך להדגיש שבנדון שלפנינו כאשר מדובר בתשלומים&nbsp;אותה גובה הרשות המקומית עבור השירותים
+שהיא מספקת לדיירים, והתובעים נהגו בחוסר אחריות גמור בכך שעזבו את הדירה כאשר הם
+מטילים את חובת התשלומים עבור השירות שקיבלו על כתפי אחרים, הרי בוודאי שהיו רשאים
+הללו לנקוט כל אמצעי להציל את ממונם מידי התובעים.</span></span><o:p></o:p></span></p><p class="Bodytext0" align="left" dir="RTL"><span class="Bodytext"><span lang="HE">שוב פסק
+הטור חושן משפט בסימן י״ד:</span><o:p></o:p></span></p><blockquote><p class="Bodytext0" align="left" dir="RTL"><span dir="RTL"><span lang="HE"><span dir="RTL">"אבל מסרב
+מלירד לדין והוצרך התובע להוציא עליו יציאות לכופו לירד לדין צריך לפרוע לו כל
+יציאותיו".</span></span><o:p></o:p></span></p></blockquote><p class="Bodytext0" dir="RTL" align="left"><span class="Bodytext"><span lang="HE">ובתוך דברי הבית יוסף</span>:</span></p><blockquote><p class="Bodytext0" dir="RTL" align="left"><span id="ogen13" class="">"וכתב (הרא״ש) בכלל ע״ג (סי׳ ב) שמשעה שנעשה סרבן חייב לפרוע יציאות שכנגדו אפילו קודם שנכתב הסרבנות והביא ראיה לדבר. וכן כתב מהרי״ק בסימן י״א (ענף ב) בשם הר״מ (שם) ורבינו ירוחם נ״ג ח״א (טו.) ונמוקי יוסף פרק הגוזל בתרא (לט סוע״ב) דעל הנתבע לפרוע כל ההוצאות שעשה התובע כשהנתבע מסרב לעשות צווי בית דין. וכל זה גם כן כתב הרשב״א בתשובה (ח״א סי׳ תתקמ) והריב״ש כתב בסימן תע״ה (ד״ה ואשר) וז״ל אם הנתבע מסרב מלבא לדין והוצרך התובע לעשות הוצאות כדי לכופו לבא לדין ויצא הנתבע מחוייב בענין זה חייב לפרוע ההוצאות ההם עכ״ל.</span><br></p><p class="Bodytext0" align="left" dir="RTL"><span class="Bodytext"><span lang="HE"><span id="ogen15" class="ogen">וכתב עוד (הרשב״א&nbsp;בתשובותיו ח״א סימן תתקמ) אם תבעו בערכאות של גוים והוצרך להוציא הוצאות
+בדיינים וטוענין, [ו]היאך ישלם ואדרבה הוא עושה שלא כהוגן ועובר על לפניהם (שמות
+כא א) ולא לפני גוים (גיטין פח:) ואפילו סירב הנתבע ומתוך סירובו הוצרך להעמיד
+בערכאות ולהוציא הוצאות גם בזה יראה לי שאינו חייב דאינו אלא גרמא בנזקין בעלמא
+(ב״ב כב:) ואינו דומה לדינא דגרמי שעושה מעשה בגוף הדבר שהוא מזיקו כשורף שטרותיו
+של חבירו (ב״ק צח:) והדומין לו וכן אינו דומה להוצאות דפתיחא משום דבית דין
+מחייבין אותו על שסירב לבא לפניהם ליום שקבעו עכ״ל ומדברי תשובות הרא״ש כלל ע״ג
+סימן ג׳ נראה שאם מתוך סירובו הוצרך להעמידו בערכאות ולהוציא הוצאות חייב לפרוע לו
+כל יציאותיו והכי מסתבר״.</span></span><o:p></o:p></span></p></blockquote><p class="Bodytext0" align="left" dir="RTL"><span class="Bodytext"><span lang="HE"><span id="ogen17" class="ogen">לכאורה נידון דידן דומה למחלוקת הרשב״א והרא״ש, לגבי הוצאות פניה
+לערכאות במקום שתבעו לאחר סירוב בדין ישראל. ועיין כאן בדברי הרמ״א סעיף ה׳ שפסק
+כדעת הרא״ש שחייב. אולם אחר העיון נראה כי נידון דידן שונה לגמרי ממחלוקת הראשונים
+שהוזכרה בדברי ה״בית</span></span><span lang="HE">יוסף״
+שהרי מחלוקתם נוגעת למקום שסירב הנתבע לדון בדיני ישראל והתובע תבע אותו בערכאות </span><span lang="HE">שלא ברשות בית דין. </span><span lang="HE">במקרה דנן חובם של הנתבעים היה ברור משום שמראש הם היו חייבים לשלם
+את הוצאות הארנונה ולא המשכירים. וכבר כתב הרש״ל בספר ״ים של שלמה״ למסכת בבא קמא
+פרק עשירי שבמקום שיש לו שטר ברור על חברו והגיע זמן הפירעון ובית הדין אינם
+יורדים לנכסים לחוב לו שלא בפניו ישלם הנתבע את הוצאות שכר השליח לפרוע חובו,
+ומשמע שאין דין הוצאות לגביית החוב כדין הוצאות על הבאת הנידון לדון בפני דייני
+ישראל או ערכאות במקום שהנתבע אינו מסכים לדון בדבר. וכבר כתבנו שאין צריך היתר
+מיוחד לפנייה להוצאה לפועל בתשלום הנובע משטר ברור (או מחוזה ברור). וכן הוא בשו״ת
+ושב הכהן סימן צ״ט.</span><o:p></o:p></span></p><p class="Bodytext0" align="left" dir="RTL"><span class="Bodytext"><span lang="HE"><span id="ogen19" class="ogen">כדעת הפוסקים שהוזכרו מקובל בהחלט לפסוק בבתי הדין. דוגמאות רבות לכך. נזכיר לדוגמא את
+הדיון שהתקיים בבית הדין הרבני בתל אביב (פסקי דין רבניים חלק ג פס״ד תיק מס׳ /אלף
+חמש מאות ושבע עשרה/ - תשט״ו בית הדין תל - אביב - יפו לפני כב׳ הדיינים: הרבנים
+א׳ ל׳ רביץ - אב״ד, מ׳ אילן, וש׳ אליעזרי) בעניין תביעת אשה שבעלה ישלם הוצאות
+המשפט שגרם לה על - ידי ניהול משפטים נגדה במשך שנים לשם קינטור בלבד. הבעל מכחיש
+שתביעותיו היו לשם קינטור והוא מנמק את הפסקתן בסיבות מסוימות.</span></span><o:p></o:p></span></p><p class="Bodytext0" align="left" dir="RTL"><span class="Bodytext"><span lang="HE">בית הדין
+דן בשאלה מי חייב לשלם שכר הסופרים והכנת פסק הדין ובאילו מקרים חייב המפסיד בדין
+לסלק את הוצאות המשפט לצד שכנגד ואימתי הוא פטור. בתוך הדיון ביאר בית הדין</span>:<o:p></o:p></span></p><blockquote><p class="Bodytext160" align="left" dir="RTL"><span class="Bodytext16"><span lang="HE"><span id="ogen18" class="ogen">"מ"מ י"ל כי דין המסרב לשלם הוצאות הוא גרמי&nbsp;והש"ך כ' סק"ו דהוי קנס ובשוגג ליכא למקנסי', ולכן מחמת זה לבד אין לחיב
+לשלם הוצאות, אולם בנידון שעשה דחיות והשמטות פשיטא דחיב לשלם כדין כל מסרב".</span></span><o:p></o:p></span></p></blockquote><p class="Bodytext0" align="left" dir="RTL"><span lang="HE"><span id="ogen20" class="ogen">אנו סבורים שהנדון שבפנינו&nbsp;שייך לאותם המקרים שבהם רשאי בית הדין,
+ואף חייב בית הדין להטיל הוצאות אלה על התובעים.</span></span></p><h2 class="Bodytext91" align="left" dir="RTL"><span class="Bodytext9Spacing2pt2"><span lang="HE">ו. </span><span lang="HE">התביעות הדדיות שנטענו בבית הדין</span></span></h2><p class="Bodytext0" align="left" dir="RTL"><span class="Bodytext"><span lang="HE">התובעת טענה בבית הדין שהיה עליה להוסיף כסף למובילים על </span><span lang="HE">העיכוב במסירת הדירה </span><span lang="HE">במספר שעות. לטענתה הנזק שנגרם לה היה בסכום של 400 ₪. כנגדה טענה
+הנתבעת </span><span lang="HE">״ידענו מתי הם נכנסים אבל לא היה ברור מה להוציא הרמנו
+אליהם טלפון והם לא ענו. כל החודש מחתימת החוזה. לא רצינו לפנות עד שנראה דיירים״.
+</span><span lang="HE">מדובר אם כן בחוסר תקשורת שכנראה
+אפיין את היחסים בין הצדדים. בית הדין סבור שאינו צריך להביע את דעתו, מי אחראי
+יותר לחוסר התקשורת, ומכיון שהתובעים לא הציגו הוכחה כל שהיא שאכן נגרם להם נזק
+ממשי בגלל האיחור בהתארגנות של פינוי הדירה שבוצע לכל הדעות ביום המוסכם בית הדין
+דוחה תביעה זו.</span><o:p></o:p></span></p><p class="Bodytext0" align="left" dir="RTL"><span class="Bodytext"><span lang="HE"><span id="ogen22" class="ogen"><span class="Bodytext"><span lang="HE">התובעים הכריזו בבית הדין </span><span lang="HE">שהמזגן </span><span lang="HE">לא עבד</span></span>&nbsp;בכל חודשי הקיץ. במהלך הדיון התברר שהמזגן עבד ובכל פעם שהם
+ביקשו התערבות של טכנאי מיד נשלח טכנאי לתקן את המזגן. אכן השתכנענו שמדובר במזגן
+ישן, כמותו מצויים רבים בבתי ישראל. השוכרים ראו את המזגן לפני שכירות הדירה
+והסכימו לקבלו. הם אינם יכולים לטעון שאילו היה קיים בדירה מזגן מסוג אחר היו
+נחסכים להם הוצאות החשמל. המזגן הוא בבחינת ״כאן נמצא וזה מה שהיה". מכיון
+שהשתכנענו שהמשכירים לא התעצלו בתיקונים הנדרשים איננו רואים כל סיבה לחייבם לשלם
+סכום כל שהוא על ההוצאות שלדעת השוכרים היו נחסכות אלו היה מזגן אחר. יתירה מזו.
+שמענו עדות של הדייר הנוכחי שהמזגן ממשיך לעבוד גם עכשיו שנים אחרי יציאתם של
+התובעים ואין לו כל תלונה גם כיום על פעולתו של המזגן.</span></span><o:p></o:p></span></p><p class="Bodytext0" align="left" dir="RTL"><span class="BodytextBold1"><span lang="HE"><span id="ogen23" class="ogen"><span class="Bodytext"><span lang="HE">גם בעניין </span><span lang="HE">הטרמיטים</span></span>&nbsp;</span></span><span lang="HE">לא הוצגה בפני בית הדין הוכחה על הנזק שלטענת התובעים נגרם להם. לא
+היה ספק במהלך הדיון שמשעה שהופיעו הטרמיטים בדירה והדיירים הודיעו למשכירים על כך
+שלחו הנתבעים בעל מקצוע לחסל את התופעה. זאת בדיוק חובתו של המשכיר, שאם מופיע
+מזיק בדירה לדאוג לבעל מקצוע שיסלקנו. זה בדיוק מה שעשו הנתבעים. מה גם שלא הוצגה
+בפני בית הדין הוכחה שאכן נגרם להם נזק ממשי. בית הדין נוקט לפי הכלל שהמוציא
+מחברו עליו הראיה וכזו לא הוגשה בשום צורה בפני בית הדין. על כן על פי ההלכה אנו
+חייבים לדחות תביעה זו.</span><o:p></o:p></span></p><p class="Bodytext0" align="left" dir="RTL"><span class="Bodytext"><span lang="HE"><span id="ogen24" class="ogen"><span class="Bodytext"><span lang="HE">הנתבעים טענו בפני בית הדין ש</span><span lang="HE">רהיטים </span><span lang="HE">שלהם ניזוקו</span></span>&nbsp;על ידי העברתם למחסן הבית. לטענת הנתבעים הם דורשים סכום
+של 5000 ₪ על אותם הרהיטים. שוב, לא הוצגה שום ראיה על הדבר. יתירה מזו. לשאלת בית
+הדין על שווים הודה הנתבע שאין הוא תובע את שווים אלא על התוספת שלדעתו היה יכול
+לקבל בעתיד אילו הרהיטים היו שלמים ויכול היה להשכיר את הדירה כדירה מרוהטת יותר.
+בלא להתייחס לפרטי הטענה. כל כולה אינה מבוססת אלא על הערכות חסרות בסיס ונטולות
+כל ראיה של ממש ושוב אנו נוקטים על פי מה שכבר קבעו גדולי האמוראים בדור הראשון של
+אמוראי בבל: ״זה כלל גדול בדין המוציא מחברו עליו הראיה״ (בב״ק מו ע״א).</span></span><o:p></o:p></span></p><p class="Bodytext0" align="left" dir="RTL"><span class="Bodytext"><span lang="HE">לסיכום,
+בית הדין אינו מוצא ממש בכל התביעות שטרחו הצדדים לתבוע אחד על השני על מנת להעצים
+איש את תביעתו על זולתו.</span><o:p></o:p></span></p><p class="Bodytext0" align="left" dir="RTL"><span class="Bodytext"><span lang="HE">בית הדין מחייב את התובעים לשלם את חובם עבור הארנונה והוצאות הגבייה
+שהם גרמו בסך 7,660 ₪.</span><o:p></o:p></span></p><h2 class="Bodytext91" align="left" dir="RTL"><span class="Bodytext9Spacing2pt2"><span lang="HE">ז.</span><span lang="HE"> הסדר התשלומים</span></span></h2><p class="Bodytext0" align="left" dir="RTL"><span lang="HE">בית הדין התלבט מאד בעניין צורת התשלום. אכן הלכה ברורה היא בשולחן
+ערוך שכשיגיע זמן הפרעון ובא לגבות חובו מסדרין לבעל החוב. ההלכה מכירה בצורך
+לפעול לפנים משורת הדין ולהקל על הלווה בתשלומי חובו. גם בנידון שבפנינו ביקשו
+התובעים לסדר את חובם בתשלומים משום שקשה להם לעמוד בכל התשלום בבת אחת. מאידך
+ההלכה של מסדרין היא כאשר בא הלווה לפרוע את חובו בזמן. כבר עברו לפחות ארבע שנים
+מאז חובם של התובעים והם לא עמדו בחובם והטילו על הנתבעים חובה לשלם סכום גדול.
+האם בקבלת הבקשה להקל בסדרי התשלום אין מידת הדין לוקה, כאשר הנתבעים שילמו את
+חובם ועכשיו עליהם לקבל את כספם שנים אחרי שהם שילמו לשלטונות ובתשלומים. הדין היה
+נותן שנחמיר במקרה זה יותר מן המקובל ונחייב את התובעים לשלם את החוב מיידית. אע״פ
+כן החליט בית הדין ולפנים משורת הדין לחייב את התובעים לשלם את חובם בחמשה
+תשלומים.</span></p><h2 class="Bodytext91" align="left" dir="RTL"><span class="Bodytext9Spacing2pt2"><span lang="HE">ח. </span><span lang="HE">החלטה</span></span></h2><p class="Bodytext0" align="left" dir="RTL"><!--[if !supportLists]-->1.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<!--[endif]--><span lang="HE">התובעים
+ישלמו לנתבעים 7660 ₪.</span><o:p></o:p></span></p><p class="Bodytext0" align="left" dir="RTL"><span class="Bodytext"><span lang="HE"><span id="ogen27" class="ogen">2.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <!--[endif]--><span lang="HE">התשלום יתבצע באמצעות</span></span>&nbsp;חמש המחאות חודשיות של 1532 ₪ כל אחת. שימסרו עד לתאריך א׳ תמוז
+תש״ע.</span></span><o:p></o:p></span></p><p class="Bodytext0" align="left" dir="RTL"><span lang="HE">ההמחאה
+הראשונה תהיה לא׳ תמוז תש״ע, וארבעת התשלומים הבאים יהיו באותו היום בחודש בארבעת
+החודשים שאחרי התשלום הראשון.<o:p></o:p></span></p><p class="Bodytext0" align="left" dir="RTL"><span class="Bodytext"><span lang="HE"><span id="ogen26" class="ogen"><span class="Bodytext"><span>3.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><!--[endif]--><span lang="HE">במידה ואחת ההמחאות לא תפרע בזמנה</span></span>&nbsp;יהיו </span></span>הנתבעיםרשאיםלפנותלהוצאהלפועל<span lang="HE">
+ולנקוט כל פעולה על מנת לגבות את חובם מיד.</span></span></p><p class="Bodytext0" align="left" dir="RTL"><!--[if !supportLists]-->4.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<!--[endif]--><span lang="HE">לאחר
+סילוק כל חובם של התובעים כלפי הנתבעים יהיו חייבים הנתבעים להשיב לתובעים את שטר
+הבטחון המוחזק בידם.</span></span></p><p class="Bodytext0" align="left" dir="RTL"><!--[if !supportLists]-->5.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<!--[endif]--><span lang="HE">פסק
+הדין ניתן ביום עברי כ״ד ניסן תש״ע.</span></span></p><h3 class="Bodytext91" align="left" dir="RTL">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; על
+החתום:<br></h3><h3><span class="Bodytext"><span lang="HE"><br>הרב שלמה אישון&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <br>הרב יעקב אריאל&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br>הרב  אהרן כ״ץ</span><o:p></o:p></span></h3><h3><span class="Bodytext"><span>אב״ד</span></span><o:p></o:p></h3>
+    </article>
+  </main>
+  <footer class="psak-footer">
+    מקור: <a href="https://www.psakim.org/Psakim/File/282" target="_blank">psakim.org — פסק 282</a>
+  </footer>
+</body>
+</html>

@@ -1,9 +1,32 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { Pool } from "https://deno.land/x/postgres@v0.19.3/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
+
+// Direct Postgres pool for executing SQL (bypasses RPC limitations)
+let _pool: Pool | null = null;
+function getPool(): Pool {
+  if (!_pool) {
+    const dbUrl = Deno.env.get('SUPABASE_DB_URL');
+    if (!dbUrl) throw new Error('SUPABASE_DB_URL not set');
+    _pool = new Pool(dbUrl, 1, true);
+  }
+  return _pool;
+}
+
+async function execSqlDirect(sql: string): Promise<{ rows_affected: number; data?: any }> {
+  const pool = getPool();
+  const conn = await pool.connect();
+  try {
+    const result = await conn.queryObject(sql);
+    return { rows_affected: result.rowCount ?? 0, data: result.rows };
+  } finally {
+    conn.release();
+  }
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -127,19 +150,11 @@ async function executeMigration(client: any, body: any, userId: string) {
   const startTime = Date.now();
 
   try {
-    // Execute SQL using rpc or direct query
-    const { data, error } = await client.rpc('exec_sql', { query: sql });
+    // Execute SQL using direct Postgres connection (bypasses exec_sql RPC)
+    const { rows_affected, data } = await execSqlDirect(sql);
     
-    let rowsAffected = 0;
-    let resultData = null;
-
-    if (error) {
-      // Try alternative: split into statements and execute via postgrest
-      throw error;
-    } else {
-      resultData = data;
-      rowsAffected = Array.isArray(data) ? data.length : 0;
-    }
+    let rowsAffected = rows_affected;
+    let resultData = data;
 
     const executionTime = Date.now() - startTime;
 
@@ -368,15 +383,19 @@ async function analyzeSql(sql: string) {
   });
 }
 
-async function listTables(client: any) {
-  const { data, error } = await client.rpc('exec_sql', {
-    query: `SELECT table_name, pg_size_pretty(pg_total_relation_size(quote_ident(table_name))) as size
-            FROM information_schema.tables 
-            WHERE table_schema = 'public' 
-            ORDER BY table_name`
-  });
+async function listTables(_client: any) {
+  try {
+    const { data } = await execSqlDirect(
+      `SELECT table_name, pg_size_pretty(pg_total_relation_size(quote_ident(table_name))) as size
+       FROM information_schema.tables 
+       WHERE table_schema = 'public' 
+       ORDER BY table_name`
+    );
 
-  if (error) {
+    return new Response(JSON.stringify({ tables: data }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  } catch {
     // Fallback: just list known tables
     return new Response(JSON.stringify({
       tables: [
@@ -388,8 +407,4 @@ async function listTables(client: any) {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
-
-  return new Response(JSON.stringify({ tables: data }), {
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-  });
 }

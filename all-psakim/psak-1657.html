@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+  <meta charset="utf-8">
+  <title>אפליקציה שנבנתה לפי האפיון באופן שאינה ממלאת את יעודה</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=David+Libre:wght@400;700&family=Frank+Ruhl+Libre:wght@400;700&display=swap');
+    :root{--primary:#1a237e;--primary-light:#3949ab;--accent:#c5a55a;--bg:#fafafa;--card:#fff;--text:#212121;--text-secondary:#555;--border:#e0e0e0}
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{font-size:16px}
+    body{font-family:'David Libre','Frank Ruhl Libre',serif;background:var(--bg);color:var(--text);line-height:1.9;direction:rtl}
+    .psak-header{background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;padding:40px 20px 30px;text-align:center;position:relative}
+    .psak-header::after{content:'';position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);width:60px;height:4px;background:var(--accent);border-radius:2px}
+    .psak-header h1{font-size:2rem;font-weight:700;margin-bottom:8px;font-family:'Frank Ruhl Libre',serif}
+    .psak-header .subtitle{font-size:.95rem;opacity:.85}
+    .meta-bar{max-width:850px;margin:40px auto 20px;display:flex;flex-wrap:wrap;gap:12px;justify-content:center;padding:0 20px}
+    .meta-item{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 18px;font-size:.85rem;display:flex;align-items:center;gap:6px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+    .meta-item .label{font-weight:700;color:var(--primary)}
+    .psak-body{max-width:850px;margin:30px auto;padding:0 20px}
+    .psak-card{background:var(--card);border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.07);padding:40px 45px;margin-bottom:30px}
+    h1{font-size:1.8rem;color:var(--primary);margin:30px 0 15px;font-family:'Frank Ruhl Libre',serif}
+    h2{font-size:1.4rem;color:var(--primary);margin:28px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--accent);font-family:'Frank Ruhl Libre',serif}
+    h3{font-size:1.15rem;color:var(--primary-light);margin:20px 0 10px}
+    p,div.section,.toggle-title{margin-bottom:14px;text-align:justify}
+    span{font-family:inherit!important;color:inherit!important}
+    .section-title{font-weight:700;font-size:1.1rem;color:var(--primary);margin-bottom:6px}
+    .toggle-title{font-weight:600;color:var(--primary-light);cursor:default}
+    .toggle-title:before{content:''!important}
+    .file-title{background:var(--primary)!important;color:#fff!important;padding:8px 20px!important;border-radius:6px!important;font-size:1.2rem!important;display:inline-block!important;position:static!important;right:auto!important;margin-bottom:15px}
+    #file-num{font-size:.9rem!important;color:var(--text-secondary);float:none!important}
+    .pagename{font-size:1.6rem!important;color:var(--primary)!important;text-align:center;margin:15px 0!important}
+    a.file-tag{background:var(--primary-light)!important;border-radius:4px;font-size:.8rem}
+    .ogen{background-color:rgba(197,165,90,.2)!important;border-radius:2px}
+    .ogen::after{content:''!important}
+    .highlight{background-color:rgba(255,235,59,.4)!important}
+    .selOgen:before{display:none!important}
+    hr{border:none;border-top:1px solid var(--border);margin:25px 0}
+    blockquote{border-right:4px solid var(--accent);padding:12px 20px;margin:15px 0;background:rgba(197,165,90,.06);border-radius:0 8px 8px 0}
+    .psak-footer{text-align:center;padding:20px;color:#999;font-size:.75rem;border-top:1px solid var(--border);margin-top:20px}
+    .psak-footer a{color:var(--primary-light)}
+    @media print{body{background:#fff}.psak-header{background:var(--primary);-webkit-print-color-adjust:exact;print-color-adjust:exact}.psak-card{box-shadow:none;border:1px solid #ddd}}
+    @media(max-width:600px){.psak-card{padding:20px 18px}.psak-header h1{font-size:1.5rem}h2{font-size:1.2rem}}
+  </style>
+</head>
+<body>
+  <header class="psak-header">
+    <h1>אפליקציה שנבנתה לפי האפיון באופן שאינה ממלאת את יעודה</h1>
+    <div class="subtitle">כרמי משפט - ענב · מס׳ סידורי 1657</div>
+  </header>
+  <div class="meta-bar">
+    
+    <div class="meta-item"><span class="label">תאריך</span> ז' אדר תשע"ח</div>
+    <div class="meta-item"><span class="label">דיינים</span> הרב אליהו אוריאל, הרב שולמן שבח, הרב רוזנטל בועז</div>
+    <div class="meta-item"><span class="label">בית דין</span> כרמי משפט - ענב</div>
+  </div>
+  <main class="psak-body">
+    <article class="psak-card">
+      <p class="MsoNormal" dir="RTL">ז' אדר התשע"ח<o:p></o:p></p><p class="MsoNormal" dir="RTL">מספר תיק: 5770-5</p><h1 class="MsoNormal" align="center" dir="RTL"><b><u><span lang="HE">פסק דין<o:p></o:p></u></b></span></h1><p class="MsoNormal" dir="RTL"><u><span lang="HE">בעניין הזמנת פיתוח אפליקציה (יישומון)
+מוקד מצלמות מרחוק.<o:p></o:p></u></span></p><p class="MsoNormal" dir="RTL">ביה"ד לענייני ממונות שע"י כולל
+כרמי המשפט- ענב.<o:p></o:p></p><p class="MsoNormal" dir="RTL">בהרכב הדיינים: הרב אוריאל אליהו, אב"ד;
+הרב בעז רוזנטל, דיין; הרב שבח שולמן, דיין. <o:p></o:p></p><p class="MsoNormal" dir="RTL">התובע: ר' (להלן: המזמין).<o:p></o:p></p><p class="MsoNormal" dir="RTL">הנתבע: ע' (להלן: המתכנת).<o:p></o:p></p><p class="MsoNormal" dir="RTL">הצדדים חתמו בליל שישי אור לח' סיון ה'תשע"ז
+1.6.17 על הסכם בוררות בפני ביה"ד כרמי משפט ענב [להלן נספח א].<o:p></o:p></p><h2 class="MsoNormal" dir="RTL"><b><u><span lang="HE">1. תיאור העובדות:<o:p></o:p></u></b></span></h2><p class="MsoNormal" dir="RTL">העובדות שבאו לפנינו עליהן אין הכחשה הן
+כדלהלן: בשנת 2015 הגה המזמין רעיון לאפליקציה חדשה. מטרת האפליקציה היא לייצר
+מערכת התרעה אפקטיבית שתתריע ותודיע לאדם המחובר לאפליקציה במקרה ויש פריצה לרכושו
+או כשנעשה אירוע פח"ע אחר, כגון: השחתה, פשיעה וכדו'. שיטת העבודה היא שלכל
+מנוי לאפליקציה יהיו מצלמות מותקנות ברכושו, במקביל, במוקד (הממוקם בחו"ל)
+ישבו מוקדניות שיצפו במסכים וברגע שתאותר תנועה חשודה המוקדניות ישלחו התרעה
+למכשיר הטלפון של הלקוח דרך האפליקציה.<o:p></o:p></p><p class="MsoNormal" dir="RTL">בסוף שנת 2015 החל הקשר בין שני הצדדים
+תוך שיח משותף על התשלום ועל פרטי האפליקציה. לאחר תיאום ציפיות ופירוט של המזמין
+מה הוא מעונין שהאפליקציה תכיל נקשרו הצדדים ביניהם בחוזה ובאפיון שהוצמד לחוזה
+ונהיה חלק ממנו.<o:p></o:p></p><p class="MsoNormal" dir="RTL">מכאן ואילך נחלקו הצדדים:<o:p></o:p></p><h2 class="MsoNormal" dir="RTL"><b><u><span lang="HE">טענות המתכנת:<o:p></o:p></u></b></span></h2><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->1.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;האפיון
+שהוצמד לחוזה הוא המחייב (כמפורט בסעיף 2.1). המתכנת טוען שסיים לתכנת את
+האפליקציה על פי כל המפורט באפיון ועל כן הוא זכאי לכל הסכום המפורט בחוזה.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->2.<span lang="HE">&nbsp; &nbsp; &nbsp; התשלומים
+השלישי והרביעי המפורטים בחוזה לא שולמו בזמן ועל כן זו הפרה יסודית של החוזה
+(כמפורט בסעיף 3.2). בעקבות הפרה זו אינו מחויב כלל להמשך ההתקשרות. ובנוסף ברצונו
+לממש את הקנס המפורט בסעיף 10.1.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->3.&nbsp; &nbsp; &nbsp;&nbsp;מעבר לכך,
+האחריות המובטחת לששה חודשים מוגבלת בתנאי שהמוקד יופעל תוך שנה (כמפורט בסעיף
+8.1). מכיוון שהמוקד נכנס לפעולה יותר משנה לאחר חתימת ההסכם, המתכנת פטור מלתת
+אחריות לאפליקציה מכאן ואילך גם על פי החוזה.</p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->4.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;מעבר לכך,
+על פי סעיף 3.4 רשאי המתכנת בכל שלב לפרוש מלהמשיך ולעבוד. חובו היחיד הוא למכור
+את קוד המקור בסכום מוזל של 7000 ₪.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->5.<span lang="HE">&nbsp; &nbsp; &nbsp; מעבר
+לסכומים על עצם העבודה מגיע למתכנת סכום נוסף בסך 3,250 ₪ בעבור הפעלת ושכירות
+השרת על פי המתואר בסעיף 8.4 לחוזה.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->6.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;חלק מהפרטים
+הנדרשים על ידי המזמין כלל <b>אינם</b> ניתנים לביצוע.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->7.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;בכל מקרה -
+והיה ובית הדין יחליט שהמתכנת צריך לסיים את הפרוייקט, המתכנת מבקש שהחלקים שהוא
+צריך לסיים יתומחרו ויקוזזו מסך הכל של השכר שהוא זכאי לו, באופן שבכל מקרה לא
+ימשך הקשר העסקי בין הצדדים מכאן והלאה.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->8.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;חברת פ'
+אינה חברה מקצועית, וקשה לעבוד אתה. בנוסף לכך, בחודשים הראשונים של הפרויקט הם לא
+היו פנויים לעבוד עם המתכנת.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->9.<span lang="HE">&nbsp; &nbsp; &nbsp; תמורת העלות
+הנמוכה, לדעתו, שסוכמה עבור הפרויקט לא ניתן לתבוע אפקטים וביצועים כמו של
+אפליקציית וואטסאפ וכדומה שהתקציב שלהן נאמד במיליוני דולרים.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->10.<span>&nbsp;&nbsp;&nbsp;למזמין אין
+כל ניסיון בבניית אפליקציות, והיה מצופה ממנו שלפני כניסתו לעסק זה ילמד דברים
+בסיסיים. בנוסף, למזמין היו דרישות במהלך הפיתוח שלא נכללו בהסכם. <o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->11.<span>&nbsp;&nbsp;&nbsp;&nbsp;בנוסף לכך כמעט
+כל עסק בתחילת הקמתו נתקל בקשיים וע"כ אין להתלונן על כך שהעסק אינו מתפקד
+כראוי מיד לאחר הקמתו, ובפרט שלמזמין אצה הדרך לטוס לחו"ל ולהתחיל בעבודה עוד
+לפני הרצה ובדיקות כמקובל.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->12.<span>&nbsp; &nbsp;&nbsp;התביעות
+הנגדיות של המזמין אינן קבילות כיוון שחוסר ההצלחה של האפליקציה, לטענתו, הינו
+בגללו ולא בגלל האפליקציה.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->13.<span>&nbsp;&nbsp;&nbsp;&nbsp;כמו כן נזקי
+המזמין הינם לכל היותר בגרמא או מניעת רווח, והמתכנת טוען שאף הוא הפסיד פרויקטים
+בעקבות פרויקט זה וכ"א צריך לשאת בהפסדיו.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->14.<span>&nbsp;&nbsp;&nbsp;&nbsp;בנוסף
+ביה"ד אינו מוסמך לדון בטענות אלו כיוון שלא הוגדרו בכתב הבוררות.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->15.<span>&nbsp;&nbsp;&nbsp;&nbsp;המזמין
+השתמש באפליקציה לאורך 13 חודשים ועליו לשלם כמסוכם.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->16.<span>&nbsp;&nbsp;&nbsp;&nbsp;המתכנת תובע
+תשלום סך של 19,250 ₪ המהווים יתרת הסכום המגיע לו בגין תכנות האפליקציה.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->17.<span>&nbsp;&nbsp;&nbsp;&nbsp;תשלום סך של
+3,250 ₪ עבור תמיכה בשרת ובאפליקציה החל מהפעלת המוקד בתאריך 8.12.16 ועד לניתוק
+האפליקציה ב 1.2.18 (בהתאם לסעיף 8.4 לחוזה – 250 ₪ כפול 13 חודשים).<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->18.<span>&nbsp;&nbsp;&nbsp;&nbsp;תשלום סך של
+5,000 ₪ בגין עוגמת הנפש הרבה שנגרמה לנתבע בשל התנהלותו חסרת תום הלב של המזמין
+וניצולו של המתכנת במשך חודשים רבים לתמוך באפליקציה כנגד רצונו (ובייחוד בתקופת
+השמשתה מוקדם מידי על ידי המזמין, דבר שהצריך תמיכה מוגברת יותר מהראוי ובשעות
+שאינן סבירות).<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->19.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;תשלום סך של
+3,000 ₪ בגין אובדן שעות עבודה של המתכנת בשל הצורך להגיע לדיונים בין הצדדים.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->20.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;החזר 3,800
+₪ עבור תשלום ביטוח לאומי ששולם עבור העיסקא.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->21.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;תשלום סך
+7,000 ₪ עבור קוד המקור בהתאם למוסכם בחוזה.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->22.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;תשלום סך
+17,000 ₪ עבור הפרת צו הביניים וחילוט הערבות שניתנה עבור כך. <o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->23.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;סך כל תביעת
+המתכנת הינה 54,500 ₪.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->24.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;לפנים משורת
+הדין, המתכנת יהיה מוכן להסכים לפשרה על פיה המזמין ישלם לו סך של 19,250 ₪ בלבד,
+המהווים את יתרת הסכום המגיע לו בגין תכנות האפליקציה, על אף שהם אינם משקפים את
+כמות העבודהוהמאמץ שהושקעו על ידיו בחודשים הארוכים
+מאז יצר עמו המזמין קשר ועד היום, אך זאת על מנת לסיים את הסכסוך בין הצדדים, ובתנאי
+שהמזמין יתחייב להימנע לחלוטין משימוש בקוד התוכנה והפצתו וימחק את קוד התוכנה
+מהמחשבים אליו הועבר וכן יספק ראיות בנוגע לכך.</span></p><h2 class="MsoNormal" dir="RTL"><b><u><span lang="HE">טענות המזמין:<o:p></o:p></u></b></span></h2><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->1.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;האפיון בנוי
+על התכתובת שקדמה לו. האפיון בצורתו הנוכחית ובפרשנות שניתנה לו על ידי המתכנת
+יוצרת אפליקציה לא שמישה שאינה עומדת במטרות שנועדו לה. (יש לציין שלא ניתן לאפיון
+מבוא המבאר את מטרת האפליקציה אמנם בחוזה ישנו מבוא כזה וכן בתכתובת המיילים
+ובשיחות בע"פ מבוררת מטרת האפליקציה).<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->2.<span>&nbsp; &nbsp; &nbsp;&nbsp;האפליקציה
+כלל אינה עומדת במטרות להן נועדה. בסעיף 3.1.4 נאמר שהתשלום השלישי יימסר בסוף שלב
+התכנות. אפליקציה שאינה מבצעת את המצופה ממנה אינה יכולה להיקרא "בסיום שלב
+התכנות". <o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->3.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;המוקד היה
+מוכן להפעלה עוד בתוך השנה. הסיבה שהאפליקציה לא החלה לעבוד היא משום שהמתכנת לא
+סיים את עבודת התכנות במלואה (המתזמן לא היה מוכן). לא יתכן שהמתכנת יגרום לעיכוב
+ולאחר מכן יתלונן שהמוקד לא עבד תוך שנה.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL">מעבר
+לכך, את השנה צריך להתחיל לחשב החל מהזמן שהמתכנת התחיל לעבוד ברצינות וממילא
+עיכוב של 7 חודשים מחתימת החוזה חייב להיות מקוזז.<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->4.&nbsp; &nbsp; &nbsp;&nbsp;ישנם
+פיצ'רים ופרטים רבים שהמתכנת צריך להשלים על מנת לסיים את עבודתו ואז יקבל את
+התשלום המגיע לו (פרטים אלו תוארו בפני ביה"ד בהרחבה) בפועל גם לאחר דחייה של
+8 חודשים המתכנת לא השלים את מה שביה"ד דרש ממנו להשלים וגם לא מתכוון לעשות
+זאת, בעקבות כך נאלץ המזמין, לטנתו, לפתח אפליקציה חדשה ע"י מתכנת אחר ללא כל
+שימוש בעבודה הקודמת.</p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->5.<span lang="HE">&nbsp; &nbsp; &nbsp; המתכנת
+התחייב להשלים גם פרטים שאינם כלולים בחוזה בתוך שנה מהפעלת המוקד בפועל, כמפורט
+בסעיף 8.5. ישנם פרטים נוספים שהמתכנת צריך להשלים ובתמחור של 200 ₪ לשעה כמפורט
+בסעיף הנ"ל.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->6.<span>&nbsp; &nbsp; &nbsp;&nbsp;השעון
+שהותקן באפליקציה לראשונה אינו נוח לשימוש. על שינוי השעון קיבל המתכנת 2000 ₪
+נוספים שלא בצדק מפני שנאמר מפורשות שהאפליקציה תהיה קלה לתפעול והשעון הראשון
+שהותקן לא עומד בתנאי זה.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->7.<span lang="HE">&nbsp; &nbsp; &nbsp; אי היעילות
+של האפליקציה גרמה להוצאות עקיפות של המזמין והוצאות הטסה ושהייה בחו"ל שלו
+ושל עובדים מטעמו (המזמין לא נקב בסכומים הנגזרים מטענה זו ולא הביא אסמכתאות
+להוצאות אלו), וכן פגיעה קשה בתדמית של המזמין והמוצר שהוא מציע לשוק.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->8.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;באופן כללי
+האפליקציה הינה ביטחונית-אזרחית ונועדה לחקלאים, בעלי מפעלים וכדו' כך שעיקר
+עניינה הינו מהירות התקשורת, יעילות ופשטות התפעול מה שכיום לא קיים ובפועל מספר הלקוחות
+מועט ביותר ויש צורך חיוני להיעזר בוואטספ וכד'.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->9.<span lang="HE">&nbsp; &nbsp; &nbsp; המתכנת התנהל
+בצורה פושעת והעדיף לעסוק בעבודות אחרות על פני סיום הפרוייקט בצורה טובה ובכך גרם
+עיכוב לא סביר ונזקים גדולים [סימוכין: תכתובת מייל 17-18/1/17].<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->10.<span>&nbsp;&nbsp;&nbsp;&nbsp;המתכנת לא
+קיים את צו הביניים ובכך מנע כל אפשרות להשלים את עבודתו, לכן המזמין נאלץ לפתח
+אפליקציה חדשה שאיננה בנויה כלל על קודמתה.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->11.&nbsp;<span>&nbsp;&nbsp;&nbsp;הסיבה
+שהמשיך להשתמש באפליקציה הישנה אינה בגלל איכותה אלא למרות איכותה הגרועה, ומכיוון
+שעל סמך אפליקציה זו התקשר עם לקוחות וניתוקה היה גורם נזק רב לכן המשיך להשתמש
+בה, ואילו היה יודע מלכתחילה שכך יתנהל המתכנת, באופן שיגרום לו איבוד זמן יקר
+ונזקים גדולים, לא היה מתחיל את ההתקשרות עמו.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->12.<span>&nbsp;&nbsp;&nbsp;&nbsp;מכיוון
+שהמתכנת התרשל, הוא תובע ממנו את הפער שבין ההכנסות [כ 50,000 ₪] להוצאות [כ
+80,000 ₪] לאורך 13 חודשים, שהרי לולי שסמך על דברי המתכנת שהאפליקציה גמורה לא
+היה מתחייב על סכומים אלו, אמנם מוכן לוותר על מחצית הפער, סך התביעה בסעיף זה
+הינה 195,000 ₪ (גם כאן לא הביא המזמין שום תימוכין לסכומים אלו).<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->13.&nbsp; &nbsp;&nbsp;<span lang="HE">האפליקציה
+הישנה אינה יעילה ועל כן הינו מבקש שיוחזרו לו כל התשלומים ששילם בעדה, סך כל
+התביעה בסעיף זה הינה 19,250+ 8,400 ₪ ששולמו על תוספות וייעוצים שונים, וכן 1500
+₪ המחאה שניתנה עבור בחירת משתמשים [כמפורט בנספח ג].<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->14.<span>&nbsp;&nbsp;&nbsp;&nbsp;כמו כן הוא
+תובע כ 20,000 ₪ עבור הטיסה שלו ושל עובדת נוספת בתחילת ההרצה של הפרוייקט [על פי
+המפורט לעיל סעיף 7].<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->15.<span>&nbsp;&nbsp;&nbsp;&nbsp;סך כל תביעת
+המזמין 242,650 ₪.</span></p><h2 class="MsoNormal" dir="RTL"><b><u><span lang="HE">2. פסק דין<o:p></o:p></u></b></span></h2><p class="MsoNormal" dir="RTL">לפנינו תביעה של מתכנת מחשבים התובע לקבל
+את שכרו עבור אפליקציה אותה פיתח. ולעומתו תביעה של המזמין, הטוען שהאפליקציה לא
+עמדה בדרישות, לא תוקנה על ידי המתכנת על פי ההסכם, ומכיוון שלא עשה זאת הפר את
+החוזה וגרם לנזקים כספיים גדולים, אותם תובע המזמין.<o:p></o:p></p><p class="MsoNormal" dir="RTL">הצדדים טענו טענותיהם בפני ביה"ד [הבוררים]
+ביום חמישי אור לח' סיוון התשע"ז, פס"ד ראשוני ניתן ביום יג סיון
+התשע"ז בו הוצעה פשרה לצדדים, ביום יז בסיון הוצא צו ביניים, וניתנה ארכה
+לנסות לקיים את הפשרה או חלקה, לאחר שהפשרה לא עלתה יפה וצו הביניים הופר, ניתנה
+לצדדים ארכה לשלוח טענותיהם וראיותיהם. ביום חמישי אור לי"ז שבט התשע"ח
+נערך דיון נוסף, ולאחר ששוב סירבו הצדדים לפשרה ניתנה ארכה של שבועיים להגשה סופית
+של טענות וראיות והובהר לצדדים שלאחר מועד זה לא יוכלו יותר לטעון עוד טענות.<o:p></o:p></p><p class="MsoNormal" dir="RTL"><span lang="HE">ביה"ד קיבל לידיו את כל החומרים
+שהביאו הצדדים. תכתובות מיילים בין הצדדים וביניהם לבין ביה"ד, שיחות בע"פ,
+במסרונים (SMS<span dir="RTL">) ובווטסאפ (</span>WhatsApp<span dir="RTL">)
+וכדומה. ביה"ד ישב רבות על המדוכה ולאחר ששקלנו את כל הטענות והעניינים שנמסרו
+להכרעתנו הננו פוסקים כדלהלן: <o:p></o:p></span></span></p><h2 class="MsoNormal" dir="RTL"><u><span lang="HE"><strong>מסקנות:</strong><o:p></o:p></u></span></h2><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span lang="HE">א.</b>&nbsp; &nbsp; &nbsp; <span id="ogen1" class="ogen">האפיון שצורף לחוזה אינו מסמך העומד בפני עצמו אלא הוא כפוף לתכתובות ולשיחות שנערכו בין
+הצדדים קודם לחתימת החוזה, וממילא כלל התכתובות מחייבות את הצדדים ולא רק האפיון
+כטענת המתכנת.</span><o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span lang="HE">ב.</b>&nbsp; &nbsp; &nbsp; המזמין ידע
+היטב כיצד הוא רוצה שתעבוד ותראה האפליקציה כמבואר במיילים שקדמו להתקשרות.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span lang="HE">ג.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></b>המתכנת,
+שחיבר את החוזה, כתבו ללא הגדרות זמנים מצדו וללא הגדרת הפרות יסודיות,
+ואעפ"כ התחייב ל"טיב איכות ומומחיות".<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span lang="HE">ד.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></b>כמו כן
+האפיון נכתב על ידו באופן רשלני, <b>ולא כמקובל בשוק</b>, שלא מותיר ספק שהיה פה
+ניסיון להתחמק ממחויבות, ולכן ביה"ד לא מקבל את האפיון כמו שהוא אלא בסמוך
+למטרות האפליקציה, שהן מטרות ביטחוניות-אזרחיות, ולפי המיילים שקדמו להתקשרות.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span lang="HE">ה.</b>&nbsp; &nbsp; &nbsp; לביה"ד
+התברר שישנן בעיות יסוד מובנות באפליקציה ההופכות אותה לבלתי יעילה וממילא גם לבלתי
+רווחית.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span lang="HE">ו.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></b>הבעיות
+המהותיות ביותר הינן:<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b>1.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b>אי יכולת של
+המוקד לדעת האם המשתמש ראה/הגיב/מתפעל את האירוע.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b>2.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b>הפסקת
+ההתרעה בנגיעה במסך ללא לחיצה מכוונת על כפתור ייעודי.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b>3.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b>חוסר התרעה
+תוך כדי שיחה טלפונית.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b>4.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b>איכות תפעול
+נמוכה של הסרטונים והתמונות.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b>5.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b>סימון לא
+בולט כראוי בעת קבלת התרעה.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b>6.&nbsp;<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b>מיעוט
+אפשרות של תקשורת חופשית ואיכותית בין המוקד למשתמש, כך שהאפליקציה משמשת בעיקר
+עבור התרעה ראשונית ואינה יעילה להמשך תפעול האירוע.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b>7.</b><span lang="HE">&nbsp; &nbsp; &nbsp; שאר
+הפונקציות והפיצ'רים נשלחו בפסה"ד הראשון כמפורט בנספח ב דלהלן.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span lang="HE">ז.</b>&nbsp; &nbsp; &nbsp; &nbsp;ביה"ד
+בפסה"ד הקודם איפשר למתכנת להשלים ולתקן את הבעיות ולקבל את יתרת התשלומים.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span lang="HE">ח.<span>&nbsp; &nbsp; &nbsp;&nbsp;</span></b>המתכנת סירב
+לפשרה שהוצעה בפסק הדין מיום יג סיון התשע"ז.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span lang="HE">ט.</b>&nbsp; &nbsp; &nbsp; המתכנת הפר
+בצורה בוטה את צו הביניים מיום יז סיוון התשע"ז ובכך יצר חוסר אפשרות להשלמת
+האפליקציה על ידו או ע"י מתכנת אחר, ולא הותיר ברירה לביה"ד אלא להכריע בשאלה
+האם האפליקציה עונה על המבוקש או לא והאם יש כאן מקח טעות או פועל שפשע.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span lang="HE">י.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></b>המתכנת התנהל
+בחוסר תום לב וללא נכונות אמתית לסייע בהשלמת הפרויקט בצורה טובה.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span lang="HE">יא.<span>&nbsp;&nbsp;&nbsp;&nbsp;</span></b>ביה"ד
+התרשם שהמתכנת ניסה להרוויח סכום ניכר כ'עבודה מהצד' ללא השקעה של משאבי זמן ורצון
+הנצרכים להצלחת פרויקט מסוג זה, הן מכך שמצא עבודה קבועה ומשתלמת יותר, כשבועיים
+בלבד לאחר ההתקשרות, והן מכך שהפגין חוסר רצון בולט לעבוד מול המזמין, דבר שגרם
+לפגיעה אנושה באיכות הפרויקט, ובעיקר למשיכת זמן קיצונית שגרמה לנזקים קשים
+למזמין.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span lang="HE">יב.<span>&nbsp;&nbsp;&nbsp;&nbsp;</span></b>בעקבות
+התנהלות זו המזמין נאלץ לשלם עוד ועוד כספים למתכנת ע"מ ש"יואיל
+בטובו" להמשיך, וזאת בניגוד לחוזה וללא קשר לזמן שהושקע ע"י המתכנת
+בפועל.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span lang="HE">יג.<span>&nbsp; &nbsp; &nbsp;</span></b>ביה"ד
+התרשם שהמתכנת 'ניצל' את העובדה שהמזמין תלוי בו לכל העניינים הנ"ל, ולא ניסה
+באופן רציני למצוא מחליף ע"מ להפסיק תלות זו, וזאת בניגוד להתחייבותו בחוזה
+בסעיף 3.4.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span lang="HE">יד.<span>&nbsp;&nbsp;&nbsp;&nbsp;</span></b>ביה"ד
+מקבל את הטענה שגם המזמין היה צריך להבין בשלב הרבה יותר מוקדם שהמתכנת אינו
+מעונין לעבוד עמו ולנתק מגע ולא למשוך זמן, אך מצד שני אחריות זו מוטלת בעיקר על
+המתכנת להשקיע את הזמן והמשאבים הנצרכים להצלחת הפרויקט או לחלופין לנתק את
+ההתקשרות <b>ולשלם פיצויים למזמין</b>, עכ"פ על המזמין מוטלת אחריות ורשלנות
+תורמת בלבד. <o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span lang="HE">טו.<span>&nbsp;&nbsp;&nbsp;&nbsp;</span></b>ביה"ד
+לא מקבל את הטענה שהמתכנת הינו פועל, ועל כן יש לשלם לן שכרו גם אם לא הצליח למלא
+את רצון בעה"ב, אלא דינו כאומן המייצר ומוכר את תוצרתו, וכפי שטען בעצמו
+פעמים רבות שהאפליקציה שייכת לו בלבד וכמפורט בחוזה סעיף 5.1.<o:p></o:p></span></p><p class="MsoNormal" dir="RTL"><!--[if !supportLists]--><b><span lang="HE">טז.<span id="ogen2" class="ogen"><strong><span lang="HE"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span></strong>לפיכך מסקנת בית הדין </span></span></b>כי המתכנת לא מילא את התנאים שקיבל עליו בחוזה ואינו זכאי לכל תשלום. ביה"ד
+הגיע למסקנה שהאפליקציה במצבה הנוכחי אינה יעילה למטרותיה ואינה עונה על הצרכים
+המבוקשים ממנה, ועל כן המזמין אינו חייב לרוכשה ועל המתכנת להשיב את מלוא הסכום
+שקיבל עבורה, דהיינו <b>19,250</b> ₪.<o:p></o:p></span></p><p class="MsoNormal" dir="RTL"><!--[if !supportLists]--><b><span lang="HE">יז.<span>&nbsp; &nbsp; &nbsp;</span></b>ביחס לתביעת
+תשלום של 250 ₪ לחודש למשך 13 חודשים עבור שכירות השרת ותחזוקה שוטפת, ע"פ
+סעיף 8.4, ביה"ד מקבל את התביעה עבור שכירות השרת ע"ס 50 ₪ לחודש, אך לא
+את התשלום עבור שעת תחזוקה חודשית, כיוון שהמתכנת לא נתן שירות זה כמעט בכלל וזאת
+תוך הפרת צו הביניים, סה"כ לסעיף זה <b>650</b> ₪.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span lang="HE">יח.<span>&nbsp;&nbsp;&nbsp;&nbsp;</span></b>ביחס לתשלומים
+הנוספים העומדים על סך 8400 ₪ והמפורטים במסמך שנשלח לביה"ד ביום כט שבט
+התשע"ח, הוחלט כי סך 2,900 ₪ שניתנו עבור ייעוצים שונים יתכן שהינם מוצדקים ויישארו
+ביד המתכנת, מחמת הספק מדין המוציא מחברו עליו הראיה, אך, שאר השינויים והתוספות
+הינם עבור תוספות בגוף האפליקציה ומכיוון שכיום אין בהם תועלת על המתכנת להחזירם,
+סה"כ, <b>5,500</b> ₪.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span lang="HE">יט.<span>&nbsp;&nbsp;&nbsp;&nbsp;</span></b>ביחס לטענת
+המתכנת שנעשה שימוש בפועל באפליקציה למשך 13 חודשים מאז החל בה השימוש בדצמבר 2016
+ועד ניתוקה הסופי ב 1.2.18 אכן יש לשלם עבור השימוש, שעיקרו היה: 1. עצם ההתראה,
+2. יכולת התיזמון של המצלמות, אך, ללא שאר הפיצ'רים. ביה"ד מעריך את ההנאה
+והשימוש בשווי של <b>350</b> ₪ לחודש, כלומר <b>4,550 </b>₪ לכלל התקופה. סכום זה
+יקוזז מתשלומי הגרמא דלקמן סעיף כה ולכן בפועל המזמין <b>פטור </b>מלשלמו.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span lang="HE">כ.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></b>בענין
+התשלום לביטוח לאומי. המזמין אינו חייב להשיבו הואיל והעסקה בוטלה בעיקר באשמת
+המתכנת בעצמו, וע"כ המתכנת יוכל לדרוש את כספו מהביטוח הלאומי ע"ס פסק
+זה בעילת 'ביטול עסקה'.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span lang="HE">כא.<span>&nbsp; &nbsp; </span></b>בענין
+התביעה לתשלום 7,000 ₪ עבור קוד המקור, מכיוון שבסופו של דבר בטלה העסקה והמוצר
+הינו פגום תביעה זו נדחית [כמובן, קוד המקור נשאר בבעלות המתכנת].<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span lang="HE">כב.&nbsp;<span>&nbsp;&nbsp;&nbsp;</span></b>בעניין הפרת
+צו ביניים בשימוש בקוד המקור התברר בביה"ד שלא הופר הצו ע"י המזמין
+וע"כ הינו פטור גם מסעיף זה, אם יתברר בעתיד שחברה כלשהי עשתה שימוש בקוד
+המקור ניתן יהיה לשוב ולתבוע את המזמין על כך.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span lang="HE">כג.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></b>ביחס
+לתביעות ההדדיות עבור תשלום על זמן הדיונים והנסיעות לדיון, שני הצדדים פטורים מכך
+[כמפורש בשו"ע חו"מ יד ה].<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span lang="HE">כד.<span>&nbsp;&nbsp;&nbsp;&nbsp;</span></b>ביחס לתביעת
+המזמין את הוצאות הנסיעה לחו"ל בזמן הפעלת האפליקציה, ביה"ד מקבל את
+טענת המתכנת שהמזמין מחמת הלחץ הזדרז לטוס לפני קבלת אישור מפורש שהאפליקציה עברה
+את כל הבחינות, אמנם מובן הלחץ להתחיל לאחר שנה של עיכוב מתמשך, ומבחינת המתכנת
+האפליקציה היתה כבר מוכנה בתחילת ינואר 17, עכ"פ מחמת הספק ומחמת גרמא אנו
+פוטרים את המתכנת מתביעה זו.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span lang="HE">כה.<span>&nbsp;&nbsp;&nbsp;</span></b>ביחס לתביעת
+המזמין מחצית מההפרש בין ההוצאות להכנסות העומדת על 15,000 ₪ לחודש למשך 13
+חודשים, פער שלטענתו נובע מאי השלמת האפליקציה ע"י המתכנת, ביה"ד התלבט
+רבות בענין אם לחייב את מלוא סכום התביעה דהיינו 195,000 ₪, <b>בכפוף להוכחת
+ההוצאות לבית הדין,</b> כדין מוציא הוצאות על פיו [ע"פ שו"ע חו"מ
+יד ה בהגהת הרמ"א ושם רלב כא, וכן שו"ע אהע"ז סימן נ'], או שאי
+אפשר לחייב מחמת כמה ספיקות, [כגון, אם באמת אפשר להרויח ע"י אפליקציה זו,
+ועד כמה תמימותו ורשלנותו של המזמין תרמה לעיכובים הרבים ולחוסר היעילות של
+הפרויקט]. לכן, <b>הוחלט ברוב דעות שלא לחייב את מלוא התביעה עבור סעיף זה, אך
+להתחשב בנזקים הרבים שספג המזמין עקב התרשלותו של המתכנת, בסעיף הפיצוי דלקמן,</b>
+מכיוון שאנו פוטרים את המתכנת מעיקרו של סעיף זה מחמת גרמא וספיקות שונים, <b>לכן
+גם לא יוכל לתבוע את דמי השימוש ע"ס 4,550 ש"ח סכום שיקוזז מהפסדי הגרמא
+שהיו למזמין בגלל איכות האפליקציה. </b><b><o:p></o:p></b></span></p><p class="MsoNormal" dir="RTL"><!--[if !supportLists]--><b><span lang="HE">כו.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></b>ביה"ד
+אינו מקבל את טענת המתכנת לחוסר סמכות לדון בסעיפים הללו וכך כתוב בשטר הבוררות
+עליו חתמו הצדדים המאפשר לדון בכל נושא קשור לדיון וכן בנזקי גרמא ובעשיית פשרה:<o:p></o:p></span></p><p class="MsoNormal" dir="RTL">סעיף 2 –<o:p></o:p></p><p class="MsoNormal" dir="RTL">"בית הדין ידון ויפסוק בסכסוך שבין
+הצדדים ובכל הטענות והתביעות שיש לצדדים אחד כלפי השני כמפורט ו/או יפורט בכתבי
+בית הדין אשר יגישו הצדדים <b>וכן בכל נושא אחר הקשור לנושא הבוררות אשר <u>יועלה</u>
+ע"י הצדדים במהלך הבוררות</b>".<o:p></o:p></p><p class="MsoNormal" dir="RTL">ובסעיף 3 –<o:p></o:p></p><p class="MsoNormal" dir="RTL">"בית הדין יפסוק בסכסוך, על פי דין
+או לפשרה, לפי שיקול דעתו ומיטב שפיטתו, עפ"י החומר בפניו. הצדדים מתחייבים
+לשלם <b>בגין נזקי גרמא והפסדים של מניעת רווח</b> בהתאם לנסיבות, כפי שיקבע על
+ידי בית הדין ולפי שיקול דעתו". [עיין לקמן נספח א].<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span lang="HE">כז.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></b>ביה"ד
+סבור שהמתכנת נהג בחוסר תום לב, ברשלנות ובפשיעה תוך ניצול תלותו המוחלטת של
+המזמין במתכנת, המתכנת העדיף את טובתו האישית על פני הצלחת הפרויקט, ולא השקיע בו
+את מיטב כוחו מרצו וזמנו, ובכך הפר את התחייבותו החוזית ל"טיב מומחיות
+ואיכות", המתכנת לא רצה להשכיל להבין לעומק את מהות האפליקציה ולא תרם דיו
+להצלחתה, בנוסף לכך המתכנת משך את הזמן באופן שאינו סביר עד לכדי פשיעה גם לאחר
+התחלת העבודה של 'פ'' ועוד יותר לפני כן, גם היחס למזמין לא היה ראוי, חוסר סבלנות
+וחוסר נכונות להשקיע, תוך איום מתמיד שיפסיק הכל אם המזמין ילחץ עליו, לחץ המתבקש
+בהחלט בגלל המשמעויות הכספיות הגדולות למזמין.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span lang="HE">כח.<span>&nbsp;&nbsp;&nbsp;&nbsp;</span></b>בעקבות
+הנ"ל המזמין הפסיד הרבה זמן, כסף ומשאבים ונפגע באמינותו ובשמו הטוב, עד כדי
+כך שנאלץ לפתח אפליקציה חדשה לחלוטין.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span lang="HE">כט.<span>&nbsp;&nbsp;&nbsp;&nbsp;</span></b>ביה"ד,
+ברוב דעות, החליט לחייב את המתכנת סך <b>20,000 </b>₪ כפיצוי על התנהלותו הנ"ל
+ועל הנזקים שנגרמו למזמין, וזאת ע"פ כתב הבוררות בו הסמיכו הצדדים את
+ביה"ד לחייב גם בנזקי גרמא ומניעת רווח.</span></p><h2 class="MsoNormalCxSpMiddle" dir="RTL"><b><u><span lang="HE">3.
+נימוקים בהרחבה:<o:p></o:p></u></b></span></h2><p class="MsoNormalCxSpMiddle" dir="RTL">בסיכום
+טענות הצדדים ניתן לסכם ולומר שטענות המתכנת הינן שהוא סיים את עבודתו כפי שסוכם
+ועמד בכל מה שכתוב ונדרש באפיון, ומה שלא מפורט בפירוש אינו צריך לבצע אלא ברצונו
+ובתוספת תשלום, והוא מבקש לסיים את ההתקשרות ולקבל את יתרת התשלום בתוספת הקנסות
+הנקובים בחוזה עבור הפרה יסודית של המזמין באיחור התשלום. <o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">טענות
+המזמין הן שהאפליקציה אינה יעילה ולא שימושית ואינה ניתנת לשיווק, זאת מכיוון
+שחסרים בה פרמטרים בסיסיים, וגם אלו הקיימים אינם יעילים דיים, כך שבפועל אינה
+המוצר שבשבילו היה מוכן לשלם. <o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">בית
+הדין קיבל את טענת המזמין כי המתכנת היה צריך לבנות אפליקציה יעילה כנ"ל,
+וזאת משני טעמים:<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL"><span id="ogen3" class="ogen">ראשית, מתוך תכתובות המייל וטענות הצדדים, שהוגשו בפני בית הדין, בית הדין הגיע למסקנה
+שהמתכנת לא היה שותף בתחום עבודתו כמתכנת בלבד, אלא היה מצופה ממנו להיות
+"ראש גדול" ולתכנן ולפתח מוצר העונה על הצורך המדובר, דהיינו אפליקציה
+יעילה ושימושית גם לאנשים פשוטים. ובעיקר, אפליקציה בעלת תקשורת זורמת יעילה
+ומהירה בין המוקד למשתמש וחזרה וכל מרכיב המאפשר לאפליקציית חירום וביטחון לפעול
+כראוי. <u>כל זאת גם אם באפיון הנספח לחוזה אין פירוט מדויק מספיק.<o:p></o:p></u></span></p><p class="MsoNormalCxSpMiddle" dir="RTL">זאת
+ועוד, ביה"ד התרשם שלא היה כאן מהלך רגיל של יזם המזמין אפליקציה, לא הוצגו מערכי
+"היתכנות" מסודרים וחתומים, ולא שאר השלבים המקובלים, ולכן מסקנתנו שהעיסקה
+הזו היתה בנויה הרבה על חברות אמון ורצון טוב של שני הצדדים. המתכנת היה אמור להיות
+שותף מלא בעצם הגדרת הצרכים והאפיונים הנדרשים ואין לו להטיל זאת על המזמין לבדו. <o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">זאת
+ועוד, בסעיפים 4-6 מוגדר בפירוש כי המתכנת הוא הבעלים של האפליקציה ואילו למזמין
+ישנן זכויות שימוש בלבד, במצב כזה המתכנת ודאי הינו חלק מהיזמות עצמה.<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">שנית,
+אף לו היה המתכנת רשאי להיות מבצע בלבד בעל "ראש קטן", ביה"ד קיבל
+את טענת המזמין כי כל מה שהוא דרש במהלך השנה האחרונה היה מפורש ומפורט בהסכם
+ההתקשרות מלכתחילה, ולא היו כאן דרישות ותוספות ש"צצו" לאחר חתימת
+החוזה, באופן שמלכתחילה המזמין לא ידע בדיוק מה הוא רוצה ולכן שינה כל הזמן את
+בקשותיו, כפי טענת המתכנת.<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">לדעת
+ביה"ד, בכדי להבין על מה בדיוק סיכמו הצדדים יש להתייחס גם למה שדברו והתכתבו
+ביניהם ערב חתימת החוזה וכיצד סיכומים אלו באו לידי ביטוי בחוזה ולא להתייחס לחוזה
+ולאפיון המוצמד אליו בלבד.<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">מתוך
+קריאת החוזה, האפיון המוצמד אליו ומהתכתובת הקיימת בין הצדדים לפני חתימת החוזה,
+נראה בבירור שהמזמין ידע היטב איזו מסגרת הוא מעוניין שתהיה באפליקציה. המזמין
+פירט שהוא מעונין בפונקציות רבות שיאפשרו לאפליקציה להיות מבצעית ונוחה לשימוש.
+בתכתובת ובאפיון הראשוני מוצמד לכל דרישה נימוק מדוע יש צורך בדרישה זו. <o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">זאת
+ועוד, באפיון המוצמד לחוזה יש רק רשימה של מטלות הנדרשות מהמתכנת. טענת המתכנת
+שהאפיון נכתב בצורה כזו כדי שיהיה סיום לעבודה והעבודה לא תימשך עד אין קץ ועל כן
+אין חשיבות לכל מה שנכתב לפני כן במיילים השונים, אינה מקובלת, כיון שהמתכנת התחייב
+לבנות אפליקציה יעילה, אך בפועל כיום האפליקציה אינה עומדת ביעדים הנדרשים. <o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">ישנן
+מספר ראיות שהאפיון לא נכתב כמקובל בשוק כהסכם סופי וקשיח ושמטרתו של האפיון אינה
+אלא לשמש סיכום תמציתי <u>כראשי פרקים</u> של מה שסוכם לפני כן ולא להוות מסמך
+סגור ומסכם: <b><o:p></o:p></b></p><p class="MsoNormalCxSpMiddle" dir="RTL"><b><span lang="HE">א</b>.
+האפיון חסר את המבוא שאומר את המטרה הסופית. <o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><b><span lang="HE">ב.</b>
+אפיון שנועד לחייב את הצדדים אינו יכול להכיל נקודות למחשבה או נקודות לבדיקה. <b><o:p></o:p></b></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><b><span lang="HE">ג.</b>
+בתחילת האפיון יש 'לינק' שהמתכנת מפנה את המזמין לשלב בעבודה שכבר נעשתה. במסמך
+שכל מטרתו להיות סיכום של דרישות סופיות כנספח לחוזה לא אמורות להיות הפניות
+לדברים זמניים. <o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><b><span lang="HE">ד.</b>
+האפיון מתומצת מאד בראשי פרקים וללא מספרים מדויקים המתחייבים ממהות האפליקציה.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL">אמנם
+ישנה תכתובת (17/1/2016) שבה המתכנת מזהיר את המזמין ואומר לו שהאפיון הסופי הוא
+המחייב אבל מכיוון שהאפיון אינו יכול לעמוד בפני עצמו איננו סוברים כי ניתן בפועל
+להישען עליו. <o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL"><span lang="HE">דוגמא
+לדבר: אחת מהמחלוקות בין הצדדים מה מספר ההתרעות הסגורות שחייב המתכנת לתכנת
+למוקד. המתכנת טוען שאע"פ שבאפיון הראשוני יש למעלה מעשר התרעות הוא לא חייב
+בכל כך הרבה התרעות. לפי זה היה המתכנת צריך להזכיר מספר כלשהוא באפיון ולשמור על
+עצמו. אלא שבאפיון הסופי ענין זה נשאר פתוח וחייבים לומר שהצדדים סמכו על מה שסוכם
+בתחילה.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL">על
+פי מסקנה זו מוכח שההתקשרות בין המזמין לעובד הייתה על בסיס של הכנת אפליקציה
+שימושית על פי הצרכים הבסיסיים ומטרת המתכנת בכתיבת האפיון הייתה לשמור לעצמו טווח
+ביטחון הקובע מה אכן נצרך לאפליקציה על מנת לפעול כראוי ומה נחשב כתוספת שאינה
+הכרחית ואינה כלולה בחובותיו [מסיבות אלו נראה לבית הדין שכתב הטענות הראשון שהוגש
+על ידי המתכנת לא רלוונטי כיוון שכל הטענות בו מושתתות על כך שהמתכנת עמד בכל
+התחייבויותיו. לדוגמא: סעיפים 9,18, 25, 49,54, 59 ועוד ועוד].<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">מצב
+האפליקציה הנוכחי והתאמתו לחוזה- <o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">בשלב
+זה, שבית הדין הגיע למסקנה שהסיכום בין המתכנת למזמין הוא על אפליקציה עם קווי
+יסוד הדומים לנאמר באפיון הראשוני וכותרתם בלבד ניתנה כראשי פרקים באפיון המצורף
+לחוזה, צריך בית הדין להכריע האם המוצר הנוכחי עומד בדרישות אלו.<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">במבוא
+לחוזה נאמר:<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL"><span lang="HE"><strong>"...
+והואיל והמתכנת מצהיר כי הוא בעל הידע והניסיון בפיתוח אפליקציית מוקד מצלמות
+מרוחק והוא מסוגל לבצע את העבודה נשואת הסכם זה בטיב במומחיות ובאיכות..."</strong><o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL">לאור
+החובה של המתכנת להצהיר הצהרה זו ולאור החשיבות שייחס המזמין לכך שהמתכנת יצהיר
+זאת בחוזה, מוכח שההתקשרות בין הצדדים היא לא רק לספק רשימת צרכים שכתובה או לא
+כתובה באפיון. המזמין משלם על כך שיש בעל ניסיון בתחום הספציפי הזה, שייתן לו
+תוצאה הראויה לתפעול בצורה מרבית וכנאמר בחוזה "בטיב במומחיות ובאיכות".<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">האפליקציה
+בצורה שהובאה לפני בית הדין אינה יכולה להיחשב כעומדת בדרישות הנ"ל. אפליקציה
+הדורשת תמיכה שוטפת בטלפון אישי תומך הודעות וואטסאפ אינה ראויה לעמוד בתנאי
+הנ"ל ובפרט חוסר המרכיבים (פיצ'רים) ההכרחיים כמפורט בנספח ב. אם היה מדובר
+במתכנת שרק צריך להכניס פרטים שכתובים במפרט (כמו שכיר בחברה או עובד לפי שעות)
+ניתן היה לומר שזוהי בעיה של המזמין להגדיר בדיוק את צרכיו, אבל כאשר המתכנת מצהיר
+את ההצהרה הנ"ל נראה שהוא פשע והתרשל בבניית האפליקציה ותכנונה. לאור מסקנה
+זו יש לבחון את החוזה, ונראה שצודק המזמין בטענתו שהעבודה לא הסתיימה.<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">כמו
+כן לאור ההתכתבויות שהובאו בפנינו ברור היה לשניהם שאפליקציה זו צריכה להיות נוחה
+וקלה לשימוש גם בזמנים ביטחוניים לחוצים, ע"מ לתפעל אירוע אמת במהירות
+ויעילות הן ע"י הלקוח והן ע"י המוקד ושאר הגורמים התומכים. האפליקציה
+במצבה הנוכחי <b>אינה</b> עומדת בקריטריונים אלו ומסורבלת מאוד ביחס לכל אפליקציה
+אחרת ובפרט ביחס לאפליקציה בעלת דרישות ביטחוניות.<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">יש
+להעיר כי לכל אורך הדיון טען המתכנת כי התמורה של 38,500 ₪ הינה תמורה נמוכה מאד
+ועל כן מלכתחילה ברור היה שהתוצאה לא תהיה איכותית ברמה הנדרשת מחברות גדולות –
+טענה זו נדחתה ע"י ביה"ד מכל וכל, וזאת מ 3 טעמים:<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">א.
+המשפט המצוטט לעיל מהחוזה בו המתכנת מצהיר על יכולתו לפתח "בטיב באיכות
+ובמומחיות" מורה על התחייבות לאיכות ראויה ללא קשר למחיר.<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">ב.
+לאחר בירור עם מומחים נוספים בתחום נראה שהמחיר אינו זול מהמקובל בשוק.<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">ג.
+גם אם המחיר זול יש לתת מוצר כפי מה שסוכם, והמתכנת יפסיד במה שלא העריך נכון
+מלכתחילה את כמות השעות וגודל ההשקעה בפרויקט כזה וכדלעיל.<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">לאורך
+הדרך טען המתכנת כי האיכות עליה דיבר אינה אלא על כך שלא יהיו באגים ותקלות ואכן
+לא היו כמעט תקלות, טענה זו לא התקבלה ע"י ביה"ד.<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">בפסק
+הדין הראשון איפשר ביה"ד למתכנת לפרוש מהעיסקה בתנאים מסויימים, אך לא כבקשתו
+שלו לקבל את יתרת הכסף ולפרוש טענת המתכנת לזכותו לפרישה בשלב הדיון הראשון היתה
+כדלהלן - <o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">בבקשתו
+לפטור אותו מהמשך העבודה, טוען המתכנת כי על פי סעיף 3.4 הוסכם כי הוא יוכל לפרוש <b>לאחר</b>
+שנה בתנאי שימצא מחליף או ימכור את קוד המוצר ב 7000 ₪. הצדדים נחלקו ממתי מתחילה
+השנה וממילא מתי היא מסתיימת. המתכנת טען ששנה זו מתחילה החל מזמן חתימת החוזה
+והמזמין טען ששנה זו היא אותה שנה המבוארת בסעיף 8.5 שם נאמר:<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">"התאמות
+נוספות בשנה הראשונה <b>לאחר הפעלת המוקד</b> לא יתומחרו מעל 200 ₪ לשעה או על כל
+הפיצ'ר בקבלנות".<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">לדעת
+בית הדין חייבים לומר שטענת המזמין נכונה. בסעיף המדובר הנוסח הוא:<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">"במידה
+והמתכנת מסיבה כלשהיא לא יוכל לבצע <b>עבודות נוספות </b>לאחר השנה הראשונה<b>...</b>"
+.<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">וכאן
+יש לשאול מה הן העבודות הנוספות. <o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">בסעיף
+8.1 המתכנת מקבל אחריות על תיקונים וכד' למשך חצי שנה אם המוקד יחל לפעול בתוך
+שנה. המשמעות היא שהמתכנת התחייב להיות קשור <b>לעבודה השוטפת</b> למשך זמן שעלול
+להתארך לשנה וחצי מעת חתימת החוזה. <o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">בפועל
+המוקד התחיל לפעול בסוף 2016 כך שאכן פעל בתוך שנה, ואם כן המתכנת מחויב הן
+לעבודות שוטפות והן לעבודות נוספות שנה נוספת, והיא הקרויה בחוזה "שנה
+ראשונה" ורק לאחר תום שנה זו ניתן להפעיל את סעיף 3.4.<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">זאת
+ועוד, על פי סעיף 8.1 המתכנת היה חייב להיענות לכל בקשותיו של המזמין לתיקון באגים
+וכד' וזאת בתוך 24 שעות, מה שלא נעשה כלל אלא הוא ניתק את עצמו בצורה משמעותית
+מהפרויקט שלא כדין.<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">טענת
+המתכנת, שבתוך השנה וחצי הזו שהוא מחויב לתיקונים שוטפים יש אפשרות שאדם אחר ייכנס
+לפעולות התכנות ולעבודות נוספות - אינה מתקבלת, בפרט שעליו הוטלה החובה בחוזה
+למצוא מחליף, דבר שהוא סירב מכל וכל לעשותו. זאת ועוד, בוודאי שכוונת המשפט לומר
+שלאחר שנוכחנו שהאפליקציה עובדת היטב והיא ללא תקלות אלא שרוצים לשפר את יכולותיה
+אז מבקשים עבודות נוספות. מכיוון שבסעיף 8.1 המתכנת הודיע שייתן תמיכה טכנית למשך
+ששה חודשים בתנאי שהמוקד יפעל תוך שנה ברור שהמתכנת הבין שייתכן ולאחר שנה המערכת
+לא תפעל עדיין כמצופה. אין סברא לומר שהמתכנת פטר את עצמו מעבודות נוספות בתוך
+הזמן הזה.<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">טענות
+המתכנת שחברת פ' לא מקצועית ולא הייתה זמינה, לא התקבלו, שכן המתכנת התחייב לעבוד
+גם אם חברת פ' "<b>יתעכבו או לא יתקשרו</b>" כפי שמצוין בסעיף 2.3. זאת
+ועוד, גם לאחר תחילת העבודה של פ' המתכנת השתהה עוד שבעה חודשים עד שהשלים את
+העבודה, אין מן הייתור לציין שהמתכנת ביקש גם לאחר זה לעכב את התפעול בזמן נוסף על
+מנת לאפשר הרצה ללא לקוחות.<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">לאור
+כל הנ"ל, ולאור המסקנות אליהן הגענו והן:<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]--><span lang="HE">א.&nbsp; &nbsp; &nbsp; פיתוח
+האפליקציה לא הושלם כראוי.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]--><span lang="HE">ב.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>המוצר
+הנוכחי אינו תואם את המוצר שהוזמן.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL">עלינו
+לדון האם היחסים בין הצדדים הם כיחסים של קונה (המזמין) ומוכר (המתכנת) או כיחסים
+של אומן או קבלן ובעל הבית.<o:p></o:p></p><h4 class="MsoNormalCxSpMiddle" dir="RTL"><b><span lang="HE">אפשרות
+א -<o:p></o:p></b></span></h4><p class="MsoNormalCxSpMiddle" dir="RTL">האפליקציה
+הינה "מוצר", דהיינו, חפץ וירטואלי העומד למכירה או השכרה ושייכת בו
+בעלות וזכויות יוצרים, כך גם מפורט בחוזה בסעיפים 4-6. מוצר זה הוגדר כשייך למתכנת
+והוא בעליו היחיד עם זכויות שימוש בלעדיות למזמין.<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">הגדרתו
+המשפטית של מצב זה הינו – קנין גוף למתכנת וקנין פירות למזמין (ולא רק שכירות
+שימושים (עיין שו"ע חו"מ סי' ריב בהבדלים ביניהם)).<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">לפי
+הגדרה זו כבר קיבל המזמין את מה שקנה אלא שרוצה להחזיר את המצב לקדמותו ולהחזיר את
+המקח בטענת מום במקח.<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">לפי
+הגדרה זו רשאי המזמין אם אינו חפץ במוצר זה שלא לקנותו כלל ולא לשלם כלום תמורתו.
+ואף אם כבר בוצע הקניין הרי יש כאן מקח טעות ורשאי לבקש את כל כספו בחזרה כמבואר <span id="ogen4" class="ogen">בשו"ע (חו"מ רלב ג-ד):<o:p></o:p></span></p><blockquote><p class="MsoNormalCxSpMiddle" dir="RTL">"המוכר
+לחבירו קרקע או עבד או בהמה או שאר מטלטלים, ונמצא במקח מום שלא ידע בו הלוקח, מחזירו
+אפי' לאחר כמה שנים, שזה מקח טעות הוא, והוא שלא ישתמש במקח אחר שידע במום. אבל אם
+נשתמש בו אחר שראה המום, ה"ז מחל ואינו יכול להחזיר (בנידון דידן, מתחילת
+השימוש בפועל המזמין התלונן במשך כל הזמן וניכר שלא מחל כלל. דבר זה עונה לטענת
+המתכנת שהעלה בקובץ "טענות משלימות בעקבות הדיון", וראה שם טענה מספר
+23). <o:p></o:p></p></blockquote><p class="MsoNormalCxSpMiddle" dir="RTL">אין
+מחשבין פחת המום, אפילו מכר לו כלי שוה עשרה דינרים ונמצא בו מום המפחיתו מדמיו איסר,
+מחזיר את הכלי ואינו יכול לומר לו: הילך איסר פחת המום, שהלוקח אומר: בחפץ שלם אני
+רוצה. וכן אם רוצה הלוקח ליקח פחת המום, הרשות ביד המוכר לומר: או קח אותו כמו שהוא
+או תקח מעותיך והחזיר לי מקחי".<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">זאת
+ועוד אפילו השתמש במקח יכול להחזירו במקום שהתחיל את הדרך ונתקע באמצעה בגלל המוצר
+התקול, כך מצינו במי שקנה סוס ובאמצע הדרך התברר שיש בו מום חזר עמו לביתו יכול
+לבטל המקח אע"פ שכבר השתמש לאחר שהתגלה המום, וכ"פ באורחות המשפט נתיב
+לב סי' יז:<o:p></o:p></p><blockquote><p class="MsoNormalCxSpMiddle" dir="RTL">"אם
+ראה המום בדרך, כגון אם קנה סוס ונסע עליו בדרך ובאמצע הדרך מצא בו מום, ונסע על
+הסוס בחזרה לעירו ובדעתו לעמוד על זה בדין תורה, אך עכ"פ הלא זה השתמש בו אחר
+שראה המום, האם נאמר בכזה דודאי מחל, והלא אנו רואין דודאי לא מחל אך מגודל הכרח
+משתמש בו, הילך ברגליו ויוליך בידיו העגלה עם המשא שעליו".<o:p></o:p></p></blockquote><p class="MsoNormalCxSpMiddle" dir="RTL">ואע"פ
+שנשאר בצע"ג כבר הסכים עמו להלכה בפתחי תשובה רלב א וכתב:<o:p></o:p></p><blockquote><p class="MsoNormalCxSpMiddle" dir="RTL">"בעיקר
+הדבר בהשתמש מכח אונס, לכאורה פשוט דודאי יכול לחזור, כמו באונאה יותר משיעור כדי
+שיראה לתגר וכו'".<o:p></o:p></p></blockquote><p class="MsoNormalCxSpMiddle" dir="RTL">ועיי"ש
+עוד טעמים לכך שלא אמרינן שמחל על המום שהרי הודיע למוכר עיי"ש בפת"ש
+באורך בדברי הריטב"א והשיטה מקובצת.<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">אמנם
+אם המום במקח ניתן לתיקון המוכר יכול לחייב את הקונה להישאר עם המקח ולקזז את עלות
+התיקון, כמבואר <span id="ogen5" class="ogen">שם סעיף ה:<o:p></o:p></span></p><blockquote><p class="MsoNormalCxSpMiddle" dir="RTL">"ראובן
+שמכר לשמעון בתים שיש לו בעיר אחרת, וקודם גמר המקח נכנסו גוים בבתים וקלקלו קצת מקומות
+ועשנו הכתלים ועקרו דלתות הבית והחלונות, ורוצה שמעון לחזור בו, וראובן טוען שכיון
+שהוא מום עובר ינכה לו מן הדמים כדי שיחזיר הבית לקדמותו ויקיים המקח, הדין עם ראובן.
+הגה: שהרי בית מכר לו ועדיין נקרא בית".<o:p></o:p></p></blockquote><p class="MsoNormalCxSpMiddle" dir="RTL">ולכן
+בנידון דידן, כיון שאפשר לתקן את הליקויים אי אפשר לבטל את המקח אך על המתכנת לתקן
+או לקזז את עלות התיקון ממחיר המוצר.<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">אמנם,
+יכולת זו של המוכר לחייב את הקונה להישאר במקח היא בתנאי שבסופו של תהליך יקבל
+הקונה את המקח כמו שסוכם. אבל אם המוכר מודיע שאינו יכול או אינו רוצה לתת את
+המוצר על פי הסיכום, חוזר הדין של מקח טעות למקומו ואין חייב הקונה לשלם למוכר
+כלום. לפי דברים אלו יכולת המתכנת להשלים את תכנות האפליקציה צריכה להיות באופן
+מושלם. <o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">אכן,
+בנדון דידן סירב המתכנת לתקן ואף הפר את צו הביניים בענין, ולא נמצא מתכנת אחר
+שיוכל להשלים את העבודה אלא רק לכתוב את כל הקוד מחדש והוי מום שאינו ניתן לתיקון.<o:p></o:p></p><h4 class="MsoNormalCxSpMiddle" dir="RTL"><b><span lang="HE">אפשרות
+ב - <o:p></o:p></b></span></h4><p class="MsoNormalCxSpMiddle" dir="RTL">המתכנת
+נחשב קבלן ומזמין העבודה נקרא בעה"ב. במצב כזה, מצד אחד, האומן רשאי לחזור בו
+מהעבודה, כפי שביקש המתכנת, כמבואר בשו"ע <span id="ogen6" class="ogen">(חו"מ שלג ג):<o:p></o:p></span></p><blockquote><p class="MsoNormalCxSpMiddle" dir="RTL">"התחיל
+הפועל במלאכה, וחזר בו בחצי היום, חוזר, ואפילו קבל כבר דמי שכירותו ואין בידו לשלם
+לבעל הבית, יכול לחזור בו והמעות חוב עליו, שנאמר: כי לי בני ישראל עבדים, ולא עבדים
+לעבדים".<o:p></o:p></p></blockquote><p class="MsoNormalCxSpMiddle" dir="RTL">אולם,
+מצד שני אם חוזר בו מהמשך המלאכה ידו על התחתונה, כך שגם אם השלמת העבודה ע"י
+אומן אחר תעלה יותר ממה שהיה אמור לעלות החלק היחסי שנשאר אילו היה ממשיך הקבלן
+הראשון, יש לקזז משכרו את המחיר הגבוה ששולם בסופו של דבר לאומן השני. הקיזוז
+האמור הוא בראש ובראשונה מהשכר שעדיין לא שולם לו (שו"ע<span id="ogen7" class="ogen"> שם סעיף ד),
+וי"א (ש"ך שם ס"ק כא) ששכרו של האומן השני יקוזז אף מהשכר שכבר
+שולם לאומן הראשון.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL">בנידון
+דידן, שהמתכנת סירב להשלים את הפרויקט כנדרש, נאלץ המזמין לפתח אפליקציה חדשה ללא
+הסתמכות על העבודה הקודמת, וא"כ לא מגיע לו שכר כלל.<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">בנוסף
+לכך צריך לבחון האם הפעולה שהקבלן חזר ממנה היא דבר האבד או לא כפי שמצוין
+בשו"ע (סימן שלג<span id="ogen8" class="ogen">' סעיפים ה'-ו'): <o:p></o:p></span></p><blockquote><p class="MsoNormalCxSpMiddle" dir="RTL">"אבל
+בדבר האבוד, כגון פשתן להעלות מהמשרה, או ששכר חמור להביא חלילין למת או לכלה וכיוצא
+בהם, אחד פועל ואחד קבלן, אינו יכול לחזור בו. אא"כ נאנס, כגון שחלה הוא או אשתו
+ובניו או ששמע שמת לו מת. ומיהו אינו צריך לשלם להם כל שכרם, רק מה שעשו, וידם על העליונה.
+ואם לא נאנס, וחזר בו, אם היה מוצא פועלים אחרים לשכור כששכר את אלו, ועכשיו אינו מוצא,
+שוכר עליהם או מטען.<o:p></o:p></p></blockquote><p class="MsoNormalCxSpMiddle" dir="RTL">כיצד,
+שוכר עליהם פועלים וגומרין מלאכתן שלא תאבד, וכל שיוסיף לאלו הפועלים האחרים על מה
+שפסק לראשונים נוטל מהראשונים עד כמה עד כדי שכרן של ראשונים. ואם היה להם ממון תחת
+ידו, שוכר להשלים המלאכה עד ארבעים או חמשים זוז בכל יום לכל פועל, אף על פי ששכר הפועל
+בשלשה או ארבעה... ויש אומרים הא דשוכר עליהן עד ארבעים או חמשים זוז היינו דווקא שתפס
+כלי אומנותם, אבל שאר דברים, לא... ודוקא בדבר האבוד שאינו ממון, כגון מלמד או כדומה
+לזה, אבל בדבר האבוד של ממון, צריך לשלם לו כל הזיקו..."<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">מפסיקת
+השולחן ערוך ניכר שאם קבלן חוזר בו בדבר האבד בעל הבית יכול לשכור פועלים אחרים
+שיסיימו את עבודתו של הקבלן, וכל זה על חשבון הכסף שמגיע לקבלן. אף במקרה שלפנינו
+ניתן לומר שלמזמין יש הפסדים ממשיים בכל רגע שהאפליקציה לא זמינה. מכל מקום, אף אם
+נאמר שלא מדובר בדבר האבד ידו של הקבלן שעזב על התחתונה כפי שראינו בש"ך
+לעיל.</p><h4 class="MsoNormalCxSpMiddle" dir="RTL"><b><span lang="HE">אפשרות
+ג -<o:p></o:p></b></span></h4><p class="MsoNormalCxSpMiddle" dir="RTL">המזמין
+הינו בעה"ב שהזמין 'מוצר' אצל אומן, בכה"ג אין לו חובה לקנות את המוצר
+בסופו של דבר אלא רק מדינא דגרמי (שם סעיף ח), אמנם כשהמוצר אינו לשביעות רצון
+בעה"ב אינו חייב לקנותו ופטור וא"כ דינו כבאפשרות א, שרק אם יעמיד
+המתכנת לרשות המזמין אפליקציה מושלמת צריך המזמין לשלם, ואם לא יעמוד המתכנת בתנאי
+זה הוא צריך להחזיר את כל הכסף שקיבל עד עתה. <o:p></o:p></p><h2 class="MsoNormalCxSpMiddle" dir="RTL"><b><span lang="HE">מסקנה
+-<o:p></o:p></b></span></h2><p class="MsoNormalCxSpMiddle" dir="RTL">מכל
+הנ"ל עולה שהמזמין יכול היה לדרוש את כל כספו בחזרה, וללכת לפתח את האפליקציה
+מחדש בחברה אחרת ללא שום פיצוי למתכנת, בפרט שהמתכנת סרב לשתף פעולה בצורה שתאפשר
+להשלים את עבודתו ומכיוון שכך חזר המזמין ותבע את מלוא כספו כנ"ל, וכפי
+שפסקנו בפסק הקודם מיום י"ג סיון התשע"ז:<o:p></o:p></p><blockquote><p class="MsoNormalCxSpMiddle" dir="RTL">"במידה
+ולא תצליח אפשרות זו הרי כל עבודתו של המתכנת ירדה לטמיון והוא יצטרך להחזיר את כל
+מה שקיבל מהמזמין משום שהמזמין אינו מחויב לקנות מוצר פגום". <o:p></o:p></p></blockquote><p class="MsoNormalCxSpMiddle" dir="RTL">בנוגע
+לתביעות הנוספות:<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">הוצאות
+על תדמית נמוכה והטסה ושהייה בחו"ל - <o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL"><span id="ogen13" class="ogen">על פי ההלכה כל נזק שאינו נעשה באופן ישיר אלא כתוצאה אגבית אין הנתבע צריך לשלם,
+וכמבואר בשו"ע בכמה מקומות ובפרט בסימן שפ"ח.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL">בנידון
+דידן, הוצאות אלו שהוצאו על ידי המזמין לא נעשו כשליחות ותוצאה ישירה של דרישות
+המתכנת ועל כן מוגדרות כ'גרמא' ופטור המתכנת מלשאת בהם.<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">כמו
+כן, ביחס לתביעת המזמין את הנזקים הגדולים שנגרמו לו, הן בעקבות העיכוב הגדול והן
+בגלל איכותה הירודה של האפליקציה [דהיינו בגלל הפונקציות החסרות בה <b>ולא בגלל
+נפילות ובאגים שאכן היו מעטים מאד כפי שטען המתכנת</b>].<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">ביה"ד
+התלבט רבות האם יש כאן דינא דגרמי והמתכנת יהיה חייב לשלם את ההוצאות והנזקים,
+בכפוף להוכחת הנזק, או שמא זהו גרמא, ואם זו גרמא האם חייב בדיני שמים או שפטור.<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">בסוגיא
+זו של גרמא, קיי"ל שהוא נזק שאסור לעשותו אך פטור המזיק בדיני אדם כמבואר
+במקומות רבים בש"ס (כגון: ב<span id="ogen9" class="ogen">"ק מח ב, ס א):<o:p></o:p></span></p><blockquote><p class="MsoNormalCxSpMiddle" dir="RTL">"גרמא
+בעלמא הוא, וגרמא בנזקין פטור".<o:p></o:p></p></blockquote><p class="MsoNormalCxSpMiddle" dir="RTL">ואע"פ
+שפטור הרי זה איסור גמור לגרום נזק כמבואר <span id="ogen11" class="ogen">בב"ב (כב ב):<o:p></o:p></span></p><blockquote><p class="MsoNormalCxSpMiddle" dir="RTL">"א"ר
+טובי בר מתנה, זאת אומרת: גרמא בניזקין אסור".<o:p></o:p></p></blockquote><p class="MsoNormalCxSpMiddle" dir="RTL">אלא
+שישנו דין נוסף והוא "דינא דגרמי" פסק המחבר (<span id="ogen10" class="ogen">חו"מ שפו א):<o:p></o:p></span></p><blockquote><p class="MsoNormalCxSpMiddle" dir="RTL">"קיימא
+לן כרבי מאיר דדאין דינא דגרמי".<o:p></o:p></p></blockquote><p class="MsoNormalCxSpMiddle" dir="RTL"><span id="ogen14" class="ogen">ועתה יש לדון מהו גרמא ומהו דינא דגרמי. סוגיה זאת מופיעה במסכת ב"ק דף צח שם פטר
+רבא את הזורק מטבע חברו לים הגדול, וכן את השף מטבע של חברו, וכן הצורם אוזן של
+פרת חברו, וכן השורף שטרו של חברו פטור. סוגיה זאת מוזכרת באותה המסכת בדף ק, ובדף
+כו ע"ב שם עוסקים בכלים שנפלו מהגג על כרים או כסתות ובא אדם והזיז את הכרים.
+התוספות במסכת ב"ב דף כב ע"ב עמדו על ההבדלים בין גרמא לדינא דגרמי. לפי
+ההסבר של ר"י והרא"ש בדינא דגרמי הנזק נעשה בידי האדם בחפץ הניזוק, <u>ברי
+היזקא</u>, והנזק הוא <u>מיידי.</u> לעומתם, שיטת הריצב"א היא:<o:p></o:p></span></p><blockquote><p class="MsoNormalCxSpMiddle" dir="RTL">"דדינא
+דגרמי הוי מטעם <u>קנס</u> כדמוכח בירושלמי ולכך כל היזק <u>המצוי ורגיל לבא</u>
+קנסו חכמים וטעם דקנסו שלא יהא כל אחד הולך ומזיק לחבירו בעין".<o:p></o:p></p></blockquote><p class="MsoNormalCxSpMiddle" dir="RTL">המשאת
+בנימין שמובא בפתחי תשובה על סימן שפו כותב שכו"ע מודים לריצב"א שמותר
+לקנוס במקרים שכיחים, ומחלוקת הראשונים היא רק במקרים לא שכיחים. אף הגר"א,
+סימן שפו ס"ק ו', כתב שהרמ"א והש"ך פסקו כריצב"א [עיין
+ש"ך שפו א באורך רב]. <o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL"><span id="ogen16" class="ogen">שיטה הלכתית נוספת היא דעתו של הרמב"ם. הש"ך בחו"מ סימן שפו ס"ק ד'
+כותב שלרמב"ם אין הבדל מהותי והלכתי בין גרמא לגרמי, וכיון שקי"ל שהלכה
+כרבי מאיר שדן דינא דגרמי חייבו חז"ל <u>אף בגרמא</u>. הגר"א חושן משפט
+סימן תיח ס"ק יט כתב על שיטת הרמב"ם:<o:p></o:p></span></p><blockquote><p class="MsoNormalCxSpMiddle" dir="RTL">"אבל
+אנן לא קי"ל כרב אשי בזה וכן הוא שיטתו של הרמב"ם דגרמי אינו חייב אלא <u>במתכוין</u>".<o:p></o:p></p></blockquote><p class="MsoNormalCxSpMiddle" dir="RTL">כלומר,
+לפי שיטתו אין הבדל הלכתי בין גרמא לגרמי אלא בכל מצב שכוונתו של האדם להזיק לחברו
+הוא חייב לשלם על הנזקים שגרם.<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">למעשה
+הש"ך ס"ק ד' סובר שהשו"ע לא פסק כרמב"ם אלא כראשונים שמחלקים
+בין גרמא לדינא דגרמי. לעומתו הסמ"ע הכריע שהשו"ע סובר לדינא
+כרמב"ם. <o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL"><span id="ogen18" class="ogen">לענייננו, מצד אחד יש מקום לפסוק כרמב"ם והשו"ע לפי שיטת הסמ"ע ולחייב את
+המתכנת בכל הנזקים שגרם למזמין האפליקציה. אך מצד שני הואיל והמתכנת מוחזק בכסף
+ייתכן שהוא יוכל לומר קי"ל כשאר הראשונים. כמו כן, יש פוסקים רבים שמכריעים
+כריצב"א, ולכן יש מקום לקנוס את המתכנת על הנזקים שגרם. בפועל, בית הדין רוצה
+להאמין לטענות המתכנת שהוא לא התכוון לגרום נזק במכוון למזמין האפליקציה. אך אם
+המתכנת התכוון בתוך ליבו להזיק במזיד למזמין ולעכב במתכוון את פיתוח האפליקציה הוא
+היה חייב לשלם למזמין סך נוסף של 150,000 ₪ בכדי לצאת ידי שמים [על פי פסק ערוך
+השולחן חושן משפט סימן שפו' סעיף כג']. <o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><span id="ogen19" class="ogen">הנחה זו מתקיימת גם לאור פסיקת השו"ע (רלב, כא):<o:p></o:p></span></p><blockquote><p class="MsoNormalCxSpMiddle" dir="RTL">"הלוקח
+מקח מחבירו והודיעו שהוא מוליכו למדינה פלונית למכרו שם, ואחר שהוליכו לשם נמצא בו
+מום... ואם היה המוכר <b>יודע בממכרו שהיה בו מום</b>, חייב בהוצאות שהוציא הלוקח
+להוליך אותו למקום פלוני". <o:p></o:p></p></blockquote><p class="MsoNormalCxSpMiddle" dir="RTL">משמע
+מדברי השו"ע שכאשר אדם מוציא הוצאות כתוצאה מכך שסומך על כך שקנה מוצר טוב,
+וידוע למוכר שהלוקח מתכנן להוציא הוצאות נוספות על בסיס המקח, חייב המוכר לשלם את
+ההוצאות הנוספות ללוקח. אמנם מדקדוק לשונו של השולחן ערוך מבואר שהדבר תלוי דווקא
+במה שהמוכר <u>יודע</u> מהמום שבמקח ואף על פי כן נותנו ללוקח (וכן מפורש
+ברמ"ה שהביא הטור שהוא מקור דין זה) אבל אם המוכר לא יודע על המום, הופך
+ההיזק לגרמא ופטור המוכר מלשלם ללוקח את הוצאותיו.<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">הגר"א
+(ס"ק לה) נימק את החילוק בין ידע ללא ידע על פי החילוק האמור לעיל בין אם כיוון
+להזיק או לא. ומסביר שברגע שידע המוכר על המום נחשב כמתכוון להזיק והוי גרמי. <o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">על
+פי דברים אלו נראה לכאורה שכאן, שהמתכנת חשב שהאפליקציה על פי האפיון הלוקה בחסר
+עומדת בדרישות המצופות ממנה, אין לו מודעות למום ולכן אינו נחשב מזיק בגרמי ואינו
+חייב לשלם את הוצאות המזמין.<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL"><span lang="HE">אלא
+שלכאורה יש להקשות על הנחה זו. הנתיבות (סימן קפג סק"א, סימן שו סק"ו
+ועוד) מוכיח (על פי הגמרא ב"מ עג<span dir="LTR">(:</span> שאם <span id="ogen20" class="ogen">פועל בשכר נשלח למקום מסוים לקנות סחורה בזול ולא קנה חייב לשלם את נזקו של בעל הבית ואפילו
+את מה שנמנע ממנו להרוויח ובלבד שיוכח שאכן יכול היה להרוויח.<o:p></o:p></span></span></p><p class="MsoNormalCxSpMiddle" dir="RTL">מסביר
+הנתיבות את חידושו על פי הריטב"א שכאשר פועל נוכח שבעל הבית סומך עליו ומפקיד
+בידיו את קניית הסחורה הפועל נהנה מכך עד כדי שחל עליו דין של ערבות. וכאילו אמר
+במפורש שאם מחמתי לא תתבצע השליחות אשלם את כל הרווחים שיכל בעל הבית להרוויח
+משליחות זו. הנתיבות החיל עיקרון זה על כל מקרה של פועל שקיבל על עצמו עבודה ולא
+עשאה כראוי. כגון אומן שקיבל צמר לצבעו בצבע אדום וצבעו בצבע שחור וכתוצאה מכך לא
+יכול בעל הבית למכור את הצמר במחיר שהיה מוכר אם היה צובע את הצמר בצבע הרצוי,
+מכריע הנתיבות שחלק ממה שצריך האומן להפסיד (עיין בסימן שו בפרטי החישוב המדויק)
+הוא הסכום אותו בעל הבית יכול היה להרוויח. את חידושו מבסס הנתיבות שאע"פ שלא
+הזיק הפועל בידיים והוי גרמא מכ"מ חייב מדין ערב וכאמור לעיל.<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">על
+פי הנתיבות יוצא שבנידוננו, שידע המתכנת שעל בסיס האפליקציה שיפתח מוציא המזמין
+הוצאות רבות, חייב המתכנת על כל ההוצאות שנגרמו לאחר שלא ביצע את המוטל עליו.<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL"><span id="ogen21" class="ogen">גם אם נאמר שיש לחלק בין המקרה שלנו למה שכתב הנתיבות מכיוון שכאן לא ודאי שירוויח,
+מכל מקום בהוצאות שהוציא על בסיס קיום השליחות שלא נעשתה כראוי צריך לשלם מדין
+שהוציא על פי הפועל והוי קל וחומר שחייב אפילו לא היה מרוויח כלל.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL">אבל
+עדיין יש מקום לשאול מה נשתנה בין המוכר מקח עם מום שם צריך ידיעה של המוכר לבין
+פועל שעל פי הנתיבות הפועל לוקח על עצמו את כל האחריות?<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">בספר
+אולם המשפט חולק המחבר על השלכת הנתיבות מדין השליח לדין האומן וכותב:<o:p></o:p></p><blockquote><p class="MsoNormalCxSpMiddle" dir="RTL">"ומה
+שהקשה הנתיבות מהא דיהיב ליה למזבן חמרא דקיי"ל דחייב לשלם מביתו כל מה שהיה
+ראוי להרויח. פשוט <b>דהתם דווקא במזיד ומתורת מזיק</b> ואף דהוה מבטל כיסו דפטור
+בכל מקום כאן בקיבל עליו נתחייב. <b>אבל כאן בשוגג</b>... אע"ג דהוה פושע
+ובהיזק גוף הצמר ודאי חייב מ"מ על גרם ביטול הרווח ודאי לא חייבוהו".<o:p></o:p></p></blockquote><p class="MsoNormalCxSpMiddle" dir="RTL">יוצא
+מדברי אולם המשפט שאף פועל אינו חייב אם לא שהיה מודע לכך שבמעשיו אינו עושה את מה
+שנתבקש ממנו בזמן הסיכום עם בעל הבית. על פי זה אין צורך לחלק בין מוכר לפועל אלא
+בשניהם העיקר הוא להבין האם הם מודעים לכך שאינם עושים את המוטל עליהם, כל אחד לפי
+ענינו. והיה אם היה מודע לרשלנותו הוי גרמי וחייב ואם לא מודע לרשלנותו, אע"ג
+דהוי פושע, מ"מ הוי גרמא ופטור.<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">ועל
+כן כאן, שהמתכנת חשב שסיים את עבודתו על פי האפיון אין הוכחה שלא עשה את המוטל
+עליו בכוונה להזיק ולכן הוי גרמא ופטור.<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL"><span id="ogen22" class="ogen">אע"פ שמעיקר הדין המזיק בגרמא פטור מדיני אדם וחייב בדיני שמים, ביה"ד הוסמך בקנין
+ובחתימה על כתב הבוררות לדון אף בגרמא ומניעת רווח [עיין בנספח א], ומכיוון שהגענו
+למסקנה שהמתכנת התרשל בצורה פושעת ע"כ הוחלט ברוב דעות לחייבו במקצת הנזקים
+שגרם למזמין.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL">בבואנו
+לשער את גובה הפיצוי נראה לנו לשום את הפיצוי כפי שהיה ראוי להיות בחוזה.<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">בהסכם
+שנחתם בין המתכנת למזמין נכתב בסעיף 10.1:<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">"במקרה
+של הפרה יסודית של החוזה ע"י המזמין תחשב התמורה ששולמה למתכנת או שהיתה
+אמורה להיות משולמת למתכנת בהתאם לסעיף 3 עד למועד הביטול כפיצויים מוסכמים אשר
+יחולטו ע"י המתכנת ובאם טרם שולמו במלואם ישולמו ע"י המזמין למתכנת מיד
+עם ביטול החוזה".<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">ואכן
+המתכנת תבע בדיון הראשון להפעיל את הסעיף הנ"ל.<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">המעיין
+בחוזה שנכתב ע"י המתכנת רואה שהמתכנת החתים את המזמין על חוזה לא הגון בעליל,
+המגן אך ורק על המתכנת וקונס את המזמין לבדו, בעוד שעל המתכנת לא מושת שום קנס
+ופיצוי במקרה והוא מפר הפרה יסודית את החוזה ואף לא מוגדר בחוזה מהי הפרה יסודית
+מצדו, כך שהמתכנת יכול לעשות ככל העולה על רוחו, חוסר הגינות של הסכם זה זועק
+לשמים. אמנם מכיוון שהמזמין חתם על החוזה בנוסח שלפנינו אין אנו רשאים לחייבו מתוך
+החוזה.<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">אך,<span id="ogen23" class="ogen"> מכיוון שעל פי הסמכות שהוענקה לביה"ד בכתב הבוררות, לאחר שהוסכם על
+ביה"ד שהמתכנת התרשל והפר באופן ברור אף את מחויבותו המינימלית שכן התחייב בה
+בחוזה וגרם לנזקים רבים, ע"כ הוחלט ברוב דעות להשית כנגד נזקיו את אותו קנס
+ופיצוי שקבע הוא בעצמו בהסכם על הפרה יסודית, מעיקר הדין היה לנו לחייבו, מעבר
+להחזרת כל הכספים שקיבל, גם את הקנס שקבע הוא בעצמו על המזמין, דהיינו 38,500 ₪
+נוספים, וזאת כפיצוי על העיכובים והנזקים הגדולים שספג המזמין, אך כפשרה ולפנים
+משורת הדין הוחלט לחייבו ב- 20,000 ₪ בלבד, וזאת בנוסף לתשלומים שקיבל ועליו
+להחזירם.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL">אנו
+תקווה שלמרות המחיר הכואב, שני הצדדים יוכלו לסיים את התקשרותם בצורה נבונה וטובה
+ע"פ פסה"ד הנוכחי ויראו ברכה גדולה כל אחד בהמשך דרכו.<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">"והאמת
+והשלום אהבו".<o:p></o:p></p><h2 class="MsoNormal" dir="RTL"><b><u><span lang="HE">4. החלטה [פסק
+דין]<o:p></o:p></u></b></span></h2><p class="MsoNormal" dir="RTL"><b><span lang="HE">א. המתכנת ישלם
+למזמין סך 44,100 ₪.</b> [19,250+5,500 ₪ החזר התשלומים
+שקיבל ולא סיפק את תמורתם, 20,000 ₪ פיצוי על הנזקים, בהפחתת שכירות השרת עבור 13
+חודשים ע"ס 650 ₪].<o:p></o:p></span></p><p class="MsoNormal" dir="RTL"><b><span lang="HE">ב. תשלום ראשון ע"ס 24,100 ₪ ישולם בתוך 30
+יום ממתן הפסק עד ז' ניסן התשע"ח 23/3/18.<o:p></o:p></b></span></p><p class="MsoNormal" dir="RTL"><b><span lang="HE">&nbsp; &nbsp;תשלום
+שני ע"ס 10,000 ₪ ישולם עד 60 יום מקבלת הפסק עד ז' אייר התשע"ח
+22/4/18.<o:p></o:p></b></span></p><p class="MsoNormal" dir="RTL"><b><span lang="HE">&nbsp; &nbsp;תשלום שלישי
+ע"ס 10,000 ₪ ישולם עד 90 יום מקבלת הפסק עד ח' סיוון התשע"ח 22/5/18.<o:p></o:p></b></span></p><p class="MsoNormal" dir="RTL"><b><span lang="HE">ג. התשלומים כולם
+יבוצעו ע"י העברה בנקאית לחשבון שאת מספרו ימסור המזמין למתכנת לא יאוחר מכ"א
+אדר התשע"ח 8/3/18, אסמכתא על כל תשלום יש לשלוח לביה"ד במייל עד שבוע
+לאחר התשלום.<o:p></o:p></b></span></p><p class="MsoNormal" dir="RTL"><b><span lang="HE">ד. המתכנת יחזיר
+למזמין את הצ'ק ע"ס 1500 ₪ שחזר [נספח ג]. זמן החזרת הצ'ק והסעדים להחזרתו
+יבוצעו בדומה לתשלום הראשון לעיל סעיף ב' להחלטה.<o:p></o:p></b></span></p><p class="MsoNormal" dir="RTL"><b><span lang="HE">ה. המתכנת יסיר את שם
+החברה של המזמין </b><b>מהאייקון של האפליקציה הישנה, אם המתכנת לא מתכוון
+לשווק את האפליקציה שפיתח נבקש להסירה לגמרי מחנות גוגל, וזאת תוך שבועיים מקבלת
+הפסק ולא יאוחר מתאריך התשלום הראשון, הסעדים לסעיף זה יבוצעו בדומה לתשלום הראשון
+לעיל סעיף ב' להחלטה.</b><b><o:p></o:p></b></span></p><p class="MsoNormal" dir="RTL"><b><span lang="HE">ו. פסק זה הינו סופי
+ולא ניתן לערעור, לא על פי דין תורה, ולא ע"פ חוק הבוררות תשכ"ח סעיף
+23(א).<o:p></o:p></b></span></p><p class="MsoNormal" dir="RTL"><b><span lang="HE">ז. סעדים לקיום פסה"ד:
+<o:p></o:p></b></span></p><p class="MsoNormal" dir="RTL"><b><span lang="HE">1. אם יאחר המתכנת
+בתשלום מעבר ל - 30 יום נוספים על התאריכים הנקובים לעיל לכל תשלום בזמנו, ישלם
+קנס חד פעמי של 10,000 ₪ על כל אחד מהתשלומים הנ"ל שיתאחר, כ"א מהם
+ע"פ התאריך הנקוב לו, למעט סעיפים ד ו-ה להחלטה בהם הקנס על איחור יעמוד על
+2,000 ש"ח.<o:p></o:p></b></span></p><p class="MsoNormal" dir="RTL"><b><span lang="HE">2. ניתן בזה אישור לכ"א מהצדדים לפניה
+לביהמ"ש המחוזי ע"מ לאשר פסק בוררות זה ולבצע את גבייתו ע"פ חוק.</b><b><o:p></o:p></b></span></p><p class="MsoNormal" dir="RTL"><b><span lang="HE">ח. אין צו להוצאות משפט.<o:p></o:p></b></span></p><p class="MsoNormal" dir="RTL">ובאנו על החתום יום חמישי ז' אדר
+התשע"ח 21/2/18</p><h3>אוריאל אליהו - אב"ד&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; שבח שולמן – דיין&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; בעז רוזנטל - דיין</h3><h1 class="MsoNormal" align="center" dir="RTL"><b><span lang="HE"></span></h1><h1 class="MsoNormal" align="center" dir="RTL"><b><span lang="HE">נספח א-</b> כתב
+הסמכה לבוררות</span></h1><p class="MsoNormal" align="center" dir="RTL"><b><span lang="HE">&nbsp;</b></span></p><h2 class="MsoNormal" align="center" dir="RTL"><b><u><span lang="HE">הסכם בוררות<o:p></o:p></u></b></span></h2><p class="MsoNormal" dir="RTL"><o:p>&nbsp;</o:p></p><div align="right" dir="rtl">
+
+<table class="MsoNormalTable mce-item-table" dir="rtl" border="0" cellspacing="0" cellpadding="0" width="0">
+ <tbody><tr>
+  <td width="81" valign="top">
+  <p class="MsoNormal" dir="RTL"><span lang="HE">בין:<o:p></o:p></span></p>
+  </td>
+  <td width="306" valign="top">
+  <p class="MsoNormal" dir="RTL"><span dir="RTL"><span dir="RTL">____________________________</span><o:p></o:p></span></p>
+  </td>
+  <td width="81" valign="top">
+  <p class="MsoNormal" dir="RTL"><span lang="HE">לבין:<o:p></o:p></span></p>
+  </td>
+  <td width="306" valign="top">
+  <p class="MsoNormal" dir="RTL"><span dir="RTL"><span dir="RTL">____________________________</span><o:p></o:p></span></p>
+  </td>
+ </tr>
+ <tr>
+  <td width="81" valign="top">
+  <p class="MsoNormal" dir="RTL"><span lang="HE">ת.ז./ח.פ.<o:p></o:p></span></p>
+  </td>
+  <td width="306" valign="top">
+  <p class="MsoNormal" dir="RTL"><span dir="RTL"><span dir="RTL">____________________________</span><o:p></o:p></span></p>
+  </td>
+  <td width="81" valign="top">
+  <p class="MsoNormal" dir="RTL"><span lang="HE">ת.ז./ח.פ.<o:p></o:p></span></p>
+  </td>
+  <td width="306" valign="top">
+  <p class="MsoNormal" dir="RTL"><span dir="RTL"><span dir="RTL">____________________________</span><o:p></o:p></span></p>
+  </td>
+ </tr>
+ <tr>
+  <td width="81" valign="top">
+  <p class="MsoNormal" dir="RTL"><span lang="HE">מרחוב<o:p></o:p></span></p>
+  </td>
+  <td width="306" valign="top">
+  <p class="MsoNormal" dir="RTL"><span dir="RTL"><span dir="RTL">____________________________</span><o:p></o:p></span></p>
+  </td>
+  <td width="81" valign="top">
+  <p class="MsoNormal" dir="RTL"><span lang="HE">מרחוב<o:p></o:p></span></p>
+  </td>
+  <td width="306" valign="top">
+  <p class="MsoNormal" dir="RTL"><span dir="RTL"><span dir="RTL">____________________________</span><o:p></o:p></span></p>
+  </td>
+ </tr>
+ <tr>
+  <td width="81" valign="top">
+  <p class="MsoNormal" dir="RTL"><span lang="HE">עיר<o:p></o:p></span></p>
+  </td>
+  <td width="306" valign="top">
+  <p class="MsoNormal" dir="RTL"><span dir="RTL"><span dir="RTL">_______________מיקוד_________</span><o:p></o:p></span></p>
+  </td>
+  <td width="81" valign="top">
+  <p class="MsoNormal" dir="RTL"><span lang="HE">עיר<o:p></o:p></span></p>
+  </td>
+  <td width="306" valign="top">
+  <p class="MsoNormal" dir="RTL"><span dir="RTL"><span dir="RTL">_______________מיקוד________</span><o:p></o:p></span></p>
+  </td>
+ </tr>
+ <tr>
+  <td width="81" valign="top">
+  <p class="MsoNormal" dir="RTL"><span lang="HE">טל:<o:p></o:p></span></p>
+  </td>
+  <td width="306" valign="top">
+  <p class="MsoNormal" dir="RTL"><span dir="RTL"><span dir="RTL">____________________________</span><o:p></o:p></span></p>
+  </td>
+  <td width="81" valign="top">
+  <p class="MsoNormal" dir="RTL"><span lang="HE">טל:<o:p></o:p></span></p>
+  </td>
+  <td width="306" valign="top">
+  <p class="MsoNormal" dir="RTL"><span dir="RTL"><span dir="RTL">____________________________</span><o:p></o:p></span></p>
+  </td>
+ </tr>
+ <tr>
+  <td width="81" valign="top">
+  <p class="MsoNormal" dir="RTL"><span lang="HE">פקס:<o:p></o:p></span></p>
+  </td>
+  <td width="306" valign="top">
+  <p class="MsoNormal" dir="RTL"><span dir="RTL"><span dir="RTL">____________________________</span><o:p></o:p></span></p>
+  </td>
+  <td width="81" valign="top">
+  <p class="MsoNormal" dir="RTL"><span lang="HE">פקס:<o:p></o:p></span></p>
+  </td>
+  <td width="306" valign="top">
+  <p class="MsoNormal" dir="RTL"><span dir="RTL"><span dir="RTL">____________________________</span><o:p></o:p></span></p>
+  </td>
+ </tr>
+ <tr>
+  <td width="81" valign="top">
+  <p class="MsoNormal" dir="RTL"><span lang="HE">דוא"ל<o:p></o:p></span></p>
+  </td>
+  <td width="306" valign="top">
+  <p class="MsoNormal" dir="RTL"><span dir="RTL"><span dir="RTL">____________________________</span><o:p></o:p></span></p>
+  </td>
+  <td width="81" valign="top">
+  <p class="MsoNormal" dir="RTL"><span lang="HE">דוא"ל<o:p></o:p></span></p>
+  </td>
+  <td width="306" valign="top">
+  <p class="MsoNormal" dir="RTL"><span dir="RTL"><span dir="RTL">____________________________</span><o:p></o:p></span></p>
+  </td>
+ </tr>
+</tbody></table>
+
+</div><p class="MsoNormal" dir="RTL"><o:p>&nbsp;</o:p></p><p class="MsoNormal" dir="RTL"><b><span lang="HE">הואיל:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ובין הצדדים נתגלעו
+חילוקי דעות כמפורט ו/או יפורט בכתבי בית הדין.<o:p></o:p></b></span></p><p class="MsoNormal" dir="RTL"><b><span lang="HE">והואיל:&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;וברצון הצדדים למסור את הסכסוך האמור לבוררות.<o:p></o:p></b></span></p><p class="MsoNormal" dir="RTL"><u><span lang="HE">אי לזאת הסכימו הצדדים כדלקמן:<o:p></o:p></u></span></p><p class="MsoNormal" dir="RTL"><!--[if !supportLists]--><span>1.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span><!--[endif]-->הצדדים ממנים בזה
+את בית הדין "כרמי משפט" שליד כולל ענב בתור בורר (להלן – "בית
+הדין") (הדיינים ימונו ע"י הרב אוריאל אליהו שליט"א).<o:p></o:p></span></p><p class="MsoNormal" dir="RTL"><!--[if !supportLists]--><span>2.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span><!--[endif]-->בית הדין ידון
+ויפסוק בסכסוך שבין הצדדים ובכל הטענות והתביעות שיש לצדדים אחד כלפי השני כמפורט
+ו/או יפורט בכתבי בית הדין אשר יגישו הצדדים וכן בכל נושא אחר הקשור לנושא הבוררות
+אשר יועלה ע"י הצדדים במהלך הבוררות.<o:p></o:p></span></p><p class="MsoNormal" dir="RTL"><!--[if !supportLists]--><span>3.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span><!--[endif]-->בית הדין יפסוק
+בסכסוך, על פי דין או לפשרה, לפי שיקול דעתו ומיטב שפיטתו, עפ"י החומר
+שבפניו. <o:p></o:p></span></p><p class="MsoNormal" dir="RTL">הצדדים מתחייבים לשלם בגין נזקי גרמא, הפסדים של מניעת רווח, ושאר נזק
+כגון בושת, פגיעה בשם הטוב וכדומה, בהתאם לנסיבות, כפי שיקבע על ידי בית הדין ולפי
+שיקול דעתו.<o:p></o:p></p><p class="MsoNormal" dir="RTL"><!--[if !supportLists]--><span>4.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span><!--[endif]-->הצדדים מתחייבים
+לשלם הוצאות משפט ושכר טרחת עורך דין כפי שיקבע על ידי בית הדין, לפי שיקול דעתו.<o:p></o:p></span></p><p class="MsoNormal" dir="RTL"><!--[if !supportLists]--><span>5.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span><!--[endif]-->הצדדים מסכימים שגם
+אם יוכרע הדין בפשרה ההחלטה תקבע על פי רוב דעות.<o:p></o:p></span></p><p class="MsoNormal" dir="RTL"><!--[if !supportLists]--><span>6.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span><!--[endif]-->בית הדין לא יהיה
+כבול למועדים המופיעים בסעיף טו לתוספת לחוק הבוררות, תשכ"ח – 1968. עם זאת
+בעלי הדין ובית הדין ישתפו פעולה בכדי לסיים את הבוררות במהירות האפשרית.<o:p></o:p></span></p><p class="MsoNormal" dir="RTL"><!--[if !supportLists]--><span>7.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span><!--[endif]-->הצדדים מצהירים כי
+קראו את סדרי הדין של בית הדין ומקבלים אותם על עצמםומתחייבים לנהוג על פיהם.<o:p></o:p></span></p><p class="MsoNormal" dir="RTL"><!--[if !supportLists]--><span>8.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span><!--[endif]-->הצדדים מצהירים
+ומודים בזה כי הם קיבלו קנין מועיל כדין עפ"י דין תורה בבי"ד חשוב, על
+כל התחייבויותיהם בכל סעיף וסעיף שבהסכם זה, וכחומר כל התנאים וכחומר כל השטרות דלא
+כאסמכתא ודלא כטופסי דשטרי.<o:p></o:p></span></p><p class="MsoNormal" dir="RTL"><b><span lang="HE">ולראיה באו הצדדים על החתום<o:p></o:p></b></span></p><div align="center" dir="rtl">
+
+<table class="MsoNormalTable mce-item-table" dir="rtl" border="0" cellspacing="0" cellpadding="0" width="0">
+ <tbody><tr>
+  <td width="290" valign="top">
+  <p class="MsoNormal" align="center" dir="RTL"><span lang="HE">היום_­­_____
+  לחודש________ תש_____<o:p></o:p></span></p>
+  </td>
+  <td width="295" valign="top">
+  <p class="MsoNormal" align="center" dir="RTL"><span lang="HE">היום_____
+  לחודש_______ תש_____<o:p></o:p></span></p>
+  </td>
+ </tr>
+ <tr>
+  <td width="290" valign="top">
+  <p class="MsoNormal" align="center" dir="RTL"><span dir="RTL"><span dir="RTL">________/________/________</span><o:p></o:p></span></p>
+  </td>
+  <td width="295" valign="top">
+  <p class="MsoNormal" align="center" dir="RTL"><span dir="RTL"><span dir="RTL">________/________/_________</span><o:p></o:p></span></p>
+  </td>
+ </tr>
+ <tr>
+  <td width="290" valign="top">
+  <p class="MsoNormal" align="center" dir="RTL">­­­­­­­­­­_________________________<o:p></o:p></p>
+  </td>
+  <td width="295" valign="top">
+  <p class="MsoNormal" align="center" dir="RTL">­­­­­­­­­­_________________________<o:p></o:p></p>
+  </td>
+ </tr>
+</tbody></table>
+
+</div><h1 class="MsoNormal" align="center" dir="RTL"><b><span lang="HE">נספח ב -
+</b>רשימת השלמות לאפליקציה שחייב ביה"ד בפסק מיום יג סיון התשע"ז</span></h1><p class="MsoNormal" dir="RTL">רשימת חיובים שחייב ביה"ד את המתכנת
+לעשות (אם יחליט להמשיך) אשר כלולות במחיר הראשוני. יש לציין שעל פי החוזה, אם
+יבחר המתכנת להמשיך את ההתקשרות הוא <b>מחויב</b> להמשיך ולתת תוספות כמבואר בחלק השני
+של הנספח אלא שזכותו לתמחר אותן בנפרד.<o:p></o:p></p><p class="MsoNormal" dir="RTL">ואלו התיקונים, הפיצ'רים וההתאמות המחויבות
+בביצוע ע"מ להשלים את העמידה בהתחייבויות שלקח על עצמו המתכנת:<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->1.<span lang="HE">&nbsp; &nbsp; &nbsp; בזמן התראה,
+על האפליקציה להתריע בצורה ניכרת על המסך הראשי (כמו שעון מעורר), ההתרעה תופיע על
+המסך הראשי עד לכיבויה ע"י הלקוח. [הדברים אמורים מבחינה ויזואלית. מבחינה
+קולית המצב יישאר כמו שהוא כעת].<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->2.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;כיבוי ההתרעה
+יתאפשר על ידי לחיצה על אחד מהכפתורים הבאים בלבד: 'כבה', 'התראת שווא' ו'התראת
+אמת'. כפתורים אלו ימוקמו על המסך הראשי בזמן ההתרעה ויהיו ניכרים בצורה נוחה
+ללחיצה ושימוש.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->3.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ללא לחיצה
+על אחד מהכפתורים הנ"ל, האפליקציה תמשיך לצפצף אף אם הוסרה מהמסך ע"י
+העברת אצבע (סלייט דאון) או לחיצה על כפתור "חזור"back וכדו'.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->4.<span>&nbsp; &nbsp; &nbsp;&nbsp;על
+האפליקציה לדווח למוקד על כך שהלקוח ראה את ההודעה. <b>כל לחיצה על אחד מהכפתורים
+המופיעים בסעיף 3 תדווח למוקד באופן אוטומטי</b>. <o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->5.<span lang="HE">&nbsp; &nbsp; &nbsp; על כל דיווח
+למוקד הן אוטומטי והן ידני תתקבל במוקד התראה קולית ברורה המסבה את תשומת לבן של
+התצפיתניות.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->6.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;קבלת תמונה -
+כאשר תישלח תמונה מהמוקד ניתן יהיה להקיש על התמונה עצמה כדי להגדיל אותה וכמקובל
+באפליקציית וואטסאפ. תמונה זו חייבת להיות איכותית גם בזמן שהלקוח מגדיל אותה.
+מלבד זאת, שורת ה-ip<span dir="RTL"> לא תופיע.</span><o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->7.&nbsp; &nbsp; &nbsp;&nbsp;על
+האפליקציה להתריע ולפרוץ גם אם הלקוח באמצע שיחה או כל פעילות אחרת במכשיר הטלפון.
+התראה זו צריכה להיות קולית וויזואלית.</p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->8.<span lang="HE">&nbsp; &nbsp; &nbsp; סרטון -
+כאשר המוקד שולח סרטון, התצוגה שתופיע על המסך של הלקוח תהיה, כמקובל בתחום, תמונה
+של תחילת הסרטון עם סמן משולש שלחיצה עליו תפעיל את הצגת הסרטון.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->9.<span lang="HE">&nbsp; &nbsp; &nbsp; מספר
+ההתראות הקבועות בעלות אייקון ספציפי יהיה שש התרעות להתראה חמורה ושש התראות
+להתראה בינונית ושש להתראה קלה. על כל התראה נוספת ישלם המזמין 100 ₪.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->10.<span>&nbsp;&nbsp;&nbsp;&nbsp;בכל סוגי
+ההתראות תינתן אפשרות למלל חופשי.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->11.<span>&nbsp;&nbsp;&nbsp;&nbsp;בכל ההתראות
+יש לאפשר למוקד לצרף להתראה קבצים מחברת פ' בצורה פשוטה ונוחה. <o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->12.<span>&nbsp;&nbsp;&nbsp;&nbsp;יש לתקן את
+הבאג שמנטרל את האפליקציה בזמן סיבוב המסך.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->13.<span>&nbsp;&nbsp;&nbsp;&nbsp;יש לצרף
+לאפליקציה גרסה בשפה הערבית. <b>מלאכת התרגום מוטלת על המזמין</b>.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->14.<span>&nbsp;&nbsp;&nbsp;&nbsp;בזמן שהמוקד
+שולח הודעות שוטפות האפליקציה תדווח על כך באופן דומה לקבלת הודעת sms<span dir="RTL">.</span><o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->15.<span>&nbsp;&nbsp;&nbsp;&nbsp;האפליקציה
+תכיל מונה שעות שיסכם כמה שעות היה מחובר כל לקוח למוקד.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->16.<span>&nbsp;&nbsp;&nbsp;&nbsp;יוז'רים –
+על המתכנת לאפשר 2 סוגי מנהל – 1. פאנל ניהול ראשי השולט על כלל הלקוחות והמשתמשים
+כולל סיסמאות הכניסה. 2. פאנל ניהול של כל לקוח השולט על המשתמשים המשויכים אליו.<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><span lang="HE">תיקון
+זה יתומחר בנפרד ע"י המתכנת אך לא יותר מ 1000 ₪.<o:p></o:p></span></p><p class="MsoNormal" dir="RTL">רשימת חבויות שתבע המזמין וחייב המתכנת
+לעשות על פי סעיף התוספות 8.5 בחוזה <b>וחייב המזמין עליהן בתשלום נוסף </b>(כאמור,
+אם המתכנת יבחר להשלים את התוכנה)<b>.<o:p></o:p></b></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->1.<span lang="HE">&nbsp; &nbsp; &nbsp; אייקון
+המסמל ללקוח שכעת המצלמות שלו מחוברות למוקד (משקפת).<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL"><!--[if !supportLists]-->2.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;סליקת כספים
+דרך האפליקציה.</span></p><h1 class="MsoNormalCxSpMiddle" align="center" dir="RTL"><b><span lang="HE">נספח ג - </b>מייל שהמתכנת
+שלח לבית הדין:<o:p></o:p></span></h1><p class="MsoNormalCxSpMiddle" dir="RTL">בית
+הדין ביקש שארשום את כל התוספות שגביתי מהמזמין, מצרף במייל מה שמצאתי:<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">3.5
+שעות יעוץ: 700 <o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">שעה
+בדיקת תוכנות לצפיה מרחוק 200 <o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">חצי
+שעה יעוץ טלפוני, על בחירת חברת מצלמות 100 <o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">שעה
+פגישה בעזריאלי 200 <o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">חצי
+שעה חיפוש תוכנה לפיצול מסכים ובדיקת ריבוי מסכים בוינדווס 100<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">3
+שעות עם חברת פ' 600<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL"><span lang="HE">שעה
+לימוד של ------ איך לעבוד עם POSTMAN 200<o:p></o:p></span></p><p class="MsoNormalCxSpMiddle" dir="RTL">שעה
+וחצי איפיון בבית בערב 300<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">שעה
+ביום ראשון 200<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">שעה
+וחצי בדיקת אינטרנט 300<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">250
+ש"ח תוספת סיסמא<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">2000
+ש"ח תוספת בחירת מצלמות יחידאיות<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">1750
+תוספת שידרוג שעון<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">1000
+תוספת שליחת תמונה דרך חברת פ' <o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">500
+תוספת אם חברת פ' עושים בעיות – [עשו בעיות]<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">1500
+תוספת על בחירת משתמשים מתוך רשימה: שולם בצ'ק שחזר.<o:p></o:p></p><p class="MsoNormalCxSpMiddle" dir="RTL">סה"כ
+8400 + 1500 שיק שחזר.</p>
+    </article>
+  </main>
+  <footer class="psak-footer">
+    מקור: <a href="https://www.psakim.org/Psakim/File/1657" target="_blank">psakim.org — פסק 1657</a>
+  </footer>
+</body>
+</html>

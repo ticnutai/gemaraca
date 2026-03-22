@@ -207,19 +207,32 @@ async function processAndSaveFile(
       .from('psakei-din-files')
       .getPublicUrl(storagePath);
 
-    // Extract text content for TXT files
+    // Extract text content from uploaded files
     let fullText = '';
     const fileExt = fileName.split('.').pop()?.toLowerCase();
-    if (fileExt === 'txt') {
-      try {
+    try {
+      if (fileExt === 'txt') {
         fullText = await (file as File).text?.() || await new Response(file).text();
-        // Limit text length to avoid database issues
-        if (fullText.length > 100000) {
-          fullText = fullText.substring(0, 100000) + '... [קוצר]';
-        }
-      } catch (e) {
-        console.log("Could not extract text:", e);
+      } else if (fileExt === 'html' || fileExt === 'htm') {
+        const html = await (file as File).text?.() || await new Response(file).text();
+        fullText = html
+          .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, ' ')
+          .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, ' ')
+          .replace(/<[^>]+>/g, ' ')
+          .replace(/&nbsp;/g, ' ')
+          .replace(/&[a-z]+;/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
       }
+      // Note: DOCX text extraction is handled client-side via mammoth
+      // and passed in metadata.fullText
+
+      // Limit text length to avoid database issues
+      if (fullText.length > 100000) {
+        fullText = fullText.substring(0, 100000) + '... [קוצר]';
+      }
+    } catch (e) {
+      console.log("Could not extract text:", e);
     }
 
     // Calculate content hash for duplicate detection
@@ -253,8 +266,8 @@ async function processAndSaveFile(
       court: metadata.court || 'לא צוין',
       year: metadata.year || new Date().getFullYear(),
       caseNumber: metadata.caseNumber,
-      summary: metadata.summary || `פסק דין שהועלה מהקובץ: ${fileName}`,
-      fullText: fullText || metadata.fullText,
+      summary: metadata.summary || `פסק דין שהועלה מהקובץ: ${extractTitleFromFileName(fileName)}`,
+      fullText: fullText || metadata.fullTexts?.[fileName] || metadata.fullText,
       tags: metadata.tags || [],
       contentHash,
     };
@@ -296,8 +309,9 @@ async function processAndSaveFile(
 }
 
 function extractTitleFromFileName(fileName: string): string {
-  // Remove extension and clean up
-  return fileName
+  // Strip folder path, remove extension, and clean up
+  const baseName = fileName.split('/').pop()?.split('\\').pop() || fileName;
+  return baseName
     .replace(/\.[^/.]+$/, '')
     .replace(/[_-]/g, ' ')
     .replace(/^\d+_/, '')

@@ -405,7 +405,7 @@ const DownloadManagerTab = () => {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{item.title}</p>
                     <p className="text-xs text-muted-foreground">
-                      {item.court} • {item.year}
+                      {item.court}{item.year > 0 ? ` • ${item.year}` : ''}
                     </p>
                   </div>
                 </div>

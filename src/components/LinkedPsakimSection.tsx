@@ -197,7 +197,7 @@ const LinkedPsakimSection = ({ sugyaId, masechet, dafNumber }: LinkedPsakimSecti
       .maybeSingle();
     if (!data) return;
 
-    const current = getViewerPreference() ?? "dialog";
+    const current = getViewerPreference() ?? "embedpdf";
     const next: ViewerMode = current === "dialog" ? "embedpdf" : "dialog";
     setViewerPreference(next);
 
@@ -361,7 +361,7 @@ const LinkedPsakimSection = ({ sugyaId, masechet, dafNumber }: LinkedPsakimSecti
                         {psak.title}
                       </div>
                       <div className="text-xs text-muted-foreground mt-1 text-right">
-                        {psak.court} • {psak.year}
+                        {psak.court}{psak.year > 0 ? ` • ${psak.year}` : ''}
                       </div>
                       {psak.source_text && (
                         <div className="text-xs text-accent mt-1 line-clamp-1 text-right">

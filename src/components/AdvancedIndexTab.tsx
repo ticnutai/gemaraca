@@ -22,6 +22,7 @@ import GenealogyTreeView from './talmud-index/GenealogyTreeView';
 import PsakDinViewDialog from './PsakDinViewDialog';
 import ViewerPreferenceDialog, { getViewerPreference, setViewerPreference, type ViewerMode } from './ViewerPreferenceDialog';
 import IndexingControlPanel from './IndexingControlPanel';
+import AnalysisControlPanel from './AnalysisControlPanel';
 import DebugDiagnosticDialog from './DebugDiagnosticDialog';
 import { TalmudRefWithPsak, TRACTATES, ValidationStatus, ViewMode, HIGHLIGHT_COLORS } from './talmud-index/types';
 
@@ -113,7 +114,7 @@ export default function AdvancedIndexTab() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [prefDialogOpen, setPrefDialogOpen] = useState(false);
   const [pendingRef, setPendingRef] = useState<TalmudRefWithPsak | null>(null);
-  const [preferredViewer, setPreferredViewer] = useState<ViewerMode>(() => getViewerPreference() ?? 'dialog');
+  const [preferredViewer, setPreferredViewer] = useState<ViewerMode>(() => getViewerPreference() ?? 'embedpdf');
   const navigate = useNavigate();
 
   const openWithMode = useCallback(async (ref: TalmudRefWithPsak, mode: ViewerMode) => {
@@ -217,6 +218,9 @@ export default function AdvancedIndexTab() {
 
       {/* Indexing Engine Control Panel */}
       <IndexingControlPanel />
+
+      {/* Section Analysis Control Panel */}
+      <AnalysisControlPanel />
 
       {/* Summary Stats */}
       {(refs?.length ?? 0) > 0 && (

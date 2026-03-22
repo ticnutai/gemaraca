@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+  <meta charset="utf-8">
+  <title>תשלום שכירות במכת מדינה</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=David+Libre:wght@400;700&family=Frank+Ruhl+Libre:wght@400;700&display=swap');
+    @import url('https://fonts.googleapis.com/earlyaccess/opensanshebrew.css');
+
+    :root {
+      --primary: #1a237e;
+      --primary-light: #3949ab;
+      --accent: #c5a55a;
+      --bg: #fafafa;
+      --card: #ffffff;
+      --text: #212121;
+      --text-secondary: #555;
+      --border: #e0e0e0;
+      --section-bg: #f5f7ff;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { font-size: 16px; }
+
+    body {
+      font-family: 'David Libre', 'Frank Ruhl Libre', 'Open Sans Hebrew', serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.9;
+      direction: rtl;
+      padding: 0;
+    }
+
+    /* Header banner */
+    .psak-header {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      color: white;
+      padding: 40px 20px 30px;
+      text-align: center;
+      position: relative;
+    }
+    .psak-header::after {
+      content: '';
+      position: absolute;
+      bottom: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 4px;
+      background: var(--accent);
+      border-radius: 2px;
+    }
+    .psak-header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      font-family: 'Frank Ruhl Libre', serif;
+    }
+    .psak-header .subtitle {
+      font-size: 0.95rem;
+      opacity: 0.85;
+    }
+
+    /* Metadata bar */
+    .meta-bar {
+      max-width: 850px;
+      margin: 40px auto 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      padding: 0 20px;
+    }
+    .meta-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .meta-item .label {
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    /* Main content */
+    .psak-body {
+      max-width: 850px;
+      margin: 30px auto;
+      padding: 0 20px;
+    }
+
+    .psak-card {
+      background: var(--card);
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+      padding: 40px 45px;
+      margin-bottom: 30px;
+    }
+
+    /* Typography */
+    h1 { font-size: 1.8rem; color: var(--primary); margin: 30px 0 15px; font-family: 'Frank Ruhl Libre', serif; }
+    h2 { font-size: 1.4rem; color: var(--primary); margin: 28px 0 12px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); font-family: 'Frank Ruhl Libre', serif; }
+    h3 { font-size: 1.15rem; color: var(--primary-light); margin: 20px 0 10px; }
+    h5 { font-size: 1rem; color: var(--primary); margin: 15px 0 8px; }
+    h6 { font-size: 0.9rem; color: var(--text-secondary); }
+
+    p, div.section, .toggle-title {
+      margin-bottom: 14px;
+      text-align: justify;
+    }
+
+    span { font-family: inherit !important; color: inherit !important; }
+
+    /* Section blocks */
+    .section { padding: 8px 0; }
+    .section-title { 
+      font-weight: 700; 
+      font-size: 1.1rem;
+      color: var(--primary);
+      margin-bottom: 6px;
+    }
+    .toggle-title { font-weight: 600; color: var(--primary-light); cursor: default; }
+    .toggle-title:before { content: '' !important; }
+
+    /* Info sections */
+    .file-title {
+      background: var(--primary) !important;
+      color: white !important;
+      padding: 8px 20px !important;
+      border-radius: 6px !important;
+      font-size: 1.2rem !important;
+      display: inline-block !important;
+      position: static !important;
+      right: auto !important;
+      margin-bottom: 15px;
+    }
+
+    #file-num {
+      font-size: 0.9rem !important;
+      color: var(--text-secondary);
+      float: none !important;
+    }
+
+    .pagename {
+      font-size: 1.6rem !important;
+      color: var(--primary) !important;
+      text-align: center;
+      margin: 15px 0 !important;
+    }
+
+    /* Tags & links */
+    a.file-tag {
+      background: var(--primary-light) !important;
+      border-radius: 4px;
+      font-size: 0.8rem;
+    }
+
+    .ogen { background-color: rgba(197, 165, 90, 0.2) !important; border-radius: 2px; }
+    .ogen::after { content: '' !important; }
+    .highlight { background-color: rgba(255, 235, 59, 0.4) !important; }
+
+    /* Hide external refs */
+    .selOgen:before { display: none !important; }
+
+    /* Signature area */
+    hr { border: none; border-top: 1px solid var(--border); margin: 25px 0; }
+
+    /* Footer */
+    .psak-footer {
+      text-align: center;
+      padding: 20px;
+      color: #999;
+      font-size: 0.75rem;
+      border-top: 1px solid var(--border);
+      margin-top: 20px;
+    }
+    .psak-footer a { color: var(--primary-light); }
+
+    /* Print */
+    @media print {
+      body { background: white; }
+      .psak-header { background: var(--primary); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .psak-card { box-shadow: none; border: 1px solid #ddd; }
+    }
+
+    /* Mobile */
+    @media (max-width: 600px) {
+      .psak-card { padding: 20px 18px; }
+      .psak-header h1 { font-size: 1.5rem; }
+      h2 { font-size: 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="psak-header">
+    <h1>תשלום שכירות במכת מדינה</h1>
+    <div class="subtitle">
+      שדרות · מס׳ סידורי 14398
+    </div>
+  </header>
+
+  <div class="meta-bar">
+    <div class="meta-item"><span class="label">תיק מס׳</span> 163</div>
+    <div class="meta-item"><span class="label">תאריך</span> כ"ח סיון תשפ"ה</div>
+    <div class="meta-item"><span class="label">דיינים</span> הרב בן יאיר שלמה, הרב טוויל דרור, הרב תפוחי אביעד</div>
+    <div class="meta-item"><span class="label">בית דין</span> שדרות</div>
+  </div>
+
+  <main class="psak-body">
+    <article class="psak-card">
+      <p>תיק מספר: 163</p><p dir="rtl">בעניין שבין התובעת: מוסד ע"י ראובן</p><p dir="rtl">לבין הנתבעת: שמעון</p><h2 dir="rtl">מבוא:</h2><p dir="rtl">פסק דין זה הוא המשך לפסק דין ביניים מס' 1 בו נדרש המוסד לשלוח דפי חשבונות על תשלומי השכירות של הנתבעת.&nbsp;</p><p dir="rtl">ממזכירות המוסד נשלחו דפי החשבונות שמהם לטענת נציגי המוסד עולה שהנתבעת שילמה חמישה חודשי שכירות על המבנה.</p><p dir="rtl">דפי חשבון אלו הובאו לפני הגב' שמעון שנתבקשה להשיב עליהם, וזה לשון תשובתה:</p><p dir="rtl">"תשלום למוסד, אני חייבת רק חודשיים, הכל שולם.</p><p dir="rtl">לגבי נזק למרפאה והחייבות של המוסד לעזור לי בתיקון, אני עדיין חושבת שכן מגיעה לי עזרה במידת האפשר, לא הייתי משקיעה בתיקון הרבה אם לא הייתה עזרה.</p><p dir="rtl">מוכנה לפשרה שתסגור את הדיון הזה לסכום סמלי, אבקש להתחשב בכל הדברים שמסביב וגם מצב הבטחוני וקורונה שהמרפאה הייתה סגורה ושילמנו."&nbsp;</p><h2 dir="rtl">בירור הדין:</h2><p dir="rtl">א. בדיון בבית הדין המוסד תבע חמישה חודשי שכירות בסך כולל של 43,875 ₪ (8,775*5), והגב' שמעון הודתה על חוב של שלושה חודשים מתוך החמישה. נמצא שדבריה בתשובתה שהיא חייבת רק חודשיים אינם מתקבלים, שכן הם סותרים את הודאתה המפורשת בדיון, והלכה פסוקה היא <span id="ogen1" class="ogen ogen1-dest">(חו"מ פ א) שאין טוען וחוזר וטוען מחובה לזכות, ובודאי כשיצא מבה"ד. ויתירה מזאת, הדיון בבה"ד נגמר והתגובה שנתבקשה מגב' שמעון היא רק על החשבון שהגישה המוסד, ובזה לא מצאנו התייחסות מצידה להוכיח שחשבונות אלו אינם נכונים.</span></p><p dir="rtl">ב. ביחס לתשלום מצד המוסד על נזקי המרפאה כבר נפסק בפסק הדין הראשון שאין המוסד חייב בזה, וכפי שכבר פורט בהרחבה בפסק הדין.</p><p dir="rtl">ג. לגבי טענתה על התחשבות מחמת הקורונה, גם בדיון הוזכרו מצד הגב' שמעון עניינים הנוגעים לקורונה אם כי לא טענה מפורשת. ולמעשה על פי הדו"ח שנשלח ע"י המוסד, ישנם שני תשלומים מתוך החמישה שיש להם זיקה לתקופת הקורונה, 31/3/20 וכמ"כ 31/7/21 (למניינם).</p><p dir="rtl">אכן ב'מכת מדינה' כמו בתקופה הקורונה יש לדון אם יש חובת תשלום שכירות, ויש לעיין בכל זה כפי שנתבאר בפוסקים (<span id="ogen2" class="ogen ogen2-dest">שו"ע חו"מ שכב א, שכא א והרמ"א שם, וברמ"א שיב יז, ובנושאי כלים שם).&nbsp;</span></p><p dir="rtl"><span id="ogen3" class="ogen ogen3-dest">ולמעשה בנדון דידן מחד עדיין הציוד היה בתוך המבנה וייתכן שלעיתים גם נעשו טיפולים וא"כ צריך לשלם, אך גם מסתבר שלא היה תפקוד מלא בודאי בתקופת הסגר, מה גם שמסתבר מאוד שכבר דברו הצדדים ביניהם בענין זה וסיכמו על כך.</span></p><p dir="rtl">מכל מקום כיון שיש צד להקל בדבר על הנתבע המוחזק, לכן מצד פשרה הקרובה לדין ביחס לשני החודשים שהגב' שוש מכחישה את טענת המוסד, נראה לחייבה על חצי מהסכום בכל אחד מחודשים אלו.</p><p dir="rtl">ד. העולה מכל הנ"ל הוא שעל הגב' שמעון לשלם על ארבעה חודשים בלבד. סך כולל של 35,100 ₪&nbsp;</p><h2 dir="rtl">החלטה:</h2><ol><li dir="rtl" aria-level="1"><p dir="rtl" role="presentation">המוסד אינו צריך לשלם עבור נזקי המרפאה, וכפי שנפסק בפסק דין הראשון.</p></li><li dir="rtl" aria-level="1"><p dir="rtl" role="presentation">על הגב' שמעון לשלם סך כולל של 35,100 ₪ עבור ארבעה חודשי שכירות.&nbsp;</p></li><li dir="rtl" aria-level="1"><p dir="rtl" role="presentation">הנתבעת תוכל לשלם את הסכום הנ"ל עד ארבעה תשלומים שווים, דהיינו שבכל חודש תשלם סכום של 8,775 ₪. התשלום הראשון לא יאוחר מיום 10/7/2025 למניינם.&nbsp;</p></li></ol><p dir="rtl">התשלום השני לא יאוחר מיום 10/8/2025 למניינם.&nbsp;</p><p dir="rtl">התשלום השלישי לא יאוחר מיום 10/9/2025 למניינם.&nbsp;</p><p dir="rtl">והתשלום הרביעי לא יאוחר מיום 10/10/2025 למניינם.</p><p><br></p><p dir="rtl">'והאמת והשלום אהבו'</p><p dir="rtl">  __________ __________&nbsp;        &nbsp; __________</p><h3>הרב שלמה בן יאיר &nbsp; <br>הרב דרור טויל, ראב"ד &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <br>הרב אביעד תפוחי</h3><p><br></p>
+    </article>
+  </main>
+
+  <footer class="psak-footer">
+    מקור: <a href="https://www.psakim.org/Psakim/File/14398" target="_blank">psakim.org - פסק 14398</a>
+  </footer>
+
+</body>
+</html>

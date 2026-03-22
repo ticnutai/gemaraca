@@ -317,6 +317,14 @@ const SEARCH_WIDGET_CSS = `
     font-size: 13px;
   }
   .search-btn:hover { background: #eef2f7; }
+  .search-btn-primary {
+    background: #0B1F5B;
+    color: #fff;
+    border-color: #0B1F5B;
+    font-weight: 600;
+    padding: 6px 14px;
+  }
+  .search-btn-primary:hover { background: #1a3169; border-color: #1a3169; }
   .search-count {
     font-size: 12px;
     color: #475569;
@@ -371,7 +379,19 @@ const SEARCH_WIDGET_CSS = `
 const SEARCH_WIDGET_SCRIPT = `
 <script>
 (function () {
-  var root = document.querySelector('.container, .cs-container') || document.body;
+  // FIRST: hide template sidebar/widget when embedded in iframe — must run before anything else
+  try {
+    if (window.parent !== window) {
+      var _sw = document.querySelector('.search-widget');
+      if (_sw) _sw.style.display = 'none';
+      var _sb = document.querySelector('.cs-sidebar');
+      if (_sb) _sb.style.display = 'none';
+      var _main = document.querySelector('.cs-main, .lx-main');
+      if (_main) _main.style.marginRight = '0';
+    }
+  } catch (_e) {}
+
+  var root = document.querySelector('.container, .cs-container, .lx-container') || document.body;
   if (!root) return;
 
   var input = document.getElementById('psak-search-input');
@@ -382,6 +402,7 @@ const SEARCH_WIDGET_SCRIPT = `
   var exactEl = document.getElementById('psak-search-exact');
   var normalizedEl = document.getElementById('psak-search-normalized');
   var sectionFilterEl = document.getElementById('psak-search-section');
+  var searchBtn = document.getElementById('psak-search-btn');
   var tocExpandEl = document.getElementById('psak-expand-all');
   var tocCollapseEl = document.getElementById('psak-collapse-all');
   var secPrevEl = document.getElementById('psak-prev-sec');
@@ -392,12 +413,11 @@ const SEARCH_WIDGET_SCRIPT = `
   var notesSaveEl = document.getElementById('psak-save-notes');
   var breadcrumbEl = document.getElementById('psak-breadcrumbs');
 
-  if (!input || !prevBtn || !nextBtn || !clearBtn || !countEl || !exactEl || !normalizedEl || !sectionFilterEl) return;
-
-  // In iframe context: hide widget so parent sidebar controls take over
-  if (window.parent !== window) {
-    var _sw = document.querySelector('.search-widget');
-    if (_sw) _sw.style.display = 'none';
+  // In iframe context, parent controls the UI — still set up message listener below
+  if (window.parent !== window && (!input || !prevBtn || !nextBtn || !clearBtn || !countEl || !exactEl || !normalizedEl || !sectionFilterEl)) {
+    // Elements hidden — skip standalone search setup but keep message listener
+  } else if (!input || !prevBtn || !nextBtn || !clearBtn || !countEl || !exactEl || !normalizedEl || !sectionFilterEl) {
+    return;
   }
 
   function postState() {
@@ -422,7 +442,10 @@ const SEARCH_WIDGET_SCRIPT = `
   }
 
   function isBoundary(ch) {
-    return !ch || /[\s.,;:!?()\[\]{}"'\/\\|-]/.test(ch);
+    if (!ch) return true;
+    var c = ch.charCodeAt(0);
+    if (c <= 32) return true;
+    return '.,;:!?()[]{}|/-'.indexOf(ch) >= 0;
   }
 
   function sectionKeyFromNode(node) {
@@ -496,17 +519,17 @@ const SEARCH_WIDGET_SCRIPT = `
 
       for (var i = indexes.length - 1; i >= 0; i -= 1) {
         var start = indexes[i];
-        var after = node.splitText(start + query.length);
+        node.splitText(start + query.length);
         var middle = node.splitText(start);
         var mark = document.createElement('mark');
         mark.className = 'psak-hit';
         mark.textContent = middle.nodeValue || '';
         middle.parentNode.replaceChild(mark, middle);
         hits.push(mark);
-        node = after;
       }
     });
 
+    hits.reverse();
     if (hits.length > 0) {
       activeIndex = 0;
       focusHit(activeIndex);
@@ -594,18 +617,29 @@ const SEARCH_WIDGET_SCRIPT = `
     if (id) jumpToAnchor(id);
   });
 
-  input.addEventListener('input', function () { highlightTerm(input.value.trim()); });
-  exactEl.addEventListener('change', function () { highlightTerm(input.value.trim()); });
-  normalizedEl.addEventListener('change', function () { highlightTerm(input.value.trim()); });
-  sectionFilterEl.addEventListener('change', function () { highlightTerm(input.value.trim()); });
+  // Search triggers on button click, Enter key press, or option changes
+  function doSearch() { highlightTerm(input.value.trim()); }
+  input.addEventListener('input', function () {
+    // Clear highlights when input is cleared completely
+    if (!input.value.trim()) { clearHighlights(); }
+  });
+  exactEl.addEventListener('change', function () { if (input.value.trim()) doSearch(); });
+  normalizedEl.addEventListener('change', function () { if (input.value.trim()) doSearch(); });
+  sectionFilterEl.addEventListener('change', function () { if (input.value.trim()) doSearch(); });
   input.addEventListener('keydown', function (event) {
     if (event.key === 'Enter') {
       event.preventDefault();
-      if (event.shiftKey) focusHit(activeIndex - 1);
-      else focusHit(activeIndex + 1);
+      if (hits.length > 0 && !event.shiftKey && input.value.trim() === (hits[0] && hits[0].textContent || '').toLocaleLowerCase('he-IL')) {
+        // Already searched — navigate
+        if (event.shiftKey) focusHit(activeIndex - 1);
+        else focusHit(activeIndex + 1);
+      } else {
+        doSearch();
+      }
     }
   });
 
+  if (searchBtn) { searchBtn.addEventListener('click', function () { doSearch(); }); }
   prevBtn.addEventListener('click', function () { focusHit(activeIndex - 1); });
   nextBtn.addEventListener('click', function () { focusHit(activeIndex + 1); });
   clearBtn.addEventListener('click', function () {
@@ -715,6 +749,7 @@ function renderSearchWidget(data: ParsedPsakDin): string {
       <select id="psak-search-section" data-testid="psak-search-section" class="search-select">${sectionOptions}</select>
       <label class="search-check"><input id="psak-search-exact" type="checkbox" /> ביטוי מדויק</label>
       <label class="search-check"><input id="psak-search-normalized" type="checkbox" checked /> התאמה חכמה</label>
+      <button id="psak-search-btn" data-testid="psak-search-btn" class="search-btn search-btn-primary" type="button" title="חפש">חפש</button>
       <button id="psak-search-prev" data-testid="psak-search-prev" class="search-btn" type="button" title="תוצאה קודמת">הקודם</button>
       <button id="psak-search-next" data-testid="psak-search-next" class="search-btn" type="button" title="תוצאה הבאה">הבא</button>
       <button id="psak-search-clear" data-testid="psak-search-clear" class="search-btn" type="button" title="ניקוי חיפוש">נקה</button>
@@ -3169,6 +3204,7 @@ function renderSidebarSearchWidget(data: ParsedPsakDin): string {
       <label class="cs-check"><input id="psak-search-exact" type="checkbox" /> ביטוי מדויק</label>
       <label class="cs-check"><input id="psak-search-normalized" type="checkbox" checked /> התאמה חכמה</label>
     </div>
+    <button id="psak-search-btn" data-testid="psak-search-btn" class="cs-btn cs-btn-full cs-btn-primary" type="button">חפש</button>
     <div class="cs-btn-row">
       <button id="psak-search-prev" data-testid="psak-search-prev" class="cs-btn" type="button">הקודם</button>
       <button id="psak-search-next" data-testid="psak-search-next" class="cs-btn" type="button">הבא</button>
@@ -3244,6 +3280,8 @@ function generateCleanSidebarHtml(data: ParsedPsakDin): string {
     .cs-btn { border: 1px solid #d1d5db; background: #fff; border-radius: 6px; padding: 5px 8px; cursor: pointer; font-size: 12px; flex: 1; text-align: center; }
     .cs-btn:hover { background: #eef2f7; }
     .cs-btn-full { width: 100%; }
+    .cs-btn-primary { background: #0B1F5B; color: #fff; border-color: #0B1F5B; font-weight: 600; }
+    .cs-btn-primary:hover { background: #1a3169; border-color: #1a3169; }
     .cs-count { font-size: 12px; color: #475569; text-align: center; }
     .cs-divider { border: none; border-top: 1px solid #e2e8f0; margin: 4px 0; }
     .cs-breadcrumbs { font-size: 11px; color: #475569; background: #f0f2f5; border-radius: 4px; padding: 4px 8px; }
@@ -3394,6 +3432,8 @@ function generateLuxuryHtml(data: ParsedPsakDin): string {
     .cs-btn { border: 1px solid #d1d5db; background: #fff; border-radius: 6px; padding: 5px 8px; cursor: pointer; font-size: 12px; flex: 1; text-align: center; }
     .cs-btn:hover { background: #eef2f7; }
     .cs-btn-full { width: 100%; }
+    .cs-btn-primary { background: #0B1F5B; color: #fff; border-color: #0B1F5B; font-weight: 600; }
+    .cs-btn-primary:hover { background: #1a3169; border-color: #1a3169; }
     .cs-count { font-size: 12px; color: #475569; text-align: center; }
     .cs-divider { border: none; border-top: 1px solid #e2e8f0; margin: 4px 0; }
     .cs-breadcrumbs { font-size: 11px; color: #475569; background: #f0f2f5; border-radius: 4px; padding: 4px 8px; }

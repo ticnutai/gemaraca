@@ -54,190 +54,2197 @@
             - img
     - generic [ref=e59]:
       - main [ref=e61]:
-        - generic [ref=e63]:
-          - generic [ref=e66]:
-            - button "רשת" [ref=e67] [cursor=pointer]:
-              - img [ref=e68]
-              - generic [ref=e73]: רשת
-            - button "רשימה" [ref=e74] [cursor=pointer]:
-              - img [ref=e75]
-              - generic [ref=e76]: רשימה
-            - button "עץ" [ref=e77] [cursor=pointer]:
-              - img [ref=e78]
-              - generic [ref=e82]: עץ
-            - button "סייר" [ref=e83] [cursor=pointer]:
-              - img [ref=e84]
-              - generic [ref=e87]: סייר
-          - generic [ref=e88]:
-            - button "זרעים 1 מסכתות" [ref=e89] [cursor=pointer]:
-              - img [ref=e90]
-              - generic [ref=e92]: זרעים
-              - generic [ref=e93]: 1 מסכתות
-            - button "מועד 12 מסכתות" [ref=e94] [cursor=pointer]:
-              - img [ref=e95]
-              - generic [ref=e97]: מועד
-              - generic [ref=e98]: 12 מסכתות
-            - button "נשים 7 מסכתות" [ref=e99] [cursor=pointer]:
-              - img [ref=e100]
-              - generic [ref=e102]: נשים
-              - generic [ref=e103]: 7 מסכתות
-            - button "נזיקין 8 מסכתות" [ref=e104] [cursor=pointer]:
-              - img [ref=e105]
-              - generic [ref=e107]: נזיקין
-              - generic [ref=e108]: 8 מסכתות
-            - button "קדשים 9 מסכתות" [ref=e109] [cursor=pointer]:
-              - img [ref=e110]
-              - generic [ref=e112]: קדשים
-              - generic [ref=e113]: 9 מסכתות
-            - button "טהרות 1 מסכתות" [ref=e114] [cursor=pointer]:
-              - img [ref=e115]
-              - generic [ref=e117]: טהרות
-              - generic [ref=e118]: 1 מסכתות
-      - generic [ref=e119]:
-        - generic [ref=e121]:
-          - generic [ref=e122]:
-            - heading "ניווט ראשי" [level=2] [ref=e123]
-            - paragraph [ref=e124]: מסכתות ופסקי דין
-          - button "נעץ סיידבר" [ref=e125] [cursor=pointer]:
+        - generic [ref=e62]:
+          - generic [ref=e63]:
+            - generic [ref=e66]:
+              - button "רשת" [ref=e67] [cursor=pointer]:
+                - img [ref=e68]
+                - generic [ref=e73]: רשת
+              - button "רשימה" [ref=e74] [cursor=pointer]:
+                - img [ref=e75]
+                - generic [ref=e76]: רשימה
+              - button "עץ" [ref=e77] [cursor=pointer]:
+                - img [ref=e78]
+                - generic [ref=e82]: עץ
+              - button "סייר" [ref=e83] [cursor=pointer]:
+                - img [ref=e84]
+                - generic [ref=e87]: סייר
+            - generic [ref=e88]:
+              - button "זרעים 1 מסכתות" [ref=e89] [cursor=pointer]:
+                - img [ref=e90]
+                - generic [ref=e92]: זרעים
+                - generic [ref=e93]: 1 מסכתות
+              - button "מועד 12 מסכתות" [ref=e94] [cursor=pointer]:
+                - img [ref=e95]
+                - generic [ref=e97]: מועד
+                - generic [ref=e98]: 12 מסכתות
+              - button "נשים 7 מסכתות" [ref=e99] [cursor=pointer]:
+                - img [ref=e100]
+                - generic [ref=e102]: נשים
+                - generic [ref=e103]: 7 מסכתות
+              - button "נזיקין 8 מסכתות" [ref=e104] [cursor=pointer]:
+                - img [ref=e105]
+                - generic [ref=e107]: נזיקין
+                - generic [ref=e108]: 8 מסכתות
+              - button "קדשים 9 מסכתות" [ref=e109] [cursor=pointer]:
+                - img [ref=e110]
+                - generic [ref=e112]: קדשים
+                - generic [ref=e113]: 9 מסכתות
+              - button "טהרות 1 מסכתות" [ref=e114] [cursor=pointer]:
+                - img [ref=e115]
+                - generic [ref=e117]: טהרות
+                - generic [ref=e118]: 1 מסכתות
+            - generic [ref=e119]:
+              - generic [ref=e120]:
+                - img [ref=e121]
+                - heading "פסקי דין אחרונים" [level=3] [ref=e125]
+              - generic [ref=e126]:
+                - button "H נזילה בבניין משותף (עותק) לא צוין • 2025" [ref=e127] [cursor=pointer]:
+                  - heading "H נזילה בבניין משותף (עותק)" [level=4] [ref=e128]:
+                    - button "תקציר המקרה" [ref=e129]:
+                      - img
+                    - generic "HTML" [ref=e130]: H
+                    - text: נזילה בבניין משותף (עותק)
+                  - generic [ref=e131]:
+                    - generic [ref=e132]: לא צוין
+                    - generic [ref=e133]: •
+                    - generic [ref=e134]: "2025"
+                - button "H ברכות דף ו עמוד א תלמוד בבלי • 2025" [ref=e135] [cursor=pointer]:
+                  - heading "H ברכות דף ו עמוד א" [level=4] [ref=e136]:
+                    - button "תקציר המקרה" [ref=e137]:
+                      - img
+                    - generic "HTML" [ref=e138]: H
+                    - text: ברכות דף ו עמוד א
+                  - generic [ref=e139]:
+                    - generic [ref=e140]: תלמוד בבלי
+                    - generic [ref=e141]: •
+                    - generic [ref=e142]: "2025"
+                - button "H ברכות דף ו עמוד א תלמוד בבלי • 2025" [ref=e143] [cursor=pointer]:
+                  - heading "H ברכות דף ו עמוד א" [level=4] [ref=e144]:
+                    - button "תקציר המקרה" [ref=e145]:
+                      - img
+                    - generic "HTML" [ref=e146]: H
+                    - text: ברכות דף ו עמוד א
+                  - generic [ref=e147]:
+                    - generic [ref=e148]: תלמוד בבלי
+                    - generic [ref=e149]: •
+                    - generic [ref=e150]: "2025"
+                - button "H ברכות ו ע\"א תלמוד בבלי • 2025" [ref=e151] [cursor=pointer]:
+                  - heading "H ברכות ו ע\"א" [level=4] [ref=e152]:
+                    - button "תקציר המקרה" [ref=e153]:
+                      - img
+                    - generic "HTML" [ref=e154]: H
+                    - text: ברכות ו ע"א
+                  - generic [ref=e155]:
+                    - generic [ref=e156]: תלמוד בבלי
+                    - generic [ref=e157]: •
+                    - generic [ref=e158]: "2025"
+                - button "H שיעורים ופירושים לבבא מציעא דף ב עמוד א שיעורי תורה (אתר דעת) • 2025" [ref=e159] [cursor=pointer]:
+                  - heading "H שיעורים ופירושים לבבא מציעא דף ב עמוד א" [level=4] [ref=e160]:
+                    - button "תקציר המקרה" [ref=e161]:
+                      - img
+                    - generic "HTML" [ref=e162]: H
+                    - text: שיעורים ופירושים לבבא מציעא דף ב עמוד א
+                  - generic [ref=e163]:
+                    - generic [ref=e164]: שיעורי תורה (אתר דעת)
+                    - generic [ref=e165]: •
+                    - generic [ref=e166]: "2025"
+                - button "H דין שניים או שלושה אוחזים בטלית תלמוד בבלי • 2025" [ref=e167] [cursor=pointer]:
+                  - heading "H דין שניים או שלושה אוחזים בטלית" [level=4] [ref=e168]:
+                    - button "תקציר המקרה" [ref=e169]:
+                      - img
+                    - generic "HTML" [ref=e170]: H
+                    - text: דין שניים או שלושה אוחזים בטלית
+                  - generic [ref=e171]:
+                    - generic [ref=e172]: תלמוד בבלי
+                    - generic [ref=e173]: •
+                    - generic [ref=e174]: "2025"
+              - button "צפה בכל פסקי הדין" [ref=e175] [cursor=pointer]:
+                - generic [ref=e176]: צפה בכל פסקי הדין
+                - img [ref=e177]
+          - generic [ref=e182]:
+            - tablist [ref=e183]:
+              - tab "פסקי דין אחרונים" [selected] [ref=e184] [cursor=pointer]:
+                - text: פסקי דין אחרונים
+                - img [ref=e185]
+              - tab "אינדקס לפי מסכתות" [ref=e186] [cursor=pointer]:
+                - text: אינדקס לפי מסכתות
+                - img [ref=e187]
+            - tabpanel "פסקי דין אחרונים" [ref=e189]:
+              - generic [ref=e190]:
+                - generic [ref=e191]:
+                  - generic [ref=e192]:
+                    - heading "פסקי דין" [level=2] [ref=e193]
+                    - generic [ref=e194]: 4,263 פסקים
+                    - button "הוסף" [ref=e195] [cursor=pointer]:
+                      - img
+                      - text: הוסף
+                    - button "ייצא CSV" [ref=e196] [cursor=pointer]:
+                      - img
+                      - text: ייצא CSV
+                  - generic [ref=e198]: 3039 פסקים ללא קישור
+                - generic [ref=e199]:
+                  - generic [ref=e200]:
+                    - img [ref=e201]
+                    - textbox "חיפוש לפי כותרת, בית דין, תקציר..." [ref=e204]
+                  - combobox [ref=e205] [cursor=pointer]:
+                    - img [ref=e206]
+                    - generic: כל בתי הדין
+                    - img [ref=e208]
+                  - combobox [ref=e210] [cursor=pointer]:
+                    - img [ref=e211]
+                    - generic: שנה (חדש→ישן)
+                    - img [ref=e214]
+                - generic [ref=e217]:
+                  - generic [ref=e218]:
+                    - img [ref=e219]
+                    - generic [ref=e221]:
+                      - paragraph [ref=e222]: ניתוח AI לפסקי דין קיימים
+                      - paragraph [ref=e223]: בחר פסקי דין לניתוח וקישור אוטומטי למקורות גמרא
+                  - button "בחר הכל (50)" [ref=e224] [cursor=pointer]
+                - generic [ref=e225]:
+                  - generic [ref=e227]:
+                    - generic [ref=e228]:
+                      - generic [ref=e229] [cursor=pointer]:
+                        - heading "עוצב 2 H מקח טעות ברכישת מכשיר רפואי" [level=3] [ref=e230]:
+                          - generic [ref=e231]:
+                            - img [ref=e232]
+                            - text: עוצב 2
+                          - generic "HTML" [ref=e236]: H
+                          - text: מקח טעות ברכישת מכשיר רפואי
+                        - generic [ref=e237]:
+                          - generic [ref=e238]:
+                            - generic [ref=e239]: לא צוין
+                            - img [ref=e240]
+                          - generic [ref=e244]:
+                            - generic [ref=e245]: "2025"
+                            - img [ref=e246]
+                      - generic [ref=e248]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e249] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e250] [cursor=pointer]
+                    - paragraph [ref=e251] [cursor=pointer]: "פסק דין שהועלה מהקובץ: מקח טעות ברכישת מכשיר רפואי.txt"
+                    - generic [ref=e253]:
+                      - button "עובדות המקרה" [ref=e254] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e255] [cursor=pointer]:
+                        - img
+                      - generic [ref=e256]: לא מנותח
+                      - button "נתח" [ref=e257] [cursor=pointer]:
+                        - img
+                        - generic [ref=e258]: נתח
+                  - generic [ref=e260]:
+                    - generic [ref=e261]:
+                      - generic [ref=e262] [cursor=pointer]:
+                        - heading "עוצב 1 H איזונים בצו הרחקה בין זכות צד לפרטיות לבין זכויות משנהו ושמירת הסדרי השהות 1078146 13 ביה ד הגדול" [level=3] [ref=e263]:
+                          - generic [ref=e264]:
+                            - img [ref=e265]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e269]: H
+                          - text: איזונים בצו הרחקה בין זכות צד לפרטיות לבין זכויות משנהו ושמירת הסדרי השהות 1078146 13 ביה ד הגדול
+                        - generic [ref=e270]:
+                          - generic [ref=e271]:
+                            - generic [ref=e272]: לא צוין
+                            - img [ref=e273]
+                          - generic [ref=e277]:
+                            - generic [ref=e278]: "2025"
+                            - img [ref=e279]
+                      - generic [ref=e281]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e282] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e283] [cursor=pointer]
+                    - paragraph [ref=e284] [cursor=pointer]: "פסק דין שהועלה מהקובץ: איזונים_בצו_הרחקה_בין_זכות_צד_לפרטיות_לבין_זכויות_משנהו_ושמירת_הסדרי_השהות_-_1078146-13_-_ביה__ד_הגדול.docx"
+                    - generic [ref=e286]:
+                      - button "עובדות המקרה" [ref=e287] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e288] [cursor=pointer]:
+                        - img
+                      - generic [ref=e289]: לא מנותח
+                      - button "נתח" [ref=e290] [cursor=pointer]:
+                        - img
+                        - generic [ref=e291]: נתח
+                  - generic [ref=e293]:
+                    - generic [ref=e294]:
+                      - generic [ref=e295] [cursor=pointer]:
+                        - heading "עוצב 1 H איזון משאבים שוויוני למרות טענת האישה כי האיש כ אברך 1251154 4 ביה ד הג 1" [level=3] [ref=e296]:
+                          - generic [ref=e297]:
+                            - img [ref=e298]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e302]: H
+                          - text: איזון משאבים שוויוני למרות טענת האישה כי האיש כ אברך 1251154 4 ביה ד הג 1
+                        - generic [ref=e303]:
+                          - generic [ref=e304]:
+                            - generic [ref=e305]: לא צוין
+                            - img [ref=e306]
+                          - generic [ref=e310]:
+                            - generic [ref=e311]: "2025"
+                            - img [ref=e312]
+                      - generic [ref=e314]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e315] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e316] [cursor=pointer]
+                    - paragraph [ref=e317] [cursor=pointer]: "פסק דין שהועלה מהקובץ: איזון_משאבים_שוויוני_למרות_טענת_האישה_כי_האיש_כ_אברך____-_1251154-4_-_ביה__ד_הג__1_.pdf"
+                    - generic [ref=e319]:
+                      - button "עובדות המקרה" [ref=e320] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e321] [cursor=pointer]:
+                        - img
+                      - generic [ref=e322]: לא מנותח
+                      - button "נתח" [ref=e323] [cursor=pointer]:
+                        - img
+                        - generic [ref=e324]: נתח
+                  - generic [ref=e326]:
+                    - generic [ref=e327]:
+                      - generic [ref=e328] [cursor=pointer]:
+                        - heading "עוצב 1 H קנה דירה as is וגילה בה ליקויים 1" [level=3] [ref=e329]:
+                          - generic [ref=e330]:
+                            - img [ref=e331]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e335]: H
+                          - text: קנה דירה as is וגילה בה ליקויים 1
+                        - generic [ref=e336]:
+                          - generic [ref=e337]:
+                            - generic [ref=e338]: לא צוין
+                            - img [ref=e339]
+                          - generic [ref=e343]:
+                            - generic [ref=e344]: "2025"
+                            - img [ref=e345]
+                      - generic [ref=e347]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e348] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e349] [cursor=pointer]
+                    - paragraph [ref=e350] [cursor=pointer]: "פסק דין שהועלה מהקובץ: קנה דירה as is וגילה בה ליקויים_1.txt"
+                    - generic [ref=e352]:
+                      - button "עובדות המקרה" [ref=e353] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e354] [cursor=pointer]:
+                        - img
+                      - generic [ref=e355]: לא מנותח
+                      - button "נתח" [ref=e356] [cursor=pointer]:
+                        - img
+                        - generic [ref=e357]: נתח
+                  - generic [ref=e359]:
+                    - generic [ref=e360]:
+                      - generic [ref=e361] [cursor=pointer]:
+                        - heading "עוצב 1 H אימתי יהיו תלונות שווא ו מרידה הדדית עילות לגירושין ולהפסד הכתובה מהות ודרכי בירור 1129884 1 ביה ד הגדול" [level=3] [ref=e362]:
+                          - generic [ref=e363]:
+                            - img [ref=e364]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e368]: H
+                          - text: אימתי יהיו תלונות שווא ו מרידה הדדית עילות לגירושין ולהפסד הכתובה מהות ודרכי בירור 1129884 1 ביה ד הגדול
+                        - generic [ref=e369]:
+                          - generic [ref=e370]:
+                            - generic [ref=e371]: לא צוין
+                            - img [ref=e372]
+                          - generic [ref=e376]:
+                            - generic [ref=e377]: "2025"
+                            - img [ref=e378]
+                      - generic [ref=e380]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e381] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e382] [cursor=pointer]
+                    - paragraph [ref=e383] [cursor=pointer]: "פסק דין שהועלה מהקובץ: אימתי_יהיו__תלונות_שווא__ו_מרידה_הדדית__עילות_לגירושין_ולהפסד_הכתובה___מהות_ודרכי_בירור_-_1129884-1_-_ביה__ד_הגדול.docx"
+                    - generic [ref=e385]:
+                      - button "עובדות המקרה" [ref=e386] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e387] [cursor=pointer]:
+                        - img
+                      - generic [ref=e388]: לא מנותח
+                      - button "נתח" [ref=e389] [cursor=pointer]:
+                        - img
+                        - generic [ref=e390]: נתח
+                  - generic [ref=e392]:
+                    - generic [ref=e393]:
+                      - generic [ref=e394] [cursor=pointer]:
+                        - heading "עוצב 1 H אין סמכות לבית משפט לתת צו המורה לבית הדין להמציא מסמכים 1516278 1 ביה ד חיפה" [level=3] [ref=e395]:
+                          - generic [ref=e396]:
+                            - img [ref=e397]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e401]: H
+                          - text: אין סמכות לבית משפט לתת צו המורה לבית הדין להמציא מסמכים 1516278 1 ביה ד חיפה
+                        - generic [ref=e402]:
+                          - generic [ref=e403]:
+                            - generic [ref=e404]: לא צוין
+                            - img [ref=e405]
+                          - generic [ref=e409]:
+                            - generic [ref=e410]: "2025"
+                            - img [ref=e411]
+                      - generic [ref=e413]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e414] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e415] [cursor=pointer]
+                    - paragraph [ref=e416] [cursor=pointer]: "פסק דין שהועלה מהקובץ: אין_סמכות_לבית_משפט_לתת_צו_המורה_לבית_הדין_להמציא_מסמכים_-_1516278-1_-_ביה__ד_חיפה.docx"
+                    - generic [ref=e418]:
+                      - button "עובדות המקרה" [ref=e419] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e420] [cursor=pointer]:
+                        - img
+                      - generic [ref=e421]: לא מנותח
+                      - button "נתח" [ref=e422] [cursor=pointer]:
+                        - img
+                        - generic [ref=e423]: נתח
+                  - generic [ref=e425]:
+                    - generic [ref=e426]:
+                      - generic [ref=e427] [cursor=pointer]:
+                        - heading "עוצב 1 H בקשה לבירור יהדות שלא אגב ענייני נישואין וגירושין שהוגשה תוך ניסיון להטעות את ביה ד ולעקוף רשויות אחרות 1273538 2 ביה ד הגדול" [level=3] [ref=e428]:
+                          - generic [ref=e429]:
+                            - img [ref=e430]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e434]: H
+                          - text: בקשה לבירור יהדות שלא אגב ענייני נישואין וגירושין שהוגשה תוך ניסיון להטעות את ביה ד ולעקוף רשויות אחרות 1273538 2 ביה ד הגדול
+                        - generic [ref=e435]:
+                          - generic [ref=e436]:
+                            - generic [ref=e437]: לא צוין
+                            - img [ref=e438]
+                          - generic [ref=e442]:
+                            - generic [ref=e443]: "2025"
+                            - img [ref=e444]
+                      - generic [ref=e446]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e447] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e448] [cursor=pointer]
+                    - paragraph [ref=e449] [cursor=pointer]: "פסק דין שהועלה מהקובץ: בקשה_לבירור_יהדות_שלא_אגב_ענייני_נישואין_וגירושין_שהוגשה_תוך_ניסיון_להטעות_את_ביה__ד_ולעקוף_רשויות_אחרות_-_1273538-2_-_ביה__ד_הגדול.docx"
+                    - generic [ref=e451]:
+                      - button "עובדות המקרה" [ref=e452] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e453] [cursor=pointer]:
+                        - img
+                      - generic [ref=e454]: לא מנותח
+                      - button "נתח" [ref=e455] [cursor=pointer]:
+                        - img
+                        - generic [ref=e456]: נתח
+                  - generic [ref=e458]:
+                    - generic [ref=e459]:
+                      - generic [ref=e460] [cursor=pointer]:
+                        - heading "עוצב 1 H בקשה להתיר סידור חופה וקידושין לזוג יהודים שהמירו אמונתם באמונה בישו 1138416 1 ביה ד תל אביב" [level=3] [ref=e461]:
+                          - generic [ref=e462]:
+                            - img [ref=e463]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e467]: H
+                          - text: בקשה להתיר סידור חופה וקידושין לזוג יהודים שהמירו אמונתם באמונה בישו 1138416 1 ביה ד תל אביב
+                        - generic [ref=e468]:
+                          - generic [ref=e469]:
+                            - generic [ref=e470]: לא צוין
+                            - img [ref=e471]
+                          - generic [ref=e475]:
+                            - generic [ref=e476]: "2025"
+                            - img [ref=e477]
+                      - generic [ref=e479]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e480] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e481] [cursor=pointer]
+                    - paragraph [ref=e482] [cursor=pointer]: "פסק דין שהועלה מהקובץ: בקשה_להתיר_סידור_חופה_וקידושין_לזוג_יהודים_שהמירו_אמונתם_באמונה_בישו_-_1138416-1_-ביה_ד_תל_אביב.docx"
+                    - generic [ref=e484]:
+                      - button "עובדות המקרה" [ref=e485] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e486] [cursor=pointer]:
+                        - img
+                      - generic [ref=e487]: לא מנותח
+                      - button "נתח" [ref=e488] [cursor=pointer]:
+                        - img
+                        - generic [ref=e489]: נתח
+                  - generic [ref=e491]:
+                    - generic [ref=e492]:
+                      - generic [ref=e493] [cursor=pointer]:
+                        - heading "עוצב 1 H ביטול הסכם ממון בין בני זוג שנפרדו לפני נישואין כדמו י 833636 7 ביה ד חיפה" [level=3] [ref=e494]:
+                          - generic [ref=e495]:
+                            - img [ref=e496]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e500]: H
+                          - text: ביטול הסכם ממון בין בני זוג שנפרדו לפני נישואין כדמו י 833636 7 ביה ד חיפה
+                        - generic [ref=e501]:
+                          - generic [ref=e502]:
+                            - generic [ref=e503]: לא צוין
+                            - img [ref=e504]
+                          - generic [ref=e508]:
+                            - generic [ref=e509]: "2025"
+                            - img [ref=e510]
+                      - generic [ref=e512]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e513] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e514] [cursor=pointer]
+                    - paragraph [ref=e515] [cursor=pointer]: "פסק דין שהועלה מהקובץ: ביטול_הסכם_ממון_בין_בני_זוג_שנפרדו_לפני_נישואין_כדמו_י_-_833636-7_-_ביה_ד_חיפה.docx"
+                    - generic [ref=e517]:
+                      - button "עובדות המקרה" [ref=e518] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e519] [cursor=pointer]:
+                        - img
+                      - generic [ref=e520]: לא מנותח
+                      - button "נתח" [ref=e521] [cursor=pointer]:
+                        - img
+                        - generic [ref=e522]: נתח
+                  - generic [ref=e524]:
+                    - generic [ref=e525]:
+                      - generic [ref=e526] [cursor=pointer]:
+                        - heading "עוצב 1 H בטלות החלטות לסעד דחוף שניתנו ללא הליך יישוב סכסוך ושלא על בסיס תקנה 2א א 1215353 9 ביה ד הגדול 1" [level=3] [ref=e527]:
+                          - generic [ref=e528]:
+                            - img [ref=e529]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e533]: H
+                          - text: בטלות החלטות לסעד דחוף שניתנו ללא הליך יישוב סכסוך ושלא על בסיס תקנה 2א א 1215353 9 ביה ד הגדול 1
+                        - generic [ref=e534]:
+                          - generic [ref=e535]:
+                            - generic [ref=e536]: לא צוין
+                            - img [ref=e537]
+                          - generic [ref=e541]:
+                            - generic [ref=e542]: "2025"
+                            - img [ref=e543]
+                      - generic [ref=e545]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e546] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e547] [cursor=pointer]
+                    - paragraph [ref=e548] [cursor=pointer]: "פסק דין שהועלה מהקובץ: בטלות_החלטות_לסעד_דחוף_שניתנו_ללא_הליך_יישוב_סכסוך_ושלא_על_בסיס_תקנה_2א_א__-_1215353-9_-_ביה__ד_הגדול__1_.docx"
+                    - generic [ref=e550]:
+                      - button "עובדות המקרה" [ref=e551] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e552] [cursor=pointer]:
+                        - img
+                      - generic [ref=e553]: לא מנותח
+                      - button "נתח" [ref=e554] [cursor=pointer]:
+                        - img
+                        - generic [ref=e555]: נתח
+                  - generic [ref=e557]:
+                    - generic [ref=e558]:
+                      - generic [ref=e559] [cursor=pointer]:
+                        - heading "עוצב 1 H אישה שנאסרה לבעל ולבועל ומבקשת להתירה משום שאחד מעדי קידושיה היה פסול בעבירה 1209812 1 ביה ד הגדול" [level=3] [ref=e560]:
+                          - generic [ref=e561]:
+                            - img [ref=e562]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e566]: H
+                          - text: אישה שנאסרה לבעל ולבועל ומבקשת להתירה משום שאחד מעדי קידושיה היה פסול בעבירה 1209812 1 ביה ד הגדול
+                        - generic [ref=e567]:
+                          - generic [ref=e568]:
+                            - generic [ref=e569]: לא צוין
+                            - img [ref=e570]
+                          - generic [ref=e574]:
+                            - generic [ref=e575]: "2025"
+                            - img [ref=e576]
+                      - generic [ref=e578]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e579] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e580] [cursor=pointer]
+                    - paragraph [ref=e581] [cursor=pointer]: "פסק דין שהועלה מהקובץ: אישה_שנאסרה__לבעל_ולבועל__ומבקשת_להתירה_משום_שאחד_מעדי_קידושיה_היה_פסול_בעבירה_-_1209812-1_-_ביה__ד_הגדול.docx"
+                    - generic [ref=e583]:
+                      - button "עובדות המקרה" [ref=e584] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e585] [cursor=pointer]:
+                        - img
+                      - generic [ref=e586]: לא מנותח
+                      - button "נתח" [ref=e587] [cursor=pointer]:
+                        - img
+                        - generic [ref=e588]: נתח
+                  - generic [ref=e590]:
+                    - generic [ref=e591]:
+                      - generic [ref=e592] [cursor=pointer]:
+                        - heading "עוצב 1 H בעל שחתם על ייפוי כוח בלתי חוזר להעברת חלקו בדירה לאשתו אך לא בוצע רישום בטאבו 1249054 4 ביה ד הגדול" [level=3] [ref=e593]:
+                          - generic [ref=e594]:
+                            - img [ref=e595]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e599]: H
+                          - text: בעל שחתם על ייפוי כוח בלתי חוזר להעברת חלקו בדירה לאשתו אך לא בוצע רישום בטאבו 1249054 4 ביה ד הגדול
+                        - generic [ref=e600]:
+                          - generic [ref=e601]:
+                            - generic [ref=e602]: לא צוין
+                            - img [ref=e603]
+                          - generic [ref=e607]:
+                            - generic [ref=e608]: "2025"
+                            - img [ref=e609]
+                      - generic [ref=e611]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e612] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e613] [cursor=pointer]
+                    - paragraph [ref=e614] [cursor=pointer]: "פסק דין שהועלה מהקובץ: בעל_שחתם_על_ייפוי_כוח_בלתי_חוזר_להעברת_חלקו_בדירה_לאשתו_אך_לא_בוצע_רישום_בטאבו_-_1249054-4_-_ביה__ד_הגדול.docx"
+                    - generic [ref=e616]:
+                      - button "עובדות המקרה" [ref=e617] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e618] [cursor=pointer]:
+                        - img
+                      - generic [ref=e619]: לא מנותח
+                      - button "נתח" [ref=e620] [cursor=pointer]:
+                        - img
+                        - generic [ref=e621]: נתח
+                  - generic [ref=e623]:
+                    - generic [ref=e624]:
+                      - generic [ref=e625] [cursor=pointer]:
+                        - heading "עוצב 1 H אכיפת הסכם כשיש חשש שאכיפתו עלולה להביא לפגיעה בטובת הילדים איזונים והכרעה 1331339 1 ביה ד הגדול 1" [level=3] [ref=e626]:
+                          - generic [ref=e627]:
+                            - img [ref=e628]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e632]: H
+                          - text: אכיפת הסכם כשיש חשש שאכיפתו עלולה להביא לפגיעה בטובת הילדים איזונים והכרעה 1331339 1 ביה ד הגדול 1
+                        - generic [ref=e633]:
+                          - generic [ref=e634]:
+                            - generic [ref=e635]: לא צוין
+                            - img [ref=e636]
+                          - generic [ref=e640]:
+                            - generic [ref=e641]: "2025"
+                            - img [ref=e642]
+                      - generic [ref=e644]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e645] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e646] [cursor=pointer]
+                    - paragraph [ref=e647] [cursor=pointer]: "פסק דין שהועלה מהקובץ: אכיפת_הסכם_כשיש_חשש_שאכיפתו_עלולה_להביא_לפגיעה_בטובת_הילדים___איזונים_והכרעה_-_1331339-1_-_ביה__ד_הגדול__1_.docx"
+                    - generic [ref=e649]:
+                      - button "עובדות המקרה" [ref=e650] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e651] [cursor=pointer]:
+                        - img
+                      - generic [ref=e652]: לא מנותח
+                      - button "נתח" [ref=e653] [cursor=pointer]:
+                        - img
+                        - generic [ref=e654]: נתח
+                  - generic [ref=e656]:
+                    - generic [ref=e657]:
+                      - generic [ref=e658] [cursor=pointer]:
+                        - heading "עוצב 1 H ביצוע החלטה הפוטרת ממזונות שמכוח הסכם למרות ערעור עליה למרות ה פגיעה ב ילדים בגירים היכולים לדאוג לעצמם 1209165 3 ביה ד הגדול" [level=3] [ref=e659]:
+                          - generic [ref=e660]:
+                            - img [ref=e661]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e665]: H
+                          - text: ביצוע החלטה הפוטרת ממזונות שמכוח הסכם למרות ערעור עליה למרות ה פגיעה ב ילדים בגירים היכולים לדאוג לעצמם 1209165 3 ביה ד הגדול
+                        - generic [ref=e666]:
+                          - generic [ref=e667]:
+                            - generic [ref=e668]: לא צוין
+                            - img [ref=e669]
+                          - generic [ref=e673]:
+                            - generic [ref=e674]: "2025"
+                            - img [ref=e675]
+                      - generic [ref=e677]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e678] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e679] [cursor=pointer]
+                    - paragraph [ref=e680] [cursor=pointer]: "פסק דין שהועלה מהקובץ: ביצוע_החלטה_הפוטרת_ממזונות_שמכוח_הסכם_למרות_ערעור_עליה_למרות_ה_פגיעה__ב_ילדים___בגירים_היכולים_לדאוג_לעצמם_-_1209165-3_-__ביה__ד_הגדול.docx"
+                    - generic [ref=e682]:
+                      - button "עובדות המקרה" [ref=e683] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e684] [cursor=pointer]:
+                        - img
+                      - generic [ref=e685]: לא מנותח
+                      - button "נתח" [ref=e686] [cursor=pointer]:
+                        - img
+                        - generic [ref=e687]: נתח
+                  - generic [ref=e689]:
+                    - generic [ref=e690]:
+                      - generic [ref=e691] [cursor=pointer]:
+                        - heading "עוצב 1 H ביטול הוצאות אישיות שהושתו על עו ד בשל השתתן בדן יחיד ובלי התראה וזכות טיעון ובשל העדר צידוק להן 1249375 1 ביה ד הגדול" [level=3] [ref=e692]:
+                          - generic [ref=e693]:
+                            - img [ref=e694]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e698]: H
+                          - text: ביטול הוצאות אישיות שהושתו על עו ד בשל השתתן בדן יחיד ובלי התראה וזכות טיעון ובשל העדר צידוק להן 1249375 1 ביה ד הגדול
+                        - generic [ref=e699]:
+                          - generic [ref=e700]:
+                            - generic [ref=e701]: לא צוין
+                            - img [ref=e702]
+                          - generic [ref=e706]:
+                            - generic [ref=e707]: "2025"
+                            - img [ref=e708]
+                      - generic [ref=e710]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e711] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e712] [cursor=pointer]
+                    - paragraph [ref=e713] [cursor=pointer]: "פסק דין שהועלה מהקובץ: ביטול_הוצאות_אישיות_שהושתו_על_עו__ד_בשל_השתתן_בדן_יחיד_ובלי_התראה_וזכות_טיעון_ובשל_העדר_צידוק_להן_-_1249375-1_-_ביה__ד_הגדול.docx"
+                    - generic [ref=e715]:
+                      - button "עובדות המקרה" [ref=e716] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e717] [cursor=pointer]:
+                        - img
+                      - generic [ref=e718]: לא מנותח
+                      - button "נתח" [ref=e719] [cursor=pointer]:
+                        - img
+                        - generic [ref=e720]: נתח
+                  - generic [ref=e722]:
+                    - generic [ref=e723]:
+                      - generic [ref=e724] [cursor=pointer]:
+                        - heading "עוצב 1 H תביעה להחזר תשלום שנועד לקניית חלקת קבר" [level=3] [ref=e725]:
+                          - generic [ref=e726]:
+                            - img [ref=e727]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e731]: H
+                          - text: תביעה להחזר תשלום שנועד לקניית חלקת קבר
+                        - generic [ref=e732]:
+                          - generic [ref=e733]:
+                            - generic [ref=e734]: לא צוין
+                            - img [ref=e735]
+                          - generic [ref=e739]:
+                            - generic [ref=e740]: "2025"
+                            - img [ref=e741]
+                      - generic [ref=e743]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e744] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e745] [cursor=pointer]
+                    - paragraph [ref=e746] [cursor=pointer]: "פסק דין שהועלה מהקובץ: תביעה להחזר תשלום שנועד לקניית חלקת קבר.txt"
+                    - generic [ref=e748]:
+                      - button "עובדות המקרה" [ref=e749] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e750] [cursor=pointer]:
+                        - img
+                      - generic [ref=e751]: לא מנותח
+                      - button "נתח" [ref=e752] [cursor=pointer]:
+                        - img
+                        - generic [ref=e753]: נתח
+                  - generic [ref=e755]:
+                    - generic [ref=e756]:
+                      - generic [ref=e757] [cursor=pointer]:
+                        - heading "עוצב 1 H תביעה להחזרת כסף שנגבה על ידי הערכאות" [level=3] [ref=e758]:
+                          - generic [ref=e759]:
+                            - img [ref=e760]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e764]: H
+                          - text: תביעה להחזרת כסף שנגבה על ידי הערכאות
+                        - generic [ref=e765]:
+                          - generic [ref=e766]:
+                            - generic [ref=e767]: לא צוין
+                            - img [ref=e768]
+                          - generic [ref=e772]:
+                            - generic [ref=e773]: "2025"
+                            - img [ref=e774]
+                      - generic [ref=e776]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e777] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e778] [cursor=pointer]
+                    - paragraph [ref=e779] [cursor=pointer]: "פסק דין שהועלה מהקובץ: תביעה להחזרת כסף שנגבה על ידי הערכאות.txt"
+                    - generic [ref=e781]:
+                      - button "עובדות המקרה" [ref=e782] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e783] [cursor=pointer]:
+                        - img
+                      - generic [ref=e784]: לא מנותח
+                      - button "נתח" [ref=e785] [cursor=pointer]:
+                        - img
+                        - generic [ref=e786]: נתח
+                  - generic [ref=e788]:
+                    - generic [ref=e789]:
+                      - generic [ref=e790] [cursor=pointer]:
+                        - heading "עוצב 1 H תביעה מחברת בנייה לרישום דירה על שם הרוכש" [level=3] [ref=e791]:
+                          - generic [ref=e792]:
+                            - img [ref=e793]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e797]: H
+                          - text: תביעה מחברת בנייה לרישום דירה על שם הרוכש
+                        - generic [ref=e798]:
+                          - generic [ref=e799]:
+                            - generic [ref=e800]: לא צוין
+                            - img [ref=e801]
+                          - generic [ref=e805]:
+                            - generic [ref=e806]: "2025"
+                            - img [ref=e807]
+                      - generic [ref=e809]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e810] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e811] [cursor=pointer]
+                    - paragraph [ref=e812] [cursor=pointer]: "פסק דין שהועלה מהקובץ: תביעה מחברת בנייה לרישום דירה על שם הרוכש.txt"
+                    - generic [ref=e814]:
+                      - button "עובדות המקרה" [ref=e815] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e816] [cursor=pointer]:
+                        - img
+                      - generic [ref=e817]: לא מנותח
+                      - button "נתח" [ref=e818] [cursor=pointer]:
+                        - img
+                        - generic [ref=e819]: נתח
+                  - generic [ref=e821]:
+                    - generic [ref=e822]:
+                      - generic [ref=e823] [cursor=pointer]:
+                        - heading "עוצב 1 H תביעה להסיר משכון בנקאי ולקחת חלק בנכסי החברה" [level=3] [ref=e824]:
+                          - generic [ref=e825]:
+                            - img [ref=e826]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e830]: H
+                          - text: תביעה להסיר משכון בנקאי ולקחת חלק בנכסי החברה
+                        - generic [ref=e831]:
+                          - generic [ref=e832]:
+                            - generic [ref=e833]: לא צוין
+                            - img [ref=e834]
+                          - generic [ref=e838]:
+                            - generic [ref=e839]: "2025"
+                            - img [ref=e840]
+                      - generic [ref=e842]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e843] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e844] [cursor=pointer]
+                    - paragraph [ref=e845] [cursor=pointer]: "פסק דין שהועלה מהקובץ: תביעה להסיר משכון בנקאי_ ולקחת חלק בנכסי החברה.txt"
+                    - generic [ref=e847]:
+                      - button "עובדות המקרה" [ref=e848] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e849] [cursor=pointer]:
+                        - img
+                      - generic [ref=e850]: לא מנותח
+                      - button "נתח" [ref=e851] [cursor=pointer]:
+                        - img
+                        - generic [ref=e852]: נתח
+                  - generic [ref=e854]:
+                    - generic [ref=e855]:
+                      - generic [ref=e856] [cursor=pointer]:
+                        - heading "עוצב 1 H תביעות הדדיות בשכירות בעקבות שיפוץ שלא בוצע" [level=3] [ref=e857]:
+                          - generic [ref=e858]:
+                            - img [ref=e859]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e863]: H
+                          - text: תביעות הדדיות בשכירות בעקבות שיפוץ שלא בוצע
+                        - generic [ref=e864]:
+                          - generic [ref=e865]:
+                            - generic [ref=e866]: לא צוין
+                            - img [ref=e867]
+                          - generic [ref=e871]:
+                            - generic [ref=e872]: "2025"
+                            - img [ref=e873]
+                      - generic [ref=e875]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e876] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e877] [cursor=pointer]
+                    - paragraph [ref=e878] [cursor=pointer]: "פסק דין שהועלה מהקובץ: תביעות הדדיות בשכירות בעקבות שיפוץ שלא בוצע.txt"
+                    - generic [ref=e880]:
+                      - button "עובדות המקרה" [ref=e881] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e882] [cursor=pointer]:
+                        - img
+                      - generic [ref=e883]: לא מנותח
+                      - button "נתח" [ref=e884] [cursor=pointer]:
+                        - img
+                        - generic [ref=e885]: נתח
+                  - generic [ref=e887]:
+                    - generic [ref=e888]:
+                      - generic [ref=e889] [cursor=pointer]:
+                        - heading "עוצב 1 H גבולותיו של סעד זמני דחוף בעניין מזונות הניתן בבית הדין למרות קביעתו כי אינו מוסמך לדון במזונות הקבועים 1297135 4 ביה ד הגדול" [level=3] [ref=e890]:
+                          - generic [ref=e891]:
+                            - img [ref=e892]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e896]: H
+                          - text: גבולותיו של סעד זמני דחוף בעניין מזונות הניתן בבית הדין למרות קביעתו כי אינו מוסמך לדון במזונות הקבועים 1297135 4 ביה ד הגדול
+                        - generic [ref=e897]:
+                          - generic [ref=e898]:
+                            - generic [ref=e899]: לא צוין
+                            - img [ref=e900]
+                          - generic [ref=e904]:
+                            - generic [ref=e905]: "2025"
+                            - img [ref=e906]
+                      - generic [ref=e908]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e909] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e910] [cursor=pointer]
+                    - paragraph [ref=e911] [cursor=pointer]: "פסק דין שהועלה מהקובץ: גבולותיו_של__סעד_זמני_דחוף__בעניין_מזונות_הניתן_בבית_הדין_למרות_קביעתו_כי_אינו_מוסמך_לדון_במזונות_הקבועים_-_1297135-4_-_ביה__ד_הגדול.docx"
+                    - generic [ref=e913]:
+                      - button "עובדות המקרה" [ref=e914] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e915] [cursor=pointer]:
+                        - img
+                      - generic [ref=e916]: לא מנותח
+                      - button "נתח" [ref=e917] [cursor=pointer]:
+                        - img
+                        - generic [ref=e918]: נתח
+                  - generic [ref=e920]:
+                    - generic [ref=e921]:
+                      - generic [ref=e922] [cursor=pointer]:
+                        - heading "עוצב 1 H בקשת עיכוב ביצוע שעניינה הסגת מעשה עשוי לאחור והלוקה בחוסר תום לב 1207845 2 ביה ד הגדול" [level=3] [ref=e923]:
+                          - generic [ref=e924]:
+                            - img [ref=e925]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e929]: H
+                          - text: בקשת עיכוב ביצוע שעניינה הסגת מעשה עשוי לאחור והלוקה בחוסר תום לב 1207845 2 ביה ד הגדול
+                        - generic [ref=e930]:
+                          - generic [ref=e931]:
+                            - generic [ref=e932]: לא צוין
+                            - img [ref=e933]
+                          - generic [ref=e937]:
+                            - generic [ref=e938]: "2025"
+                            - img [ref=e939]
+                      - generic [ref=e941]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e942] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e943] [cursor=pointer]
+                    - paragraph [ref=e944] [cursor=pointer]: "פסק דין שהועלה מהקובץ: בקשת_עיכוב_ביצוע_שעניינה_הסגת_מעשה_עשוי_לאחור_והלוקה_בחוסר_תום_לב_-_1207845-2_-_ביה__ד_הגדול.docx"
+                    - generic [ref=e946]:
+                      - button "עובדות המקרה" [ref=e947] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e948] [cursor=pointer]:
+                        - img
+                      - generic [ref=e949]: לא מנותח
+                      - button "נתח" [ref=e950] [cursor=pointer]:
+                        - img
+                        - generic [ref=e951]: נתח
+                  - generic [ref=e953]:
+                    - generic [ref=e954]:
+                      - generic [ref=e955] [cursor=pointer]:
+                        - heading "עוצב 1 H בקשה לפריסת חוב מזונות בביטוח הלאומי ביה ד חיפה" [level=3] [ref=e956]:
+                          - generic [ref=e957]:
+                            - img [ref=e958]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e962]: H
+                          - text: בקשה לפריסת חוב מזונות בביטוח הלאומי ביה ד חיפה
+                        - generic [ref=e963]:
+                          - generic [ref=e964]:
+                            - generic [ref=e965]: לא צוין
+                            - img [ref=e966]
+                          - generic [ref=e970]:
+                            - generic [ref=e971]: "2025"
+                            - img [ref=e972]
+                      - generic [ref=e974]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e975] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e976] [cursor=pointer]
+                    - paragraph [ref=e977] [cursor=pointer]: "פסק דין שהועלה מהקובץ: בקשה_לפריסת_חוב_מזונות_בביטוח_הלאומי_-_ביה_ד_חיפה.doc"
+                    - generic [ref=e979]:
+                      - button "עובדות המקרה" [ref=e980] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e981] [cursor=pointer]:
+                        - img
+                      - generic [ref=e982]: לא מנותח
+                      - button "נתח" [ref=e983] [cursor=pointer]:
+                        - img
+                        - generic [ref=e984]: נתח
+                  - generic [ref=e986]:
+                    - generic [ref=e987]:
+                      - generic [ref=e988] [cursor=pointer]:
+                        - heading "עוצב 1 H בקשה להחייאת ערעור שלטענת המשיבה מונעת מבקשת ריב ומדון גרידא 973484 6 ביה ד הגדול" [level=3] [ref=e989]:
+                          - generic [ref=e990]:
+                            - img [ref=e991]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e995]: H
+                          - text: בקשה להחייאת ערעור שלטענת המשיבה מונעת מבקשת ריב ומדון גרידא 973484 6 ביה ד הגדול
+                        - generic [ref=e996]:
+                          - generic [ref=e997]:
+                            - generic [ref=e998]: לא צוין
+                            - img [ref=e999]
+                          - generic [ref=e1003]:
+                            - generic [ref=e1004]: "2025"
+                            - img [ref=e1005]
+                      - generic [ref=e1007]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e1008] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e1009] [cursor=pointer]
+                    - paragraph [ref=e1010] [cursor=pointer]: "פסק דין שהועלה מהקובץ: בקשה_להחייאת_ערעור_שלטענת_המשיבה_מונעת_מבקשת_ריב_ומדון_גרידא__973484-6__ביה__ד_הגדול.docx"
+                    - generic [ref=e1012]:
+                      - button "עובדות המקרה" [ref=e1013] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e1014] [cursor=pointer]:
+                        - img
+                      - generic [ref=e1015]: לא מנותח
+                      - button "נתח" [ref=e1016] [cursor=pointer]:
+                        - img
+                        - generic [ref=e1017]: נתח
+                  - generic [ref=e1019]:
+                    - generic [ref=e1020]:
+                      - generic [ref=e1021] [cursor=pointer]:
+                        - heading "עוצב 1 H עקירת קווי ביוב על ידי קבלן ללא התייעצות עם בעל הבית" [level=3] [ref=e1022]:
+                          - generic [ref=e1023]:
+                            - img [ref=e1024]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e1028]: H
+                          - text: עקירת קווי ביוב על ידי קבלן ללא התייעצות עם בעל הבית
+                        - generic [ref=e1029]:
+                          - generic [ref=e1030]:
+                            - generic [ref=e1031]: לא צוין
+                            - img [ref=e1032]
+                          - generic [ref=e1036]:
+                            - generic [ref=e1037]: "2025"
+                            - img [ref=e1038]
+                      - generic [ref=e1040]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e1041] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e1042] [cursor=pointer]
+                    - paragraph [ref=e1043] [cursor=pointer]: "פסק דין שהועלה מהקובץ: עקירת קווי ביוב על ידי קבלן ללא התייעצות עם בעל הבית.txt"
+                    - generic [ref=e1045]:
+                      - button "עובדות המקרה" [ref=e1046] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e1047] [cursor=pointer]:
+                        - img
+                      - generic [ref=e1048]: לא מנותח
+                      - button "נתח" [ref=e1049] [cursor=pointer]:
+                        - img
+                        - generic [ref=e1050]: נתח
+                  - generic [ref=e1052]:
+                    - generic [ref=e1053]:
+                      - generic [ref=e1054] [cursor=pointer]:
+                        - heading "עוצב 1 H פיטורים על ידי מנהל ולא על ידי ראש הישיבה" [level=3] [ref=e1055]:
+                          - generic [ref=e1056]:
+                            - img [ref=e1057]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e1061]: H
+                          - text: פיטורים על ידי מנהל ולא על ידי ראש הישיבה
+                        - generic [ref=e1062]:
+                          - generic [ref=e1063]:
+                            - generic [ref=e1064]: לא צוין
+                            - img [ref=e1065]
+                          - generic [ref=e1069]:
+                            - generic [ref=e1070]: "2025"
+                            - img [ref=e1071]
+                      - generic [ref=e1073]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e1074] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e1075] [cursor=pointer]
+                    - paragraph [ref=e1076] [cursor=pointer]: "פסק דין שהועלה מהקובץ: פיטורים על ידי מנהל ולא על ידי ראש הישיבה.txt"
+                    - generic [ref=e1078]:
+                      - button "עובדות המקרה" [ref=e1079] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e1080] [cursor=pointer]:
+                        - img
+                      - generic [ref=e1081]: לא מנותח
+                      - button "נתח" [ref=e1082] [cursor=pointer]:
+                        - img
+                        - generic [ref=e1083]: נתח
+                  - generic [ref=e1085]:
+                    - generic [ref=e1086]:
+                      - generic [ref=e1087] [cursor=pointer]:
+                        - heading "עוצב 1 H משרד שידוכים שלא הציע מספיק הצעות" [level=3] [ref=e1088]:
+                          - generic [ref=e1089]:
+                            - img [ref=e1090]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e1094]: H
+                          - text: משרד שידוכים שלא הציע מספיק הצעות
+                        - generic [ref=e1095]:
+                          - generic [ref=e1096]:
+                            - generic [ref=e1097]: לא צוין
+                            - img [ref=e1098]
+                          - generic [ref=e1102]:
+                            - generic [ref=e1103]: "2025"
+                            - img [ref=e1104]
+                      - generic [ref=e1106]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e1107] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e1108] [cursor=pointer]
+                    - paragraph [ref=e1109] [cursor=pointer]: "פסק דין שהועלה מהקובץ: משרד שידוכים שלא הציע מספיק הצעות.txt"
+                    - generic [ref=e1111]:
+                      - button "עובדות המקרה" [ref=e1112] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e1113] [cursor=pointer]:
+                        - img
+                      - generic [ref=e1114]: לא מנותח
+                      - button "נתח" [ref=e1115] [cursor=pointer]:
+                        - img
+                        - generic [ref=e1116]: נתח
+                  - generic [ref=e1118]:
+                    - generic [ref=e1119]:
+                      - generic [ref=e1120] [cursor=pointer]:
+                        - heading "עוצב 1 H נזק בגין הכאה כהרתעה לאלימות בקהילה" [level=3] [ref=e1121]:
+                          - generic [ref=e1122]:
+                            - img [ref=e1123]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e1127]: H
+                          - text: נזק בגין הכאה כהרתעה לאלימות בקהילה
+                        - generic [ref=e1128]:
+                          - generic [ref=e1129]:
+                            - generic [ref=e1130]: לא צוין
+                            - img [ref=e1131]
+                          - generic [ref=e1135]:
+                            - generic [ref=e1136]: "2025"
+                            - img [ref=e1137]
+                      - generic [ref=e1139]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e1140] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e1141] [cursor=pointer]
+                    - paragraph [ref=e1142] [cursor=pointer]: "פסק דין שהועלה מהקובץ: נזק בגין הכאה כהרתעה לאלימות בקהילה.txt"
+                    - generic [ref=e1144]:
+                      - button "עובדות המקרה" [ref=e1145] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e1146] [cursor=pointer]:
+                        - img
+                      - generic [ref=e1147]: לא מנותח
+                      - button "נתח" [ref=e1148] [cursor=pointer]:
+                        - img
+                        - generic [ref=e1149]: נתח
+                  - generic [ref=e1151]:
+                    - generic [ref=e1152]:
+                      - generic [ref=e1153] [cursor=pointer]:
+                        - heading "עוצב 1 H סגירת תיק צוואה נוכח התנגדות היורש לקניין" [level=3] [ref=e1154]:
+                          - generic [ref=e1155]:
+                            - img [ref=e1156]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e1160]: H
+                          - text: סגירת תיק צוואה נוכח התנגדות היורש לקניין
+                        - generic [ref=e1161]:
+                          - generic [ref=e1162]:
+                            - generic [ref=e1163]: לא צוין
+                            - img [ref=e1164]
+                          - generic [ref=e1168]:
+                            - generic [ref=e1169]: "2025"
+                            - img [ref=e1170]
+                      - generic [ref=e1172]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e1173] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e1174] [cursor=pointer]
+                    - paragraph [ref=e1175] [cursor=pointer]: "פסק דין שהועלה מהקובץ: סגירת תיק צוואה נוכח התנגדות היורש לקניין.txt"
+                    - generic [ref=e1177]:
+                      - button "עובדות המקרה" [ref=e1178] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e1179] [cursor=pointer]:
+                        - img
+                      - generic [ref=e1180]: לא מנותח
+                      - button "נתח" [ref=e1181] [cursor=pointer]:
+                        - img
+                        - generic [ref=e1182]: נתח
+                  - generic [ref=e1184]:
+                    - generic [ref=e1185]:
+                      - generic [ref=e1186] [cursor=pointer]:
+                        - heading "עוצב 1 H ניכוי בדמי השכירות עקב רטיבות ותיקון שנעשה ע י השוכר" [level=3] [ref=e1187]:
+                          - generic [ref=e1188]:
+                            - img [ref=e1189]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e1193]: H
+                          - text: ניכוי בדמי השכירות עקב רטיבות ותיקון שנעשה ע י השוכר
+                        - generic [ref=e1194]:
+                          - generic [ref=e1195]:
+                            - generic [ref=e1196]: לא צוין
+                            - img [ref=e1197]
+                          - generic [ref=e1201]:
+                            - generic [ref=e1202]: "2025"
+                            - img [ref=e1203]
+                      - generic [ref=e1205]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e1206] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e1207] [cursor=pointer]
+                    - paragraph [ref=e1208] [cursor=pointer]: "פסק דין שהועלה מהקובץ: ניכוי בדמי השכירות עקב רטיבות ותיקון שנעשה ע_י השוכר.txt"
+                    - generic [ref=e1210]:
+                      - button "עובדות המקרה" [ref=e1211] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e1212] [cursor=pointer]:
+                        - img
+                      - generic [ref=e1213]: לא מנותח
+                      - button "נתח" [ref=e1214] [cursor=pointer]:
+                        - img
+                        - generic [ref=e1215]: נתח
+                  - generic [ref=e1217]:
+                    - generic [ref=e1218]:
+                      - generic [ref=e1219] [cursor=pointer]:
+                        - heading "עוצב 1 H נעילת רכב בשלט שפתחה נעילת רכב אחר ונגנב הרכב שנפתח" [level=3] [ref=e1220]:
+                          - generic [ref=e1221]:
+                            - img [ref=e1222]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e1226]: H
+                          - text: נעילת רכב בשלט שפתחה נעילת רכב אחר ונגנב הרכב שנפתח
+                        - generic [ref=e1227]:
+                          - generic [ref=e1228]:
+                            - generic [ref=e1229]: לא צוין
+                            - img [ref=e1230]
+                          - generic [ref=e1234]:
+                            - generic [ref=e1235]: "2025"
+                            - img [ref=e1236]
+                      - generic [ref=e1238]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e1239] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e1240] [cursor=pointer]
+                    - paragraph [ref=e1241] [cursor=pointer]: "פסק דין שהועלה מהקובץ: נעילת רכב בשלט שפתחה נעילת רכב אחר ונגנב הרכב שנפתח.txt"
+                    - generic [ref=e1243]:
+                      - button "עובדות המקרה" [ref=e1244] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e1245] [cursor=pointer]:
+                        - img
+                      - generic [ref=e1246]: לא מנותח
+                      - button "נתח" [ref=e1247] [cursor=pointer]:
+                        - img
+                        - generic [ref=e1248]: נתח
+                  - generic [ref=e1250]:
+                    - generic [ref=e1251]:
+                      - generic [ref=e1252] [cursor=pointer]:
+                        - heading "עוצב 1 H עזיבת מושכר באמצע שכירות חודשית" [level=3] [ref=e1253]:
+                          - generic [ref=e1254]:
+                            - img [ref=e1255]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e1259]: H
+                          - text: עזיבת מושכר באמצע שכירות חודשית
+                        - generic [ref=e1260]:
+                          - generic [ref=e1261]:
+                            - generic [ref=e1262]: לא צוין
+                            - img [ref=e1263]
+                          - generic [ref=e1267]:
+                            - generic [ref=e1268]: "2025"
+                            - img [ref=e1269]
+                      - generic [ref=e1271]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e1272] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e1273] [cursor=pointer]
+                    - paragraph [ref=e1274] [cursor=pointer]: "פסק דין שהועלה מהקובץ: עזיבת מושכר באמצע שכירות חודשית.txt"
+                    - generic [ref=e1276]:
+                      - button "עובדות המקרה" [ref=e1277] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e1278] [cursor=pointer]:
+                        - img
+                      - generic [ref=e1279]: לא מנותח
+                      - button "נתח" [ref=e1280] [cursor=pointer]:
+                        - img
+                        - generic [ref=e1281]: נתח
+                  - generic [ref=e1283]:
+                    - generic [ref=e1284]:
+                      - generic [ref=e1285] [cursor=pointer]:
+                        - heading "עוצב 1 H עיכוב ביכולת להשכיר עכב החזרת בית עם תקלות" [level=3] [ref=e1286]:
+                          - generic [ref=e1287]:
+                            - img [ref=e1288]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e1292]: H
+                          - text: עיכוב ביכולת להשכיר עכב החזרת בית עם תקלות
+                        - generic [ref=e1293]:
+                          - generic [ref=e1294]:
+                            - generic [ref=e1295]: לא צוין
+                            - img [ref=e1296]
+                          - generic [ref=e1300]:
+                            - generic [ref=e1301]: "2025"
+                            - img [ref=e1302]
+                      - generic [ref=e1304]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e1305] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e1306] [cursor=pointer]
+                    - paragraph [ref=e1307] [cursor=pointer]: "פסק דין שהועלה מהקובץ: עיכוב ביכולת להשכיר עכב החזרת בית עם תקלות.txt"
+                    - generic [ref=e1309]:
+                      - button "עובדות המקרה" [ref=e1310] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e1311] [cursor=pointer]:
+                        - img
+                      - generic [ref=e1312]: לא מנותח
+                      - button "נתח" [ref=e1313] [cursor=pointer]:
+                        - img
+                        - generic [ref=e1314]: נתח
+                  - generic [ref=e1316]:
+                    - generic [ref=e1317]:
+                      - generic [ref=e1318] [cursor=pointer]:
+                        - heading "עוצב 1 H מוסך שמתח רצועה ונקרעה והתקלקל המנוע" [level=3] [ref=e1319]:
+                          - generic [ref=e1320]:
+                            - img [ref=e1321]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e1325]: H
+                          - text: מוסך שמתח רצועה ונקרעה והתקלקל המנוע
+                        - generic [ref=e1326]:
+                          - generic [ref=e1327]:
+                            - generic [ref=e1328]: לא צוין
+                            - img [ref=e1329]
+                          - generic [ref=e1333]:
+                            - generic [ref=e1334]: "2025"
+                            - img [ref=e1335]
+                      - generic [ref=e1337]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e1338] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e1339] [cursor=pointer]
+                    - paragraph [ref=e1340] [cursor=pointer]: "פסק דין שהועלה מהקובץ: מוסך שמתח רצועה ונקרעה והתקלקל המנוע.txt"
+                    - generic [ref=e1342]:
+                      - button "עובדות המקרה" [ref=e1343] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e1344] [cursor=pointer]:
+                        - img
+                      - generic [ref=e1345]: לא מנותח
+                      - button "נתח" [ref=e1346] [cursor=pointer]:
+                        - img
+                        - generic [ref=e1347]: נתח
+                  - generic [ref=e1349]:
+                    - generic [ref=e1350]:
+                      - generic [ref=e1351] [cursor=pointer]:
+                        - heading "עוצב 1 H מידע המבוקש לצורך בירור הטענות ושבית הדין חושש כי נועד לפגיעה בצד שכנגד במישורים אחרים" [level=3] [ref=e1352]:
+                          - generic [ref=e1353]:
+                            - img [ref=e1354]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e1358]: H
+                          - text: מידע המבוקש לצורך בירור הטענות ושבית הדין חושש כי נועד לפגיעה בצד שכנגד במישורים אחרים
+                        - generic [ref=e1359]:
+                          - generic [ref=e1360]:
+                            - generic [ref=e1361]: לא צוין
+                            - img [ref=e1362]
+                          - generic [ref=e1366]:
+                            - generic [ref=e1367]: "2025"
+                            - img [ref=e1368]
+                      - generic [ref=e1370]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e1371] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e1372] [cursor=pointer]
+                    - paragraph [ref=e1373] [cursor=pointer]: "פסק דין שהועלה מהקובץ: מידע המבוקש לצורך בירור הטענות ושבית הדין חושש כי נועד לפגיעה בצד שכנגד במישורים אחרים.txt"
+                    - generic [ref=e1375]:
+                      - button "עובדות המקרה" [ref=e1376] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e1377] [cursor=pointer]:
+                        - img
+                      - generic [ref=e1378]: לא מנותח
+                      - button "נתח" [ref=e1379] [cursor=pointer]:
+                        - img
+                        - generic [ref=e1380]: נתח
+                  - generic [ref=e1382]:
+                    - generic [ref=e1383]:
+                      - generic [ref=e1384] [cursor=pointer]:
+                        - heading "עוצב 1 H מנעולן שהתלמד אצל מנעולן אחר" [level=3] [ref=e1385]:
+                          - generic [ref=e1386]:
+                            - img [ref=e1387]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e1391]: H
+                          - text: מנעולן שהתלמד אצל מנעולן אחר
+                        - generic [ref=e1392]:
+                          - generic [ref=e1393]:
+                            - generic [ref=e1394]: לא צוין
+                            - img [ref=e1395]
+                          - generic [ref=e1399]:
+                            - generic [ref=e1400]: "2025"
+                            - img [ref=e1401]
+                      - generic [ref=e1403]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e1404] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e1405] [cursor=pointer]
+                    - paragraph [ref=e1406] [cursor=pointer]: "פסק דין שהועלה מהקובץ: מנעולן שהתלמד אצל מנעולן אחר.txt"
+                    - generic [ref=e1408]:
+                      - button "עובדות המקרה" [ref=e1409] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e1410] [cursor=pointer]:
+                        - img
+                      - generic [ref=e1411]: לא מנותח
+                      - button "נתח" [ref=e1412] [cursor=pointer]:
+                        - img
+                        - generic [ref=e1413]: נתח
+                  - generic [ref=e1415]:
+                    - generic [ref=e1416]:
+                      - generic [ref=e1417] [cursor=pointer]:
+                        - heading "עוצב 1 H מניעת הגרוש למכור מניות ע פ חוק יחסי ממון" [level=3] [ref=e1418]:
+                          - generic [ref=e1419]:
+                            - img [ref=e1420]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e1424]: H
+                          - text: מניעת הגרוש למכור מניות ע פ חוק יחסי ממון
+                        - generic [ref=e1425]:
+                          - generic [ref=e1426]:
+                            - generic [ref=e1427]: לא צוין
+                            - img [ref=e1428]
+                          - generic [ref=e1432]:
+                            - generic [ref=e1433]: "2025"
+                            - img [ref=e1434]
+                      - generic [ref=e1436]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e1437] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e1438] [cursor=pointer]
+                    - paragraph [ref=e1439] [cursor=pointer]: "פסק דין שהועלה מהקובץ: מניעת הגרוש למכור מניות - ע_פ חוק _יחסי ממון_.txt"
+                    - generic [ref=e1441]:
+                      - button "עובדות המקרה" [ref=e1442] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e1443] [cursor=pointer]:
+                        - img
+                      - generic [ref=e1444]: לא מנותח
+                      - button "נתח" [ref=e1445] [cursor=pointer]:
+                        - img
+                        - generic [ref=e1446]: נתח
+                  - generic [ref=e1448]:
+                    - generic [ref=e1449]:
+                      - generic [ref=e1450] [cursor=pointer]:
+                        - heading "עוצב 2 H חלוקת דירה הרשומה על שם הבעל" [level=3] [ref=e1451]:
+                          - generic [ref=e1452]:
+                            - img [ref=e1453]
+                            - text: עוצב 2
+                          - generic "HTML" [ref=e1457]: H
+                          - text: חלוקת דירה הרשומה על שם הבעל
+                        - generic [ref=e1458]:
+                          - generic [ref=e1459]:
+                            - generic [ref=e1460]: לא צוין
+                            - img [ref=e1461]
+                          - generic [ref=e1465]:
+                            - generic [ref=e1466]: "2025"
+                            - img [ref=e1467]
+                      - generic [ref=e1469]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e1470] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e1471] [cursor=pointer]
+                    - paragraph [ref=e1472] [cursor=pointer]: "פסק דין שהועלה מהקובץ: חלוקת דירה הרשומה על שם הבעל.txt"
+                    - generic [ref=e1474]:
+                      - button "עובדות המקרה" [ref=e1475] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e1476] [cursor=pointer]:
+                        - img
+                      - generic [ref=e1477]: לא מנותח
+                      - button "נתח" [ref=e1478] [cursor=pointer]:
+                        - img
+                        - generic [ref=e1479]: נתח
+                  - generic [ref=e1481]:
+                    - generic [ref=e1482]:
+                      - generic [ref=e1483] [cursor=pointer]:
+                        - heading "עוצב 2 H מקח טעות באתרוגים ברמת כשרות נמוכה" [level=3] [ref=e1484]:
+                          - generic [ref=e1485]:
+                            - img [ref=e1486]
+                            - text: עוצב 2
+                          - generic "HTML" [ref=e1490]: H
+                          - text: מקח טעות באתרוגים ברמת כשרות נמוכה
+                        - generic [ref=e1491]:
+                          - generic [ref=e1492]:
+                            - generic [ref=e1493]: לא צוין
+                            - img [ref=e1494]
+                          - generic [ref=e1498]:
+                            - generic [ref=e1499]: "2025"
+                            - img [ref=e1500]
+                      - generic [ref=e1502]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e1503] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e1504] [cursor=pointer]
+                    - paragraph [ref=e1505] [cursor=pointer]: "פסק דין שהועלה מהקובץ: מקח טעות באתרוגים ברמת כשרות נמוכה.txt"
+                    - generic [ref=e1507]:
+                      - button "עובדות המקרה" [ref=e1508] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e1509] [cursor=pointer]:
+                        - img
+                      - generic [ref=e1510]: לא מנותח
+                      - button "נתח" [ref=e1511] [cursor=pointer]:
+                        - img
+                        - generic [ref=e1512]: נתח
+                  - generic [ref=e1514]:
+                    - generic [ref=e1515]:
+                      - generic [ref=e1516] [cursor=pointer]:
+                        - heading "עוצב 2 H מקח טעות בקניית מחשב" [level=3] [ref=e1517]:
+                          - generic [ref=e1518]:
+                            - img [ref=e1519]
+                            - text: עוצב 2
+                          - generic "HTML" [ref=e1523]: H
+                          - text: מקח טעות בקניית מחשב
+                        - generic [ref=e1524]:
+                          - generic [ref=e1525]:
+                            - generic [ref=e1526]: לא צוין
+                            - img [ref=e1527]
+                          - generic [ref=e1531]:
+                            - generic [ref=e1532]: "2025"
+                            - img [ref=e1533]
+                      - generic [ref=e1535]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e1536] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e1537] [cursor=pointer]
+                    - paragraph [ref=e1538] [cursor=pointer]: "פסק דין שהועלה מהקובץ: מקח טעות בקניית מחשב.txt"
+                    - generic [ref=e1540]:
+                      - button "עובדות המקרה" [ref=e1541] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e1542] [cursor=pointer]:
+                        - img
+                      - generic [ref=e1543]: לא מנותח
+                      - button "נתח" [ref=e1544] [cursor=pointer]:
+                        - img
+                        - generic [ref=e1545]: נתח
+                  - generic [ref=e1547]:
+                    - generic [ref=e1548]:
+                      - generic [ref=e1549] [cursor=pointer]:
+                        - heading "עוצב 2 H יושב ראש מזכירות יישוב הבטיח לשלם בניגוד להחלטה רשמית" [level=3] [ref=e1550]:
+                          - generic [ref=e1551]:
+                            - img [ref=e1552]
+                            - text: עוצב 2
+                          - generic "HTML" [ref=e1556]: H
+                          - text: יושב ראש מזכירות יישוב הבטיח לשלם בניגוד להחלטה רשמית
+                        - generic [ref=e1557]:
+                          - generic [ref=e1558]:
+                            - generic [ref=e1559]: לא צוין
+                            - img [ref=e1560]
+                          - generic [ref=e1564]:
+                            - generic [ref=e1565]: "2025"
+                            - img [ref=e1566]
+                      - generic [ref=e1568]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e1569] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e1570] [cursor=pointer]
+                    - paragraph [ref=e1571] [cursor=pointer]: "פסק דין שהועלה מהקובץ: יושב ראש מזכירות יישוב הבטיח לשלם בניגוד להחלטה רשמית.txt"
+                    - generic [ref=e1573]:
+                      - button "עובדות המקרה" [ref=e1574] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e1575] [cursor=pointer]:
+                        - img
+                      - generic [ref=e1576]: לא מנותח
+                      - button "נתח" [ref=e1577] [cursor=pointer]:
+                        - img
+                        - generic [ref=e1578]: נתח
+                  - generic [ref=e1580]:
+                    - generic [ref=e1581]:
+                      - generic [ref=e1582] [cursor=pointer]:
+                        - heading "עוצב 2 H כתר תורה שנגנב ע י הנאצים" [level=3] [ref=e1583]:
+                          - generic [ref=e1584]:
+                            - img [ref=e1585]
+                            - text: עוצב 2
+                          - generic "HTML" [ref=e1589]: H
+                          - text: כתר תורה שנגנב ע י הנאצים
+                        - generic [ref=e1590]:
+                          - generic [ref=e1591]:
+                            - generic [ref=e1592]: לא צוין
+                            - img [ref=e1593]
+                          - generic [ref=e1597]:
+                            - generic [ref=e1598]: "2025"
+                            - img [ref=e1599]
+                      - generic [ref=e1601]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e1602] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e1603] [cursor=pointer]
+                    - paragraph [ref=e1604] [cursor=pointer]: "פסק דין שהועלה מהקובץ: כתר תורה שנגנב ע_י הנאצים.txt"
+                    - generic [ref=e1606]:
+                      - button "עובדות המקרה" [ref=e1607] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e1608] [cursor=pointer]:
+                        - img
+                      - generic [ref=e1609]: לא מנותח
+                      - button "נתח" [ref=e1610] [cursor=pointer]:
+                        - img
+                        - generic [ref=e1611]: נתח
+                  - generic [ref=e1613]:
+                    - generic [ref=e1614]:
+                      - generic [ref=e1615] [cursor=pointer]:
+                        - heading "עוצב 2 H כללי סמכותו של דיין יחיד שדן בהסכמת הצדדים" [level=3] [ref=e1616]:
+                          - generic [ref=e1617]:
+                            - img [ref=e1618]
+                            - text: עוצב 2
+                          - generic "HTML" [ref=e1622]: H
+                          - text: כללי סמכותו של דיין יחיד שדן בהסכמת הצדדים
+                        - generic [ref=e1623]:
+                          - generic [ref=e1624]:
+                            - generic [ref=e1625]: לא צוין
+                            - img [ref=e1626]
+                          - generic [ref=e1630]:
+                            - generic [ref=e1631]: "2025"
+                            - img [ref=e1632]
+                      - generic [ref=e1634]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e1635] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e1636] [cursor=pointer]
+                    - paragraph [ref=e1637] [cursor=pointer]: "פסק דין שהועלה מהקובץ: כללי סמכותו של דיין יחיד שדן בהסכמת הצדדים.txt"
+                    - generic [ref=e1639]:
+                      - button "עובדות המקרה" [ref=e1640] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e1641] [cursor=pointer]:
+                        - img
+                      - generic [ref=e1642]: לא מנותח
+                      - button "נתח" [ref=e1643] [cursor=pointer]:
+                        - img
+                        - generic [ref=e1644]: נתח
+                  - generic [ref=e1646]:
+                    - generic [ref=e1647]:
+                      - generic [ref=e1648] [cursor=pointer]:
+                        - heading "עוצב 1 H חלוקת מס רכישה בין שותפים" [level=3] [ref=e1649]:
+                          - generic [ref=e1650]:
+                            - img [ref=e1651]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e1655]: H
+                          - text: חלוקת מס רכישה בין שותפים
+                        - generic [ref=e1656]:
+                          - generic [ref=e1657]:
+                            - generic [ref=e1658]: לא צוין
+                            - img [ref=e1659]
+                          - generic [ref=e1663]:
+                            - generic [ref=e1664]: "2025"
+                            - img [ref=e1665]
+                      - generic [ref=e1667]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e1668] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e1669] [cursor=pointer]
+                    - paragraph [ref=e1670] [cursor=pointer]: "פסק דין שהועלה מהקובץ: חלוקת מס רכישה בין שותפים.txt"
+                    - generic [ref=e1672]:
+                      - button "עובדות המקרה" [ref=e1673] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e1674] [cursor=pointer]:
+                        - img
+                      - generic [ref=e1675]: לא מנותח
+                      - button "נתח" [ref=e1676] [cursor=pointer]:
+                        - img
+                        - generic [ref=e1677]: נתח
+                  - generic [ref=e1679]:
+                    - generic [ref=e1680]:
+                      - generic [ref=e1681] [cursor=pointer]:
+                        - heading "עוצב 1 H עורך דין התובע שכר טירחה ביצוג לקוח" [level=3] [ref=e1682]:
+                          - generic [ref=e1683]:
+                            - img [ref=e1684]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e1688]: H
+                          - text: עורך דין התובע שכר טירחה ביצוג לקוח
+                        - generic [ref=e1689]:
+                          - generic [ref=e1690]:
+                            - generic [ref=e1691]: לא צוין
+                            - img [ref=e1692]
+                          - generic [ref=e1696]:
+                            - generic [ref=e1697]: "2025"
+                            - img [ref=e1698]
+                      - generic [ref=e1700]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e1701] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e1702] [cursor=pointer]
+                    - paragraph [ref=e1703] [cursor=pointer]: "פסק דין שהועלה מהקובץ: עורך דין התובע שכר טירחה ביצוג לקוח.txt"
+                    - generic [ref=e1705]:
+                      - button "עובדות המקרה" [ref=e1706] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e1707] [cursor=pointer]:
+                        - img
+                      - generic [ref=e1708]: לא מנותח
+                      - button "נתח" [ref=e1709] [cursor=pointer]:
+                        - img
+                        - generic [ref=e1710]: נתח
+                  - generic [ref=e1712]:
+                    - generic [ref=e1713]:
+                      - generic [ref=e1714] [cursor=pointer]:
+                        - heading "עוצב 1 H מורה שהועבר לכיתה אחרת ועזב את בית הספר" [level=3] [ref=e1715]:
+                          - generic [ref=e1716]:
+                            - img [ref=e1717]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e1721]: H
+                          - text: מורה שהועבר לכיתה אחרת ועזב את בית הספר
+                        - generic [ref=e1722]:
+                          - generic [ref=e1723]:
+                            - generic [ref=e1724]: לא צוין
+                            - img [ref=e1725]
+                          - generic [ref=e1729]:
+                            - generic [ref=e1730]: "2025"
+                            - img [ref=e1731]
+                      - generic [ref=e1733]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e1734] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e1735] [cursor=pointer]
+                    - paragraph [ref=e1736] [cursor=pointer]: "פסק דין שהועלה מהקובץ: מורה שהועבר לכיתה אחרת ועזב את בית הספר.txt"
+                    - generic [ref=e1738]:
+                      - button "עובדות המקרה" [ref=e1739] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e1740] [cursor=pointer]:
+                        - img
+                      - generic [ref=e1741]: לא מנותח
+                      - button "נתח" [ref=e1742] [cursor=pointer]:
+                        - img
+                        - generic [ref=e1743]: נתח
+                  - generic [ref=e1745]:
+                    - generic [ref=e1746]:
+                      - generic [ref=e1747] [cursor=pointer]:
+                        - heading "עוצב 2 H כלב שתקף ילדה האם יכול בעל הכלב להמשיך להחזיק בו" [level=3] [ref=e1748]:
+                          - generic [ref=e1749]:
+                            - img [ref=e1750]
+                            - text: עוצב 2
+                          - generic "HTML" [ref=e1754]: H
+                          - text: כלב שתקף ילדה האם יכול בעל הכלב להמשיך להחזיק בו
+                        - generic [ref=e1755]:
+                          - generic [ref=e1756]:
+                            - generic [ref=e1757]: לא צוין
+                            - img [ref=e1758]
+                          - generic [ref=e1762]:
+                            - generic [ref=e1763]: "2025"
+                            - img [ref=e1764]
+                      - generic [ref=e1766]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e1767] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e1768] [cursor=pointer]
+                    - paragraph [ref=e1769] [cursor=pointer]: "פסק דין שהועלה מהקובץ: כלב שתקף ילדה - האם יכול בעל הכלב להמשיך להחזיק בו_.txt"
+                    - generic [ref=e1771]:
+                      - button "עובדות המקרה" [ref=e1772] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e1773] [cursor=pointer]:
+                        - img
+                      - generic [ref=e1774]: לא מנותח
+                      - button "נתח" [ref=e1775] [cursor=pointer]:
+                        - img
+                        - generic [ref=e1776]: נתח
+                  - generic [ref=e1778]:
+                    - generic [ref=e1779]:
+                      - generic [ref=e1780] [cursor=pointer]:
+                        - heading "עוצב 1 H חלוקת זכיה בין שותפים שלא השקיעו סכום זהה" [level=3] [ref=e1781]:
+                          - generic [ref=e1782]:
+                            - img [ref=e1783]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e1787]: H
+                          - text: חלוקת זכיה בין שותפים שלא השקיעו סכום זהה
+                        - generic [ref=e1788]:
+                          - generic [ref=e1789]:
+                            - generic [ref=e1790]: לא צוין
+                            - img [ref=e1791]
+                          - generic [ref=e1795]:
+                            - generic [ref=e1796]: "2025"
+                            - img [ref=e1797]
+                      - generic [ref=e1799]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e1800] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e1801] [cursor=pointer]
+                    - paragraph [ref=e1802] [cursor=pointer]: "פסק דין שהועלה מהקובץ: חלוקת זכיה בין שותפים_ שלא השקיעו סכום זהה.txt"
+                    - generic [ref=e1804]:
+                      - button "עובדות המקרה" [ref=e1805] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e1806] [cursor=pointer]:
+                        - img
+                      - generic [ref=e1807]: לא מנותח
+                      - button "נתח" [ref=e1808] [cursor=pointer]:
+                        - img
+                        - generic [ref=e1809]: נתח
+                  - generic [ref=e1811]:
+                    - generic [ref=e1812]:
+                      - generic [ref=e1813] [cursor=pointer]:
+                        - heading "עוצב 1 H פיצויי פיטורין לעובדת שאיחרה וייצוגה על ידי הבעל" [level=3] [ref=e1814]:
+                          - generic [ref=e1815]:
+                            - img [ref=e1816]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e1820]: H
+                          - text: פיצויי פיטורין לעובדת שאיחרה וייצוגה על ידי הבעל
+                        - generic [ref=e1821]:
+                          - generic [ref=e1822]:
+                            - generic [ref=e1823]: לא צוין
+                            - img [ref=e1824]
+                          - generic [ref=e1828]:
+                            - generic [ref=e1829]: "2025"
+                            - img [ref=e1830]
+                      - generic [ref=e1832]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e1833] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e1834] [cursor=pointer]
+                    - paragraph [ref=e1835] [cursor=pointer]: "פסק דין שהועלה מהקובץ: פיצויי פיטורין לעובדת שאיחרה_ וייצוגה על ידי הבעל.txt"
+                    - generic [ref=e1837]:
+                      - button "עובדות המקרה" [ref=e1838] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e1839] [cursor=pointer]:
+                        - img
+                      - generic [ref=e1840]: לא מנותח
+                      - button "נתח" [ref=e1841] [cursor=pointer]:
+                        - img
+                        - generic [ref=e1842]: נתח
+                  - generic [ref=e1844]:
+                    - generic [ref=e1845]:
+                      - generic [ref=e1846] [cursor=pointer]:
+                        - heading "עוצב 1 H פרטים בהסכמת הורים בדבר חתונת ילדיהם ודין המתנות מהחתונה" [level=3] [ref=e1847]:
+                          - generic [ref=e1848]:
+                            - img [ref=e1849]
+                            - text: עוצב 1
+                          - generic "HTML" [ref=e1853]: H
+                          - text: פרטים בהסכמת הורים בדבר חתונת ילדיהם ודין המתנות מהחתונה
+                        - generic [ref=e1854]:
+                          - generic [ref=e1855]:
+                            - generic [ref=e1856]: לא צוין
+                            - img [ref=e1857]
+                          - generic [ref=e1861]:
+                            - generic [ref=e1862]: "2025"
+                            - img [ref=e1863]
+                      - generic [ref=e1865]:
+                        - generic:
+                          - button "החלף צפיין":
+                            - img
+                          - button "ערוך שם":
+                            - img
+                          - button "מחק":
+                            - img
+                          - button "הורד":
+                            - img
+                        - checkbox [ref=e1866] [cursor=pointer]
+                        - checkbox "בחר לניתוח AI" [ref=e1867] [cursor=pointer]
+                    - paragraph [ref=e1868] [cursor=pointer]: "פסק דין שהועלה מהקובץ: פרטים בהסכמת הורים בדבר חתונת ילדיהם ודין המתנות מהחתונה.txt"
+                    - generic [ref=e1870]:
+                      - button "עובדות המקרה" [ref=e1871] [cursor=pointer]:
+                        - img
+                      - button "תקציר" [ref=e1872] [cursor=pointer]:
+                        - img
+                      - generic [ref=e1873]: לא מנותח
+                      - button "נתח" [ref=e1874] [cursor=pointer]:
+                        - img
+                        - generic [ref=e1875]: נתח
+                - paragraph [ref=e1877]: מוצגים 50 מתוך 4,263 פסקי דין
+      - generic [ref=e1878]:
+        - generic [ref=e1880]:
+          - generic [ref=e1881]:
+            - heading "ניווט ראשי" [level=2] [ref=e1882]
+            - paragraph [ref=e1883]: מסכתות ופסקי דין
+          - button "נעץ סיידבר" [ref=e1884] [cursor=pointer]:
             - img
-        - generic [ref=e126]:
-          - generic [ref=e127]:
-            - generic [ref=e128]: תפריט
-            - list [ref=e130]:
-              - listitem [ref=e131]:
-                - button "גמרא" [ref=e132] [cursor=pointer]:
-                  - img [ref=e133]
-                  - generic [ref=e135]: גמרא
-              - listitem [ref=e136]:
-                - button "פסקי דין" [ref=e137] [cursor=pointer]:
-                  - img [ref=e138]
-                  - generic [ref=e142]: פסקי דין
-              - listitem [ref=e143]:
-                - button "חיפוש פסקי דין" [ref=e144] [cursor=pointer]:
-                  - img [ref=e145]
-                  - generic [ref=e148]: חיפוש פסקי דין
-              - listitem [ref=e149]:
-                - button "העלאה" [ref=e150] [cursor=pointer]:
-                  - img [ref=e151]
-                  - generic [ref=e154]: העלאה
-              - listitem [ref=e155]:
-                - button "הורדה" [ref=e156] [cursor=pointer]:
-                  - img [ref=e157]
-                  - generic [ref=e159]: הורדה
-              - listitem [ref=e160]:
-                - button "אינדקס מתקדם" [ref=e161] [cursor=pointer]:
-                  - img [ref=e162]
-                  - generic [ref=e165]: אינדקס מתקדם
-              - listitem [ref=e166]:
-                - button "הורדת ש\"ס" [ref=e167] [cursor=pointer]:
-                  - img [ref=e168]
-                  - generic [ref=e172]: הורדת ש"ס
-              - listitem [ref=e173]:
-                - button "צפיין PDF" [ref=e174] [cursor=pointer]:
-                  - img [ref=e175]
-                  - generic [ref=e178]: צפיין PDF
-              - listitem [ref=e179]:
-                - button "צפיין EmbedPDF" [ref=e180] [cursor=pointer]:
-                  - img [ref=e181]
-                  - generic [ref=e185]: צפיין EmbedPDF
-              - listitem [ref=e186]:
-                - button "לוח שבועי חדש" [ref=e187] [cursor=pointer]:
-                  - img [ref=e188]
-                  - generic [ref=e190]: לוח שבועי
-                  - generic [ref=e191]: חדש
-              - listitem [ref=e192]:
-                - button "מילון מונחים חדש" [ref=e193] [cursor=pointer]:
-                  - img [ref=e194]
-                  - generic [ref=e197]: מילון מונחים
-                  - generic [ref=e198]: חדש
-              - listitem [ref=e199]:
-                - button "מפת חום הש\"ס חדש" [ref=e200] [cursor=pointer]:
-                  - img [ref=e201]
-                  - generic [ref=e203]: מפת חום הש"ס
-                  - generic [ref=e204]: חדש
-              - listitem [ref=e205]:
-                - button "כרטיסיות חזרה חדש" [ref=e206] [cursor=pointer]:
-                  - img [ref=e207]
-                  - generic [ref=e211]: כרטיסיות חזרה
-                  - generic [ref=e212]: חדש
-              - listitem [ref=e213]:
-                - button "מצב מבחן חדש" [ref=e214] [cursor=pointer]:
-                  - img [ref=e215]
-                  - generic [ref=e218]: מצב מבחן
-                  - generic [ref=e219]: חדש
-              - listitem [ref=e220]:
-                - button "סטטיסטיקות חדש" [ref=e221] [cursor=pointer]:
-                  - img [ref=e222]
-                  - generic [ref=e224]: סטטיסטיקות
-                  - generic [ref=e225]: חדש
-              - listitem [ref=e226]:
-                - button "המלצות למידה חדש" [ref=e227] [cursor=pointer]:
-                  - img [ref=e228]
-                  - generic [ref=e231]: המלצות למידה
-                  - generic [ref=e232]: חדש
-              - listitem [ref=e233]:
-                - button "עיצוב פסקי דין חדש" [ref=e234] [cursor=pointer]:
-                  - img [ref=e235]
-                  - generic [ref=e239]: עיצוב פסקי דין
-                  - generic [ref=e240]: חדש
-              - listitem [ref=e241]:
-                - button "אינדקס חכם" [ref=e242] [cursor=pointer]:
-                  - img [ref=e243]
-                  - generic [ref=e253]: אינדקס חכם
-              - listitem [ref=e254]:
-                - button "חיפוש גלובלי" [ref=e255] [cursor=pointer]:
-                  - img [ref=e256]
-                  - generic [ref=e259]: חיפוש גלובלי
-              - listitem [ref=e260]:
-                - button "היסטוריית למידה" [ref=e261] [cursor=pointer]:
-                  - img [ref=e262]
-                  - generic [ref=e266]: היסטוריית למידה
-              - listitem [ref=e267]:
-                - button "דף יומי" [ref=e268] [cursor=pointer]:
-                  - img [ref=e269]
-                  - generic [ref=e272]: דף יומי
-              - listitem [ref=e273]:
-                - button "השוואת פסקים" [ref=e274] [cursor=pointer]:
-                  - img [ref=e275]
-                  - generic [ref=e282]: השוואת פסקים
-              - listitem [ref=e283]:
-                - button "גרף ידע" [ref=e284] [cursor=pointer]:
-                  - img [ref=e285]
-                  - generic [ref=e291]: גרף ידע
-          - generic [ref=e292]:
-            - generic [ref=e293]: מסכתות הגמרא
-            - generic [ref=e295]:
-              - button "סדר זרעים 1 מסכתות" [ref=e297] [cursor=pointer]:
-                - generic [ref=e298]: סדר זרעים
-                - generic [ref=e299]:
-                  - generic [ref=e300]: 1 מסכתות
-                  - img [ref=e301]
-              - button "סדר מועד 12 מסכתות" [ref=e304] [cursor=pointer]:
-                - generic [ref=e305]: סדר מועד
-                - generic [ref=e306]:
-                  - generic [ref=e307]: 12 מסכתות
-                  - img [ref=e308]
-              - button "סדר נשים 7 מסכתות" [ref=e311] [cursor=pointer]:
-                - generic [ref=e312]: סדר נשים
-                - generic [ref=e313]:
-                  - generic [ref=e314]: 7 מסכתות
-                  - img [ref=e315]
-              - button "סדר נזיקין 8 מסכתות" [ref=e318] [cursor=pointer]:
-                - generic [ref=e319]: סדר נזיקין
-                - generic [ref=e320]:
-                  - generic [ref=e321]: 8 מסכתות
-                  - img [ref=e322]
-              - button "סדר קדשים 9 מסכתות" [ref=e325] [cursor=pointer]:
-                - generic [ref=e326]: סדר קדשים
-                - generic [ref=e327]:
-                  - generic [ref=e328]: 9 מסכתות
-                  - img [ref=e329]
-              - button "סדר טהרות 1 מסכתות" [ref=e332] [cursor=pointer]:
-                - generic [ref=e333]: סדר טהרות
-                - generic [ref=e334]:
-                  - generic [ref=e335]: 1 מסכתות
-                  - img [ref=e336]
-        - generic [ref=e339]: גמרא להלכה © 2026
-    - button "ניווט מהיר" [ref=e340] [cursor=pointer]:
-      - img [ref=e341]
+        - generic [ref=e1885]:
+          - generic [ref=e1886]:
+            - generic [ref=e1887]: תפריט
+            - list [ref=e1889]:
+              - listitem [ref=e1890]:
+                - button "גמרא" [ref=e1891] [cursor=pointer]:
+                  - img [ref=e1892]
+                  - generic [ref=e1894]: גמרא
+              - listitem [ref=e1895]:
+                - button "פסקי דין" [ref=e1896] [cursor=pointer]:
+                  - img [ref=e1897]
+                  - generic [ref=e1901]: פסקי דין
+              - listitem [ref=e1902]:
+                - button "חיפוש פסקי דין" [ref=e1903] [cursor=pointer]:
+                  - img [ref=e1904]
+                  - generic [ref=e1907]: חיפוש פסקי דין
+              - listitem [ref=e1908]:
+                - button "העלאה" [ref=e1909] [cursor=pointer]:
+                  - img [ref=e1910]
+                  - generic [ref=e1913]: העלאה
+              - listitem [ref=e1914]:
+                - button "הורדה" [ref=e1915] [cursor=pointer]:
+                  - img [ref=e1916]
+                  - generic [ref=e1918]: הורדה
+              - listitem [ref=e1919]:
+                - button "אינדקס מתקדם" [ref=e1920] [cursor=pointer]:
+                  - img [ref=e1921]
+                  - generic [ref=e1924]: אינדקס מתקדם
+              - listitem [ref=e1925]:
+                - button "הורדת ש\"ס" [ref=e1926] [cursor=pointer]:
+                  - img [ref=e1927]
+                  - generic [ref=e1931]: הורדת ש"ס
+              - listitem [ref=e1932]:
+                - button "צפיין מסמכים" [ref=e1933] [cursor=pointer]:
+                  - img [ref=e1934]
+                  - generic [ref=e1938]: צפיין מסמכים
+              - listitem [ref=e1939]:
+                - button "לוח שבועי חדש" [ref=e1940] [cursor=pointer]:
+                  - img [ref=e1941]
+                  - generic [ref=e1943]: לוח שבועי
+                  - generic [ref=e1944]: חדש
+              - listitem [ref=e1945]:
+                - button "מילון מונחים חדש" [ref=e1946] [cursor=pointer]:
+                  - img [ref=e1947]
+                  - generic [ref=e1950]: מילון מונחים
+                  - generic [ref=e1951]: חדש
+              - listitem [ref=e1952]:
+                - button "מפת חום הש\"ס חדש" [ref=e1953] [cursor=pointer]:
+                  - img [ref=e1954]
+                  - generic [ref=e1956]: מפת חום הש"ס
+                  - generic [ref=e1957]: חדש
+              - listitem [ref=e1958]:
+                - button "כרטיסיות חזרה חדש" [ref=e1959] [cursor=pointer]:
+                  - img [ref=e1960]
+                  - generic [ref=e1964]: כרטיסיות חזרה
+                  - generic [ref=e1965]: חדש
+              - listitem [ref=e1966]:
+                - button "מצב מבחן חדש" [ref=e1967] [cursor=pointer]:
+                  - img [ref=e1968]
+                  - generic [ref=e1971]: מצב מבחן
+                  - generic [ref=e1972]: חדש
+              - listitem [ref=e1973]:
+                - button "סטטיסטיקות חדש" [ref=e1974] [cursor=pointer]:
+                  - img [ref=e1975]
+                  - generic [ref=e1977]: סטטיסטיקות
+                  - generic [ref=e1978]: חדש
+              - listitem [ref=e1979]:
+                - button "המלצות למידה חדש" [ref=e1980] [cursor=pointer]:
+                  - img [ref=e1981]
+                  - generic [ref=e1984]: המלצות למידה
+                  - generic [ref=e1985]: חדש
+              - listitem [ref=e1986]:
+                - button "עיצוב פסקי דין חדש" [ref=e1987] [cursor=pointer]:
+                  - img [ref=e1988]
+                  - generic [ref=e1992]: עיצוב פסקי דין
+                  - generic [ref=e1993]: חדש
+              - listitem [ref=e1994]:
+                - button "אינדקס חכם" [ref=e1995] [cursor=pointer]:
+                  - img [ref=e1996]
+                  - generic [ref=e2006]: אינדקס חכם
+              - listitem [ref=e2007]:
+                - button "חיפוש גלובלי" [ref=e2008] [cursor=pointer]:
+                  - img [ref=e2009]
+                  - generic [ref=e2012]: חיפוש גלובלי
+              - listitem [ref=e2013]:
+                - button "היסטוריית למידה" [ref=e2014] [cursor=pointer]:
+                  - img [ref=e2015]
+                  - generic [ref=e2019]: היסטוריית למידה
+              - listitem [ref=e2020]:
+                - button "דף יומי" [ref=e2021] [cursor=pointer]:
+                  - img [ref=e2022]
+                  - generic [ref=e2025]: דף יומי
+              - listitem [ref=e2026]:
+                - button "השוואת פסקים" [ref=e2027] [cursor=pointer]:
+                  - img [ref=e2028]
+                  - generic [ref=e2035]: השוואת פסקים
+              - listitem [ref=e2036]:
+                - button "גרף ידע" [ref=e2037] [cursor=pointer]:
+                  - img [ref=e2038]
+                  - generic [ref=e2044]: גרף ידע
+          - generic [ref=e2045]:
+            - generic [ref=e2046]: מסכתות הגמרא
+            - generic [ref=e2048]:
+              - button "סדר זרעים 1 מסכתות" [ref=e2050] [cursor=pointer]:
+                - generic [ref=e2051]: סדר זרעים
+                - generic [ref=e2052]:
+                  - generic [ref=e2053]: 1 מסכתות
+                  - img [ref=e2054]
+              - button "סדר מועד 12 מסכתות" [ref=e2057] [cursor=pointer]:
+                - generic [ref=e2058]: סדר מועד
+                - generic [ref=e2059]:
+                  - generic [ref=e2060]: 12 מסכתות
+                  - img [ref=e2061]
+              - button "סדר נשים 7 מסכתות" [ref=e2064] [cursor=pointer]:
+                - generic [ref=e2065]: סדר נשים
+                - generic [ref=e2066]:
+                  - generic [ref=e2067]: 7 מסכתות
+                  - img [ref=e2068]
+              - button "סדר נזיקין 8 מסכתות" [ref=e2071] [cursor=pointer]:
+                - generic [ref=e2072]: סדר נזיקין
+                - generic [ref=e2073]:
+                  - generic [ref=e2074]: 8 מסכתות
+                  - img [ref=e2075]
+              - button "סדר קדשים 9 מסכתות" [ref=e2078] [cursor=pointer]:
+                - generic [ref=e2079]: סדר קדשים
+                - generic [ref=e2080]:
+                  - generic [ref=e2081]: 9 מסכתות
+                  - img [ref=e2082]
+              - button "סדר טהרות 1 מסכתות" [ref=e2085] [cursor=pointer]:
+                - generic [ref=e2086]: סדר טהרות
+                - generic [ref=e2087]:
+                  - generic [ref=e2088]: 1 מסכתות
+                  - img [ref=e2089]
+        - generic [ref=e2092]: גמרא להלכה © 2026
+    - button "ניווט מהיר" [ref=e2093] [cursor=pointer]:
+      - img [ref=e2094]
 ```

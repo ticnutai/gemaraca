@@ -1,0 +1,12 @@
+START
+Health: {"status":"ok","models_loaded":true,"gpu_available":true,"gpu_name":"NVIDIA GeForce RTX 5050 Laptop GPU","tesseract_available":true,"engines":["surya","tesseract"]}
+PIL imported OK
+Font: C:/Windows/Fonts/david.ttf
+Image ready: 17412 bytes b64
+Status: None
+Engine: surya
+Full text:
+דחא רובידב רוכזו רומש
+סיהלא ארב תישארב
+יניסם השמל הכלה
+DONE

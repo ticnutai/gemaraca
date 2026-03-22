@@ -15,6 +15,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { calculateFileHashes } from "@/lib/fileHash";
 import { isOnline } from "@/lib/uploadUtils";
 import UploadSummaryDialog from "./UploadSummaryDialog";
+import DuplicateActionDialog, { DuplicateItem, DuplicateAction } from "./DuplicateActionDialog";
 import PsakDinStats from "./PsakDinStats";
 
 interface DuplicateFile {
@@ -46,6 +47,14 @@ const UploadPsakDinTab = () => {
   const [showSummary, setShowSummary] = useState(false);
   const [completedSessionId, setCompletedSessionId] = useState<string | undefined>();
   const [debugLog, setDebugLog] = useState<string[]>([]);
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  const [pendingDuplicates, setPendingDuplicates] = useState<DuplicateItem[]>([]);
+  const [duplicateResolveCallback, setDuplicateResolveCallback] = useState<{
+    resolve: (files: File[]) => void;
+    allFiles: File[];
+    uniqueFiles: File[];
+    fileHashes: Map<string, string>;
+  } | null>(null);
   
   // Use the upload controller hook
   const {
@@ -95,7 +104,7 @@ const UploadPsakDinTab = () => {
         (existingPsakim || []).map(p => p.title.toLowerCase().trim())
       );
       
-      const foundDuplicates: DuplicateFile[] = [];
+      const foundDuplicates: DuplicateItem[] = [];
       const uniqueFiles: File[] = [];
       
       for (const file of filesToCheck) {
@@ -105,6 +114,7 @@ const UploadPsakDinTab = () => {
         // Check content hash first (more accurate)
         if (hash && hasFileHash(hash)) {
           foundDuplicates.push({
+            file,
             name: file.name,
             reason: 'hash',
             existingTitle: getFileByHash(hash),
@@ -120,6 +130,7 @@ const UploadPsakDinTab = () => {
         
         if (titleMatch) {
           foundDuplicates.push({
+            file,
             name: file.name,
             reason: 'title',
             existingTitle: Array.from(existingTitles).find(t => 
@@ -136,13 +147,12 @@ const UploadPsakDinTab = () => {
       }
       
       if (foundDuplicates.length > 0) {
-        setDuplicates(prev => [...prev, ...foundDuplicates]);
-        
-        // Show toast notification
-        toast({
-          title: `נמצאו ${foundDuplicates.length} קבצים כפולים`,
-          description: "קבצים אלו הוסרו מההעלאה",
-          variant: "destructive",
+        // Show dialog and wait for user decision
+        return new Promise<File[]>((resolve) => {
+          setPendingDuplicates(foundDuplicates);
+          setDuplicateResolveCallback({ resolve, allFiles: filesToCheck, uniqueFiles, fileHashes });
+          setShowDuplicateDialog(true);
+          setCheckingDuplicates(false);
         });
       }
       
@@ -163,6 +173,94 @@ const UploadPsakDinTab = () => {
     console.log(logMsg);
     setDebugLog(prev => [...prev.slice(-50), logMsg]); // Keep last 50 logs
   }, []);
+
+  // Handle duplicate dialog resolution
+  const handleDuplicateResolve = useCallback(async (resolved: DuplicateItem[]) => {
+    setShowDuplicateDialog(false);
+    
+    if (!duplicateResolveCallback) return;
+    const { resolve, uniqueFiles, fileHashes } = duplicateResolveCallback;
+    
+    const filesToUpload: File[] = [...uniqueFiles];
+    const skipped: DuplicateFile[] = [];
+    
+    for (const item of resolved) {
+      if (item.action === 'skip') {
+        skipped.push({ name: item.name, reason: item.reason, existingTitle: item.existingTitle });
+        continue;
+      }
+      
+      if (item.action === 'overwrite') {
+        // Delete the existing record before re-uploading
+        const baseName = item.file.name.replace(/\.[^/.]+$/, '').toLowerCase().trim();
+        try {
+          const { data: existing } = await supabase
+            .from('psakei_din')
+            .select('id')
+            .or(`title.ilike.%${baseName}%`)
+            .limit(1);
+          
+          if (existing && existing.length > 0) {
+            await supabase.from('psakei_din').delete().eq('id', existing[0].id);
+            addDebug(`🗑️ נמחק פסק קיים: ${baseName}`);
+          }
+        } catch (err) {
+          addDebug(`⚠️ שגיאה במחיקת פסק קיים: ${baseName}`);
+        }
+        filesToUpload.push(item.file);
+      }
+      
+      if (item.action === 'duplicate') {
+        // Find next available numbered title
+        const baseName = item.file.name.replace(/\.[^/.]+$/, '');
+        const ext = item.file.name.split('.').pop() || '';
+        
+        let num = 2;
+        const { data: existingNamed } = await supabase
+          .from('psakei_din')
+          .select('title')
+          .ilike('title', `${baseName}%`);
+        
+        const existingNames = new Set(
+          (existingNamed || []).map(p => p.title.toLowerCase().trim())
+        );
+        
+        while (existingNames.has(`${baseName} (${num})`.toLowerCase())) {
+          num++;
+        }
+        
+        const newFileName = `${baseName} (${num}).${ext}`;
+        const renamedFile = new File([item.file], newFileName, { type: item.file.type });
+        filesToUpload.push(renamedFile);
+        addDebug(`📋 שכפול: ${item.name} → ${newFileName}`);
+      }
+      
+      // Save hash for uploaded files
+      const hash = fileHashes.get(item.name);
+      if (hash) {
+        const baseName = item.file.name.replace(/\.[^/.]+$/, '').toLowerCase().trim();
+        addFileHash(hash, baseName);
+      }
+    }
+    
+    if (skipped.length > 0) {
+      setDuplicates(prev => [...prev, ...skipped]);
+    }
+    
+    setDuplicateResolveCallback(null);
+    setPendingDuplicates([]);
+    resolve(filesToUpload);
+  }, [duplicateResolveCallback, addDebug, addFileHash]);
+
+  const handleDuplicateCancel = useCallback(() => {
+    setShowDuplicateDialog(false);
+    if (duplicateResolveCallback) {
+      // On cancel, return only unique (non-duplicate) files
+      duplicateResolveCallback.resolve(duplicateResolveCallback.uniqueFiles);
+      setDuplicateResolveCallback(null);
+      setPendingDuplicates([]);
+    }
+  }, [duplicateResolveCallback]);
 
   // Extract files from ZIP with progress tracking
   const extractZipFiles = useCallback(async (zipFile: File): Promise<File[]> => {
@@ -234,8 +332,12 @@ const UploadPsakDinTab = () => {
     const regularFiles: File[] = [];
     const zipFiles: File[] = [];
     
-    // Separate ZIP files from regular files
-    for (const file of selectedFiles) {
+    // Separate ZIP files from regular files, strip folder path from names
+    for (const rawFile of selectedFiles) {
+      const cleanName = rawFile.name.split('/').pop()?.split('\\').pop() || rawFile.name;
+      const file = cleanName !== rawFile.name
+        ? new File([rawFile], cleanName, { type: rawFile.type })
+        : rawFile;
       const ext = file.name.split('.').pop()?.toLowerCase();
       if (ext === 'zip') {
         zipFiles.push(file);
@@ -783,6 +885,16 @@ const UploadPsakDinTab = () => {
         onOpenChange={setShowSummary}
         sessionId={completedSessionId}
       />
+
+      {/* Duplicate Action Dialog */}
+      {showDuplicateDialog && pendingDuplicates.length > 0 && (
+        <DuplicateActionDialog
+          open={showDuplicateDialog}
+          duplicates={pendingDuplicates}
+          onResolve={handleDuplicateResolve}
+          onCancel={handleDuplicateCancel}
+        />
+      )}
     </div>
   );
 };

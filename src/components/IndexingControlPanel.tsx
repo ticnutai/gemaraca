@@ -13,10 +13,16 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Zap, Pause, Play, Square, RotateCcw, AlertTriangle,
   CheckCircle2, Clock, Cpu, Layers, SkipForward, Hash,
-  Settings2, ChevronDown, ChevronUp
+  Settings2, ChevronDown, ChevronUp, Save
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 function formatDuration(ms: number): string {
   if (ms <= 0) return '—';
@@ -51,6 +57,7 @@ export default function IndexingControlPanel() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [resumeDialogOpen, setResumeDialogOpen] = useState(false);
 
   const status = useIndexingStore(s => s.status);
   const stats = useIndexingStore(s => s.stats);
@@ -59,6 +66,7 @@ export default function IndexingControlPanel() {
   const batchSize = useIndexingStore(s => s.batchSize);
   const skipIndexed = useIndexingStore(s => s.skipIndexed);
   const useAI = useIndexingStore(s => s.useAI);
+  const savedProgress = useIndexingStore(s => s.savedProgress);
 
   const setConcurrency = useIndexingStore(s => s.setConcurrency);
   const setBatchSize = useIndexingStore(s => s.setBatchSize);
@@ -69,6 +77,9 @@ export default function IndexingControlPanel() {
   const resume = useIndexingStore(s => s.resume);
   const cancel = useIndexingStore(s => s.cancel);
   const reset = useIndexingStore(s => s.reset);
+  const saveProgress = useIndexingStore(s => s.saveProgress);
+  const clearSavedProgress = useIndexingStore(s => s.clearSavedProgress);
+  const startFromSaved = useIndexingStore(s => s.startFromSaved);
 
   const isRunning = status === 'running';
   const isPaused = status === 'paused';
@@ -93,12 +104,37 @@ export default function IndexingControlPanel() {
   }, [isRunning]);
 
   const handleStart = useCallback(() => {
+    if (savedProgress) {
+      setResumeDialogOpen(true);
+      return;
+    }
     start();
-    // Run engine in next microtask to let store update
     setTimeout(() => {
       runIndexingEngine(user?.id ?? null).catch(console.error);
     }, 0);
-  }, [start, user?.id]);
+  }, [start, user?.id, savedProgress]);
+
+  const handleStartFresh = useCallback(() => {
+    setResumeDialogOpen(false);
+    clearSavedProgress();
+    start();
+    setTimeout(() => {
+      runIndexingEngine(user?.id ?? null).catch(console.error);
+    }, 0);
+  }, [clearSavedProgress, start, user?.id]);
+
+  const handleStartFromSaved = useCallback(() => {
+    setResumeDialogOpen(false);
+    startFromSaved();
+    setTimeout(() => {
+      runIndexingEngine(user?.id ?? null).catch(console.error);
+    }, 0);
+  }, [startFromSaved, user?.id]);
+
+  const handleSave = useCallback(() => {
+    saveProgress();
+    toast.success('ההתקדמות נשמרה בהצלחה');
+  }, [saveProgress]);
 
   const handleResume = useCallback(() => {
     resume();
@@ -161,6 +197,12 @@ export default function IndexingControlPanel() {
               <Button size="sm" onClick={handleResume} className="gap-1.5">
                 <Play className="w-3.5 h-3.5" />
                 המשך
+              </Button>
+            )}
+            {isActive && (
+              <Button size="sm" variant="outline" onClick={handleSave} className="gap-1.5">
+                <Save className="w-3.5 h-3.5" />
+                שמור
               </Button>
             )}
             {isActive && (
@@ -339,7 +381,48 @@ export default function IndexingControlPanel() {
             </span>
           </div>
         )}
+
+        {/* Saved progress banner */}
+        {!isActive && !isDone && savedProgress && (
+          <div className="flex items-center justify-between text-sm bg-blue-50 dark:bg-blue-950/30 p-3 rounded border border-blue-200 dark:border-blue-800">
+            <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+              <Save className="w-4 h-4" />
+              <span>
+                נשמר אינדוקס: {savedProgress.stats.processed}/{savedProgress.stats.totalPsakim} פסקים
+                {' • '}
+                לפני {formatDuration(Date.now() - savedProgress.savedAt)}
+              </span>
+            </div>
+            <Button size="sm" variant="ghost" className="text-xs text-red-500 h-6 px-2" onClick={clearSavedProgress}>
+              מחק
+            </Button>
+          </div>
+        )}
       </CardContent>
+
+      {/* Resume Dialog */}
+      <AlertDialog open={resumeDialogOpen} onOpenChange={setResumeDialogOpen}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>נמצא אינדוקס שמור</AlertDialogTitle>
+            <AlertDialogDescription>
+              נשמר התקדמות של {savedProgress?.stats.processed}/{savedProgress?.stats.totalPsakim} פסקים
+              ({savedProgress ? Math.round((savedProgress.stats.processed / savedProgress.stats.totalPsakim) * 100) : 0}%).
+              <br />
+              האם להמשיך מהמקום שעצרת או להתחיל מחדש?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex gap-2 sm:flex-row-reverse">
+            <AlertDialogAction onClick={handleStartFromSaved}>
+              המשך מהמקום שעצרתי
+            </AlertDialogAction>
+            <AlertDialogAction onClick={handleStartFresh} className="bg-secondary text-secondary-foreground hover:bg-secondary/80">
+              התחל מחדש
+            </AlertDialogAction>
+            <AlertDialogCancel>ביטול</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

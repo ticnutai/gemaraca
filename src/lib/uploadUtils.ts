@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import mammoth from "mammoth";
 
 export interface UploadBatchResult {
   results: Array<{ id: string; fileName: string; title?: string }>;
@@ -103,11 +104,33 @@ async function uploadBatchWithTimeout(
   abortSignal?: AbortSignal
 ): Promise<UploadBatchResult> {
   
+  // Extract text from DOCX files client-side (Edge Function can't parse DOCX)
+  const fullTexts: Record<string, string> = {};
+  for (const file of batch) {
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (ext === 'docx') {
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const result = await mammoth.extractRawText({ arrayBuffer });
+        if (result.value && result.value.length > 10) {
+          fullTexts[file.name] = result.value.length > 100000
+            ? result.value.substring(0, 100000) + '... [קוצר]'
+            : result.value;
+        }
+      } catch (e) {
+        console.warn(`Could not extract text from ${file.name}:`, e);
+      }
+    }
+  }
+
   const formData = new FormData();
   batch.forEach(file => {
     formData.append("files", file);
   });
-  formData.append("metadata", JSON.stringify(metadata));
+  const metadataWithText = Object.keys(fullTexts).length > 0
+    ? { ...metadata, fullTexts }
+    : metadata;
+  formData.append("metadata", JSON.stringify(metadataWithText));
 
   // Create timeout promise
   const timeoutId = setTimeout(() => {}, UPLOAD_TIMEOUT);

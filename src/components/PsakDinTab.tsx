@@ -22,7 +22,8 @@ import PsakDinViewDialog from "./PsakDinViewDialog";
 import PsakPreviewPopover from "./PsakPreviewPopover";
 import PsakDinEditDialog from "./PsakDinEditDialog";
 import BulkActionsBar from "./BulkActionsBar";
-import FileTypeBadge from "./FileTypeBadge";
+import FileTypeBadge, { detectFileType } from "./FileTypeBadge";
+import { FileType as LucideFileType } from "lucide-react";
 import GemaraPsakDinIndex from "./GemaraPsakDinIndex";
 import { getViewerPreference, setViewerPreference, type ViewerMode } from "./ViewerPreferenceDialog";
 import { useToast } from "@/hooks/use-toast";
@@ -36,6 +37,7 @@ function escapeHtml(str: string): string {
 }
 
 const PAGE_SIZE = 50;
+const SCROLL_POS_KEY = 'psak-list-scroll-pos';
 
 const PsakDinTab = () => {
   const navigate = useNavigate();
@@ -59,6 +61,7 @@ const PsakDinTab = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [courtFilter, setCourtFilter] = useState<string>("all");
+  const [fileTypeFilter, setFileTypeFilter] = useState<string>("all");
   const [sortOrder, setSortOrder] = useState<string>("year-desc");
   const [courts, setCourts] = useState<string[]>([]);
   const { toast } = useToast();
@@ -80,7 +83,7 @@ const PsakDinTab = () => {
   useEffect(() => {
     setPsakim([]);
     setHasMore(true);
-  }, [courtFilter, sortOrder]);
+  }, [courtFilter, fileTypeFilter, sortOrder]);
 
   // Load courts for filter
   useEffect(() => {
@@ -93,7 +96,22 @@ const PsakDinTab = () => {
   useEffect(() => {
     loadPsakim(0, true);
     loadTotalUnlinkedCount();
-  }, [debouncedSearch, courtFilter, sortOrder]);
+  }, [debouncedSearch, courtFilter, fileTypeFilter, sortOrder]);
+
+  // Restore scroll position after returning from psak viewer
+  useEffect(() => {
+    if (!loading && psakim.length > 0) {
+      const saved = sessionStorage.getItem(SCROLL_POS_KEY);
+      if (saved) {
+        sessionStorage.removeItem(SCROLL_POS_KEY);
+        requestAnimationFrame(() => {
+          if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTop = Number(saved);
+          }
+        });
+      }
+    }
+  }, [loading, psakim.length]);
 
   // React Query for link counts
   const psakIds = psakim.map(p => p.id);
@@ -141,8 +159,20 @@ const PsakDinTab = () => {
         }
       }
 
-      const ascending = sortOrder === 'year-asc' || sortOrder === 'title-asc';
-      const orderCol = sortOrder.startsWith('title') ? 'title' : 'year';
+      let ascending = false;
+      let orderCol = 'year';
+      switch (sortOrder) {
+        case 'year-asc': orderCol = 'year'; ascending = true; break;
+        case 'year-desc': orderCol = 'year'; ascending = false; break;
+        case 'title-asc': orderCol = 'title'; ascending = true; break;
+        case 'title-desc': orderCol = 'title'; ascending = false; break;
+        case 'created-desc': orderCol = 'created_at'; ascending = false; break;
+        case 'created-asc': orderCol = 'created_at'; ascending = true; break;
+        case 'updated-desc': orderCol = 'updated_at'; ascending = false; break;
+        case 'updated-asc': orderCol = 'updated_at'; ascending = true; break;
+        case 'beautify-desc': orderCol = 'beautify_count'; ascending = false; break;
+        case 'beautify-asc': orderCol = 'beautify_count'; ascending = true; break;
+      }
 
       let query = supabase
         .from('psakei_din')
@@ -154,6 +184,23 @@ const PsakDinTab = () => {
       }
       if (courtFilter !== 'all') {
         query = query.eq('court', courtFilter);
+      }
+
+      // File type filter — done via source_url patterns
+      if (fileTypeFilter === 'pdf') {
+        query = query.like('source_url', '%.pdf%');
+      } else if (fileTypeFilter === 'word') {
+        query = query.or('source_url.like.%.doc%,source_url.like.%.docx%,source_url.like.%.rtf%,source_url.like.%.odt%');
+      } else if (fileTypeFilter === 'text') {
+        query = query.or('source_url.like.%.txt%,source_url.like.%.text%,source_url.like.%.md%,source_url.like.%.csv%');
+      } else if (fileTypeFilter === 'html') {
+        // HTML = has source_url but NOT pdf/doc/txt
+        query = query.not('source_url', 'is', null)
+          .not('source_url', 'like', '%.pdf%')
+          .not('source_url', 'like', '%.doc%')
+          .not('source_url', 'like', '%.txt%');
+      } else if (fileTypeFilter === 'none') {
+        query = query.is('source_url', null);
       }
 
       const { data, error, count } = await query.range(offset, offset + PAGE_SIZE - 1);
@@ -190,7 +237,7 @@ const PsakDinTab = () => {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [debouncedSearch, courtFilter, sortOrder]);
+  }, [debouncedSearch, courtFilter, fileTypeFilter, sortOrder]);
 
   // Infinite scroll
   useEffect(() => {
@@ -223,8 +270,13 @@ const PsakDinTab = () => {
   };
 
   const handlePsakClick = (psak: PsakDinRow) => {
+    // Save scroll position before navigating
+    if (scrollContainerRef.current) {
+      sessionStorage.setItem(SCROLL_POS_KEY, String(scrollContainerRef.current.scrollTop));
+    }
+
     const sourceUrl = psak.source_url;
-    const preferred = getViewerPreference() ?? "dialog";
+    const preferred = getViewerPreference() ?? "embedpdf";
 
     if (preferred === "newwindow" && sourceUrl) {
       window.open(sourceUrl, "_blank");
@@ -242,7 +294,11 @@ const PsakDinTab = () => {
 
   const handleSwitchViewer = (psak: PsakDinRow, e: React.MouseEvent) => {
     e.stopPropagation();
-    const current = getViewerPreference() ?? "dialog";
+    // Save scroll position before navigating
+    if (scrollContainerRef.current) {
+      sessionStorage.setItem(SCROLL_POS_KEY, String(scrollContainerRef.current.scrollTop));
+    }
+    const current = getViewerPreference() ?? "embedpdf";
     const next: ViewerMode = current === "dialog" ? "embedpdf" : "dialog";
     setViewerPreference(next);
 
@@ -298,7 +354,7 @@ const PsakDinTab = () => {
     const content = psak.full_text || psak.summary || '';
     const html = `<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="UTF-8"><title>${escapeHtml(psak.title)}</title>
 <style>body{font-family:'David',serif;max-width:800px;margin:0 auto;padding:20px;direction:rtl;line-height:1.8}h1{color:#1a365d;border-bottom:2px solid #2b6cb0;padding-bottom:10px}.meta{background:#f7fafc;padding:12px;border-radius:8px;margin-bottom:20px;color:#4a5568}.content{white-space:pre-wrap}</style>
-</head><body><h1>${escapeHtml(psak.title)}</h1><div class="meta"><span>בית דין: ${escapeHtml(psak.court)}</span> <span>שנה: ${psak.year}</span></div><div class="content">${escapeHtml(content)}</div></body></html>`;
+</head><body><h1>${escapeHtml(psak.title)}</h1><div class="meta"><span>בית דין: ${escapeHtml(psak.court)}</span>${psak.year > 0 ? ` <span>שנה: ${psak.year}</span>` : ''}</div><div class="content">${escapeHtml(content)}</div></body></html>`;
     const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -469,8 +525,22 @@ const PsakDinTab = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                  <Select value={sortOrder} onValueChange={setSortOrder}>
+                  <Select value={fileTypeFilter} onValueChange={setFileTypeFilter}>
                     <SelectTrigger className="w-[140px]">
+                      <LucideFileType className="w-4 h-4 ml-2" />
+                      <SelectValue placeholder="סוג קובץ" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">כל הסוגים</SelectItem>
+                      <SelectItem value="pdf">PDF</SelectItem>
+                      <SelectItem value="html">HTML</SelectItem>
+                      <SelectItem value="word">Word</SelectItem>
+                      <SelectItem value="text">טקסט</SelectItem>
+                      <SelectItem value="none">ללא קובץ</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={sortOrder} onValueChange={setSortOrder}>
+                    <SelectTrigger className="w-[170px]">
                       <ArrowUpDown className="w-4 h-4 ml-2" />
                       <SelectValue placeholder="מיון" />
                     </SelectTrigger>
@@ -479,6 +549,12 @@ const PsakDinTab = () => {
                       <SelectItem value="year-asc">שנה (ישן→חדש)</SelectItem>
                       <SelectItem value="title-asc">שם (א-ת)</SelectItem>
                       <SelectItem value="title-desc">שם (ת-א)</SelectItem>
+                      <SelectItem value="created-desc">העלאה (חדש→ישן)</SelectItem>
+                      <SelectItem value="created-asc">העלאה (ישן→חדש)</SelectItem>
+                      <SelectItem value="updated-desc">עדכון אחרון (חדש→ישן)</SelectItem>
+                      <SelectItem value="updated-asc">עדכון אחרון (ישן→חדש)</SelectItem>
+                      <SelectItem value="beautify-desc">עיצוב (הכי מעוצב)</SelectItem>
+                      <SelectItem value="beautify-asc">עיצוב (הכי פחות)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -565,7 +641,7 @@ const PsakDinTab = () => {
                             <div className="flex items-start justify-between gap-3 mb-3">
                               <div className="flex-1 cursor-pointer" onClick={() => handlePsakClick(psak)}>
                                 <h3 className="text-lg font-semibold text-foreground text-right mb-2 leading-tight flex items-center gap-2 justify-end">
-                                  {(psak as Record<string, unknown>).beautify_count && Number((psak as Record<string, unknown>).beautify_count) > 0 && (
+                                  {Number((psak as Record<string, unknown>).beautify_count) > 0 && (
                                     <Badge className="gap-1 text-[10px] px-1.5 py-0.5 bg-amber-500/15 text-amber-600 border border-amber-500/30 dark:text-amber-400">
                                       <Paintbrush className="w-3 h-3" />
                                       עוצב {Number((psak as Record<string, unknown>).beautify_count)}
@@ -579,10 +655,12 @@ const PsakDinTab = () => {
                                     <span>{psak.court}</span>
                                     <Building2 className="w-3.5 h-3.5 text-primary" />
                                   </div>
+                                  {psak.year > 0 && (
                                   <div className="flex items-center gap-1">
                                     <span>{psak.year}</span>
                                     <Calendar className="w-3.5 h-3.5 text-primary" />
                                   </div>
+                                  )}
                                   {psak.case_number && (
                                     <div className="flex items-center gap-1">
                                       <span>{psak.case_number}</span>
@@ -655,12 +733,19 @@ const PsakDinTab = () => {
                             </div>
 
                             {/* Summary */}
-                            <p
-                              className="text-foreground mb-4 line-clamp-2 text-right cursor-pointer"
-                              onClick={() => handlePsakClick(psak)}
-                            >
-                              {psak.summary}
-                            </p>
+                            {(() => {
+                              const cs = (psak as Record<string, unknown>).case_summary as string | null;
+                              const displaySummary = (cs && cs.length > 10) ? cs :
+                                (psak.summary && !psak.summary.startsWith('פסק דין שהועלה מהקובץ')) ? psak.summary : null;
+                              return displaySummary ? (
+                                <p
+                                  className="text-foreground mb-4 line-clamp-2 text-right cursor-pointer"
+                                  onClick={() => handlePsakClick(psak)}
+                                >
+                                  {displaySummary}
+                                </p>
+                              ) : null;
+                            })()}
 
                             {/* Bottom Row: Status + Tags */}
                             <div className="flex items-center justify-between gap-3 border-t border-border/50 pt-3">

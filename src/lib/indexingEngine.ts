@@ -83,7 +83,7 @@ async function extractSinglePsak(
 // ─── Main engine entry point ─────────────────────────────────
 export async function runIndexingEngine(userId: string | null): Promise<void> {
   const store = useIndexingStore.getState();
-  const { batchSize, concurrency, skipIndexed, useAI, _abortController } = store;
+  const { batchSize, concurrency, skipIndexed, useAI, _abortController, _currentOffset } = store;
 
   if (!_abortController) return;
   const signal = _abortController.signal;
@@ -128,9 +128,10 @@ export async function runIndexingEngine(userId: string | null): Promise<void> {
       }
     }
 
-    // 3. Process in pages
-    let offset = 0;
+    // 3. Process in pages (support resume from saved offset)
+    let offset = _currentOffset;
     const startTime = Date.now();
+    const baseProcessed = useIndexingStore.getState().stats.processed;
 
     while (offset < total) {
       if (signal.aborted) return;
@@ -178,7 +179,7 @@ export async function runIndexingEngine(userId: string | null): Promise<void> {
               const count = await extractSinglePsak(psak, useAI, userId, signal);
               const currentStats = useIndexingStore.getState().stats;
               const processed = currentStats.processed + 1;
-              const elapsed = Date.now() - startTime;
+              const elapsed = Date.now() - startTime + (baseProcessed > 0 ? currentStats.elapsed : 0);
               store._updateStats({
                 processed,
                 refsFound: currentStats.refsFound + count,
@@ -208,6 +209,7 @@ export async function runIndexingEngine(userId: string | null): Promise<void> {
       }
 
       offset += psakim.length;
+      store._setCurrentOffset(offset);
 
       // Small delay between batches to avoid rate limiting
       if (!signal.aborted && offset < total) {
@@ -219,6 +221,7 @@ export async function runIndexingEngine(userId: string | null): Promise<void> {
       const finalStats = useIndexingStore.getState().stats;
       store._updateStats({ elapsed: Date.now() - startTime });
       store._setStatus('completed');
+      store.clearSavedProgress();
     }
   } catch (e: unknown) {
     if (signal.aborted) return;

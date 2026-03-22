@@ -8,7 +8,8 @@ async function goHome(page: Page) {
 }
 
 async function openPsakeiDinTab(page: Page) {
-  const btn = page.getByRole("button", { name: /פסקי דין/ });
+  // Scope to the top <nav> to avoid matching sidebar buttons like "חיפוש פסקי דין"
+  const btn = page.getByRole("navigation").getByRole("button", { name: "פסקי דין", exact: true });
   await btn.waitFor({ state: "attached", timeout: 10_000 });
   await btn.evaluate((el) => {
     el.scrollIntoView({ block: "center" });

@@ -1,0 +1,148 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - region "Notifications (F8)":
+    - list
+  - region "Notifications alt+T"
+  - generic [ref=e3]:
+    - button "פיתוח - מיגרציות" [ref=e4] [cursor=pointer]:
+      - img
+    - button [ref=e5] [cursor=pointer]:
+      - img
+  - button "מורה AI" [ref=e6]:
+    - img
+  - generic [ref=e7]:
+    - banner [ref=e8]:
+      - generic [ref=e9]:
+        - button "חזור" [ref=e10] [cursor=pointer]:
+          - img
+        - button "דף הבית" [ref=e11] [cursor=pointer]:
+          - img
+        - img [ref=e12]
+        - heading "EmbedPDF" [level=1] [ref=e15]
+        - generic [ref=e16]:
+          - button "יחיד" [ref=e17] [cursor=pointer]
+          - button "מפוצל" [ref=e18] [cursor=pointer]
+          - button "השוואה" [ref=e19] [cursor=pointer]
+        - button "4e9adba6-4dd7-49d2-a538-9c5175b8b5b6-1773676483817.html" [ref=e20] [cursor=pointer]:
+          - img [ref=e21]
+        - generic [ref=e24]:
+          - button "10" [ref=e25] [cursor=pointer]:
+            - img [ref=e26]
+            - generic [ref=e28]: "10"
+          - button "אנוטציות" [ref=e29] [cursor=pointer]:
+            - img [ref=e30]
+          - button "סימניות (0)" [ref=e36] [cursor=pointer]:
+            - img [ref=e37]
+          - button "סטטיסטיקות" [ref=e39] [cursor=pointer]:
+            - img [ref=e40]
+          - button "עצב פסק דין" [ref=e42] [cursor=pointer]:
+            - img [ref=e43]
+          - button "חיפוש במסמך" [active] [ref=e45] [cursor=pointer]:
+            - img [ref=e46]
+          - button "הצמד סרגל צד פתוח" [ref=e50] [cursor=pointer]:
+            - img [ref=e51]
+        - button "מסך מלא" [ref=e53] [cursor=pointer]:
+          - img [ref=e54]
+        - link "פתח בחלון חדש" [ref=e59] [cursor=pointer]:
+          - /url: https://jaotdqumpcfhcbkgtfib.supabase.co/storage/v1/object/public/psakei-din-files/beautified/4e9adba6-4dd7-49d2-a538-9c5175b8b5b6-1773676483817.html
+          - img [ref=e60]
+        - button "החלף לצפיין רגיל" [ref=e64] [cursor=pointer]:
+          - img [ref=e65]
+    - generic [ref=e68]:
+      - complementary [ref=e69]:
+        - generic [ref=e70]:
+          - generic [ref=e71]:
+            - heading "חיפוש במסמך" [level=3] [ref=e72]
+            - generic [ref=e73]:
+              - button "הצמד סרגל צד פתוח" [ref=e74] [cursor=pointer]:
+                - img
+              - button [ref=e75] [cursor=pointer]:
+                - img
+          - generic [ref=e76]:
+            - paragraph [ref=e77]: חיפוש במסמך
+            - generic [ref=e78]:
+              - img [ref=e79]
+              - textbox "חפש בתוך פסק הדין..." [ref=e82]
+              - button "חפש" [ref=e83] [cursor=pointer]
+            - generic [ref=e84]:
+              - generic [ref=e85]: 0/0 תוצאות
+              - button "קודם" [ref=e86] [cursor=pointer]:
+                - img
+              - button "הבא" [ref=e87] [cursor=pointer]:
+                - img
+              - button "נקה" [ref=e88] [cursor=pointer]:
+                - img
+            - generic [ref=e89]:
+              - button "← סעיף קודם" [ref=e90] [cursor=pointer]
+              - button "סעיף הבא →" [ref=e91] [cursor=pointer]
+            - generic [ref=e92]:
+              - button "פתח הכל" [ref=e93] [cursor=pointer]
+              - button "כווץ הכל" [ref=e94] [cursor=pointer]
+            - generic [ref=e95]:
+              - paragraph [ref=e96]: תוכן עניינים
+              - button "הצג תוכן עניינים" [ref=e97] [cursor=pointer]:
+                - img
+      - main [ref=e98]:
+        - generic [ref=e99]:
+          - generic [ref=e101]:
+            - generic [ref=e102]: עריכת מסמך HTML
+            - button "ערוך" [ref=e104] [cursor=pointer]:
+              - img
+              - text: ערוך
+            - button "העתק" [ref=e106] [cursor=pointer]:
+              - img
+            - button "הדפסה" [ref=e107] [cursor=pointer]:
+              - img
+            - link [ref=e108] [cursor=pointer]:
+              - /url: https://jaotdqumpcfhcbkgtfib.supabase.co/storage/v1/object/public/psakei-din-files/beautified/4e9adba6-4dd7-49d2-a538-9c5175b8b5b6-1773676483817.html
+              - button "פתח בחלון חדש" [ref=e109]:
+                - img
+            - button "שמור (דריסה)" [ref=e111] [cursor=pointer]:
+              - img
+            - button "שכפול ושמירה" [ref=e112] [cursor=pointer]:
+              - img
+            - button "שכפול והשוואה" [ref=e113] [cursor=pointer]:
+              - img
+            - button "הורד בפורמטים שונים" [ref=e114] [cursor=pointer]:
+              - img
+            - button "ערוך שם ופרטי פסק דין" [ref=e115] [cursor=pointer]:
+              - img
+            - button "מרווח שורות" [ref=e116] [cursor=pointer]:
+              - img
+            - button "עמודות" [ref=e117] [cursor=pointer]:
+              - img
+            - button "תבניות" [ref=e119] [cursor=pointer]:
+              - img
+              - text: תבניות
+          - iframe [ref=e121]:
+            - generic [ref=f1e2]:
+              - generic [ref=f1e3]:
+                - generic [ref=f1e4]: 🏛️ בית דין רבני ⚖️
+                - heading "פסק דין" [level=1] [ref=f1e5]
+              - heading "📋 פרטי התיק" [level=2] [ref=f1e6]
+              - table [ref=f1e7]:
+                - rowgroup [ref=f1e8]:
+                  - 'row "📌 כותרת: פסק דין שהועלה מהקובץ: אימתי_יהיו__תלונות_שווא__ו_מרידה_הדדית__עילות_לגירושין_ולהפסד_הכתובה___מהות_ודרכי_בירור_-_1129884-1_-_ביה__ד_הגדול.docx" [ref=f1e9]':
+                    - cell "📌 כותרת:" [ref=f1e10]
+                    - 'cell "פסק דין שהועלה מהקובץ: אימתי_יהיו__תלונות_שווא__ו_מרידה_הדדית__עילות_לגירושין_ולהפסד_הכתובה___מהות_ודרכי_בירור_-_1129884-1_-_ביה__ד_הגדול.docx" [ref=f1e11]'
+                  - row "🏛️ בית דין:" [ref=f1e12]:
+                    - cell "🏛️ בית דין:" [ref=f1e13]
+                    - cell [ref=f1e14]
+                  - 'row "📅 תאריך: (2026)" [ref=f1e15]':
+                    - cell "📅 תאריך:" [ref=f1e16]
+                    - cell "(2026)" [ref=f1e17]
+              - separator [ref=f1e18]
+              - heading "📜 טקסט מלא של פסק הדין" [level=2] [ref=f1e19]
+              - generic [ref=f1e20]: בס"ד
+              - 'heading "פסק דין שהועלה מהקובץ: אימתי_יהיו__תלונות_שווא__ו_מרידה_הדדית__עילות_לגירושין_ולהפסד_הכתובה___מהות_ודרכי_בירור_-_1129884-1_-_ביה__ד_הגדול.docx" [level=3] [ref=f1e21]'
+              - generic [ref=f1e22]: "שם בית דין:"
+              - generic [ref=f1e23]: "תאריך:"
+              - heading "✅ פסק" [level=3] [ref=f1e24]
+              - generic [ref=f1e25]: "דין שהועלה מהקובץ: אימתי_יהיו__תלונות_שווא__ו_מרידה_הדדית__עילות_לגירושין_ולהפסד_הכתובה___מהות_ודרכי_בירור_-_1129884-1_-_ביה__ד_הגדול.docx"
+              - generic [ref=f1e26]: "'והאמת והשלום אהבו'"
+              - generic [ref=f1e27]:
+                - separator [ref=f1e28]
+                - text: מעוצב אוטומטית | © 2026 כל הזכויות שמורות
+```

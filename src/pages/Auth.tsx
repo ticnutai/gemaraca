@@ -125,9 +125,34 @@ export default function Auth() {
     setIsLoading(true);
     saveOrClearRememberedEmail();
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    let signInResult: Awaited<ReturnType<typeof supabase.auth.signInWithPassword>>;
+    try {
+      signInResult = await supabase.auth.signInWithPassword({ email, password });
+    } catch (storageErr: unknown) {
+      // localStorage quota exceeded — clear stale data and retry once
+      if (storageErr instanceof DOMException && storageErr.name === 'QuotaExceededError') {
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && k !== 'remembered-email') keysToRemove.push(k);
+        }
+        keysToRemove.forEach(k => localStorage.removeItem(k));
+        try {
+          signInResult = await supabase.auth.signInWithPassword({ email, password });
+        } catch {
+          setIsLoading(false);
+          toast.error("הדפדפן מלא — אנא נקה את הנתונים המקומיים ונסה שוב");
+          return;
+        }
+      } else {
+        setIsLoading(false);
+        toast.error("שגיאה בהתחברות — נסה שוב");
+        return;
+      }
+    }
     setIsLoading(false);
 
+    const { error } = signInResult;
     if (error) {
       toast.error(error.message.includes("Invalid login credentials")
         ? "אימייל או סיסמה שגויים" : error.message);

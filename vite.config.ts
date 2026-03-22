@@ -4,15 +4,85 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 import { visualizer } from "rollup-plugin-visualizer";
+import { spawn, type ChildProcess } from "child_process";
+import type { Plugin } from "vite";
+
+/**
+ * Vite plugin that manages the OCR Python server lifecycle.
+ * Exposes POST /api/ocr-launcher/start to spawn the server process.
+ */
+function ocrServerLauncher(): Plugin {
+  let ocrProcess: ChildProcess | null = null;
+  const SCRIPT = path.resolve(
+    process.env.USERPROFILE || process.env.HOME || ".",
+    ".vscode/extensions/terminal-monitor/ocr-server/server.py"
+  );
+
+  return {
+    name: "ocr-server-launcher",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        if (req.url === "/api/ocr-launcher/start" && req.method === "POST") {
+          // Check if process is already alive
+          if (ocrProcess && !ocrProcess.killed) {
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ status: "already_running", pid: ocrProcess.pid }));
+            return;
+          }
+
+          try {
+            const child = spawn("python", [SCRIPT, "--port", "8399"], {
+              stdio: ["ignore", "pipe", "pipe"],
+              detached: false,
+              windowsHide: true,
+            });
+
+            ocrProcess = child;
+
+            child.stdout?.on("data", (d: Buffer) => {
+              const msg = d.toString().trim();
+              if (msg) console.log(`[OCR] ${msg}`);
+            });
+            child.stderr?.on("data", (d: Buffer) => {
+              const msg = d.toString().trim();
+              if (msg) console.log(`[OCR] ${msg}`);
+            });
+            child.on("exit", (code) => {
+              console.log(`[OCR] Server exited (code=${code})`);
+              ocrProcess = null;
+            });
+
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ status: "started", pid: child.pid }));
+          } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            res.writeHead(500, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ status: "error", message }));
+          }
+          return;
+        }
+        next();
+      });
+    },
+  };
+}
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    proxy: {
+      "/api/ocr": {
+        target: "http://127.0.0.1:8399",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/ocr/, ""),
+      },
+    },
   },
   plugins: [
     react(),
+    mode === "development" && ocrServerLauncher(),
     mode === "development" && componentTagger(),
     mode === "analyze" && visualizer({
       open: true,

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { BookOpen, Scale, Search, Upload, Pin, PinOff, ChevronDown, ChevronLeft, ArrowDownToLine, BookMarked, FileText, Database, FileType, Calendar, BookA, Map, Layers, GraduationCap, BarChart3, Compass, Paintbrush, Brain, Globe, History, CalendarCheck, GitCompareArrows, Share2 } from "lucide-react";
+import { BookOpen, Scale, Search, Upload, Pin, PinOff, ChevronDown, ChevronLeft, ArrowDownToLine, BookMarked, FileText, Database, FileType, Calendar, BookA, Map, Layers, GraduationCap, BarChart3, Compass, Paintbrush, Brain, Globe, History, CalendarCheck, GitCompareArrows, Share2, Eye } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -166,6 +166,13 @@ const menuItems = [
     title: "גרף ידע",
     icon: Share2,
     description: "ויזואליזציה של קשרים בין סוגיות",
+  },
+  {
+    id: "ocr",
+    title: "זיהוי טקסט (OCR)",
+    icon: Eye,
+    description: "זיהוי טקסט עברי מתמונות ו-PDF עם GPU",
+    badge: "חדש",
   },
 ];
 

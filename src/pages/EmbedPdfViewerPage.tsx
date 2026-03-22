@@ -8,7 +8,8 @@ import {
   RotateCcw, Printer, StickyNote, Scissors, ClipboardPaste, Sparkles, Eye, Strikethrough,
   ListOrdered, WrapText, PilcrowSquare, ArrowRight, Link, BarChart3,
   Upload, HardDrive, Database, Loader2 as Loader2Icon, Save, CopyPlus, Columns, GripVertical, Lock, Unlock,
-  Pencil, FileDown, FileType, SlidersHorizontal, MoveVertical, ArrowRightLeft, Pin, PinOff, X
+  Pencil, FileDown, FileType, SlidersHorizontal, MoveVertical, ArrowRightLeft, Pin, PinOff, X,
+  Star, Heart, Settings2
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,9 @@ import { parsePsakDinText } from "@/lib/psakDinParser";
 
 const VIEW_MODE_STORAGE_KEY = "embedpdf-view-mode-v1";
 const EDITED_TEXT_STORAGE_PREFIX = "embedpdf-edited-text-v1:";
+const PSAK_FAVORITES_KEY = "psak-favorites-v1";
+const PSAK_DEFAULT_FORMAT_KEY = "psak-default-format-v1";
+const PSAK_FORMAT_PREFIX = "psak-format-v1:";
 
 type ViewMode = "single" | "split" | "compare";
 
@@ -301,7 +305,7 @@ interface TextFormat {
   wordWrap: boolean;
 }
 
-const DEFAULT_FORMAT: TextFormat = {
+const HARDCODED_DEFAULT: TextFormat = {
   fontSize: 16,
   fontFamily: "font-serif",
   textAlign: "right",
@@ -313,6 +317,32 @@ const DEFAULT_FORMAT: TextFormat = {
   showLineNumbers: false,
   wordWrap: true,
 };
+
+function loadDefaultFormat(): TextFormat {
+  try {
+    const stored = localStorage.getItem(PSAK_DEFAULT_FORMAT_KEY);
+    if (stored) return { ...HARDCODED_DEFAULT, ...JSON.parse(stored) };
+  } catch { /* ignore */ }
+  return HARDCODED_DEFAULT;
+}
+
+function loadPsakFormat(psakId: string): TextFormat | null {
+  try {
+    const stored = localStorage.getItem(PSAK_FORMAT_PREFIX + psakId);
+    if (stored) return { ...HARDCODED_DEFAULT, ...JSON.parse(stored) };
+  } catch { /* ignore */ }
+  return null;
+}
+
+function loadPsakFavorites(): Set<string> {
+  try {
+    const stored = localStorage.getItem(PSAK_FAVORITES_KEY);
+    if (stored) return new Set(JSON.parse(stored));
+  } catch { /* ignore */ }
+  return new Set();
+}
+
+const DEFAULT_FORMAT: TextFormat = loadDefaultFormat();
 
 interface TextHighlight {
   id: string;
@@ -639,11 +669,54 @@ export default function EmbedPdfViewerPage() {
   const [annotationColor, setAnnotationColor] = useState("#FFEB3B");
   const [annotationSearch, setAnnotationSearch] = useState("");
 
+  // ── Psak Favorites ──
+  const [psakFavorites, setPsakFavorites] = useState<Set<string>>(loadPsakFavorites);
+  const togglePsakFavorite = useCallback((psakId: string) => {
+    setPsakFavorites(prev => {
+      const next = new Set(prev);
+      if (next.has(psakId)) next.delete(psakId); else next.add(psakId);
+      localStorage.setItem(PSAK_FAVORITES_KEY, JSON.stringify([...next]));
+      return next;
+    });
+  }, []);
+  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
+
   // ── Text Formatting ──
-  const [textFormat, setTextFormat] = useState<TextFormat>(DEFAULT_FORMAT);
+  const [textFormat, setTextFormat] = useState<TextFormat>(() => {
+    if (psakIdParam) {
+      const perPsak = loadPsakFormat(psakIdParam);
+      if (perPsak) return perPsak;
+    }
+    return DEFAULT_FORMAT;
+  });
   const updateFormat = useCallback((patch: Partial<TextFormat>) => {
     setTextFormat(prev => ({ ...prev, ...patch }));
   }, []);
+
+  // Load per-psak format when psakId changes
+  useEffect(() => {
+    if (!psakIdParam) return;
+    const perPsak = loadPsakFormat(psakIdParam);
+    if (perPsak) setTextFormat(perPsak);
+    else setTextFormat(loadDefaultFormat());
+  }, [psakIdParam]);
+
+  const saveAsDefaultFormat = useCallback(() => {
+    localStorage.setItem(PSAK_DEFAULT_FORMAT_KEY, JSON.stringify(textFormat));
+    toast.success("הגדרות ברירת מחדל נשמרו");
+  }, [textFormat]);
+
+  const savePerPsakFormat = useCallback(() => {
+    if (!psakIdParam) return;
+    localStorage.setItem(PSAK_FORMAT_PREFIX + psakIdParam, JSON.stringify(textFormat));
+    toast.success("הגדרות פסק נשמרו");
+  }, [psakIdParam, textFormat]);
+
+  const resetToDefaultFormat = useCallback(() => {
+    if (psakIdParam) localStorage.removeItem(PSAK_FORMAT_PREFIX + psakIdParam);
+    setTextFormat(loadDefaultFormat());
+    toast.success("אופס לברירת מחדל");
+  }, [psakIdParam]);
 
   // ── Selection Popup ──
   const [selectionPopup, setSelectionPopup] = useState<{
@@ -665,6 +738,10 @@ export default function EmbedPdfViewerPage() {
   const [docSearchCount, setDocSearchCount] = useState(0);
   const [docSearchCurrent, setDocSearchCurrent] = useState(0);
   const [docSearchSection, setDocSearchSection] = useState('');
+  const htmlSearchHitsRef = useRef<HTMLElement[]>([]);
+  const htmlSearchIndexRef = useRef(-1);
+  const [showDocToc, setShowDocToc] = useState(false);
+  const [dynamicToc, setDynamicToc] = useState<{ id: string; title: string }[]>([]);
 
   // Persist viewMode
   useEffect(() => {
@@ -694,12 +771,185 @@ export default function EmbedPdfViewerPage() {
     isLoading: annotationsLoading,
   } = usePDFAnnotations(canPersist ? selectedPdf!.id : null);
 
+  const clearHtmlEmbedHighlights = useCallback((doc: Document) => {
+    doc.querySelectorAll('mark.psak-hit').forEach((mark) => {
+      const text = doc.createTextNode(mark.textContent || '');
+      mark.replaceWith(text);
+      text.parentNode?.normalize();
+    });
+    htmlSearchHitsRef.current = [];
+    htmlSearchIndexRef.current = -1;
+    setDocSearchCount(0);
+    setDocSearchCurrent(0);
+  }, []);
+
+  const focusHtmlEmbedHit = useCallback((index: number) => {
+    const hits = htmlSearchHitsRef.current;
+    if (!hits.length) {
+      setDocSearchCount(0);
+      setDocSearchCurrent(0);
+      return;
+    }
+    hits.forEach((h) => h.classList.remove('active-hit'));
+    const safeIndex = ((index % hits.length) + hits.length) % hits.length;
+    htmlSearchIndexRef.current = safeIndex;
+    const current = hits[safeIndex];
+    current.classList.add('active-hit');
+    current.scrollIntoView({ behavior: 'auto', block: 'center' });
+    setDocSearchCount(hits.length);
+    setDocSearchCurrent(safeIndex + 1);
+  }, []);
+
+  const runHtmlEmbedSearch = useCallback((query: string, sectionFilter: string, activeDoc?: Document) => {
+    const doc = activeDoc ?? htmlEmbedIframeRef.current?.contentDocument ?? beautifyIframeRef.current?.contentDocument;
+    if (!doc?.body) return;
+
+    clearHtmlEmbedHighlights(doc);
+
+    const trimmed = query.trim();
+    if (trimmed.length < 2) return;
+
+    const q = trimmed.toLocaleLowerCase('he-IL');
+    const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT, {
+      acceptNode: (textNode) => {
+        const parent = textNode.parentElement;
+        if (!parent) return NodeFilter.FILTER_REJECT;
+        if (parent.closest('script, style, mark')) return NodeFilter.FILTER_REJECT;
+        if (parent.closest('.search-widget, .cs-sidebar, .toc')) return NodeFilter.FILTER_REJECT;
+        if (!(textNode.nodeValue || '').trim()) return NodeFilter.FILTER_REJECT;
+        if (sectionFilter) {
+          const holder = parent.closest('[data-search-scope]');
+          const scope = holder?.getAttribute('data-search-scope') || '';
+          if (scope !== sectionFilter) return NodeFilter.FILTER_REJECT;
+        }
+        return NodeFilter.FILTER_ACCEPT;
+      },
+    });
+
+    const nodes: Text[] = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode as Text);
+
+    nodes.forEach((node) => {
+      const currentNode: Text = node;
+      const source = (currentNode.nodeValue || '').toLocaleLowerCase('he-IL');
+      const indexes: number[] = [];
+      let from = 0;
+
+      while (from < source.length) {
+        const idx = source.indexOf(q, from);
+        if (idx === -1) break;
+        indexes.push(idx);
+        from = idx + q.length;
+      }
+
+      for (let i = indexes.length - 1; i >= 0; i -= 1) {
+        const start = indexes[i];
+        currentNode.splitText(start + q.length);
+        const middle = currentNode.splitText(start);
+        const mark = doc.createElement('mark');
+        mark.className = 'psak-hit';
+        mark.textContent = middle.nodeValue || '';
+        middle.parentNode?.replaceChild(mark, middle);
+        htmlSearchHitsRef.current.push(mark);
+      }
+    });
+
+    htmlSearchHitsRef.current.reverse();
+    if (htmlSearchHitsRef.current.length > 0) focusHtmlEmbedHit(0);
+  }, [clearHtmlEmbedHighlights, focusHtmlEmbedHit]);
+
+  const handleHtmlEmbedCmd = useCallback((msg: any) => {
+    const doc = beautifyIframeRef.current?.contentDocument ?? htmlEmbedIframeRef.current?.contentDocument;
+    if (!doc?.body) return;
+
+    // Always use parent-side search (more reliable than relying on stored HTML script)
+    const cmd = msg?.cmd;
+    if (!cmd) return;
+
+    if (cmd === 'search') {
+      runHtmlEmbedSearch(String(msg.query || ''), docSearchSection, doc);
+      return;
+    }
+    if (cmd === 'next') {
+      focusHtmlEmbedHit(htmlSearchIndexRef.current + 1);
+      return;
+    }
+    if (cmd === 'prev') {
+      focusHtmlEmbedHit(htmlSearchIndexRef.current - 1);
+      return;
+    }
+    if (cmd === 'clear') {
+      clearHtmlEmbedHighlights(doc);
+      return;
+    }
+    if (cmd === 'section') {
+      runHtmlEmbedSearch(docSearchQuery, String(msg.value || ''), doc);
+      return;
+    }
+    if (cmd === 'jump' && msg.anchor) {
+      const target = doc.getElementById(String(msg.anchor));
+      target?.scrollIntoView({ behavior: 'auto', block: 'start' });
+      return;
+    }
+    if (cmd === 'expand') {
+      doc.querySelectorAll('.doc-section-content').forEach((el) => el.classList.remove('section-collapsed'));
+      return;
+    }
+    if (cmd === 'collapse') {
+      doc.querySelectorAll('.doc-section-content').forEach((el) => el.classList.add('section-collapsed'));
+      return;
+    }
+    if (cmd === 'prev-sec' || cmd === 'next-sec') {
+      const anchors = Array.from(doc.querySelectorAll<HTMLElement>('[id^="sec-"]'));
+      if (!anchors.length) return;
+      let current = 0;
+      for (let i = 0; i < anchors.length; i += 1) {
+        if (anchors[i].getBoundingClientRect().top <= 130) current = i;
+      }
+      const next = cmd === 'prev-sec'
+        ? Math.max(0, current - 1)
+        : Math.min(anchors.length - 1, current + 1);
+      anchors[next]?.scrollIntoView({ behavior: 'auto', block: 'start' });
+    }
+  }, [clearHtmlEmbedHighlights, docSearchQuery, docSearchSection, focusHtmlEmbedHit, runHtmlEmbedSearch]);
+
+  // ── Build dynamic TOC from iframe headings ──
+  const buildDynamicToc = useCallback(() => {
+    const doc = beautifyIframeRef.current?.contentDocument ?? htmlEmbedIframeRef.current?.contentDocument;
+    if (!doc?.body) { setDynamicToc([]); return; }
+    const items: { id: string; title: string }[] = [];
+    // First try anchors with [id^="sec-"]
+    doc.querySelectorAll<HTMLElement>('[id^="sec-"]').forEach((el) => {
+      const label = el.getAttribute('data-search-label');
+      const isHeading = /^H[1-6]$/i.test(el.tagName);
+      const childHeading = !isHeading ? el.querySelector('h2, h3') : null;
+      let raw = label || (isHeading ? el.textContent : childHeading?.textContent) || '';
+      // Fallback: first child element text
+      if (!raw && el.firstElementChild) raw = el.firstElementChild.textContent || '';
+      if (!raw) raw = el.textContent || '';
+      let title = raw.replace(/[▲▼↑↓]/g, '').trim();
+      if (title.length > 40) title = title.slice(0, 37) + '...';
+      if (title && el.id) items.push({ id: el.id, title });
+    });
+    // If no sec- anchors found, try headings h2/h3
+    if (!items.length) {
+      doc.querySelectorAll<HTMLElement>('h2, h3').forEach((el, i) => {
+        const title = el.textContent?.trim();
+        if (!title) return;
+        if (!el.id) el.id = `auto-toc-${i}`;
+        items.push({ id: el.id, title });
+      });
+    }
+    setDynamicToc(items);
+  }, []);
+
   // ── Post message to active iframe (sidebar controls) ──
   const sendBeautifyCmd = useCallback((msg: object) => {
-    // Try beautify iframe first, then fall back to html-embed iframe
     const target = beautifyIframeRef.current?.contentWindow ?? htmlEmbedIframeRef.current?.contentWindow;
     target?.postMessage(msg, '*');
-  }, []);
+    // Always run parent-side search — works for all iframe types regardless of stored HTML
+    handleHtmlEmbedCmd(msg);
+  }, [handleHtmlEmbedCmd]);
 
   // Listen for state updates from beautify iframe
   useEffect(() => {
@@ -895,6 +1145,9 @@ export default function EmbedPdfViewerPage() {
     setDocSearchQuery('');
     setDocSearchCount(0);
     setDocSearchCurrent(0);
+    setDocSearchSection('');
+    htmlSearchHitsRef.current = [];
+    htmlSearchIndexRef.current = -1;
   }, [leftSourceUrl]);
 
   // ── Download in multiple formats ──
@@ -1864,6 +2117,7 @@ export default function EmbedPdfViewerPage() {
   // Filtered cloud docs
   const filteredCloudDocs = useMemo(() => {
     return cloudDocs.filter(doc => {
+      if (showOnlyFavorites && !psakFavorites.has(doc.id)) return false;
       const matchesSearch = !cloudSearch.trim() || 
         doc.title?.toLowerCase().includes(cloudSearch.toLowerCase());
       const matchesCourt = cloudCourtFilter === "all" || doc.court === cloudCourtFilter;
@@ -1872,11 +2126,17 @@ export default function EmbedPdfViewerPage() {
       const matchesTag = cloudTagFilter === "all" || (doc.tags && doc.tags.includes(cloudTagFilter));
       return matchesSearch && matchesCourt && matchesYear && matchesFileType && matchesTag;
     });
-  }, [cloudDocs, cloudSearch, cloudCourtFilter, cloudYearFilter, cloudFileTypeFilter, cloudTagFilter, getFileType]);
+  }, [cloudDocs, cloudSearch, cloudCourtFilter, cloudYearFilter, cloudFileTypeFilter, cloudTagFilter, getFileType, showOnlyFavorites, psakFavorites]);
+
+  const favoritesCount = useMemo(() => {
+    return cloudDocs.filter(d => psakFavorites.has(d.id)).length;
+  }, [cloudDocs, psakFavorites]);
 
   // Icon toolbar items
   const toolbarItems = [
     { id: "docs", icon: BookOpen, label: `מסמכים (${books.length})`, badge: books.length > 0 ? books.length : undefined },
+    { id: "favorites", icon: Star, label: `מועדפים (${favoritesCount})`, badge: favoritesCount > 0 ? favoritesCount : undefined },
+    { id: "display-settings", icon: Settings2, label: "הגדרות תצוגה", badge: undefined },
     { id: "annotations", icon: Palette, label: "אנוטציות", badge: annotations.length > 0 ? annotations.length : undefined },
     { id: "bookmarks", icon: Bookmark, label: `סימניות (${bookmarks.length})`, badge: bookmarks.length > 0 ? bookmarks.length : undefined },
     { id: "stats", icon: BarChart3, label: "סטטיסטיקות", badge: undefined },
@@ -1990,7 +2250,7 @@ export default function EmbedPdfViewerPage() {
               <button
                 key={item.id}
                 onClick={() => {
-                  if (item.id === "add") {
+                  if (item.id === "add" || item.id === "favorites") {
                     loadCloudDocs();
                   }
                   togglePanel(item.id);
@@ -2255,6 +2515,14 @@ export default function EmbedPdfViewerPage() {
                                 toast.success(`נטען: ${doc.title || "מסמך"}`);
                               }}
                             >
+                              <button
+                                type="button"
+                                className="shrink-0 mt-0.5 p-0.5 rounded hover:bg-[#D4AF37]/20 transition-colors"
+                                onClick={(e) => { e.stopPropagation(); togglePsakFavorite(doc.id); }}
+                                title={psakFavorites.has(doc.id) ? "הסר ממועדפים" : "הוסף למועדפים"}
+                              >
+                                <Star className={`h-3.5 w-3.5 ${psakFavorites.has(doc.id) ? "fill-[#D4AF37] text-[#D4AF37]" : "text-[#0B1F5B]/30"}`} />
+                              </button>
                               <FileText className="h-4 w-4 text-[#D4AF37] shrink-0 mt-0.5" />
                               <div className="flex-1 min-w-0 text-right">
                                 <p className="text-xs font-medium truncate" style={{ color: "#0B1F5B" }}>{doc.title || "ללא כותרת"}</p>
@@ -2430,6 +2698,166 @@ export default function EmbedPdfViewerPage() {
                 </ScrollArea>
               )}
 
+              {/* FAVORITES */}
+              {activePanel === "favorites" && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 justify-between">
+                    <p className="text-xs font-semibold text-[#0B1F5B] flex items-center gap-1">
+                      <Star className="h-4 w-4 fill-[#D4AF37] text-[#D4AF37]" /> מועדפים
+                    </p>
+                    <Button
+                      size="sm" variant={showOnlyFavorites ? "default" : "outline"}
+                      className={`h-6 text-[10px] ${showOnlyFavorites ? "bg-[#D4AF37] text-[#0B1F5B]" : "border-[#D4AF37]"}`}
+                      onClick={() => { setShowOnlyFavorites(!showOnlyFavorites); setActivePanel("add"); loadCloudDocs(); }}
+                    >
+                      {showOnlyFavorites ? "הצג הכול" : "סנן מועדפים בלבד"}
+                    </Button>
+                  </div>
+                  <ScrollArea className="max-h-[360px]">
+                    {(() => {
+                      const favDocs = cloudDocs.filter(d => psakFavorites.has(d.id));
+                      if (favDocs.length === 0) return (
+                        <div className="text-center py-6 space-y-2">
+                          <Star className="h-8 w-8 mx-auto text-[#0B1F5B]/20" />
+                          <p className="text-xs text-[#0B1F5B]/40">אין פסקי דין מועדפים</p>
+                          <p className="text-[10px] text-[#0B1F5B]/30">לחצו על ★ ליד פסק דין להוספה למועדפים</p>
+                        </div>
+                      );
+                      return (
+                        <div className="space-y-1">
+                          {favDocs.map((doc) => (
+                            <div
+                              key={doc.id}
+                              className="flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer hover:bg-[#D4AF37]/10 transition-colors"
+                              onClick={() => {
+                                assignSourceToTarget(doc.source_url, null);
+                                const newParams = new URLSearchParams();
+                                newParams.set("url", doc.source_url);
+                                newParams.set("psakId", doc.id);
+                                setSearchParams(newParams, { replace: true });
+                                setPsakData(doc);
+                                if (!iconBarPinned) setActivePanel(null);
+                              }}
+                            >
+                              <Star className="h-3.5 w-3.5 fill-[#D4AF37] text-[#D4AF37] shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium truncate text-[#0B1F5B]">{doc.title || "ללא כותרת"}</p>
+                                <span className="text-[10px] text-[#0B1F5B]/50">{doc.court || "—"} · {doc.year || "—"}</span>
+                              </div>
+                              <button
+                                className="shrink-0 p-0.5 rounded hover:bg-red-100 transition-colors"
+                                onClick={(e) => { e.stopPropagation(); togglePsakFavorite(doc.id); }}
+                                title="הסר ממועדפים"
+                              >
+                                <Trash2 className="h-3 w-3 text-red-500" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </ScrollArea>
+                </div>
+              )}
+
+              {/* DISPLAY SETTINGS */}
+              {activePanel === "display-settings" && (
+                <div className="space-y-3">
+                  <p className="text-xs font-semibold text-[#0B1F5B] flex items-center gap-1">
+                    <Settings2 className="h-4 w-4 text-[#D4AF37]" /> הגדרות תצוגה
+                  </p>
+
+                  {/* Font Family */}
+                  <div>
+                    <Label className="text-[10px] text-[#0B1F5B]/70">גופן</Label>
+                    <div className="grid grid-cols-3 gap-1 mt-1">
+                      {FONTS.map(f => (
+                        <button
+                          key={f.value}
+                          className={`text-[10px] px-2 py-1 rounded border transition-colors ${
+                            textFormat.fontFamily === f.value
+                              ? "bg-[#D4AF37] text-[#0B1F5B] border-[#D4AF37] font-bold"
+                              : "border-[#D4AF37]/30 hover:bg-[#D4AF37]/10"
+                          }`}
+                          onClick={() => updateFormat({ fontFamily: f.value })}
+                        >
+                          {f.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Font Size */}
+                  <div>
+                    <Label className="text-[10px] text-[#0B1F5B]/70">גודל גופן: {textFormat.fontSize}px</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => updateFormat({ fontSize: Math.max(10, textFormat.fontSize - 1) })}>
+                        <AArrowDown className="h-3 w-3" />
+                      </Button>
+                      <Slider
+                        value={[textFormat.fontSize]}
+                        onValueChange={([v]) => updateFormat({ fontSize: v })}
+                        min={10} max={36} step={1}
+                        className="flex-1"
+                      />
+                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => updateFormat({ fontSize: Math.min(36, textFormat.fontSize + 1) })}>
+                        <AArrowUp className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Line Height */}
+                  <div>
+                    <Label className="text-[10px] text-[#0B1F5B]/70">גובה שורה: {textFormat.lineHeight.toFixed(1)}</Label>
+                    <Slider
+                      value={[textFormat.lineHeight]}
+                      onValueChange={([v]) => updateFormat({ lineHeight: v })}
+                      min={1} max={3.5} step={0.1}
+                      className="mt-1"
+                    />
+                  </div>
+
+                  {/* Text Align */}
+                  <div>
+                    <Label className="text-[10px] text-[#0B1F5B]/70">יישור טקסט</Label>
+                    <div className="flex gap-1 mt-1">
+                      {([
+                        { val: "right" as const, icon: AlignRight, label: "ימין" },
+                        { val: "center" as const, icon: AlignCenter, label: "מרכז" },
+                        { val: "left" as const, icon: AlignLeft, label: "שמאל" },
+                        { val: "justify" as const, icon: AlignJustify, label: "מיושר" },
+                      ] as const).map(a => (
+                        <Button
+                          key={a.val} size="icon" variant="ghost"
+                          className={`h-7 w-7 ${textFormat.textAlign === a.val ? "bg-[#D4AF37]/20" : ""}`}
+                          onClick={() => updateFormat({ textAlign: a.val })}
+                          title={a.label}
+                        >
+                          <a.icon className="h-3.5 w-3.5" />
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <Separator className="bg-[#D4AF37]/20" />
+
+                  {/* Save actions */}
+                  <div className="space-y-1.5">
+                    <Button size="sm" className="w-full text-xs bg-[#0B1F5B] text-white border-2 border-[#D4AF37] gap-1" onClick={saveAsDefaultFormat}>
+                      <Save className="h-3 w-3" /> שמור כברירת מחדל
+                    </Button>
+                    {psakIdParam && (
+                      <Button size="sm" variant="outline" className="w-full text-xs border-[#D4AF37] gap-1" onClick={savePerPsakFormat}>
+                        <Save className="h-3 w-3" /> שמור לפסק זה בלבד
+                      </Button>
+                    )}
+                    <Button size="sm" variant="ghost" className="w-full text-xs gap-1" onClick={resetToDefaultFormat}>
+                      <RotateCcw className="h-3 w-3" /> אפס לברירת מחדל
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {/* STATS */}
               {activePanel === "stats" && (
                 <div className="space-y-3">
@@ -2498,45 +2926,38 @@ export default function EmbedPdfViewerPage() {
               {/* DOC SEARCH */}
               {activePanel === "doc-search" && (beautifiedHtml || leftTemplateHtml || (leftContentType === 'html-embed' && fetchedHtml)) && (
                 <div className="space-y-3">
-                  <p className="text-xs font-semibold text-[#0B1F5B]">🔍 חיפוש במסמך המעוצב</p>
+                  <p className="text-xs font-semibold text-[#0B1F5B]">חיפוש במסמך</p>
                   <div className="flex gap-1 items-center">
                     <Search className="h-3.5 w-3.5 text-[#D4AF37] flex-shrink-0" />
                     <Input
                       value={docSearchQuery}
-                      onChange={e => { setDocSearchQuery(e.target.value); sendBeautifyCmd({ cmd: 'search', query: e.target.value }); }}
+                      onChange={e => setDocSearchQuery(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') sendBeautifyCmd({ cmd: 'search', query: docSearchQuery }); }}
                       placeholder="חפש בתוך פסק הדין..."
                       className="h-7 text-xs flex-1 border-[#D4AF37]/30 focus-visible:ring-[#D4AF37]"
                       dir="rtl"
                     />
+                    <Button
+                      size="sm"
+                      className="h-7 px-3 text-xs bg-[#0B1F5B] text-white hover:bg-[#0B1F5B]/80 flex-shrink-0"
+                      onClick={() => sendBeautifyCmd({ cmd: 'search', query: docSearchQuery })}
+                    >
+                      חפש
+                    </Button>
                   </div>
-                  {docSearchCount > 0 && (
-                    <div className="flex items-center gap-1">
-                      <span className="text-[10px] text-[#0B1F5B]/60 flex-1">{docSearchCurrent}/{docSearchCount} תוצאות</span>
-                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => sendBeautifyCmd({ cmd: 'prev' })} title="קודם"><ChevronUp className="h-3 w-3" /></Button>
-                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => sendBeautifyCmd({ cmd: 'next' })} title="הבא"><ChevronDown className="h-3 w-3" /></Button>
-                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => { setDocSearchQuery(''); sendBeautifyCmd({ cmd: 'clear' }); setDocSearchCount(0); }} title="נקה"><X className="h-3 w-3" /></Button>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-1">
+                    <span className="text-[10px] text-[#0B1F5B]/60 flex-1">{docSearchCurrent}/{docSearchCount} תוצאות</span>
+                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => sendBeautifyCmd({ cmd: 'prev' })} title="קודם"><ChevronUp className="h-3 w-3" /></Button>
+                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => sendBeautifyCmd({ cmd: 'next' })} title="הבא"><ChevronDown className="h-3 w-3" /></Button>
+                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => { setDocSearchQuery(''); sendBeautifyCmd({ cmd: 'clear' }); setDocSearchCount(0); setDocSearchCurrent(0); }} title="נקה"><X className="h-3 w-3" /></Button>
+                  </div>
                   {docSearchQuery && docSearchCount === 0 && (
                     <p className="text-[10px] text-red-500">לא נמצאו תוצאות</p>
                   )}
-                  {psakData?.sections && psakData.sections.length > 0 && (
-                    <div>
-                      <p className="text-[10px] text-[#0B1F5B]/60 mb-1">חיפוש בסעיף:</p>
-                      <select
-                        value={docSearchSection}
-                        onChange={e => { setDocSearchSection(e.target.value); sendBeautifyCmd({ cmd: 'section', value: e.target.value }); }}
-                        className="w-full text-xs border rounded-md px-2 py-1 border-[#D4AF37]/30 text-[#0B1F5B] bg-white"
-                        dir="rtl"
-                      >
-                        <option value="">כל המסמך</option>
-                        {psakData.sections.map((sec, i) => (
-                          <option key={i} value={`sec-${i}`}>{sec.title}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
+
                   <Separator className="bg-[#D4AF37]/20" />
+
+                  {/* Section nav */}
                   <div className="flex gap-1">
                     <Button size="sm" variant="outline" className="text-xs h-7 border-[#D4AF37]/40 flex-1" onClick={() => sendBeautifyCmd({ cmd: 'prev-sec' })}>← סעיף קודם</Button>
                     <Button size="sm" variant="outline" className="text-xs h-7 border-[#D4AF37]/40 flex-1" onClick={() => sendBeautifyCmd({ cmd: 'next-sec' })}>סעיף הבא →</Button>
@@ -2545,19 +2966,42 @@ export default function EmbedPdfViewerPage() {
                     <Button size="sm" variant="ghost" className="text-xs h-7 flex-1 border border-[#D4AF37]/20" onClick={() => sendBeautifyCmd({ cmd: 'expand' })}>פתח הכל</Button>
                     <Button size="sm" variant="ghost" className="text-xs h-7 flex-1 border border-[#D4AF37]/20" onClick={() => sendBeautifyCmd({ cmd: 'collapse' })}>כווץ הכל</Button>
                   </div>
-                  {psakData && (
-                    <>
-                      <Separator className="bg-[#D4AF37]/20" />
-                      <p className="text-[10px] font-semibold text-[#0B1F5B]/70">📑 תוכן עניינים</p>
-                      <div className="space-y-0.5 max-h-64 overflow-y-auto">
-                        <button onClick={() => sendBeautifyCmd({ cmd: 'jump', anchor: 'sec-details' })} className="w-full text-right text-xs px-2 py-1 rounded hover:bg-[#D4AF37]/10 text-[#0B1F5B] block">פרטי התיק</button>
-                        {psakData.summary && <button onClick={() => sendBeautifyCmd({ cmd: 'jump', anchor: 'sec-summary' })} className="w-full text-right text-xs px-2 py-1 rounded hover:bg-[#D4AF37]/10 text-[#0B1F5B] block">תקציר</button>}
-                        {psakData.sections.map((sec, i) => (
-                          <button key={i} onClick={() => sendBeautifyCmd({ cmd: 'jump', anchor: `sec-${i}` })} className="w-full text-right text-xs px-2 py-1 rounded hover:bg-[#D4AF37]/10 text-[#0B1F5B] block">{sec.title}</button>
-                        ))}
-                        {(psakData.judges?.length ?? 0) > 0 && <button onClick={() => sendBeautifyCmd({ cmd: 'jump', anchor: 'sec-signature' })} className="w-full text-right text-xs px-2 py-1 rounded hover:bg-[#D4AF37]/10 text-[#0B1F5B] block">חתימה</button>}
-                      </div>
-                    </>
+
+                  <Separator className="bg-[#D4AF37]/20" />
+
+                  {/* TOC Toggle */}
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-semibold text-[#0B1F5B]/70">תוכן עניינים</p>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6"
+                      onClick={() => { setShowDocToc(v => !v); if (!showDocToc) buildDynamicToc(); }}
+                      title={showDocToc ? "הסתר תוכן עניינים" : "הצג תוכן עניינים"}
+                    >
+                      <ListOrdered className="h-3.5 w-3.5 text-[#D4AF37]" />
+                    </Button>
+                  </div>
+
+                  {showDocToc && (
+                    <div className="space-y-0.5 max-h-64 overflow-y-auto border border-[#D4AF37]/20 rounded-md p-1">
+                      {dynamicToc.length > 0 ? (
+                        dynamicToc.map((item, i) => (
+                          <button key={i} onClick={() => sendBeautifyCmd({ cmd: 'jump', anchor: item.id })} className="w-full text-right text-xs px-2 py-1 rounded hover:bg-[#D4AF37]/10 text-[#0B1F5B] block">{item.title}</button>
+                        ))
+                      ) : psakData ? (
+                        <>
+                          <button onClick={() => sendBeautifyCmd({ cmd: 'jump', anchor: 'sec-details' })} className="w-full text-right text-xs px-2 py-1 rounded hover:bg-[#D4AF37]/10 text-[#0B1F5B] block">פרטי התיק</button>
+                          {psakData.summary && <button onClick={() => sendBeautifyCmd({ cmd: 'jump', anchor: 'sec-summary' })} className="w-full text-right text-xs px-2 py-1 rounded hover:bg-[#D4AF37]/10 text-[#0B1F5B] block">תקציר</button>}
+                          {(psakData.sections ?? []).map((sec: { title: string }, i: number) => (
+                            <button key={i} onClick={() => sendBeautifyCmd({ cmd: 'jump', anchor: `sec-${i}` })} className="w-full text-right text-xs px-2 py-1 rounded hover:bg-[#D4AF37]/10 text-[#0B1F5B] block">{sec.title}</button>
+                          ))}
+                          {(psakData.judges?.length ?? 0) > 0 && <button onClick={() => sendBeautifyCmd({ cmd: 'jump', anchor: 'sec-signature' })} className="w-full text-right text-xs px-2 py-1 rounded hover:bg-[#D4AF37]/10 text-[#0B1F5B] block">חתימה</button>}
+                        </>
+                      ) : (
+                        <p className="text-[10px] text-[#0B1F5B]/40 text-center py-2">לא נמצא תוכן עניינים</p>
+                      )}
+                    </div>
                   )}
                 </div>
               )}
@@ -3175,14 +3619,14 @@ export default function EmbedPdfViewerPage() {
 
               {/* Document Viewer */}
               <div className="flex-1 relative bg-[#f8f8f6]">
-                {/* BEAUTIFIED VIEW */}
+                {/* BEAUTIFIED VIEW — always rendered so iframe ref stays alive for search */}
                 {leftTemplateHtml && !beautifiedHtml ? (
                   <iframe ref={beautifyIframeRef} srcDoc={leftTemplateHtml} className="absolute inset-0 w-full h-full border-0" title="Template View" sandbox="allow-same-origin allow-scripts allow-popups" />
-                ) : beautifiedHtml && activePanel === "beautify" ? (
+                ) : beautifiedHtml ? (
                   <iframe
                     ref={beautifyIframeRef}
                     srcDoc={beautifiedHtml}
-                    className="absolute inset-0 w-full h-full border-0"
+                    className={`absolute inset-0 w-full h-full border-0 ${activePanel !== "beautify" && activePanel !== "doc-search" && activePanel !== null ? "invisible" : ""}`}
                     title="Beautified Psak Din"
                     sandbox="allow-same-origin allow-popups allow-scripts allow-modals"
                     onLoad={() => {

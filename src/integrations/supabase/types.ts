@@ -359,10 +359,49 @@ export type Database = {
           },
         ]
       }
+      psak_sections: {
+        Row: {
+          id: string
+          psak_din_id: string
+          section_type: string
+          section_title: string
+          section_content: string
+          section_order: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          psak_din_id: string
+          section_type: string
+          section_title: string
+          section_content: string
+          section_order?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          psak_din_id?: string
+          section_type?: string
+          section_title?: string
+          section_content?: string
+          section_order?: number
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "psak_sections_psak_din_id_fkey"
+            columns: ["psak_din_id"]
+            isOneToOne: false
+            referencedRelation: "psakei_din"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       psakei_din: {
         Row: {
           beautify_count: number
           case_number: string | null
+          case_summary: string | null
           content_hash: string | null
           court: string
           created_at: string
@@ -378,6 +417,7 @@ export type Database = {
         Insert: {
           beautify_count?: number
           case_number?: string | null
+          case_summary?: string | null
           content_hash?: string | null
           court: string
           created_at?: string
@@ -393,6 +433,7 @@ export type Database = {
         Update: {
           beautify_count?: number
           case_number?: string | null
+          case_summary?: string | null
           content_hash?: string | null
           court?: string
           created_at?: string

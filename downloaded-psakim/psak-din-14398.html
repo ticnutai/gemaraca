@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="windows-1255" />
+    <title>תשלום שכירות במכת מדינה - אתר פסקי דין רבניים</title>
+    <meta name="description" content="אתר פסקים - מאגר פסקי דין רבניים של בתי הדין הרבניים לממונות">
+    <link href="/content/contentpsakim/images/favicon.png" rel="shortcut icon" type="image/x-icon" />
+    <meta name="viewport" content="width=device-width" />
+    
+    
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <style>
+        @media print {
+            #mainContent {
+                height: max-content !important;
+            }
+        }
+
+        html, body {
+            background: #ebebeb;
+            font-size: 10px;
+            margin: 0;
+            padding: 0;
+        }
+
+        #container1 {
+            /*width: 85%;*/
+            min-width: 320px;
+            margin: 0px auto 0 auto;
+            background: white;
+            border-radius: 0px;
+            padding: 0px;
+            /*overflow: hidden;*/
+            /*min-height: 1000px;*/
+        }
+
+            #container1.NotAdminInterface {
+                height: 100vh;
+            }
+
+            #container1.IsAdminInterface {
+                overflow: hidden;
+                min-height: 1000px;
+            }
+
+        .short {
+            height: 100px;
+            overflow-y: hidden;
+            border-color: #2A6496;
+            border-style: double;
+            border-radius: 34px;
+            padding: 10px;
+            margin: 10px;
+            cursor: pointer;
+        }
+    </style>
+    
+    
+    <style>
+        @import url(https://fonts.googleapis.com/earlyaccess/opensanshebrew.css);
+
+        /*bootstrap styling*/
+        #psakim-body {
+            font-family: 'Open Sans Hebrew', sans-serif !important;
+            font-size: 14px;
+            line-height: 1.42857143;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /*fallback for IE font*/
+        @media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
+            #psakim-body {
+                font-family: Rosenberg, sans-serif !important;
+            }
+        }
+
+        #nvbar {
+            height: 55px;
+            margin-bottom: 0px;
+        }
+
+        ol,
+        ul {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        a {
+            color: #337ab7;
+            text-decoration: none;
+        }
+
+        /*eo*/
+        #p-logo {
+            position: relative;
+            top: -45px;
+            background: white;
+            max-height: 49px;
+            z-index: 10;
+            margin-top: 5px;
+
+            @media screen and (max-width: 700px) {
+                width: 40%;
+                top: 0px;
+                margin-top: 5px;
+                margin-inline-start: 10px;
+            }
+        }
+
+        .pagename {
+            margin: 20px auto;
+            overflow: hidden;
+            text-align: center;
+            line-height: 1.2em;
+            font-size: 42px;
+            font-weight: bold;
+            color: black;
+        }
+
+        .container {
+            margin-left: auto;
+            margin-right: auto;
+            min-height: 550px;
+        }
+
+        #nvbar ul {
+            list-style-type: none;
+        }
+
+        #mainContent {
+            background-color: #dee9fa;
+            /*            background-image: url(/content/contentPsakim/Images/background.png);*/
+            overflow-x: auto;
+            /*            margin-top: 50px;*/
+        }
+
+        @media screen and (min-width: 1000px) {
+            .container {
+                max-width: 1000px;
+            }
+        }
+
+        @media screen and (max-width: 1000px) {
+            .container {
+                max-width: 98%;
+            }
+        }
+
+        @media screen and (min-width: 700px) {
+            #mobileTitle {
+                display: none;
+            }
+
+            #nvbar ul {
+                text-align: center;
+                padding-top: 12px;
+                background-color: white;
+            }
+
+            .selNavItem {
+                border-bottom: #91a7e7 2px solid;
+            }
+
+            #nvbar li {
+                display: inline;
+                padding: 10px 10px;
+            }
+
+            .hamburger {
+                display: none;
+            }
+        }
+
+        @media screen and (max-width: 700px) {
+            #nvbar {
+                background-color: white;
+            }
+
+            #mobileTitle {
+                text-align: center;
+                font-size: 25px;
+                padding-top: 7px;
+            }
+
+            #nvbar ul {
+                display: none;
+                padding: 0;
+                margin: 0;
+                position: absolute;
+                background: white;
+                width: 100%;
+                right: 0;
+                top: 60px;
+                z-index: 10;
+            }
+
+            #nvbar.open ul {
+                display: initial;
+            }
+
+            #nvbar li {
+                color: #2A3062;
+                padding: 10px;
+                border-bottom: 1px solid #2A3062;
+            }
+
+            a {
+                color: #2A3062;
+            }
+
+            #nvbar li:last-child {
+                border: 0;
+            }
+
+            .hamburger {
+                float: inline-end;
+                display: initial;
+                background: white;
+                background-image: url(/content/contentPsakim/Images/hamburger.png);
+                width: 43px;
+                height: 40px;
+                background-repeat: no-repeat;
+                background-size: contain;
+                background-position: center;
+                border: 0;
+                margin: 10px;
+                margin-top: 5px;
+            }
+        }
+    </style>
+    <link href="/Content/ContentPsakim/style/bootstrap.min.css" rel="stylesheet" />
+
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.8/themes/default/style.min.css" />
+    <style>
+        .section-title {
+            font-weight: bold;
+        }
+
+        .section {
+            padding-bottom: 15px;
+        }
+
+        .toggle-title:hover {
+            cursor: pointer;
+        }
+
+        a.file-tag {
+            padding: 4px;
+            background-color: #337ab7;
+            color: white;
+            margin: 5px;
+            line-height: 2;
+        }
+
+        div.toggle-title:before {
+            position: relative;
+            top: 5px;
+            content: url('/content/contentPsakim/Images/nodeCloseBlue.png');
+        }
+
+        div.toggle-title.open:before {
+            content: url('/content/contentPsakim/Images/nodeOpenBlue.png');
+        }
+
+        .selOgen {
+            padding-top: 80px;
+            margin-top: -80px;
+            display: unset;
+        }
+
+            .selOgen:before {
+                background-image: url('/content/contentPsakim/Images/hand-pointers-screenshots-4.png');
+                content: "";
+                min-height: 30px;
+                padding-right: 61px;
+                padding-bottom: 11px;
+                background-position: right bottom;
+                background-size: 53px 40px;
+                background-repeat: no-repeat;
+                position: absolute;
+                right: -50px;
+            }
+
+        .highlight {
+            background-color: yellow
+        }
+
+        #file-num {
+            font-size: 20px;
+        }
+
+        .extTitle {
+            text-align: center;
+            font-size: 32px;
+            background-color: transparent;
+        }
+
+        .file-title {
+            line-height: 40px;
+            font-size: 25px;
+            background-color: #2A3062;
+            padding: 12px;
+            color: white;
+            position: relative;
+            right: -25px;
+            display: inline;
+        }
+
+        @media screen and (min-width: 700px) {
+            #file-num {
+                float: left;
+            }
+        }
+
+        @media screen and (max-width: 700px) {
+            #file-num {
+                position: relative;
+                right: -25px;
+                padding-bottom: 10px;
+            }
+        }
+    </style>
+        <style>
+               span {font-family:arial, tahoma !important;}
+span {color:black !important;}
+h1, h1 span {font-size:24px !important;}
+h1, h1 span {color: !important;}
+h1, h1 span {font-weight: bold !important;}
+h1, h1 span {line-height:2 !important;}
+h2, h2 span {font-size:19px !important;}
+h2, h2 span {font-weight: bold !important;}
+h5, h5 span {color:blue !important;}
+h6, h6 span {font-size:14px !important;}
+.file-title{color:white !important;}
+        </style>
+<style>
+    .subjectTag {
+        border: 1px solid lightgray;
+        padding: 2px;
+        margin: 3px;
+        min-width: 150px;
+        max-width: 60%;
+        font-size: 10px;
+    }
+
+    @media screen and (max-width: 768px) {
+        .subjectTag {
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .jstree-default-responsive .jstree-anchor {
+            font-weight: normal;
+        }
+    }
+
+    .tagsTreeName {
+        font-weight: bold;
+        font-size: 28px;
+    }
+
+    .subjectNameTag a {
+        font-weight: bold;
+        font-size: 18px;
+    }
+
+    .subjectsListHolder {
+        margin-inline-start: 20px;
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .tagsTreeBody {
+        margin-inline-start: 10px;
+    }
+
+    .subjectsFirstLevels, #sourcesTree {
+        font-size: 20px;
+    }
+
+    .tagsTree a {
+        color: black;
+    }
+
+    .pathSubjects * {
+        font-size: 10px;
+    }
+
+    .firstLevels {
+        margin-bottom: 8px;
+    }
+
+    .subjectTagArrowBig {
+        font-size: 14px;
+    }
+
+    .subjectTagArrowSmall {
+        font-size: 7px;
+    }
+    /*the following items are overrides from the style.min.css*/
+    .jstree-rtl .jstree-anchor > .jstree-themeicon {
+        margin-left: -26px;
+    }
+
+    .jstree-default.jstree-rtl .jstree-node {
+        background: none;
+    }
+
+    .jstree-default.jstree-rtl .jstree-open > .jstree-ocl {
+        background-position: -36px -36px;
+    }
+
+    .jstree-default.jstree-rtl .jstree-closed > .jstree-ocl {
+        background-position: -6px -36px;
+    }
+
+    .jstree-default-small.jstree-rtl .jstree-node {
+        background: none;
+    }
+
+    .jstree-default-large.jstree-rtl .jstree-node {
+        background: none;
+    }
+
+    .ogen {
+        background-color: #ffff0087;
+        cursor: pointer;
+    }
+
+    .ogen::after {
+        content: " ↓";
+    }
+</style>
+
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-3P9QRFE83H"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+
+        gtag('config', 'G-3P9QRFE83H', {
+            'content_group': window.location.pathname.match(/^\/[^\/]*/)[0],
+        });
+    </script>
+
+</head>
+<body dir=rtl class=LangHE >
+    <div id="container1" role="main" class="IsAdminInterface">
+        
+
+
+<div id="psakim-body">
+    <div id="nvbar" class="navbar">
+        <div style="max-width: 1000px;margin-left: auto;margin-right: auto;">
+            <button class="hamburger" onclick="$('#nvbar').toggleClass('open')" aria-label="Menu"></button>
+            
+            <ul>
+                <li class="">
+                    <a href="/">דף בית</a>
+                </li>
+                <li class="">
+                    <a href="/Psakim/Tags">מפתח פסקי הדין</a>
+                </li>
+                
+                <li class="">
+                    <a href="/Psakim/Search">חיפוש מתקדם</a>
+                </li>
+                <li class="">
+                    <a href="/Psakim/Extentions">מאמרים ועיונים</a>
+                </li>
+                <li class="">
+                    <a href="/Psakim/Contact">צור קשר</a>
+                </li>
+                <li class="">
+                    <a href="/Psakim/AboutHeb">אודות</a>
+                </li>
+                
+                <li class="">
+                    <a href="/Psakim/Change?LanguageAbbrevation=en">English</a>
+                </li>
+            </ul>
+                <a href="/">
+                    <img id="p-logo" src="/content/contentPsakim/Images/logo.svg" />
+                </a>
+        </div>
+        <div style="background-color:white;padding: 20px;height:0;position: absolute;width: 100%;top: 0px;z-index: -1;">
+        </div>
+    </div>
+    <div id="mainContent" dir="rtl">
+        
+        <div style="color: white; height: 0; padding-inline-start: 25px;" id="basad">בס"ד</div>
+        <div class="container">
+            <div style="clear: both;"></div>
+            
+
+
+<script src="/content/ContentPsakim/plugin/angular/angular.min.js"></script>
+<script src="/content/ContentPsakim/scripts/app/controller.js"></script>
+<script>
+    var subjects = {"tag":{"ID":17203,"ParentID":1,"Name":"מפתח הנושאים","Type":0,"FileID":null,"OgenID":null,"RowIndex":0,"Tooltip":null},"sons":[{"tag":{"ID":207,"ParentID":17203,"Name":"בית דין - סדרי דין","Type":0,"FileID":0,"OgenID":"","RowIndex":0,"Tooltip":null},"sons":[{"tag":{"ID":44,"ParentID":207,"Name":"סדרי דין","Type":0,"FileID":0,"OgenID":"","RowIndex":0,"Tooltip":null},"sons":[{"tag":{"ID":1340,"ParentID":44,"Name":"טענות","Type":0,"FileID":0,"OgenID":"","RowIndex":0,"Tooltip":null},"sons":[{"tag":{"ID":1341,"ParentID":1340,"Name":"טוען וחוזר וטוען ","Type":0,"FileID":0,"OgenID":"","RowIndex":0,"Tooltip":null},"sons":[{"tag":{"ID":2440,"ParentID":1341,"Name":"מחיוב לפטור","Type":0,"FileID":0,"OgenID":"","RowIndex":0,"Tooltip":null},"sons":[{"tag":{"ID":3981,"ParentID":2440,"Name":"אינו נאמן","Type":2,"FileID":null,"OgenID":null,"RowIndex":0,"Tooltip":null},"sons":[{"tag":{"ID":59776,"ParentID":3981,"Name":"(חו\"מ פ א)","Type":1,"FileID":14398,"OgenID":"ogen1","RowIndex":0,"Tooltip":null},"sons":null}]}]}]}]}]}]},{"tag":{"ID":3757,"ParentID":17203,"Name":"שומרים - שכירות                           ","Type":0,"FileID":null,"OgenID":null,"RowIndex":0,"Tooltip":null},"sons":[{"tag":{"ID":55,"ParentID":3757,"Name":"שכירות","Type":0,"FileID":0,"OgenID":"","RowIndex":0,"Tooltip":null},"sons":[{"tag":{"ID":160,"ParentID":55,"Name":"דמי שכירות","Type":0,"FileID":0,"OgenID":"","RowIndex":0,"Tooltip":null},"sons":[{"tag":{"ID":16705,"ParentID":160,"Name":"באונס","Type":0,"FileID":null,"OgenID":null,"RowIndex":0,"Tooltip":null},"sons":[{"tag":{"ID":55806,"ParentID":16705,"Name":"במכת מדינה","Type":0,"FileID":null,"OgenID":null,"RowIndex":0,"Tooltip":null},"sons":[{"tag":{"ID":59777,"ParentID":55806,"Name":"כאשר חפצי השוכר נשארו במושכר","Type":2,"FileID":null,"OgenID":null,"RowIndex":0,"Tooltip":null},"sons":[{"tag":{"ID":59778,"ParentID":59777,"Name":"ולמעשה בנדון דידן","Type":1,"FileID":14398,"OgenID":"ogen3","RowIndex":0,"Tooltip":null},"sons":null}]}]}]}]}]}]}]};
+</script>
+
+<div style="background-color: white; padding: 25px; position: relative; font-size: medium;" class="file">
+    <div style="padding-bottom:35px;">
+        <div id="file-num">מס. סידורי:14398</div>
+        <h1 class="file-title">תשלום שכירות במכת מדינה</h1>
+    </div>
+
+        <div class="section">
+            <span class="section-title">שם בית דין:</span>שדרות                                             
+        </div>
+        <div class="section">
+            <div class="section-title">דיינים:</div>
+            <div>הרב בן יאיר שלמה<br/>הרב טוויל דרור<br/>הרב תפוחי אביעד</div>
+        </div>
+        <div class="section">
+            <div class="section-title">תקציר:</div>
+            <div></div>
+        </div>
+        <div class="section">
+            <div class="section-title">פסק הדין:</div>
+            <div></div>
+        </div>
+        <div class="section">
+            <div class="section-title toggle-title" id='discussion-title' onclick="$('#discussion').toggle();$(this).toggleClass('open')">נושאים הנידונים בפסק:</div>
+            <div id="discussion" style="display:none;">א: חוזר וטוען מחיוב לפטור.<br />ב: תשלום שכירות בזמן מכת מדינה<br />ג.</div>
+        </div>
+    <div class="section">
+        <div class="section-title">תאריך: כ&quot;ח סיון תשפ&quot;ה</div>
+    </div>
+    <div>
+        <p style="text-align: left;" data-mce-style="text-align: left;"><span id="docs-internal-guid-94e43807-7fff-b260-eb37-b3e61b1235cd"></span><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;">תיק מספר: 163</span></p><p dir="rtl" style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;" data-mce-style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;"><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-weight: bold; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-weight: bold; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;"></span><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;">בעניין שבין התובעת: מוסד ע"י ראובן</span></p><p dir="rtl" style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;" data-mce-style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;"><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;">לבין הנתבעת: שמעון</span></p><h2 dir="rtl" data-mce-style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;" style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;"><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-weight: bold; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-weight: bold; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;">מבוא</span><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;">:</span></h2><p dir="rtl" style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;" data-mce-style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;"><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;">פסק דין זה הוא המשך לפסק דין ביניים מס' 1 בו נדרש המוסד לשלוח דפי חשבונות על תשלומי השכירות של הנתבעת.&nbsp;</span></p><p dir="rtl" style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;" data-mce-style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;"><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;">ממזכירות המוסד נשלחו דפי החשבונות שמהם לטענת נציגי המוסד עולה שהנתבעת שילמה חמישה חודשי שכירות על המבנה.</span></p><p dir="rtl" style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;" data-mce-style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;"><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;">דפי חשבון אלו הובאו לפני הגב' שמעון שנתבקשה להשיב עליהם, וזה לשון תשובתה:</span></p><p dir="rtl" style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;" data-mce-style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;"><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;">"תשלום למוסד, אני חייבת רק חודשיים, הכל שולם.</span></p><p dir="rtl" style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;" data-mce-style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;"><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;">לגבי נזק למרפאה והחייבות של המוסד לעזור לי בתיקון, אני עדיין חושבת שכן מגיעה לי עזרה במידת האפשר, לא הייתי משקיעה בתיקון הרבה אם לא הייתה עזרה.</span></p><p dir="rtl" style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;" data-mce-style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;"><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;">מוכנה לפשרה שתסגור את הדיון הזה לסכום סמלי, אבקש להתחשב בכל הדברים שמסביב וגם מצב הבטחוני וקורונה שהמרפאה הייתה סגורה ושילמנו."&nbsp;</span></p><h2 dir="rtl" data-mce-style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;" style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;"><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-weight: bold; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-weight: bold; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;">בירור הדין</span><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;">:</span></h2><p dir="rtl" style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;" data-mce-style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;"><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-weight: bold; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-weight: bold; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;">א.</span><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;"> בדיון בבית הדין המוסד תבע חמישה חודשי שכירות בסך כולל של 43,875 ₪ (8,775*5), והגב' שמעון הודתה על חוב של שלושה חודשים מתוך החמישה. נמצא שדבריה בתשובתה שהיא חייבת רק חודשיים אינם מתקבלים, שכן הם סותרים את הודאתה המפורשת בדיון, והלכה פסוקה היא <span id="ogen1" class="ogen ogen1-dest">(חו"מ פ א)</span> שאין טוען וחוזר וטוען מחובה לזכות, ובודאי כשיצא מבה"ד. ויתירה מזאת, הדיון בבה"ד נגמר והתגובה שנתבקשה מגב' שמעון היא רק על החשבון שהגישה המוסד, ובזה לא מצאנו התייחסות מצידה להוכיח שחשבונות אלו אינם נכונים.</span></p><p dir="rtl" style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;" data-mce-style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;"><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-weight: bold; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-weight: bold; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;">ב. </span><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;">ביחס לתשלום מצד המוסד על נזקי המרפאה כבר נפסק בפסק הדין הראשון שאין המוסד חייב בזה, וכפי שכבר פורט בהרחבה בפסק הדין.</span></p><p dir="rtl" style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;" data-mce-style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;"><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-weight: bold; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-weight: bold; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;">ג.</span><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;"> לגבי טענתה על התחשבות מחמת הקורונה, גם בדיון הוזכרו מצד הגב' שמעון עניינים הנוגעים לקורונה אם כי לא טענה מפורשת. ולמעשה על פי הדו"ח שנשלח ע"י המוסד, ישנם שני תשלומים מתוך החמישה שיש להם זיקה לתקופת הקורונה, 31/3/20 וכמ"כ 31/7/21 (למניינם).</span></p><p dir="rtl" style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;" data-mce-style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;"><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;">אכן ב'מכת מדינה' כמו בתקופה הקורונה יש לדון אם יש חובת תשלום שכירות, ויש לעיין בכל זה כפי שנתבאר בפוסקים (<span id="ogen2" class="ogen ogen2-dest">שו"ע חו"מ שכב א, שכא א ו</span>הרמ"א שם, וברמ"א שיב יז, ובנושאי כלים שם).&nbsp;</span></p><p dir="rtl" style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;" data-mce-style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;"><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;"><span id="ogen3" class="ogen ogen3-dest">ולמעשה בנדון דידן</span> מחד עדיין הציוד היה בתוך המבנה וייתכן שלעיתים גם נעשו טיפולים וא"כ צריך לשלם, אך גם מסתבר שלא היה תפקוד מלא בודאי בתקופת הסגר, מה גם שמסתבר מאוד שכבר דברו הצדדים ביניהם בענין זה וסיכמו על כך.</span></p><p dir="rtl" style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;" data-mce-style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;"><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;">מכל מקום כיון שיש צד להקל בדבר על הנתבע המוחזק, לכן מצד פשרה הקרובה לדין ביחס לשני החודשים שהגב' שוש מכחישה את טענת המוסד, נראה לחייבה על חצי מהסכום בכל אחד מחודשים אלו.</span></p><p dir="rtl" style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;" data-mce-style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;"><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-weight: bold; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-weight: bold; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;">ד.</span><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;"> העולה מכל הנ"ל הוא שעל הגב' שמעון לשלם על ארבעה חודשים בלבד. סך כולל של 35,100 ₪&nbsp;</span></p><h2 dir="rtl" data-mce-style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;" style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;"><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-weight: bold; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-weight: bold; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;">החלטה</span><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;">:</span></h2><ol style="margin-bottom: 0px; padding-inline-start: 48px;" data-mce-style="margin-bottom: 0px; padding-inline-start: 48px;"><li dir="rtl" style="list-style-type: decimal; font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space: pre;" aria-level="1" data-mce-style="list-style-type: decimal; font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space: pre;"><p dir="rtl" style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 0pt;" role="presentation" data-mce-style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 0pt;"><span style="font-size: 12pt; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; text-wrap-mode: wrap;" data-mce-style="font-size: 12pt; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; text-wrap-mode: wrap;">המוסד אינו צריך לשלם עבור נזקי המרפאה, וכפי שנפסק בפסק דין הראשון.</span></p></li><li dir="rtl" style="list-style-type: decimal; font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space: pre;" aria-level="1" data-mce-style="list-style-type: decimal; font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space: pre;"><p dir="rtl" style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 0pt;" role="presentation" data-mce-style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 0pt;"><span style="font-size: 12pt; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; text-wrap-mode: wrap;" data-mce-style="font-size: 12pt; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; text-wrap-mode: wrap;">על הגב' שמעון לשלם סך כולל של 35,100 ₪ עבור ארבעה חודשי שכירות.&nbsp;</span></p></li><li dir="rtl" style="list-style-type: decimal; font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space: pre;" aria-level="1" data-mce-style="list-style-type: decimal; font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space: pre;"><p dir="rtl" style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 0pt;" role="presentation" data-mce-style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 0pt;"><span style="font-size: 12pt; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; text-wrap-mode: wrap;" data-mce-style="font-size: 12pt; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; text-wrap-mode: wrap;">הנתבעת תוכל לשלם את הסכום הנ"ל עד ארבעה תשלומים שווים, דהיינו שבכל חודש תשלם סכום של 8,775 ₪. התשלום הראשון לא יאוחר מיום 10/7/2025 למניינם.&nbsp;</span></p></li></ol><p dir="rtl" style="line-height: 1.7999999999999998; margin-right: 36pt; text-align: justify; margin-top: 0pt; margin-bottom: 0pt;" data-mce-style="line-height: 1.7999999999999998; margin-right: 36pt; text-align: justify; margin-top: 0pt; margin-bottom: 0pt;"><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;">התשלום השני לא יאוחר מיום 10/8/2025 למניינם.&nbsp;</span></p><p dir="rtl" style="line-height: 1.7999999999999998; margin-right: 36pt; text-align: justify; margin-top: 0pt; margin-bottom: 0pt;" data-mce-style="line-height: 1.7999999999999998; margin-right: 36pt; text-align: justify; margin-top: 0pt; margin-bottom: 0pt;"><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;">התשלום השלישי לא יאוחר מיום 10/9/2025 למניינם.&nbsp;</span></p><p dir="rtl" style="line-height: 1.7999999999999998; margin-right: 36pt; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;" data-mce-style="line-height: 1.7999999999999998; margin-right: 36pt; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;"><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;">והתשלום הרביעי לא יאוחר מיום 10/10/2025 למניינם.</span></p><p><br></p><p dir="rtl" style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;" data-mce-style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;"><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;">'והאמת והשלום אהבו'</span></p><p dir="rtl" style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;" data-mce-style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;"><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;">  __________</span><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;"><span class="Apple-tab-span" style="text-wrap-mode: nowrap;" data-mce-style="text-wrap-mode: nowrap;">	</span></span><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;"><span class="Apple-tab-span" style="text-wrap-mode: nowrap;" data-mce-style="text-wrap-mode: nowrap;">	</span>                      </span><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;"> __________</span><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;"><span class="Apple-tab-span" style="text-wrap-mode: nowrap;" data-mce-style="text-wrap-mode: nowrap;">	</span></span><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;"><span class="Apple-tab-span" style="text-wrap-mode: nowrap;" data-mce-style="text-wrap-mode: nowrap;">	</span></span><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;"><span class="Apple-tab-span" style="text-wrap-mode: nowrap;" data-mce-style="text-wrap-mode: nowrap;">	</span></span><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;"><span class="Apple-tab-span" style="text-wrap-mode: nowrap;" data-mce-style="text-wrap-mode: nowrap;">	</span></span><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;">&nbsp;        &nbsp; __________</span></p><h3 dir="rtl" data-mce-style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;" style="line-height: 1.7999999999999998; text-align: justify; margin-top: 0pt; margin-bottom: 10pt;"><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;">הרב שלמה בן יאיר</span><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;"><span class="Apple-tab-span" style="text-wrap-mode: nowrap;" data-mce-style="text-wrap-mode: nowrap;">	</span></span><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;"><span class="Apple-tab-span" style="text-wrap-mode: nowrap;" data-mce-style="text-wrap-mode: nowrap;">	</span></span><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;"> &nbsp; הרב דרור טויל, ראב"ד</span><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;"><span class="Apple-tab-span" style="text-wrap-mode: nowrap;" data-mce-style="text-wrap-mode: nowrap;">	</span></span><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;"> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; </span><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;"><span class="Apple-tab-span" style="text-wrap-mode: nowrap;" data-mce-style="text-wrap-mode: nowrap;">	</span></span><span style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;" data-mce-style="font-size: 12pt; font-family: Arial, sans-serif; color: #000000; background-color: transparent; font-variant-numeric: normal; font-variant-east-asian: normal; font-variant-alternates: normal; font-variant-position: normal; font-variant-emoji: normal; vertical-align: baseline; white-space-collapse: preserve;">&nbsp; &nbsp; &nbsp; הרב אביעד תפוחי</span></h3><p><br></p><p></p>
+    </div>
+
+    
+
+        <h2>תגיות</h2>
+            <div id="subjectsTree" class="tagsTree">
+            <span class="tagsTreeName">נושאים</span>
+            <div class="tagsTreeBody">
+                        <div class="firstLevels">
+                            <span class="subjectsFirstLevels">
+                                <a href="/psakim/tags/207">בית דין - סדרי דין</a><span class="subjectTagArrowBig"> > </span><a href="/psakim/tags/44">סדרי דין</a><span class="subjectTagArrowBig"> > </span>
+                                <div class="subjectsListHolder">
+                                        <div class="subjectTag">
+                                            <span class="pathSubjects">
+                                                            <a target="_blank" rel="noopener" href="/psakim/tags/1340">טענות</a><span class="subjectTagArrowSmall"> > </span>
+                                                            <a target="_blank" rel="noopener" href="/psakim/tags/1341">טוען וחוזר וטוען </a><span class="subjectTagArrowSmall"> > </span>
+                                                            <a target="_blank" rel="noopener" href="/psakim/tags/2440">מחיוב לפטור</a><span class="subjectTagArrowSmall"> > </span>
+                                            </span>
+                                            <div class="subjectNameTag">
+                                                <a target="_blank" rel="noopener" class="ogen1" href="/psakim/tags/3981">אינו נאמן</a>
+                                            </div>
+                                        </div>
+                                </div>
+                        </div>
+                        <div class="firstLevels">
+                            <span class="subjectsFirstLevels">
+                                <a href="/psakim/tags/3757">שומרים - שכירות                           </a><span class="subjectTagArrowBig"> > </span><a href="/psakim/tags/55">שכירות</a><span class="subjectTagArrowBig"> > </span>
+                                <div class="subjectsListHolder">
+                                        <div class="subjectTag">
+                                            <span class="pathSubjects">
+                                                            <a target="_blank" rel="noopener" href="/psakim/tags/160">דמי שכירות</a><span class="subjectTagArrowSmall"> > </span>
+                                                            <a target="_blank" rel="noopener" href="/psakim/tags/16705">באונס</a><span class="subjectTagArrowSmall"> > </span>
+                                                            <a target="_blank" rel="noopener" href="/psakim/tags/55806">במכת מדינה</a><span class="subjectTagArrowSmall"> > </span>
+                                            </span>
+                                            <div class="subjectNameTag">
+                                                <a target="_blank" rel="noopener" class="ogen3" href="/psakim/tags/59777">כאשר חפצי השוכר נשארו במושכר</a>
+                                            </div>
+                                        </div>
+                                </div>
+                        </div>
+            </div>
+        </div>
+
+        <div id="sourcesTreeHolder" class="tagsTree">
+            <span class="tagsTreeName">מקורות</span>
+            <div id="sourcesTree" >
+                
+
+
+
+        <ul>
+                    <li class=&#39;jstree-open&#39; id='17205' data-jstree='{"icon":"tag","opened":true}' title=  >
+                            <a href="/psakim/tags/17205" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); window.open(this.href, '_blank'); return false;">שולחן ערוך</a>
+                                <ul>
+                    <li  id='17207' data-jstree='{"icon":"tag","opened":false}' title=  >
+                            <a href="/psakim/tags/17207" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); window.open(this.href, '_blank'); return false;">חושן משפט</a>
+                                <ul>
+                    <li  id='19142' data-jstree='{"icon":"tag","opened":false}' title=  >
+                            <a href="/psakim/tags/19142" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); window.open(this.href, '_blank'); return false;">עה-צו - הלכות טוען ונטען                                                        </a>
+                                <ul>
+                    <li  id='18756' data-jstree='{"icon":"tag","opened":false}' title=  >
+                            <a href="/psakim/tags/18756" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); window.open(this.href, '_blank'); return false;">סימן פ</a>
+                                <ul>
+                    <li  id='18757' data-jstree='{"icon":"subject","opened":false}' title=  >
+                            <a href="/psakim/tags/18757" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); window.open(this.href, '_blank'); return false;">סעיף א</a>
+                                <ul>
+        </ul>
+
+                    </li>
+        </ul>
+
+                    </li>
+        </ul>
+
+                    </li>
+                    <li  id='19164' data-jstree='{"icon":"tag","opened":false}' title=  >
+                            <a href="/psakim/tags/19164" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); window.open(this.href, '_blank'); return false;">שז-שיט - הלכות שוכר                            </a>
+                                <ul>
+                    <li  id='17275' data-jstree='{"icon":"tag","opened":false}' title=  >
+                            <a href="/psakim/tags/17275" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); window.open(this.href, '_blank'); return false;">סימן שיב</a>
+                                <ul>
+                    <li  id='17278' data-jstree='{"icon":"subject","opened":false}' title=  >
+                            <a href="/psakim/tags/17278" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); window.open(this.href, '_blank'); return false;">סעיף יז</a>
+                                <ul>
+        </ul>
+
+                    </li>
+        </ul>
+
+                    </li>
+        </ul>
+
+                    </li>
+                    <li  id='19165' data-jstree='{"icon":"tag","opened":false}' title=  >
+                            <a href="/psakim/tags/19165" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); window.open(this.href, '_blank'); return false;">שכ-של - הלכות חכירות וקבלנות                                                                </a>
+                                <ul>
+                    <li  id='21472' data-jstree='{"icon":"tag","opened":false}' title=  >
+                            <a href="/psakim/tags/21472" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); window.open(this.href, '_blank'); return false;">סימן שכא</a>
+                                <ul>
+                    <li  id='21473' data-jstree='{"icon":"subject","opened":false}' title=  >
+                            <a href="/psakim/tags/21473" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); window.open(this.href, '_blank'); return false;">סעיף א</a>
+                                <ul>
+        </ul>
+
+                    </li>
+        </ul>
+
+                    </li>
+                    <li  id='57216' data-jstree='{"icon":"tag","opened":false}' title=  >
+                            <a href="/psakim/tags/57216" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); window.open(this.href, '_blank'); return false;">סימן שכב</a>
+                                <ul>
+                    <li  id='57217' data-jstree='{"icon":"subject","opened":false}' title=  >
+                            <a href="/psakim/tags/57217" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); window.open(this.href, '_blank'); return false;">סעיף א</a>
+                                <ul>
+        </ul>
+
+                    </li>
+        </ul>
+
+                    </li>
+        </ul>
+
+                    </li>
+        </ul>
+
+                    </li>
+        </ul>
+
+                    </li>
+        </ul>
+
+            </div>
+        </div>
+</div>
+        </div>
+
+        
+    <div id="footer" style="position:relative;">
+        <div style="text-align:center;color:#2A3062;width: 50%;margin: 20px auto;">
+            <div style="padding:0;font-size:16px;font-weight:bold;">בכדי להתייחס לפסק דין זה, <a href="/psakim/contact?type=comment&id=14398">לחץ כאן</a></div>
+        </div>
+        <div id="dedication" style="text-align:center;color:#2A3062;width: 50%;margin: 20px auto;">
+            <img src="/content/contentPsakim/Images/dedication.jpg" />
+            <div style="padding:0;font-size:16px;font-weight:bold;">ניתן להנציח פסקי דין. לפרטים <a href='/psakim/contact?type=ded&id=14398'>לחץ</a></div>
+        </div>
+    </div>
+    <div style="clear:both;"> </div>
+
+    </div>
+</div>
+
+    </div>
+
+    
+    <script src="/Content/ContentPsakim/Plugin/jquery-1.8.2.min.js"></script>
+    <script>
+        window.onresize = function (event) {
+            setWindowSize();
+        };
+
+        $(document).ready(function () {
+            setWindowSize();
+        });
+
+        function setWindowSize() {
+            //what we are trying to do is set the correct class if we are not in an admin state
+            //this makes it so the fix for the footnote scroll is only applied in the non admin state
+            //this prevents a grey bar in the admin page
+            var navBar = document.getElementById('nvbar');
+            if (navBar === undefined || navBar === null) {
+                return;
+            }
+            var cont = $('#container1');
+            if (cont.hasClass('IsAdminInterface')) {
+                cont.removeClass('IsAdminInterface')
+            }
+            if (!cont.hasClass('NotAdminInterface')) {
+                cont.addClass('NotAdminInterface');
+            }
+            //console.log('navbar=' + JSON.stringify(navBar));
+            var height = $(window).height() - 55;
+            $("#mainContent").height(height);
+        }
+    </script>
+    <!--<script src="/content/ContentPsakim/plugin/jTree/dist/libs/jquery.js"></script>-->
+    
+    
+    <script src="/content/ContentPsakim/plugin/jTree/dist/jstree.min.js"></script>
+
+    <script src="/content/ContentPsakim/scripts/bootstrap/bootstrap.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#sourcesTree')
+                .on("changed.jstree", function (e, data) {
+			        if(data.selected.length) {
+                        document.location.href = data.node.a_attr.href;
+			        }
+                })
+                .jstree();
+        });
+        function scrollToTarget($target, offset) {
+           // This method scrolls the target element into view with a specified offset.
+            var $scrollContainer = $('#mainContent');
+            if ($scrollContainer.length) {
+                var targetTop = $target.offset().top - $scrollContainer.offset().top + $scrollContainer.scrollTop() - offset;
+                $scrollContainer.animate({
+                    scrollTop: targetTop
+                }, 600);
+            } else {
+                // if the target is inside a scrollable container, we need to scroll the container instead of the whole page.
+                $('html, body').animate({
+                    scrollTop: $target.offset().top - offset
+                }, 600);
+            }
+        }
+
+        var hash = window.location.hash;
+        if (hash) {
+            var $hashTarget = $(hash);
+            console.log(`Hash target for ${hash}:`, $hashTarget);
+            if ($hashTarget.length) {
+                console.log(`Scrolling to target ${hash} with offset 80`);
+                $hashTarget.addClass('selOgen');
+                // Delay to ensure layout is ready before scrolling.
+                setTimeout(function () {
+                    scrollToTarget($hashTarget, 80);
+                }, 0);
+            }
+        }
+
+        // Click handler for ogen elements to scroll to matching tag
+        $(document).on('click', '.ogen', function(e) {
+            e.preventDefault();
+            var ogenId = $(this).attr('id');
+            if (ogenId) {
+                var $target = $('.tagsTree .' + ogenId);
+                if ($target.length) {
+                    var targetEl = $target[0];
+                    targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    $target.addClass('highlight');
+                    setTimeout(function() {
+                        $target.removeClass('highlight');
+                    }, 6000);
+                } 
+                else {
+                    // Best effort: scroll to tags section if no exact match
+                    var $fallback = $('#sourcesTreeHolder').first();
+                    if ($fallback.length) {
+                        $fallback[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }
+            }
+        });
+
+        /*
+
+highlight v5
+
+Highlights arbitrary terms.
+
+<http://johannburkard.de/blog/programming/javascript/highlight-javascript-text-higlighting-jquery-plugin.html>
+
+MIT license.
+
+Johann Burkard
+<http://johannburkard.de>
+<mailto:jb@eaio.com>
+
+*/
+
+        jQuery.fn.highlight = function (pat) {
+            function innerHighlight(node, pat) {
+                var skip = 0;
+                if (node.nodeType == 3) {
+                    var pos = node.data.toUpperCase().indexOf(pat);
+                    pos -= (node.data.substr(0, pos).toUpperCase().length - node.data.substr(0, pos).length);
+                    if (pos >= 0) {
+                        var spannode = document.createElement('span');
+                        spannode.className = 'highlight';
+                        var middlebit = node.splitText(pos);
+                        var endbit = middlebit.splitText(pat.length);
+                        var middleclone = middlebit.cloneNode(true);
+                        spannode.appendChild(middleclone);
+                        middlebit.parentNode.replaceChild(spannode, middlebit);
+                        skip = 1;
+                    }
+                }
+                else if (node.nodeType == 1 && node.childNodes && !/(script|style)/i.test(node.tagName)) {
+                    for (var i = 0; i < node.childNodes.length; ++i) {
+                        i += innerHighlight(node.childNodes[i], pat);
+                    }
+                }
+                return skip;
+            }
+            return this.length && pat && pat.length ? this.each(function () {
+                innerHighlight(this, pat.toUpperCase());
+            }) : this;
+        };
+
+        jQuery.fn.removeHighlight = function () {
+            return this.find("span.highlight").each(function () {
+                this.parentNode.firstChild.nodeName;
+                with (this.parentNode) {
+                    replaceChild(this.firstChild, this);
+                    normalize();
+                }
+            }).end();
+        };
+
+
+        //http://stackoverflow.com/a/979997/2627214
+        function gup(name, url) {
+            if (!url) url = location.href;
+            name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+            var regexS = "[\\?&]" + name + "=([^&#]*)";
+            var regex = new RegExp(regexS);
+            var results = regex.exec(url);
+            return results == null ? null : results[1];
+        }
+        var hl = decodeURIComponent(gup('highlight', window.location.search));
+        $('body').highlight(hl);
+        if (hl) {
+            $('#mainContent').animate({
+                scrollTop: $(".highlight").offset()?.top - 55 // -50 px because the fixed navabr size made it covered.
+            }, 2000);
+
+            $('#discussion').toggle(); $("#discussion-title").toggleClass('open');
+        }
+
+                //if (window.location.search.toLowerCase().indexOf("highlight=")>-1) {       }
+
+/**/</script>
+
+
+    <script type="text/javascript" charset="utf-8" src="https://www.sefaria.org/linker.js"></script>
+    <script>
+        sefaria.link();
+    </script>
+
+    <script>
+
+        // There is no rush to load the accessibility plugin before the page completed loading completely also for jquery to be deffered, so it's better to delay it.
+        window.addEventListener("load", function () {
+            var script = document.createElement('script');
+            script.type = 'text/javascript';
+            script.src = 'https://accessibility.f-static.com/site/free-accessibility-plugin/accessibility.min.js?lan=he&place=bottom-left&distance=100';
+            script.id = 'free_accessibility_plugin_script';
+            script.crossOrigin = 'anonymous';
+            document.body.appendChild(script);
+        });
+
+    </script>
+</body>
+</html>

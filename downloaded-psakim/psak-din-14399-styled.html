@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+  <meta charset="utf-8">
+  <title>חזרה מקניית ס"ת בטענת מום</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=David+Libre:wght@400;700&family=Frank+Ruhl+Libre:wght@400;700&display=swap');
+    @import url('https://fonts.googleapis.com/earlyaccess/opensanshebrew.css');
+
+    :root {
+      --primary: #1a237e;
+      --primary-light: #3949ab;
+      --accent: #c5a55a;
+      --bg: #fafafa;
+      --card: #ffffff;
+      --text: #212121;
+      --text-secondary: #555;
+      --border: #e0e0e0;
+      --section-bg: #f5f7ff;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { font-size: 16px; }
+
+    body {
+      font-family: 'David Libre', 'Frank Ruhl Libre', 'Open Sans Hebrew', serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.9;
+      direction: rtl;
+      padding: 0;
+    }
+
+    /* Header banner */
+    .psak-header {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      color: white;
+      padding: 40px 20px 30px;
+      text-align: center;
+      position: relative;
+    }
+    .psak-header::after {
+      content: '';
+      position: absolute;
+      bottom: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 4px;
+      background: var(--accent);
+      border-radius: 2px;
+    }
+    .psak-header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      font-family: 'Frank Ruhl Libre', serif;
+    }
+    .psak-header .subtitle {
+      font-size: 0.95rem;
+      opacity: 0.85;
+    }
+
+    /* Metadata bar */
+    .meta-bar {
+      max-width: 850px;
+      margin: 40px auto 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      padding: 0 20px;
+    }
+    .meta-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .meta-item .label {
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    /* Main content */
+    .psak-body {
+      max-width: 850px;
+      margin: 30px auto;
+      padding: 0 20px;
+    }
+
+    .psak-card {
+      background: var(--card);
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+      padding: 40px 45px;
+      margin-bottom: 30px;
+    }
+
+    /* Typography */
+    h1 { font-size: 1.8rem; color: var(--primary); margin: 30px 0 15px; font-family: 'Frank Ruhl Libre', serif; }
+    h2 { font-size: 1.4rem; color: var(--primary); margin: 28px 0 12px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); font-family: 'Frank Ruhl Libre', serif; }
+    h3 { font-size: 1.15rem; color: var(--primary-light); margin: 20px 0 10px; }
+    h5 { font-size: 1rem; color: var(--primary); margin: 15px 0 8px; }
+    h6 { font-size: 0.9rem; color: var(--text-secondary); }
+
+    p, div.section, .toggle-title {
+      margin-bottom: 14px;
+      text-align: justify;
+    }
+
+    span { font-family: inherit !important; color: inherit !important; }
+
+    /* Section blocks */
+    .section { padding: 8px 0; }
+    .section-title { 
+      font-weight: 700; 
+      font-size: 1.1rem;
+      color: var(--primary);
+      margin-bottom: 6px;
+    }
+    .toggle-title { font-weight: 600; color: var(--primary-light); cursor: default; }
+    .toggle-title:before { content: '' !important; }
+
+    /* Info sections */
+    .file-title {
+      background: var(--primary) !important;
+      color: white !important;
+      padding: 8px 20px !important;
+      border-radius: 6px !important;
+      font-size: 1.2rem !important;
+      display: inline-block !important;
+      position: static !important;
+      right: auto !important;
+      margin-bottom: 15px;
+    }
+
+    #file-num {
+      font-size: 0.9rem !important;
+      color: var(--text-secondary);
+      float: none !important;
+    }
+
+    .pagename {
+      font-size: 1.6rem !important;
+      color: var(--primary) !important;
+      text-align: center;
+      margin: 15px 0 !important;
+    }
+
+    /* Tags & links */
+    a.file-tag {
+      background: var(--primary-light) !important;
+      border-radius: 4px;
+      font-size: 0.8rem;
+    }
+
+    .ogen { background-color: rgba(197, 165, 90, 0.2) !important; border-radius: 2px; }
+    .ogen::after { content: '' !important; }
+    .highlight { background-color: rgba(255, 235, 59, 0.4) !important; }
+
+    /* Hide external refs */
+    .selOgen:before { display: none !important; }
+
+    /* Signature area */
+    hr { border: none; border-top: 1px solid var(--border); margin: 25px 0; }
+
+    /* Footer */
+    .psak-footer {
+      text-align: center;
+      padding: 20px;
+      color: #999;
+      font-size: 0.75rem;
+      border-top: 1px solid var(--border);
+      margin-top: 20px;
+    }
+    .psak-footer a { color: var(--primary-light); }
+
+    /* Print */
+    @media print {
+      body { background: white; }
+      .psak-header { background: var(--primary); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .psak-card { box-shadow: none; border: 1px solid #ddd; }
+    }
+
+    /* Mobile */
+    @media (max-width: 600px) {
+      .psak-card { padding: 20px 18px; }
+      .psak-header h1 { font-size: 1.5rem; }
+      h2 { font-size: 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="psak-header">
+    <h1>חזרה מקניית ס"ת בטענת מום</h1>
+    <div class="subtitle">
+      שדרות · מס׳ סידורי 14399
+    </div>
+  </header>
+
+  <div class="meta-bar">
+    <div class="meta-item"><span class="label">תיק מס׳</span> 159</div>
+    <div class="meta-item"><span class="label">תאריך</span> ט"ו כסלו תשפ"ה</div>
+    <div class="meta-item"><span class="label">דיינים</span> הרב בן יאיר שלמה, הרב טוויל דרור, הרב תפוחי אביעד</div>
+    <div class="meta-item"><span class="label">בית דין</span> שדרות</div>
+  </div>
+
+  <main class="psak-body">
+    <article class="psak-card">
+      <p> תיק מספר: 159</p><h2>פסק דין</h2><p dir="rtl">בעניין שבין התובעים: משפחת ראובן ע"י לוי</p><p dir="rtl">לבין הנתבע: שמעון&nbsp;</p><h2>עובדות מוסכמות</h2><p dir="rtl">בתאריך 5/4/22 (למניינם), משפחת ראובן חתמה חוזה לכתיבת ספר תורה עם הסופר סת"ם שמעון. הס"ת נכתב לעילוי נשמת אימם ע"ה, מכספי עזבונה שהשאירה למטרה זו.</p><p dir="rtl">הסכום הכולל היה 90,000 ₪ והוא כלל ס"ת, ספר הפטרות, והוצאות תהלוכה.</p><p dir="rtl">שמעון הראה למשפחת ראובן את יריעות ספר בראשית ושמות אחר שכתב אותם והם היו מרוצים. משפחת ראובן&nbsp; שילמה את כל הסכום בארבעה תשלומים.</p><p dir="rtl">כאשר הסתיימה הכתיבה, ניסו הצדדים לקבוע תאריך להכנסת ספר התורה, אך בגלל עיכובים שונים של שני הצדדים, הדבר לא עלה בידם. המלחמה פרצה והדבר נדחה שוב.</p><p dir="rtl">כאשר התאפשר הדבר, הם פנו לרב בית הכנסת שתכננו להכניס אליו את ספר התורה, והוא ביקש לראות את ספר התורה לפני שהם מכניסים אותו לבית הכנסת. לאחר שהראו לו צילומים ממנו, הוא ביקש מהם לא להכניס את ספר התורה לבית הכנסת כיון שהוא ברמה נמוכה ויש בו טעויות.</p><p dir="rtl">בני משפחת ראובן פנו לשמעון וביקשו ממנו לבטל את הקניה ושיחזיר להם את כספם.</p><p dir="rtl">שמעון הסכים, אך למעשה לא הגיעו להסכמות על החזרת הכסף.</p><p dir="rtl">בשלב מסויים שמעון העביר למשפחת ראובן מקדמה בסך של 2,000 ₪.</p><h2>טענות התובעים</h2><p dir="rtl">(הוצג בפני בית הדין יפוי כח של כל האחים, שממנים את לוי לנציג שלהם בתביעה).</p><p dir="rtl">אני מרגיש ששמעון רימה אותנו. הוא הראה לנו תחילה יריעות שמצאו חן בעינינו והיו כתובים יפה, ואח"כ התברר שבספר התורה שהוא רצה למכור לנו היו יריעות אחרות. יתכן ששמעון הטעה אותנו בכוונה והראה לנו יריעות אחרות או שהוא החליט למכור אותן למישהו אחר. ספר התורה שהוא הביא לנו בסוף לא מצא חן בעינינו ויש בו כתב של סופרים שונים והוא לא אחיד. הרב של בית הכנסת לא רצה אותו. פנינו לרב מומחה מבני ברק, הרב מועלם, הוא ראה צילומים של הספר ואמר שהוא ב'רמה רדודה ובעיתית'. הוא המליץ להחזיר אותו ולבקש את הכסף חזרה.</p><p dir="rtl">ביטלנו את האולם שסגרנו לערב ההכנסה וביקשנו משמעון את הכסף חזרה. הוא הסכים אך עיכב אותנו מאוד ומשך את הזמן. בתאריך 9/8/24 (למניינם) הוא החזיר לנו 2000 ₪. מאז, לא שילם כלום.&nbsp;</p><p dir="rtl">אימנו ע"ה היתה צדיקה וכל רצונה היה שיכתב ספר לעילוי נשמתה ויש לכל המשפחה עוגמת נפש וצער גדול מהעיכוב הזה.&nbsp;</p><p dir="rtl">בנוסף, לפני שנתיים העלות של כתיבת ס"ת היתה כ100,000 ₪ אך עכשיו זה לפחות 120,000 ₪ ההתקשרות עם שמעון עיכבה אותנו ועכשיו נצטרך לשלם סכום גדול יותר.</p><p dir="rtl">מטעמים אלו, אנו תובעים את החזרת כל הכסף ששילמנו, ובנוסף אנו תובעים סכום של 30,000 ₪ על עוגמת נפש.&nbsp;</p><h2>טענת הנתבע</h2><p dir="rtl">ספר התורה המדובר בסדר גמור. עובדה שהוא נמכר למקום אחר וקוראים בו. כל ס"ת חדש יש בו קצת טעויות, דיבוקים וכד' וצריך לעבור הגהה. מה שצילמתי והראתי להם זה היה לפני הגהה ולכן ראו שם כמה חסרונות אבל אחרי הגהה זה לא נראה כך.&nbsp;</p><p dir="rtl">הסכמתי להחזיר להם את הכסף שנתנו לי והצעתי לתת להם צ'קים של לקוח אחר, אך הם סירבו. לא היו לי צ'קים שלי באותה תקופה.</p><p dir="rtl">אח"כ הצעתי להם שאמצא להם סופר מוסכם והוא יכתוב ואני אשלם לו. הם הסכימו תחילה אך אחרי כמה ימים ראובן אמר לי שהאחים לא רוצים.&nbsp;</p><p dir="rtl">העיכובים במציאת תאריך מוסכם להכנסת ספר התורה לא היו בגללי אלא בעיקר בגלל משפחת ראובן, הם הרבה אחים וכל פעם אח אחר לא יכל. אני לא צריך לשלם כלום עבור עוגמת הנפש כיון שלא אני אחראי לה.</p><p dir="rtl">אני מוכן לשלם מה שאני חייב אך אין לי אפשרות לשלם בתשלום אחד אלא בפריסה לתשלומים כאשר כל תשלום יעלה לסך של 10,000 ₪ בכל חודש.</p><h2 dir="rtl">פסק הדין</h2><p dir="rtl">לאחר שבית הדין שמע את טענות הצדדים הוא הציע להם ללכת למתווה של פשרה ובעלי הדין הסכימו.&nbsp;</p><p dir="rtl">הפשרה שהושגה בין הצדדים היא ששמעון ישלם 95,000 ₪, מלבד ה-2,000 ₪ שכבר שילם, כך שסה"כ הוא ישלם 7000 ₪ מעבר למה שקיבל, וזה יחשב כפיצוי מוסכם על עוגמת הנפש. הסכום הזה יחולק ל-8 תשלומים שווים. את הסכום הראשון הוא ישלם במזומן, כדי שמשפחת&nbsp; תוכל לשלם מיידית לסופר אחר שיתחיל לכתוב עבורם ס"ת, והשאר ישולם בצ'קים. שמעון הסכים שבמידת האפשר הוא ישלם תשלום מזומן כנגד כל צ'ק שהגיע לו בתאריך הרשום בצ'ק.&nbsp;</p><p dir="rtl">התשלום הראשון על סך 11,875 ₪ ישולם במזומן, ושאר הסכום ישולם בשבעה תשלומים.</p><h2 dir="rtl">החלטה</h2><ol><li dir="rtl" aria-level="1"><p dir="rtl" role="presentation">שמעון ישלם למשפחת ראובן סכום של 95,000 ₪ ב8 תשלומים.</p></li><li dir="rtl" aria-level="1"><p dir="rtl" role="presentation">התשלום הראשון בסך של 11,875 ₪ ישולם במזומן לא יאוחר מה 20/12/2024 (למניינם).</p></li><li dir="rtl" aria-level="1"><p dir="rtl" role="presentation">שאר החוב ישולם ב7 תשלומים שווים בסך של 11,875 ₪ בכל 15 בחודש הלועזי כך שהתשלום השני ישולם ב15/1/2025 למניינם, התשלום השני ב15/2/2025 למניינים וכן הלאה עד ה15/7/2025 למניינם.</p></li><li dir="rtl" aria-level="1"><p dir="rtl" role="presentation">במועד התשלום הראשון שמעון יעביר למשפחת ראובן 7 צ'קים לפי התשלומים הנ"ל.</p></li><li dir="rtl" aria-level="1"><p dir="rtl" role="presentation">במידה ומשפחת ראובן תרצה להמיר את הצ'קים לתשלום מזומן במועד פרעון הצ'ק שמעון יהיה מחוייב לעשות זאת.</p></li></ol><p dir="rtl">'והאמת והשלום אהבו'</p><p dir="rtl">________________________________</p><h3>הרב שלמה בן יאיר<br>הרב דרור טויל, ראב"ד<br>הרב אביעד תפוחי</h3><p><br></p>
+    
+    </article>
+  </main>
+
+  <footer class="psak-footer">
+    מקור: <a href="https://www.psakim.org/Psakim/File/14399" target="_blank">psakim.org - פסק 14399</a>
+  </footer>
+
+</body>
+</html>

@@ -86,7 +86,7 @@ const GemaraPsakDinIndex = () => {
   const [psakimView, setPsakimView] = useState<"list" | "table" | "compact">("list");
   const [prefDialogOpen, setPrefDialogOpen] = useState(false);
   const [pendingPsak, setPendingPsak] = useState<PsakLink | null>(null);
-  const [preferredViewer, setPreferredViewer] = useState<ViewerMode>(() => getViewerPreference() ?? "dialog");
+  const [preferredViewer, setPreferredViewer] = useState<ViewerMode>(() => getViewerPreference() ?? "embedpdf");
 
   const statistics = useMemo<Statistics>(() => {
     const tagCounts = new Map<string, number>();
@@ -978,7 +978,7 @@ return (
                             </div>
                           </td>
                           <td className="p-2 text-muted-foreground">{link.psakei_din?.court}</td>
-                          <td className="p-2 text-muted-foreground">{link.psakei_din?.year}</td>
+                          <td className="p-2 text-muted-foreground">{link.psakei_din?.year || ''}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -996,7 +996,7 @@ return (
                           <FileTypeBadge url={link.psakei_din?.source_url} />
                           <span className="font-medium text-sm line-clamp-1">{link.psakei_din?.title}</span>
                         </div>
-                        <p className="text-xs text-muted-foreground">{link.psakei_din?.court} • {link.psakei_din?.year}</p>
+                        <p className="text-xs text-muted-foreground">{link.psakei_din?.court}{link.psakei_din?.year ? ` • ${link.psakei_din.year}` : ''}</p>
                       </div>
                     ))}
                   </div>
@@ -1022,10 +1022,12 @@ return (
                                 {link.psakei_din?.court}
                                 <Building2 className="w-3 h-3" />
                               </span>
+                              {link.psakei_din?.year > 0 && (
                               <span className="flex items-center gap-1">
                                 {link.psakei_din?.year}
                                 <Calendar className="w-3 h-3" />
                               </span>
+                              )}
                             </div>
                             <p className="text-sm text-foreground/80 mt-2 line-clamp-2 text-right">
                               {link.connection_explanation}

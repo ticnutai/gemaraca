@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+  <meta charset="utf-8">
+  <title>החזרת תשלום ששולם למעון</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=David+Libre:wght@400;700&family=Frank+Ruhl+Libre:wght@400;700&display=swap');
+    :root{--primary:#1a237e;--primary-light:#3949ab;--accent:#c5a55a;--bg:#fafafa;--card:#fff;--text:#212121;--text-secondary:#555;--border:#e0e0e0}
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{font-size:16px}
+    body{font-family:'David Libre','Frank Ruhl Libre',serif;background:var(--bg);color:var(--text);line-height:1.9;direction:rtl}
+    .psak-header{background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;padding:40px 20px 30px;text-align:center;position:relative}
+    .psak-header::after{content:'';position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);width:60px;height:4px;background:var(--accent);border-radius:2px}
+    .psak-header h1{font-size:2rem;font-weight:700;margin-bottom:8px;font-family:'Frank Ruhl Libre',serif}
+    .psak-header .subtitle{font-size:.95rem;opacity:.85}
+    .meta-bar{max-width:850px;margin:40px auto 20px;display:flex;flex-wrap:wrap;gap:12px;justify-content:center;padding:0 20px}
+    .meta-item{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 18px;font-size:.85rem;display:flex;align-items:center;gap:6px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+    .meta-item .label{font-weight:700;color:var(--primary)}
+    .psak-body{max-width:850px;margin:30px auto;padding:0 20px}
+    .psak-card{background:var(--card);border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.07);padding:40px 45px;margin-bottom:30px}
+    h1{font-size:1.8rem;color:var(--primary);margin:30px 0 15px;font-family:'Frank Ruhl Libre',serif}
+    h2{font-size:1.4rem;color:var(--primary);margin:28px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--accent);font-family:'Frank Ruhl Libre',serif}
+    h3{font-size:1.15rem;color:var(--primary-light);margin:20px 0 10px}
+    p,div.section,.toggle-title{margin-bottom:14px;text-align:justify}
+    span{font-family:inherit!important;color:inherit!important}
+    .section-title{font-weight:700;font-size:1.1rem;color:var(--primary);margin-bottom:6px}
+    .toggle-title{font-weight:600;color:var(--primary-light);cursor:default}
+    .toggle-title:before{content:''!important}
+    .file-title{background:var(--primary)!important;color:#fff!important;padding:8px 20px!important;border-radius:6px!important;font-size:1.2rem!important;display:inline-block!important;position:static!important;right:auto!important;margin-bottom:15px}
+    #file-num{font-size:.9rem!important;color:var(--text-secondary);float:none!important}
+    .pagename{font-size:1.6rem!important;color:var(--primary)!important;text-align:center;margin:15px 0!important}
+    a.file-tag{background:var(--primary-light)!important;border-radius:4px;font-size:.8rem}
+    .ogen{background-color:rgba(197,165,90,.2)!important;border-radius:2px}
+    .ogen::after{content:''!important}
+    .highlight{background-color:rgba(255,235,59,.4)!important}
+    .selOgen:before{display:none!important}
+    hr{border:none;border-top:1px solid var(--border);margin:25px 0}
+    blockquote{border-right:4px solid var(--accent);padding:12px 20px;margin:15px 0;background:rgba(197,165,90,.06);border-radius:0 8px 8px 0}
+    .psak-footer{text-align:center;padding:20px;color:#999;font-size:.75rem;border-top:1px solid var(--border);margin-top:20px}
+    .psak-footer a{color:var(--primary-light)}
+    @media print{body{background:#fff}.psak-header{background:var(--primary);-webkit-print-color-adjust:exact;print-color-adjust:exact}.psak-card{box-shadow:none;border:1px solid #ddd}}
+    @media(max-width:600px){.psak-card{padding:20px 18px}.psak-header h1{font-size:1.5rem}h2{font-size:1.2rem}}
+  </style>
+</head>
+<body>
+  <header class="psak-header">
+    <h1>החזרת תשלום ששולם למעון</h1>
+    <div class="subtitle">שדרות · מס׳ סידורי 297</div>
+  </header>
+  <div class="meta-bar">
+    
+    <div class="meta-item"><span class="label">תאריך</span> ה' אלול תשס"ח</div>
+    <div class="meta-item"><span class="label">דיינים</span> הרב בר-אלי אריאל, הרב בן יאיר שלמה, הרב טוויל דרור</div>
+    <div class="meta-item"><span class="label">בית דין</span> שדרות</div>
+  </div>
+  <main class="psak-body">
+    <article class="psak-card">
+      <p class="MsoNormal" dir="RTL"><span>תובע:&nbsp;הילדה שלי הייתה במעון של הנתבע מחודש מרץ 2008 עד אמצע
+חודש יולי. אנו נדרשנו לשלם מראש בשיקים עבור כל השנה, ולכן הפקדתי כבר בתחילה את
+כל השיקים עד לחודש אוגוסט (כולל). כיון שהוצאתי את בתי באמצע חודש יולי לכן אני
+תובע בחזרה את התשלום עבור חודש אוגוסט. אמנם לגבי החודש השביעי אין לי תביעה
+אע"פ שהיינו רק חצי חודש, אך לגבי החודש השמיני אני רוצה את כספי בסך 665
+ש"ח בחזרה. אמרתי לנתבע שאני רוצה את כספי בחזרה, והוא אמר לי שע"פ כללי
+המשרד למסחר מי שמוציא את הילד מעבר לחודש החמישי משלם עד סוף השנה. טענתי היא שלא
+ידעתי מכללים אלו ולא נאמרו לי מראש. ביקשתי שלא יפרע את השיק הזה, ואעפ"כ
+הוא נפרע.</span><o:p></o:p></p><p class="MsoNormal" dir="RTL"><span lang="HE">נתבע</span>: המעון אצלנו מסובסד מכספי המשרד למסחר, זאת אומרת שעל כל תינוק
+ההורים משלמים סך של 665 ש"ח והמשרד למסחר מוסיף עד לכ1600 ש"ח.
+ע"פ הכללים של המשרד למסחר כל מי שמוציא את ילדו קודם לחודש החמישי משלם עד
+סוף החודש אך מי שמוציא מהחודש החמישי ואילך משלם עד סוף השנה. אמנם מי שקובע
+למעשה בענייני הכספים של המעון אינו המשרד למסחר אלא אנו מנהלי המעון, אך הכללים
+של המשרד למסחר הם כנ"ל וזהו מה שמקובל. אכן אני מודה שלא נאמר לנתבע מראש על
+כך, אך זהו מה שנהוג, לפעול על פי כללים אלו.</p><h1 class="MsoNormal" dir="RTL"><b><span lang="HE">בירור הדין</span></b><br></h1>
+
+<p class="MsoNormal" dir="RTL"><span lang="HE"><span id="ogen1" class="ogen">במקרה שלפנינו נראה&nbsp;שיש לדון
+בזה מצד שכירות פועלים, בעל המעון הוא למעשה פועל[1]</span>&nbsp;שנשתעבד לעבוד אצל בעה"ב
+תקופה מסויימת, בנדון דידן עד אוגוסט 2008, ואילו התובע הרי הוא בעה"ב
+שמתחייב לשלם לפועל תמורת העבודה. <o:p></o:p></span></p>
+
+<p class="MsoNormal" dir="RTL"><span id="ogen2" class="ogen">הוצאת הילדה באמצע התקופה&nbsp;הרי
+זו הפסקת עבודה באמצע תקופת שכירות הפועל. <o:p></o:p></span></p>
+
+<h2 class="MsoNormal" dir="RTL"><strong><span id="ogen3" class="ogen">מה היא תקופת השכירות?</span></strong></h2>
+
+<p class="MsoNormal" dir="RTL">בהגדרת תקופת השכירות, נראה שיש
+להחשיב זאת כשכירות אחת לכל התקופה אע"פ שמגדירים את התשלום כתשלום חודשי בסוף
+כל חודש וחודש. <o:p></o:p></p>
+
+<p class="MsoNormal" dir="RTL"><span lang="HE">והסברא בכך היא שישנה רגילות
+אצל אנשים להחשיב את שנת הלימודים כחטיבה אחת. ואף שמצורת התשלום החודשית נראה כי
+מדובר על שכירות חודשית, מכל מקום זהו רק לגבי זמן הפירעון אך לא להגדרת קנין הפועל.
+זו משמעות פסק הרמ"א שכתב:</span></p><blockquote><p class="MsoNormal" dir="RTL"><span lang="HE">"מלמד שהשכיר עצמו לשתי שנים והתחיל שנה
+ראשונה, מקרי התחלה גם לשנה שניה; וה"ה כל פועל" (שלג ב).</span></p></blockquote><p class="MsoNormal" dir="RTL"><span lang="HE">מסתבר שמדובר
+על קביעת שכר שנתית ובכל זאת חידש הרמ"א שאנו רואים את שתי השנים כשכירות אחת<span color="#000000">[2]</span>. <o:p></o:p></span></p>
+
+<p class="MsoNormal" dir="RTL">לכן בנדון דידן אע"פ שהתשלום
+הוא חודשי, כל התקופה הרי היא שכירות אחת. <o:p></o:p></p>
+
+<h2 class="MsoNormal" dir="RTL"><strong><span><span id="ogen6" class="ogen">האם הסיכום מחייב?</span></strong></span></h2>
+
+<p class="MsoNormal" dir="RTL">במקרה שלנו היה מעשה קנין, שהרי
+שכירות פועל נקנית בכסף (נתה"מ שלג סק"א), והרי שולם להנהלת המעון
+בשיקים מראש וניתן לראותם כקניין כסף.<o:p></o:p></p>
+
+<p class="MsoNormal" dir="RTL">בנוסף יש כאן תחילת עבודה
+ונתבאר בשו"ע (שלג ב) שתחילת העבודה יוצרת כבר את שעבודו של בעה"ב כלפי
+הפועל.<o:p></o:p></p>
+
+<h2 class="MsoNormal" dir="RTL"><strong><span><span id="ogen8" class="ogen">חזרת המעביד מההסכם - שכר פועל בטל</span></strong></span></h2>
+
+<p class="MsoNormal" dir="RTL">במקרה של חזרת בעה"ב באמצע
+זמן השכירות מבואר בשו"ע (שלג ב) שאם חזר בו בעה"ב ולא מוצא הפועל
+להשתכר אצל אחר במקומו הרי חובת בעה"ב לשלם לפועל <span>כפועל בטל. אמנם כל
+זה כאשר חזרת בעה"ב אינה מחמת אונס, אך אם היא מחמת אונס הרי הוא פטור כמבואר
+בשו"ע (שם). <o:p></o:p></span></p>
+
+<p class="MsoNormal" dir="RTL"><span id="ogen7" class="ogen">בנדון דידן חזרת בעה"ב היא מחמת מעבר&nbsp;דירה למקום אחר שנעשה מרצונו ללא אונס, ולפ"ז<b> נראה שיש לחייב את
+בעה"ב לשלם לבעל המעון שכר כפועל בטל</b>. <o:p></o:p></span></p>
+
+<p class="MsoNormal" dir="RTL"><span id="ogen9" class="ogen">אולם יש לקחת בחשבון&nbsp;את העובדה
+כי בחודש השמיני המעון פעיל רק שבוע אחד מתוך החודש וכל השאר ישנה חופשה לצוות. בחודש
+הזה הפועל מקבל כל שכרו אע"פ שהוא בטל, א"כ כאן אין להוריד כלל
+משכרו מחמת בטלתו, שהרי מתחילה סוכם שהוא יתבטל בזמן זה ויקבל כל שכרו. וא"כ
+נראה שעל שלושת שבועות החופשה יש לשלם את כל השכר, ועל השבוע הראשון שבו בדרך כלל
+ישנה עבודה יש לפחות מהשכר הרגיל ולשלם רק כפועל בטל.<o:p></o:p></span></p>
+
+<p class="MsoNormal" dir="RTL"><span id="ogen10" class="ogen">מהו שכרו של "פועל בטל"?&nbsp;ב"פתחי
+חושן" שכירות (פ"י סק"י בסופו) כתב בשם הט"ז שהוא חצי משכר
+הפועל, אך מדברי הראשונים הרשב"א והרא"ש משמע שפוחתין קצת. לכן למעשה
+נראה לפי התחשיב שההורים משלמים ליום כ26 ש"ח, נראה שיש להחשיב שכר בטלה כ20
+ש"ח ליום. וא"כ לשמונה ימי עבודה יש להפחית מהשכר הכולל 48 ש"ח. <o:p></o:p></span></p>
+
+<h2 class="MsoNormal" dir="RTL"><strong><span><span id="ogen11" class="ogen">מנהג המדינה</span></strong></span></h2>
+
+<p class="MsoNormal" dir="RTL">וכל זה כשאין מנהג ידוע, אך אם
+יש מנהג בעניינים אלו יש לילך אחר מנהג העולם בעניינים אלו של הסכם בין המעביד
+לעובד, כלל גדול הוא בשכירות פועלים "הכל כמנהג המדינה" כמבואר
+בשו"ע (שלא א-ב). <o:p></o:p></p>
+
+<p class="MsoNormal" dir="RTL"><span id="ogen15" class="ogen">אך בנדון דידן לא נאמרו במפורש&nbsp;להורים
+שום הוראות בזמן הרישום ואפילו אמירה כללית שיש חוקי משרד המסחר, לא נאמרה להם.
+לכן טענת התובע שהכללים הללו לא חלים עליו, בבסיסה, נכונה.<o:p></o:p></span></p>
+
+<p class="MsoNormal" dir="RTL"><span id="ogen13" class="ogen">הוראת המשרד למסחר&nbsp;היא שהפסקה מצד ההורים
+מהחודש החמישי ואילך מחייבת תשלום עד סוף השנה[3].
+אם ההוראה של משרד המסחר הייתה מפורסמת, ובגדר מנהג ידוע, הרי הדבר היה מחייב את
+התובע אף שלא הכיר את המנהג.<o:p></o:p></span></p>
+
+<p class="MsoNormal" dir="RTL"><span id="ogen12" class="ogen">כאשר ישנו מנהג מפורסם&nbsp;לכל אזי
+האדם מחוייב בכך אף ללא ידיעתו. גם אם לא ידעו אותו משום שעל דעת המנהג הכניס את
+ילדיו.<o:p></o:p></span></p>
+
+<p class="MsoNormal" dir="RTL"><span id="ogen14" class="ogen">במקרה שלנו אין מנהג ברור,&nbsp;המשרד
+נותן הוראות רק כלפי המעון אבל השאיר לעמותה להחליט כיצד לנהוג עם ההורים. יש
+שנוהגים לבחון את הנסיבות מדוע הייתה הפסקת ההסכם. ולגבי החודש השמיני שבלאו הכי
+רובו ככולו הוא ימי חופשה מקובל יותר לגבות תשלום עבור חודש זה למרות שהילדה לא היתה
+כלל במעון. אך בסופו של דבר אין כאן מנהג קבוע ממש, ומידי ספק לא יצאנו מבחינה זו.
+<o:p></o:p></span></p>
+
+<p class="MsoNormal" dir="RTL">מ"מ ע"פ מה שנתבאר
+לעיל נראה שמצד עיקר הדין בהלכות שכירות פועלים לגבי החודש השמיני יש לשלם כפועל
+בטל עבור שמונת הימים הראשונים, ותשלום מלא עבור שאר ימי החודש.</p>
+
+<p class="MsoNormal" dir="RTL"><b><span lang="HE">לסכום פסק הדין, הנתבע צריך
+להחזיר סך של 48 ש"ח.</b></span></p>
+
+<h3>האמת והשלום אהבו</h3>
+
+<h3>הרב אריאל בראלי &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br>הרב שלמה בן יאיר &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br>הרב דרור טויל</h3><div>
+
+<hr align="right" size="1" width="33%">
+
+<!--[endif]-->
+
+<div id="ftn1">
+
+<p class="MsoNormal" dir="RTL"><span lang="HE">[1] ועיין
+בפתחי חושן הלכות שכירות (פ"ז סק"ד, סק"ט).</span></p>
+
+</div>
+
+<div id="ftn2">
+
+<p class="MsoNormal" dir="RTL">[2] בספר "חזון אי"ש" ב"ק סימן כ"ג ב משמע אחרת.</p>
+
+<p class="MsoNormal" dir="RTL"><span id="ogen5" class="ogen">והנה הרמ"א (אורח חיים סימן שו ס"ד) כתב בענין שכר שבת:</span></p><blockquote><p class="MsoNormal" dir="RTL">"ואם שכרו לחודש
+והתנה לשלם לו כל יום כך וכך, מקרי שכיר יום) (ר"ן ס"פ אע"פ)".</p></blockquote><p class="MsoNormal" dir="RTL">וכוונתו שמחמת כך אין לו לשלם לו עבור שבת אפילו בהבלעה עם כל החודש, כיון שכל יום
+הוא שכירות בפנ"ע. ולכאורה מכאן שאם שכר פועל לתקופה ארוכה וסיכם עמו על
+תשלום חודשי, כל חודש הוא שכירות בפנ"ע ולא כמו שנתבאר. <o:p></o:p></p>
+
+<p class="MsoNormal" dir="RTL">אלא
+שכבר כתב בביאור הלכה (ד"ה והתנה שם) לחלק בין מצב שהשכירות היתה לחודש ימים
+ובעה"ב הסכים לפרוע בסוף כל יום, דהיינו שאע"פ שמעיקר הדין שכירות אינה
+משתלמת אלא לבסוף, בעה"ב חייב עצמו יותר מעיקר חיובו וזמן הפירעון הוא כבר
+בסוף יום העבודה, משא"כ בנדון של הרמ"א משמעות התנאי היא שכל יום הוא
+שכירות בפנ"ע, ויכול לחזור בו ולא ישלם אלא על מה שעבר כבר. ולפ"ז ניחא
+שבנדון דידן יש לומר שכל התקופה היא שכירות אחת אלא שיש כאן התחייבות לגבי זמן הפירעון
+של בעה"ב שהוא בסוף חודש ולא רק בסוף התקופה.</p>
+
+</div>
+
+<div id="ftn3">
+
+<p class="MsoNormal" dir="RTL"><span lang="HE"><span id="ogen16" class="ogen"><span>[3]&nbsp;יש לבחון ענין נוסף.</span>&nbsp;לפי הוראות משרד
+הרווחה התשלום השנתי למעון הוא עבור 11 חודשים ולא 12. והסיבה לכך היא כיון שבחודש
+האחרון ישנה חופשה בת שלושה שבועות, והתשלום עבור חודש זה נכלל בחודשים הקודמים.
+אלא שישנם מנהלי מעונות שמאפשרים תשלום נפרד על החודש השמיני בפנ"ע כמו שנהגו
+בנדון דידן. אך נראה שגם אם נניח שיש לילך אחר ההוראות של משרד המשרד למסחר
+והשעבוד עבור החודש של החופשה כלול בחודשים הקודמים, ולפ"ז נראה שבכל חודש יש
+לשלם רק 1/11 מתשלום החופשה של החודש השמיני, וא"כ במקרה שלפנינו שהתינוק
+נכנס למעון באמצע השנה רק מהחודש השלישי, א"כ אמור הוא לשלם רק 5/11 מן החודש
+השמיני שהוא כמחצית בלבד, ונמצא לכאורה שיש להקל על הנתבע מחמת כך. אך כל זה אם
+נניח שההסכם הוא ע"פ הוראות משרד הרווחה, אך אם נתחשב בהוראות אלו כבר נתבאר
+שכיון שהוצאת הילד היתה לאחר החודש החמישי היה צריך לשלם את כל השכר עד סוף השנה,
+לכן לא ניתן להקל מחמת כך, ויש לדון כעיקר הדין בשכירות פועלים.</span></span></p>
+
+
+    </article>
+  </main>
+  <footer class="psak-footer">
+    מקור: <a href="https://www.psakim.org/Psakim/File/297" target="_blank">psakim.org — פסק 297</a>
+  </footer>
+</body>
+</html>
