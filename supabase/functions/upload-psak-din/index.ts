@@ -143,8 +143,8 @@ serve(async (req) => {
       }
     };
 
-    // Process files in batches of 3 for parallel execution
-    const CONCURRENT_LIMIT = 3;
+    // Process files in batches of 5 for parallel execution
+    const CONCURRENT_LIMIT = 5;
     for (let i = 0; i < files.length; i += CONCURRENT_LIMIT) {
       const batch = files.slice(i, i + CONCURRENT_LIMIT);
       await Promise.all(batch.map(processFile));
@@ -313,7 +313,8 @@ function extractTitleFromFileName(fileName: string): string {
   const baseName = fileName.split('/').pop()?.split('\\').pop() || fileName;
   return baseName
     .replace(/\.[^/.]+$/, '')
-    .replace(/[_-]/g, ' ')
+    .replace(/[_\-/\\]/g, ' ')
     .replace(/^\d+_/, '')
+    .replace(/\s{2,}/g, ' ')
     .trim() || 'פסק דין';
 }

@@ -231,7 +231,7 @@ export function useGemaraDownloadEngine() {
 
     return () => {
       unsub();
-      abortRef.current?.abort();
+      // Don't abort on unmount — downloads should continue in background
     };
   }, [processQueue]);
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { trackRecentPsak } from "@/lib/recentPsakim";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -166,6 +167,7 @@ const LinkedPsakimSection = ({ sugyaId, masechet, dafNumber }: LinkedPsakimSecti
   };
 
   const handlePsakClick = async (psakId: string) => {
+    trackRecentPsak(psakId);
     const { data } = await supabase
       .from('psakei_din')
       .select('*')

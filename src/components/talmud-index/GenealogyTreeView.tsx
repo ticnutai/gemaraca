@@ -228,82 +228,91 @@ export default memo(function GenealogyTreeView({ grouped, onValidate, onClickRef
                         const dafKey = `${tractate}-${daf}`;
                         const isDafExpanded = expandedDaf === dafKey;
 
+                        // Build amud data for expanded daf
+                        const byAmud: Record<string, TalmudRefWithPsak[]> = isDafExpanded ? { a: [], b: [] } : {};
+                        if (isDafExpanded) {
+                          for (const r of dafRefs) {
+                            const aKey = r.amud || '_none';
+                            if (!byAmud[aKey]) byAmud[aKey] = [];
+                            byAmud[aKey].push(r);
+                          }
+                        }
+                        const amudOrder = isDafExpanded
+                          ? (['a', 'b', ...('_none' in byAmud && byAmud._none.length > 0 ? ['_none'] : [])] as string[])
+                          : [];
+
                         return (
-                          <TreeNode
-                            key={dafKey}
-                            isLeaf={!isDafExpanded}
-                            color={color}
-                            onClick={() => {
-                              setExpandedDaf(isDafExpanded ? null : dafKey);
-                              setExpandedAmud(null);
-                            }}
-                            className={cn(
-                              'min-w-0',
-                              isDafExpanded && 'ring-2 ring-offset-1 shadow-md col-span-full'
-                            )}
-                          >
-                            <span className="font-semibold text-xs" style={{ color }}>
-                              דף {toHebrewDaf(daf)}
-                            </span>
-                            <Badge variant="secondary" className="text-[9px] px-1 py-0 mt-0.5 block mx-auto w-fit">
-                              {dafRefs.length}
-                            </Badge>
-                          </TreeNode>
-                        );
-                      })}
-                    </div>
+                          <div key={dafKey} className={cn(isDafExpanded && 'col-span-full')}>
+                            <TreeNode
+                              isLeaf={!isDafExpanded}
+                              color={color}
+                              onClick={() => {
+                                setExpandedDaf(isDafExpanded ? null : dafKey);
+                                setExpandedAmud(null);
+                              }}
+                              className={cn(
+                                'min-w-0',
+                                isDafExpanded && 'ring-2 ring-offset-1 shadow-md'
+                              )}
+                            >
+                              <span className="font-semibold text-xs" style={{ color }}>
+                                דף {toHebrewDaf(daf)}
+                              </span>
+                              <Badge variant="secondary" className="text-[9px] px-1 py-0 mt-0.5 block mx-auto w-fit">
+                                {dafRefs.length}
+                              </Badge>
+                            </TreeNode>
 
-                    {/* Expanded daf: amud & refs panel below the grid */}
-                    {expandedDaf && expandedDaf.startsWith(tractate + '-') && (() => {
-                      const dafNum = expandedDaf.split('-').slice(1).join('-');
-                      const dafRefs = byDaf[dafNum];
-                      if (!dafRefs) return null;
+                            {/* Expanded: amud cards + psakei din directly below this daf */}
+                            {isDafExpanded && (
+                              <div className="mt-3 animate-in fade-in slide-in-from-top-2 duration-200 w-full max-w-[900px] mx-auto">
+                                <VLine height={16} color={color} />
 
-                      const byAmud: Record<string, TalmudRefWithPsak[]> = {};
-                      for (const r of dafRefs) {
-                        const aKey = r.amud || '_none';
-                        if (!byAmud[aKey]) byAmud[aKey] = [];
-                        byAmud[aKey].push(r);
-                      }
-                      const amudOrder = ['a', 'b', '_none'].filter(k => byAmud[k]);
-                      const hasAmudim = amudOrder.length > 1 || (amudOrder.length === 1 && amudOrder[0] !== '_none');
+                                {/* Amud cards */}
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-w-[500px] mx-auto">
+                                  {amudOrder.map(amudKey => {
+                                    const amudRefs = byAmud[amudKey] || [];
+                                    const amudNodeKey = `${dafKey}-${amudKey}`;
+                                    const isAmudExpanded = expandedAmud === amudNodeKey;
+                                    const amudLabel = amudKey === 'a' ? 'עמוד א׳' : amudKey === 'b' ? 'עמוד ב׳' : 'כללי';
 
-                      return (
-                        <div className="mt-3 animate-in fade-in slide-in-from-top-2 duration-200 w-full max-w-[900px] mx-auto">
-                          <VLine height={16} color={color} />
+                                    return (
+                                      <TreeNode
+                                        key={amudNodeKey}
+                                        isLeaf={!isAmudExpanded}
+                                        color={color}
+                                        onClick={() => setExpandedAmud(isAmudExpanded ? null : amudNodeKey)}
+                                        className={cn(
+                                          'min-w-0',
+                                          isAmudExpanded && 'ring-2 ring-offset-1 shadow-md col-span-full'
+                                        )}
+                                      >
+                                        <span className="font-semibold text-xs" style={{ color }}>{amudLabel}</span>
+                                        <Badge variant="secondary" className="text-[9px] px-1 py-0 mt-0.5 block mx-auto w-fit">
+                                          {amudRefs.length}
+                                        </Badge>
+                                      </TreeNode>
+                                    );
+                                  })}
+                                </div>
 
-                          {hasAmudim ? (
-                            <div className="flex gap-4 justify-center flex-wrap">
-                              {amudOrder.map(amudKey => {
-                                const amudRefs = byAmud[amudKey];
-                                const amudNodeKey = `${expandedDaf}-${amudKey}`;
-                                const isAmudExpanded = expandedAmud === amudNodeKey;
-                                const amudLabel = amudKey === 'a' ? 'ע״א' : amudKey === 'b' ? 'ע״ב' : 'לא צוין';
+                                {/* Expanded amud: show psakei din */}
+                                {expandedAmud && expandedAmud.startsWith(dafKey + '-') && (() => {
+                                  const amudKey = expandedAmud.split('-').pop()!;
+                                  const amudRefs = byAmud[amudKey] || [];
+                                  const amudLabel = amudKey === 'a' ? 'עמוד א׳' : amudKey === 'b' ? 'עמוד ב׳' : 'כללי';
 
-                                return (
-                                  <div key={amudNodeKey} className="flex flex-col items-center flex-1 min-w-[200px] max-w-[440px]">
-                                    <TreeNode
-                                      isLeaf={!isAmudExpanded}
-                                      color={color}
-                                      onClick={() => setExpandedAmud(isAmudExpanded ? null : amudNodeKey)}
-                                      className={cn(
-                                        'w-full',
-                                        isAmudExpanded && 'ring-1 ring-offset-1'
-                                      )}
-                                    >
-                                      <span className="font-medium text-xs" style={{ color }}>{amudLabel}</span>
-                                      <Badge variant="secondary" className="text-[8px] px-1 py-0 mt-0.5 block mx-auto w-fit">
-                                        {amudRefs.length}
-                                      </Badge>
-                                    </TreeNode>
-
-                                    {isAmudExpanded && (
-                                      <div className="w-full animate-in fade-in duration-200 mt-2">
-                                        <VLine height={12} color={color} />
+                                  return (
+                                    <div className="mt-3 animate-in fade-in slide-in-from-top-2 duration-200 w-full">
+                                      <VLine height={12} color={color} />
+                                      {amudRefs.length > 0 ? (
                                         <div
                                           className="border-r-2 pr-3 mr-1 space-y-2 w-full"
                                           style={{ borderColor: color }}
                                         >
+                                          <div className="text-xs font-bold text-center mb-2" style={{ color }}>
+                                            דף {toHebrewDaf(daf)} {amudLabel} — {amudRefs.length} פסקי דין
+                                          </div>
                                           {amudRefs.map(ref => (
                                             <div key={ref.id} className="relative">
                                               <div
@@ -321,39 +330,20 @@ export default memo(function GenealogyTreeView({ grouped, onValidate, onClickRef
                                             </div>
                                           ))}
                                         </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          ) : (
-                            /* No amud info — show refs directly */
-                            <div
-                              className="border-r-2 pr-3 mr-1 space-y-2 w-full max-w-[600px] mx-auto"
-                              style={{ borderColor: color }}
-                            >
-                              {dafRefs.map(ref => (
-                                <div key={ref.id} className="relative">
-                                  <div
-                                    className="absolute top-4 -right-3 w-3"
-                                    style={{ height: 2, backgroundColor: color }}
-                                  />
-                                  <RefCard
-                                    data={ref}
-                                    onValidate={onValidate}
-                                    onClickRef={onClickRef}
-                                    onCorrect={onCorrect}
-                                    highlightColor={highlightColor}
-                                    highlightBg={highlightBg}
-                                  />
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })()}
+                                      ) : (
+                                        <div className="text-center text-xs text-muted-foreground py-3">
+                                          אין פסקי דין לעמוד זה
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })()}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>

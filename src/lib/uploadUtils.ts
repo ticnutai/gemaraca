@@ -104,21 +104,24 @@ async function uploadBatchWithTimeout(
   abortSignal?: AbortSignal
 ): Promise<UploadBatchResult> {
   
-  // Extract text from DOCX files client-side (Edge Function can't parse DOCX)
+  // Extract text from DOCX files client-side in parallel (Edge Function can't parse DOCX)
   const fullTexts: Record<string, string> = {};
-  for (const file of batch) {
-    const ext = file.name.split('.').pop()?.toLowerCase();
-    if (ext === 'docx') {
-      try {
+  const docxFiles = batch.filter(f => f.name.split('.').pop()?.toLowerCase() === 'docx');
+  
+  if (docxFiles.length > 0) {
+    const extractResults = await Promise.allSettled(
+      docxFiles.map(async (file) => {
         const arrayBuffer = await file.arrayBuffer();
         const result = await mammoth.extractRawText({ arrayBuffer });
-        if (result.value && result.value.length > 10) {
-          fullTexts[file.name] = result.value.length > 100000
-            ? result.value.substring(0, 100000) + '... [קוצר]'
-            : result.value;
-        }
-      } catch (e) {
-        console.warn(`Could not extract text from ${file.name}:`, e);
+        return { name: file.name, text: result.value };
+      })
+    );
+    
+    for (const result of extractResults) {
+      if (result.status === 'fulfilled' && result.value.text?.length > 10) {
+        fullTexts[result.value.name] = result.value.text.length > 100000
+          ? result.value.text.substring(0, 100000) + '... [קוצר]'
+          : result.value.text;
       }
     }
   }

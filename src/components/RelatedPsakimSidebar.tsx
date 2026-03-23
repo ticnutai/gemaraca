@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { trackRecentPsak } from "@/lib/recentPsakim";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -119,6 +120,7 @@ const RelatedPsakimSidebar = ({ sugyaId }: RelatedPsakimSidebarProps) => {
   }, [sugyaId]);
 
   const handlePsakClick = useCallback((psak: typeof psakim[number]) => {
+    trackRecentPsak(psak.id);
     const sourceUrl = (psak as any).source_url as string | undefined;
     const preferred = getViewerPreference() ?? "dialog";
 

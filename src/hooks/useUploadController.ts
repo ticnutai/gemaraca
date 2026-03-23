@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import { useUploadStore } from '@/stores/uploadStore';
 import { 
   uploadBatchWithRetry, 
@@ -11,16 +11,17 @@ import { toast } from '@/hooks/use-toast';
 
 const BATCH_SIZE = 5;
 
+// Module-level singletons — survive component unmount so uploads
+// continue running in the background when navigating away.
+const globalAbortControllers = new Map<string, AbortController>();
+const globalPausedSessions = new Set<string>();
+
 interface UseUploadControllerOptions {
   onComplete?: (sessionId: string) => void;
   onError?: (sessionId: string, error: Error) => void;
 }
 
 export function useUploadController(options: UseUploadControllerOptions = {}) {
-  // Multiple abort controllers for concurrent uploads
-  const abortControllersRef = useRef<Map<string, AbortController>>(new Map());
-  const pausedRef = useRef<Set<string>>(new Set());
-  
   const {
     sessions,
     startSession,
@@ -40,30 +41,23 @@ export function useUploadController(options: UseUploadControllerOptions = {}) {
     getTotalProgress,
   } = useUploadStore();
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      abortControllersRef.current.forEach((controller) => controller.abort());
-    };
-  }, []);
-
   const pause = useCallback((sessionId: string) => {
-    pausedRef.current.add(sessionId);
+    globalPausedSessions.add(sessionId);
     pauseSession(sessionId);
     toast({ title: "ההעלאה הושהתה", description: "לחץ המשך כדי להמשיך" });
   }, [pauseSession]);
 
   const resume = useCallback((sessionId: string) => {
-    pausedRef.current.delete(sessionId);
+    globalPausedSessions.delete(sessionId);
     resumeSession(sessionId);
     toast({ title: "ממשיך בהעלאה..." });
   }, [resumeSession]);
 
   const cancel = useCallback((sessionId: string) => {
-    const controller = abortControllersRef.current.get(sessionId);
+    const controller = globalAbortControllers.get(sessionId);
     controller?.abort();
-    abortControllersRef.current.delete(sessionId);
-    pausedRef.current.delete(sessionId);
+    globalAbortControllers.delete(sessionId);
+    globalPausedSessions.delete(sessionId);
     setStatus(sessionId, 'error');
     toast({ 
       title: "ההעלאה בוטלה", 
@@ -73,9 +67,9 @@ export function useUploadController(options: UseUploadControllerOptions = {}) {
   }, [setStatus]);
 
   const cancelAll = useCallback(() => {
-    abortControllersRef.current.forEach((controller) => controller.abort());
-    abortControllersRef.current.clear();
-    pausedRef.current.clear();
+    globalAbortControllers.forEach((controller) => controller.abort());
+    globalAbortControllers.clear();
+    globalPausedSessions.clear();
     Object.keys(sessions).forEach((id) => setStatus(id, 'error'));
     toast({ 
       title: "כל ההעלאות בוטלו", 
@@ -84,7 +78,7 @@ export function useUploadController(options: UseUploadControllerOptions = {}) {
   }, [sessions, setStatus]);
 
   const waitWhilePaused = useCallback(async (sessionId: string, signal?: AbortSignal) => {
-    while (pausedRef.current.has(sessionId)) {
+    while (globalPausedSessions.has(sessionId)) {
       if (signal?.aborted) {
         throw new UploadAbortError();
       }
@@ -116,9 +110,9 @@ export function useUploadController(options: UseUploadControllerOptions = {}) {
     const sessionId = crypto.randomUUID();
     const name = sessionName || `העלאה ${new Date().toLocaleTimeString('he-IL')}`;
 
-    // Create new abort controller for this session
+    // Create new abort controller for this session (module-level — survives unmount)
     const abortController = new AbortController();
-    abortControllersRef.current.set(sessionId, abortController);
+    globalAbortControllers.set(sessionId, abortController);
     const signal = abortController.signal;
 
     // Start session
@@ -199,9 +193,9 @@ export function useUploadController(options: UseUploadControllerOptions = {}) {
           failed: allErrors.length,
         });
 
-        // Small delay between batches
+        // Minimal delay between batches (rate limiting)
         if (i < batches.length - 1) {
-          await sleep(200, signal);
+          await sleep(50, signal);
         }
       }
 
@@ -240,7 +234,7 @@ export function useUploadController(options: UseUploadControllerOptions = {}) {
 
       return { sessionId, uploadedFileNames, results: allResults, errors: allErrors };
     } finally {
-      abortControllersRef.current.delete(sessionId);
+      globalAbortControllers.delete(sessionId);
     }
   }, [
     startSession, updateProgress, addResult, addError, setStatus, 
@@ -305,7 +299,7 @@ export function useUploadController(options: UseUploadControllerOptions = {}) {
 
     if (psakim && psakim.length > 0) {
       const abortController = new AbortController();
-      abortControllersRef.current.set(sessionId, abortController);
+      globalAbortControllers.set(sessionId, abortController);
       await runAIAnalysis(sessionId, psakim, abortController.signal);
     }
   }, [runAIAnalysis]);

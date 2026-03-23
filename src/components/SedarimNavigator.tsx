@@ -1,6 +1,7 @@
 import { useState, useEffect, lazy, Suspense } from "react";
 import { BookOpen, ChevronLeft, ChevronDown, Scale, Download, Loader2, Check, X, MoreVertical, Trash2, RefreshCw, LayoutGrid, List, Compass, GitBranch } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { trackRecentPsak } from "@/lib/recentPsakim";
 import { SEDARIM, getMasechtotBySeder, MASECHTOT, Masechet } from "@/lib/masechtotData";
 import { toDafFormat } from "@/lib/hebrewNumbers";
 import { Button } from "@/components/ui/button";
@@ -88,24 +89,39 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
     queryFn: async () => {
       try {
         const recentIds: string[] = JSON.parse(localStorage.getItem(RECENT_PSAKIM_KEY) || '[]');
-        if (recentIds.length === 0) {
-          // Fallback: show latest psakim
+        const TARGET = 6;
+        let results: PsakDinExample[] = [];
+
+        if (recentIds.length > 0) {
+          // Fetch recently viewed by IDs preserving order
           const { data } = await supabase
             .from('psakei_din')
             .select('id, title, court, year, summary, source_url')
-            .order('created_at', { ascending: false })
-            .limit(6);
-          return (data || []) as PsakDinExample[];
+            .in('id', recentIds.slice(0, TARGET));
+          if (data && data.length > 0) {
+            const orderMap = new Map(recentIds.map((id, i) => [id, i]));
+            results = (data as PsakDinExample[]).sort((a, b) => (orderMap.get(a.id) ?? 99) - (orderMap.get(b.id) ?? 99));
+          }
         }
-        // Fetch by IDs preserving order
-        const { data } = await supabase
-          .from('psakei_din')
-          .select('id, title, court, year, summary, source_url')
-          .in('id', recentIds.slice(0, 6));
-        if (!data) return [];
-        // Sort by the order in localStorage (most recent first)
-        const orderMap = new Map(recentIds.map((id, i) => [id, i]));
-        return (data as PsakDinExample[]).sort((a, b) => (orderMap.get(a.id) ?? 99) - (orderMap.get(b.id) ?? 99));
+
+        // Fill remaining slots with latest psakim (avoid duplicates)
+        if (results.length < TARGET) {
+          const existingIds = new Set(results.map(r => r.id));
+          const { data: latest } = await supabase
+            .from('psakei_din')
+            .select('id, title, court, year, summary, source_url')
+            .order('created_at', { ascending: false })
+            .limit(TARGET - results.length + existingIds.size);
+          if (latest) {
+            for (const p of latest as PsakDinExample[]) {
+              if (!existingIds.has(p.id) && results.length < TARGET) {
+                results.push(p);
+              }
+            }
+          }
+        }
+
+        return results;
       } catch {
         return [];
       }
@@ -215,13 +231,8 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
   };
 
   const handlePsakDinClick = (id: string) => {
-    // Track recently viewed
-    try {
-      const recent: string[] = JSON.parse(localStorage.getItem(RECENT_PSAKIM_KEY) || '[]');
-      const updated = [id, ...recent.filter(r => r !== id)].slice(0, 20);
-      localStorage.setItem(RECENT_PSAKIM_KEY, JSON.stringify(updated));
-      queryClient.invalidateQueries({ queryKey: ['recently-viewed-psakim'] });
-    } catch { /* ignore */ }
+    trackRecentPsak(id);
+    queryClient.invalidateQueries({ queryKey: ['recently-viewed-psakim'] });
     setActiveTab("psak-din");
   };
 
@@ -554,44 +565,6 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
         </div>
       )}
 
-      {/* Psak Din Examples Section */}
-      {psakDinExamples.length > 0 && !selectedMasechetLocal && (
-        <div className="bg-card rounded-lg md:rounded-xl border border-border p-2 md:p-4">
-           <div className="flex items-center gap-1.5 md:gap-2 mb-2 md:mb-4">
-            <Scale className="h-3.5 w-3.5 md:h-5 md:w-5 text-foreground" />
-            <h3 className="font-bold text-sm md:text-lg">פסקי דין אחרונים</h3>
-          </div>
-          
-          <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
-            {psakDinExamples.map((psak) => (
-              <button
-                key={psak.id}
-                onClick={() => handlePsakDinClick(psak.id)}
-                className={cn(
-                  "p-2.5 md:p-3 rounded-md md:rounded-lg border text-right transition-all min-h-[48px]",
-                  "bg-secondary/30 border-border hover:border-accent hover:shadow-sm",
-                  "hover:bg-accent/10"
-                )}
-              >
-                <h4 className="font-medium text-xs md:text-sm line-clamp-2 mb-0.5 md:mb-1 flex items-center gap-1 justify-end"><SummaryToggle summary={psak.summary} compact /><FileTypeBadge url={psak.source_url} />{psak.title}</h4>
-                <div className="flex items-center gap-1.5 md:gap-2 text-[10px] md:text-xs text-muted-foreground">
-                  <span className="truncate max-w-[100px] md:max-w-none">{psak.court}</span>
-                  <span>•</span>
-                  <span>{psak.year}</span>
-                </div>
-              </button>
-            ))}
-          </div>
-          
-          <button
-            onClick={() => setActiveTab("psak-din")}
-            className="flex items-center gap-1 mt-2 md:mt-4 mx-auto text-xs md:text-sm text-accent hover:text-accent/80 transition-colors min-h-[44px]"
-          >
-            <span>צפה בכל פסקי הדין</span>
-            <ChevronLeft className="h-3 w-3 md:h-4 md:w-4 rtl-flip" />
-          </button>
-        </div>
-      )}
       </>
       )}
 
@@ -675,6 +648,44 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
               )}
             </div>
           ))}
+        </div>
+      )}
+      {/* ──── פסקי דין אחרונים - shown in all view modes ──── */}
+      {psakDinExamples.length > 0 && !selectedMasechetLocal && (
+        <div className="bg-card rounded-lg md:rounded-xl border border-border p-2 md:p-4">
+           <div className="flex items-center gap-1.5 md:gap-2 mb-2 md:mb-4">
+            <Scale className="h-3.5 w-3.5 md:h-5 md:w-5 text-foreground" />
+            <h3 className="font-bold text-sm md:text-lg">פסקי דין אחרונים</h3>
+          </div>
+          
+          <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
+            {psakDinExamples.map((psak) => (
+              <button
+                key={psak.id}
+                onClick={() => handlePsakDinClick(psak.id)}
+                className={cn(
+                  "p-2.5 md:p-3 rounded-md md:rounded-lg border text-right transition-all min-h-[48px]",
+                  "bg-secondary/30 border-border hover:border-accent hover:shadow-sm",
+                  "hover:bg-accent/10"
+                )}
+              >
+                <h4 className="font-medium text-xs md:text-sm line-clamp-2 mb-0.5 md:mb-1 flex items-center gap-1 justify-end"><SummaryToggle summary={psak.summary} compact /><FileTypeBadge url={psak.source_url} />{psak.title.replace(/^.*[/\\]/, '')}</h4>
+                <div className="flex items-center gap-1.5 md:gap-2 text-[10px] md:text-xs text-muted-foreground">
+                  <span className="truncate max-w-[100px] md:max-w-none">{psak.court}</span>
+                  <span>•</span>
+                  <span>{psak.year}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+          
+          <button
+            onClick={() => setActiveTab("psak-din")}
+            className="flex items-center gap-1 mt-2 md:mt-4 mx-auto text-xs md:text-sm text-accent hover:text-accent/80 transition-colors min-h-[44px]"
+          >
+            <span>צפה בכל פסקי הדין</span>
+            <ChevronLeft className="h-3 w-3 md:h-4 md:w-4 rtl-flip" />
+          </button>
         </div>
       )}
     </div>

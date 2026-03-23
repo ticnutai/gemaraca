@@ -1544,6 +1544,59 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
                     <Download className="w-3.5 h-3.5" />
                     ייצוא PDF
                   </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1"
+                    onClick={async () => {
+                      try {
+                        const { generateDocx } = await import('@/lib/docxGenerator');
+                        const blob = await generateDocx({
+                          title: psak?.title || 'פסק דין',
+                          court: psak?.court || 'לא צוין',
+                          year: psak?.year || new Date().getFullYear(),
+                          case_number: psak?.case_number || psak?.caseNumber,
+                          full_text: beautifiedHtml ? stripHtmlToText(beautifiedHtml) : (psak?.full_text || psak?.fullText || psak?.summary),
+                          summary: psak?.summary,
+                        });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `${psak?.title || 'psak-din'}.docx`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                        toast.success('קובץ DOCX הורד בהצלחה');
+                      } catch (err) {
+                        console.error('DOCX export error:', err);
+                        toast.error('שגיאה בייצוא DOCX');
+                      }
+                    }}
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    ייצוא WORD
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1"
+                    onClick={() => {
+                      const text = beautifiedHtml
+                        ? stripHtmlToText(beautifiedHtml)
+                        : (psak?.full_text || psak?.fullText || psak?.summary || '');
+                      const header = `${psak?.title || ''}\n${'='.repeat(40)}\nבית דין: ${psak?.court || 'לא צוין'}\nשנה: ${psak?.year || ''}\n${psak?.case_number || psak?.caseNumber ? `תיק: ${psak?.case_number || psak?.caseNumber}\n` : ''}${'='.repeat(40)}\n\n`;
+                      const blob = new Blob([`\uFEFF${header}${text}`], { type: 'text/plain;charset=utf-8' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `${psak?.title || 'psak-din'}.txt`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                      toast.success('קובץ TXT הורד בהצלחה');
+                    }}
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    ייצוא TXT
+                  </Button>
 
                   {/* Save buttons separator */}
                   <div className="w-px h-6 bg-border mx-1" />

@@ -117,15 +117,51 @@ async function main() {
   console.log('\n🏁 Done!\n');
 }
 
-// ─── Execute SQL via rpc or direct statements ───────────────
+// ─── Execute SQL via edge function, rpc, or direct statements ───
 async function executeSql(supabase, sql) {
-  // Try using the execute_safe_migration RPC if available
+  // 1) Try the run-migration edge function (most reliable - uses direct PG connection)
+  const session = (await supabase.auth.getSession()).data.session;
+  if (session?.access_token) {
+    console.log('📡 Trying run-migration edge function...');
+    const edgeRes = await fetch(`${SUPABASE_URL}/functions/v1/run-migration`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+        'apikey': SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({
+        action: 'execute',
+        sql,
+        name: 'direct-run-migration',
+        description: 'Executed via direct-run.mjs',
+      }),
+    });
+
+    if (edgeRes.ok) {
+      const result = await edgeRes.json();
+      if (result.error) {
+        console.error('❌ Edge function error:', result.error);
+        throw new Error(result.error);
+      }
+      console.log('✅ Migration completed successfully via edge function!');
+      if (result.rows_affected != null) {
+        console.log(`📊 Rows affected: ${result.rows_affected}`);
+      }
+      return;
+    }
+
+    const edgeErr = await edgeRes.text();
+    console.log(`⚠️  Edge function returned ${edgeRes.status}: ${edgeErr.substring(0, 200)}`);
+    console.log('   Falling back to RPC...\n');
+  }
+
+  // 2) Try using the execute_safe_migration RPC
   const { data, error } = await supabase.rpc('execute_safe_migration', {
     migration_sql: sql,
   });
 
   if (error) {
-    // If RPC doesn't exist, try splitting and running statements individually
     if (error.message.includes('execute_safe_migration') || error.code === '42883') {
       console.log('ℹ️  RPC not available, running statements directly...\n');
       await executeStatementsDirectly(supabase, sql);

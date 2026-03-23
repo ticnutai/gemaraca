@@ -184,62 +184,89 @@ const UploadPsakDinTab = () => {
     const filesToUpload: File[] = [...uniqueFiles];
     const skipped: DuplicateFile[] = [];
     
-    for (const item of resolved) {
-      if (item.action === 'skip') {
-        skipped.push({ name: item.name, reason: item.reason, existingTitle: item.existingTitle });
-        continue;
-      }
-      
-      if (item.action === 'overwrite') {
-        // Delete the existing record before re-uploading
-        const baseName = item.file.name.replace(/\.[^/.]+$/, '').toLowerCase().trim();
-        try {
-          const { data: existing } = await supabase
-            .from('psakei_din')
-            .select('id')
-            .or(`title.ilike.%${baseName}%`)
-            .limit(1);
-          
-          if (existing && existing.length > 0) {
-            await supabase.from('psakei_din').delete().eq('id', existing[0].id);
-            addDebug(`🗑️ נמחק פסק קיים: ${baseName}`);
+    // Separate items by action type for parallel processing
+    const skipItems = resolved.filter(item => item.action === 'skip');
+    const overwriteItems = resolved.filter(item => item.action === 'overwrite');
+    const duplicateItems = resolved.filter(item => item.action === 'duplicate');
+    
+    // Handle skipped items (no async needed)
+    for (const item of skipItems) {
+      skipped.push({ name: item.name, reason: item.reason, existingTitle: item.existingTitle });
+    }
+    
+    // Process overwrites and duplicates in parallel
+    const [overwriteResults, duplicateResults] = await Promise.all([
+      // Parallel overwrites - delete existing records concurrently
+      Promise.allSettled(
+        overwriteItems.map(async (item) => {
+          const baseName = item.file.name.replace(/\.[^/.]+$/, '').toLowerCase().trim();
+          try {
+            const { data: existing } = await supabase
+              .from('psakei_din')
+              .select('id')
+              .or(`title.ilike.%${baseName}%`)
+              .limit(1);
+            
+            if (existing && existing.length > 0) {
+              await supabase.from('psakei_din').delete().eq('id', existing[0].id);
+              addDebug(`🗑️ נמחק פסק קיים: ${baseName}`);
+            }
+          } catch (err) {
+            addDebug(`⚠️ שגיאה במחיקת פסק קיים: ${baseName}`);
           }
-        } catch (err) {
-          addDebug(`⚠️ שגיאה במחיקת פסק קיים: ${baseName}`);
-        }
-        filesToUpload.push(item.file);
+          return item.file;
+        })
+      ),
+      // Parallel duplicates - find available names concurrently
+      Promise.allSettled(
+        duplicateItems.map(async (item) => {
+          const baseName = item.file.name.replace(/\.[^/.]+$/, '');
+          const ext = item.file.name.split('.').pop() || '';
+          
+          const { data: existingNamed } = await supabase
+            .from('psakei_din')
+            .select('title')
+            .ilike('title', `${baseName}%`);
+          
+          const existingNames = new Set(
+            (existingNamed || []).map((p: { title: string }) => p.title.toLowerCase().trim())
+          );
+          
+          let num = 2;
+          while (existingNames.has(`${baseName} (${num})`.toLowerCase())) {
+            num++;
+          }
+          
+          const newFileName = `${baseName} (${num}).${ext}`;
+          const renamedFile = new File([item.file], newFileName, { type: item.file.type });
+          addDebug(`📋 שכפול: ${item.name} → ${newFileName}`);
+          return renamedFile;
+        })
+      ),
+    ]);
+    
+    // Collect successful overwrite files
+    for (const result of overwriteResults) {
+      if (result.status === 'fulfilled') {
+        filesToUpload.push(result.value);
       }
-      
-      if (item.action === 'duplicate') {
-        // Find next available numbered title
-        const baseName = item.file.name.replace(/\.[^/.]+$/, '');
-        const ext = item.file.name.split('.').pop() || '';
-        
-        let num = 2;
-        const { data: existingNamed } = await supabase
-          .from('psakei_din')
-          .select('title')
-          .ilike('title', `${baseName}%`);
-        
-        const existingNames = new Set(
-          (existingNamed || []).map(p => p.title.toLowerCase().trim())
-        );
-        
-        while (existingNames.has(`${baseName} (${num})`.toLowerCase())) {
-          num++;
-        }
-        
-        const newFileName = `${baseName} (${num}).${ext}`;
-        const renamedFile = new File([item.file], newFileName, { type: item.file.type });
-        filesToUpload.push(renamedFile);
-        addDebug(`📋 שכפול: ${item.name} → ${newFileName}`);
+    }
+    
+    // Collect successful duplicate files
+    for (const result of duplicateResults) {
+      if (result.status === 'fulfilled') {
+        filesToUpload.push(result.value);
       }
-      
-      // Save hash for uploaded files
-      const hash = fileHashes.get(item.name);
-      if (hash) {
-        const baseName = item.file.name.replace(/\.[^/.]+$/, '').toLowerCase().trim();
-        addFileHash(hash, baseName);
+    }
+    
+    // Save hashes for all non-skipped items
+    for (const item of resolved) {
+      if (item.action !== 'skip') {
+        const hash = fileHashes.get(item.name);
+        if (hash) {
+          const baseName = item.file.name.replace(/\.[^/.]+$/, '').toLowerCase().trim();
+          addFileHash(hash, baseName);
+        }
       }
     }
     
@@ -283,7 +310,7 @@ const UploadPsakDinTab = () => {
       
       for (let i = 0; i < entries.length; i++) {
         const [path, zipEntry] = entries[i];
-        const fileName = path.split('/').pop() || path;
+        const fileName = path.split('/').pop()?.split('\\').pop() || path;
         const ext = fileName.split('.').pop()?.toLowerCase();
         
         // Update progress every 10 files or at the end

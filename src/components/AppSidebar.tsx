@@ -288,7 +288,7 @@ const AppSidebar = ({
         className={cn(
           "border border-border/50 !bg-sidebar",
           "overflow-hidden",
-          "transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+          "transition-all duration-300 [transition-timing-function:cubic-bezier(0.32,0.72,0,1)]",
           isMobile
             ? cn(
                 "fixed !top-[56px] z-50 w-[80vw] max-w-[300px] shadow-2xl",

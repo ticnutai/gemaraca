@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import { useDownloadStore, DownloadItem } from '@/stores/downloadStore';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -10,12 +10,13 @@ const ITEM_TIMEOUT = 20000;
 
 export type DownloadFormat = 'html' | 'pdf' | 'docx';
 
-export function useDownloadController() {
-  const abortRef = useRef<AbortController | null>(null);
-  const pausedRef = useRef(false);
-  const activeRef = useRef(false);
-  const speedRef = useRef({ startTime: 0, completedCount: 0 });
+// ─── Module-level singletons (survive component unmount) ─────
+let _abortController: AbortController | null = null;
+let _paused = false;
+let _active = false;
+let _speed = { startTime: 0, completedCount: 0 };
 
+export function useDownloadController() {
   const {
     sessions,
     startSession,
@@ -26,12 +27,6 @@ export function useDownloadController() {
     getProgress,
   } = useDownloadStore();
 
-  useEffect(() => {
-    return () => {
-      abortRef.current?.abort();
-    };
-  }, []);
-
   const sleep = (ms: number, signal?: AbortSignal) =>
     new Promise<void>((resolve, reject) => {
       if (signal?.aborted) return reject(new Error('aborted'));
@@ -40,7 +35,7 @@ export function useDownloadController() {
     });
 
   const waitWhilePaused = async (signal: AbortSignal) => {
-    while (pausedRef.current) {
+    while (_paused) {
       if (signal.aborted) throw new Error('aborted');
       await sleep(300, signal);
     }
@@ -119,19 +114,19 @@ export function useDownloadController() {
     sessionName?: string
   ) => {
     if (items.length === 0) return;
-    if (activeRef.current) {
+    if (_active) {
       toast({ title: 'הורדה כבר פעילה', variant: 'destructive' });
       return;
     }
 
-    activeRef.current = true;
-    pausedRef.current = false;
-    speedRef.current = { startTime: Date.now(), completedCount: 0 };
+    _active = true;
+    _paused = false;
+    _speed = { startTime: Date.now(), completedCount: 0 };
     const sessionId = crypto.randomUUID();
     const name = sessionName || `הורדת ${items.length} פסקי דין`;
 
     const abortController = new AbortController();
-    abortRef.current = abortController;
+    _abortController = abortController;
     const signal = abortController.signal;
 
     // Check for resumable session
@@ -182,7 +177,7 @@ export function useDownloadController() {
           const result = await downloadWithRetry(item.id, format, signal);
           downloadedContents.set(item.id, result);
           markItemDone(sessionId, item.id);
-          speedRef.current.completedCount++;
+          _speed.completedCount++;
         } catch (err) {
           if ((err as Error).message === 'aborted') return;
           updateItemStatus(sessionId, item.id, 'error', (err as Error).message);
@@ -204,7 +199,7 @@ export function useDownloadController() {
       await Promise.all(workers);
 
       if (signal.aborted) {
-        activeRef.current = false;
+        _active = false;
         return;
       }
 
@@ -253,34 +248,34 @@ export function useDownloadController() {
         });
       }
     } finally {
-      activeRef.current = false;
-      abortRef.current = null;
+      _active = false;
+      _abortController = null;
     }
   }, [sessions, startSession, updateItemStatus, markItemDone, setSessionStatus, clearSession]);
 
   const pause = useCallback((sessionId: string) => {
-    pausedRef.current = true;
+    _paused = true;
     setSessionStatus(sessionId, 'paused');
     toast({ title: 'ההורדה הושהתה' });
   }, [setSessionStatus]);
 
   const resume = useCallback((sessionId: string) => {
-    pausedRef.current = false;
+    _paused = false;
     setSessionStatus(sessionId, 'downloading');
     toast({ title: 'ממשיך בהורדה...' });
   }, [setSessionStatus]);
 
   const cancel = useCallback((sessionId: string) => {
-    abortRef.current?.abort();
-    abortRef.current = null;
-    activeRef.current = false;
-    pausedRef.current = false;
+    _abortController?.abort();
+    _abortController = null;
+    _active = false;
+    _paused = false;
     clearSession(sessionId);
     toast({ title: 'ההורדה בוטלה', variant: 'destructive' });
   }, [clearSession]);
 
   const getSpeed = useCallback(() => {
-    const { startTime, completedCount } = speedRef.current;
+    const { startTime, completedCount } = _speed;
     if (!startTime || completedCount === 0) return 0;
     const elapsed = (Date.now() - startTime) / 1000;
     return elapsed > 0 ? Math.round((completedCount / elapsed) * 10) / 10 : 0;

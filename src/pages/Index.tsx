@@ -4,6 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { SectionErrorBoundary } from "@/components/SectionErrorBoundary";
 import PinnedItemsBar from "@/components/PinnedItemsBar";
+import { useCloudPreferences } from "@/hooks/useCloudPreferences";
 
 // Lazy-loaded tab components (code splitting)
 const SedarimNavigator = lazy(() => import("@/components/SedarimNavigator"));
@@ -42,6 +43,9 @@ const TabFallback = () => (
 const Index = () => {
   const { activeTab } = useAppContext();
   const isMobile = useIsMobile();
+
+  // Sync preferences to cloud on login
+  useCloudPreferences();
 
   // On mobile, hide SedarimNavigator when another tab is active to save space
   const showNavigator = !isMobile || activeTab === "gemara";

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { trackRecentPsak } from "@/lib/recentPsakim";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -487,6 +488,7 @@ const GemaraPsakDinIndex = () => {
 
   const handlePsakClick = useCallback((psak: any) => {
     if (!psak) return;
+    trackRecentPsak(psak.id || psak.psak_din_id || '');
     // Wrap psakei_din data into PsakLink shape if needed
     const psakLink: PsakLink = psak.psak_din_id ? psak : {
       id: psak.id || '',

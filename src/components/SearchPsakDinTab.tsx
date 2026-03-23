@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { trackRecentPsak } from "@/lib/recentPsakim";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -153,6 +154,7 @@ const SearchPsakDinTab = () => {
   };
 
   const handlePsakClick = (psak: SearchResult) => {
+    trackRecentPsak(psak.id);
     const preferred = getViewerPreference() ?? "embedpdf";
 
     if (preferred === "newwindow" && psak.sourceUrl) {

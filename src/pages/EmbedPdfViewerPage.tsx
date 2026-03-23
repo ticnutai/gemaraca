@@ -29,6 +29,7 @@ import { supabase } from "@/integrations/supabase/client";
 import PsakDinViewDialog from "@/components/PsakDinViewDialog";
 import { TEMPLATES, generateFromTemplate } from "@/lib/psakDinTemplates";
 import { parsePsakDinText } from "@/lib/psakDinParser";
+import { PDFViewer as EmbedPDFViewer, type PDFViewerConfig } from "@embedpdf/react-pdf-viewer";
 
 
 // ─── Constants ───────────────────────────────────────────────
@@ -38,8 +39,55 @@ const EDITED_TEXT_STORAGE_PREFIX = "embedpdf-edited-text-v1:";
 const PSAK_FAVORITES_KEY = "psak-favorites-v1";
 const PSAK_DEFAULT_FORMAT_KEY = "psak-default-format-v1";
 const PSAK_FORMAT_PREFIX = "psak-format-v1:";
+const PDF_THEME_STORAGE_KEY = "embedpdf-pdf-theme-v1";
 
 type ViewMode = "single" | "split" | "compare";
+type PdfThemeKey = "cobalt" | "sand" | "noir";
+
+const PDF_THEME_CONFIGS: Record<PdfThemeKey, { label: string; icon: string; themeConfig: PDFViewerConfig["theme"] }> = {
+  cobalt: {
+    label: "Cobalt",
+    icon: "🔵",
+    themeConfig: {
+      preference: "light",
+      light: {
+        background: { app: "#ffffff", surface: "#ffffff", surfaceAlt: "#f8f9fc", elevated: "#ffffff", overlay: "rgba(11, 31, 91, 0.18)", input: "#ffffff" },
+        foreground: { primary: "#0B1F5B", secondary: "#1D3270", muted: "#4A5A86", disabled: "#8A95B8", onAccent: "#0B1F5B" },
+        border: { default: "#D4AF37", subtle: "#E6C976", strong: "#B9901F" },
+        accent: { primary: "#D4AF37", primaryHover: "#C6A132", primaryActive: "#AF8B21", primaryLight: "#FFF4D2", primaryForeground: "#0B1F5B" },
+        interactive: { hover: "#FFF9E8", active: "#FFF1CC", selected: "#FFF1CC", focus: "#D4AF37", focusRing: "rgba(212, 175, 55, 0.35)" },
+      },
+    },
+  },
+  sand: {
+    label: "Sand",
+    icon: "🟡",
+    themeConfig: {
+      preference: "light",
+      light: {
+        background: { app: "#faf6ee", surface: "#faf6ee", surfaceAlt: "#f3ece0", elevated: "#ffffff", overlay: "rgba(120, 80, 30, 0.15)", input: "#ffffff" },
+        foreground: { primary: "#3d2b1f", secondary: "#5a3e28", muted: "#8b7355", disabled: "#b8a88a", onAccent: "#3d2b1f" },
+        border: { default: "#c8a96e", subtle: "#dbc9a0", strong: "#a88c4a" },
+        accent: { primary: "#c8a96e", primaryHover: "#b89a5e", primaryActive: "#a88c4a", primaryLight: "#f5ecd8", primaryForeground: "#3d2b1f" },
+        interactive: { hover: "#f5ecd8", active: "#ece0c4", selected: "#ece0c4", focus: "#c8a96e", focusRing: "rgba(200, 169, 110, 0.35)" },
+      },
+    },
+  },
+  noir: {
+    label: "Noir",
+    icon: "⚫",
+    themeConfig: {
+      preference: "dark",
+      dark: {
+        background: { app: "#1a1a2e", surface: "#1a1a2e", surfaceAlt: "#16213e", elevated: "#0f3460", overlay: "rgba(0, 0, 0, 0.5)", input: "#16213e" },
+        foreground: { primary: "#e0e0e0", secondary: "#b0b0b0", muted: "#808080", disabled: "#555555", onAccent: "#1a1a2e" },
+        border: { default: "#D4AF37", subtle: "#555555", strong: "#D4AF37" },
+        accent: { primary: "#D4AF37", primaryHover: "#e0c060", primaryActive: "#c0a030", primaryLight: "#2a2a4e", primaryForeground: "#1a1a2e" },
+        interactive: { hover: "#2a2a4e", active: "#333366", selected: "#333366", focus: "#D4AF37", focusRing: "rgba(212, 175, 55, 0.4)" },
+      },
+    },
+  },
+};
 
 const ANNOTATION_COLORS = [
   { label: "צהוב", value: "#FFEB3B" },
@@ -522,6 +570,16 @@ export default function EmbedPdfViewerPage() {
   const [targetPane, setTargetPane] = useState<"left" | "right">("left");
   const [viewerFullscreen, setViewerFullscreen] = useState(false);
   const [regularViewerOpen, setRegularViewerOpen] = useState(false);
+
+  // ── PDF Theme (for EmbedPDF viewer) ──
+  const [pdfTheme, setPdfTheme] = useState<PdfThemeKey>(() => {
+    try {
+      return (localStorage.getItem(PDF_THEME_STORAGE_KEY) as PdfThemeKey) || "cobalt";
+    } catch { return "cobalt"; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem(PDF_THEME_STORAGE_KEY, pdfTheme); } catch { /* ignore */ }
+  }, [pdfTheme]);
 
   // ── Psak Din context (for beautify) ──
   const psakIdParam = searchParams.get("psakId");
@@ -1086,6 +1144,33 @@ export default function EmbedPdfViewerPage() {
   const rightContentType = detectContentType(rightSourceUrl);
   const leftViewerUrl = getViewerUrl(leftSourceUrl, leftContentType);
   const rightViewerUrl = getViewerUrl(rightSourceUrl, rightContentType);
+
+  // ── EmbedPDF Viewer config (for native PDF rendering) ──
+  const leftPdfConfig = useMemo((): PDFViewerConfig | null => {
+    if (leftContentType !== 'pdf' || !leftSourceUrl) return null;
+    return {
+      src: leftSourceUrl,
+      theme: PDF_THEME_CONFIGS[pdfTheme].themeConfig,
+      annotations: {
+        colorPresets: ["#FFEB3B", "#81C784", "#64B5F6", "#FF8A65", "#CE93D8", "#F48FB1", "#FCA5A5"],
+      },
+      search: { showAllResults: true },
+      zoom: { defaultZoomLevel: "page-width" as any },
+    };
+  }, [leftSourceUrl, leftContentType, pdfTheme]);
+
+  const rightPdfConfig = useMemo((): PDFViewerConfig | null => {
+    if (rightContentType !== 'pdf' || !rightSourceUrl) return null;
+    return {
+      src: rightSourceUrl,
+      theme: PDF_THEME_CONFIGS[pdfTheme].themeConfig,
+      annotations: {
+        colorPresets: ["#FFEB3B", "#81C784", "#64B5F6", "#FF8A65", "#CE93D8", "#F48FB1", "#FCA5A5"],
+      },
+      search: { showAllResults: true },
+      zoom: { defaultZoomLevel: "page-width" as any },
+    };
+  }, [rightSourceUrl, rightContentType, pdfTheme]);
 
   // ── Right pane HTML fetch (for html-embed in split/compare) ──
   const [rightFetchedHtml, setRightFetchedHtml] = useState<string | null>(null);
@@ -2218,6 +2303,28 @@ export default function EmbedPdfViewerPage() {
               </Button>
             ))}
           </div>
+
+          {/* ── PDF Theme Toggle (Cobalt / Sand / Noir) ── */}
+          {leftContentType === 'pdf' && (
+            <>
+              <Separator orientation="vertical" className="h-5 bg-[#D4AF37]/30 hidden sm:block" />
+              <div className="flex gap-0.5">
+                {(Object.keys(PDF_THEME_CONFIGS) as PdfThemeKey[]).map((key) => (
+                  <Button
+                    key={key}
+                    size="sm"
+                    variant={pdfTheme === key ? "default" : "ghost"}
+                    className={`h-7 text-xs px-2 ${pdfTheme === key
+                      ? "bg-[#0B1F5B] text-white hover:bg-[#0B1F5B]/90"
+                      : "text-[#0B1F5B]/60 hover:bg-[#D4AF37]/10"}`}
+                    onClick={() => setPdfTheme(key)}
+                  >
+                    {PDF_THEME_CONFIGS[key].icon} {PDF_THEME_CONFIGS[key].label}
+                  </Button>
+                ))}
+              </div>
+            </>
+          )}
 
           <div className="flex-1" />
 
@@ -3772,32 +3879,43 @@ export default function EmbedPdfViewerPage() {
                   </div>
                 )}
 
-                {/* PDF / DOCX */}
+                {/* PDF / DOCX — use EmbedPDF native viewer for PDFs, fallback iframe for DOCX */}
                 {(leftContentType === 'pdf' || leftContentType === 'docx') && (
                   <>
-                    <div className="absolute top-2 right-2 z-20">
-                      <Badge variant="secondary" className="text-[10px] bg-[#D4AF37]/15 border border-[#D4AF37]/40 text-[#0B1F5B]">
-                        עריכת טקסט מלאה זמינה בקבצי TXT/HTML
-                      </Badge>
-                    </div>
-                    {!iframeLoaded && !iframeError && (
-                      <div className="absolute inset-0 flex items-center justify-center z-10">
-                        <div className="w-8 h-8 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin mx-auto" />
-                      </div>
-                    )}
-                    {iframeError && (
-                      <div className="absolute inset-0 flex items-center justify-center z-10 bg-white">
-                        <div className="text-center space-y-3 p-6">
-                          <FileText className="h-12 w-12 mx-auto text-[#D4AF37]/40" />
-                          <p className="text-sm text-[#0B1F5B]/70">לא ניתן לטעון את המסמך</p>
-                          <div className="flex gap-2 justify-center flex-wrap">
-                            <Button size="sm" variant="outline" className="border-[#D4AF37]" onClick={() => { setIframeError(false); setIframeLoaded(false); }}><RefreshCw className="h-3.5 w-3.5 ml-1" /> נסה שוב</Button>
-                            <a href={leftSourceUrl} target="_blank" rel="noopener noreferrer"><Button size="sm" className="bg-[#0B1F5B] text-white border-2 border-[#D4AF37]"><ExternalLink className="h-3.5 w-3.5 ml-1" /> חלון חדש</Button></a>
-                          </div>
+                    {leftContentType === 'pdf' && leftPdfConfig ? (
+                      <EmbedPDFViewer
+                        key={`${leftSourceUrl}-${pdfTheme}`}
+                        config={leftPdfConfig}
+                        className="absolute inset-0 w-full h-full"
+                        style={{ width: '100%', height: '100%' }}
+                      />
+                    ) : (
+                      <>
+                        <div className="absolute top-2 right-2 z-20">
+                          <Badge variant="secondary" className="text-[10px] bg-[#D4AF37]/15 border border-[#D4AF37]/40 text-[#0B1F5B]">
+                            עריכת טקסט מלאה זמינה בקבצי TXT/HTML
+                          </Badge>
                         </div>
-                      </div>
+                        {!iframeLoaded && !iframeError && (
+                          <div className="absolute inset-0 flex items-center justify-center z-10">
+                            <div className="w-8 h-8 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin mx-auto" />
+                          </div>
+                        )}
+                        {iframeError && (
+                          <div className="absolute inset-0 flex items-center justify-center z-10 bg-white">
+                            <div className="text-center space-y-3 p-6">
+                              <FileText className="h-12 w-12 mx-auto text-[#D4AF37]/40" />
+                              <p className="text-sm text-[#0B1F5B]/70">לא ניתן לטעון את המסמך</p>
+                              <div className="flex gap-2 justify-center flex-wrap">
+                                <Button size="sm" variant="outline" className="border-[#D4AF37]" onClick={() => { setIframeError(false); setIframeLoaded(false); }}><RefreshCw className="h-3.5 w-3.5 ml-1" /> נסה שוב</Button>
+                                <a href={leftSourceUrl} target="_blank" rel="noopener noreferrer"><Button size="sm" className="bg-[#0B1F5B] text-white border-2 border-[#D4AF37]"><ExternalLink className="h-3.5 w-3.5 ml-1" /> חלון חדש</Button></a>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        <iframe key={leftViewerUrl} src={leftViewerUrl} className="absolute inset-0 w-full h-full border-0" title="PDF Viewer" allow="fullscreen" onLoad={() => setIframeLoaded(true)} onError={() => setIframeError(true)} />
+                      </>
                     )}
-                    <iframe key={leftViewerUrl} src={leftViewerUrl} className="absolute inset-0 w-full h-full border-0" title="PDF Viewer" allow="fullscreen" onLoad={() => setIframeLoaded(true)} onError={() => setIframeError(true)} />
                   </>
                 )}
                 </>
@@ -4063,6 +4181,13 @@ export default function EmbedPdfViewerPage() {
                     ) : (
                       <iframe src={rightViewerUrl} className="absolute inset-0 w-full h-full border-0" title="Compare Viewer" allow="fullscreen" />
                     )
+                  ) : rightContentType === 'pdf' && rightPdfConfig ? (
+                    <EmbedPDFViewer
+                      key={`${rightSourceUrl}-${pdfTheme}`}
+                      config={rightPdfConfig}
+                      className="absolute inset-0 w-full h-full"
+                      style={{ width: '100%', height: '100%' }}
+                    />
                   ) : (
                     <iframe src={rightViewerUrl} className="absolute inset-0 w-full h-full border-0" title="Compare Viewer" allow="fullscreen" />
                   )}

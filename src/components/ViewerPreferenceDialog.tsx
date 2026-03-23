@@ -4,6 +4,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Eye, FileText, ExternalLink } from "lucide-react";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const VIEWER_PREF_KEY = "psak_din_viewer_preference";
 const LEGACY_VIEWER_PREF_KEY = "psak-din-default-viewer";
@@ -28,6 +29,18 @@ export function getViewerPreference(): ViewerMode | null {
 
 export function setViewerPreference(mode: ViewerMode) {
   localStorage.setItem(VIEWER_PREF_KEY, mode);
+  // Async cloud sync (fire-and-forget)
+  supabase.auth.getUser().then(({ data }) => {
+    if (data?.user) {
+      supabase
+        .from('user_preferences')
+        .upsert(
+          { user_id: data.user.id, viewer_mode: mode, updated_at: new Date().toISOString() },
+          { onConflict: 'user_id' }
+        )
+        .then(() => {});
+    }
+  });
 }
 
 export function clearViewerPreference() {

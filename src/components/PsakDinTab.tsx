@@ -30,6 +30,7 @@ import { useToast } from "@/hooks/use-toast";
 import { cachePsakim, getAllCachedPsakim, type CachedPsak } from "@/lib/psakCache";
 import { exportPsakimToCsv } from "@/lib/csvExporter";
 import { cn } from "@/lib/utils";
+import { trackRecentPsak } from "@/lib/recentPsakim";
 import type { PsakDinRow } from "@/types/psakDin";
 
 function escapeHtml(str: string): string {
@@ -38,6 +39,7 @@ function escapeHtml(str: string): string {
 
 const PAGE_SIZE = 50;
 const SCROLL_POS_KEY = 'psak-list-scroll-pos';
+const SCROLL_COUNT_KEY = 'psak-list-scroll-count';
 
 const PsakDinTab = () => {
   const navigate = useNavigate();
@@ -57,6 +59,7 @@ const PsakDinTab = () => {
   const [editingPsak, setEditingPsak] = useState<PsakDinRow | null>(null);
   const [isNewPsak, setIsNewPsak] = useState(false);
   const [selectedForBulk, setSelectedForBulk] = useState<Set<string>>(new Set());
+  const [selectingAll, setSelectingAll] = useState(false);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -68,13 +71,18 @@ const PsakDinTab = () => {
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const prevSearchRef = useRef(searchQuery);
 
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
+      // Only clear psakim when search actually changes (avoid race condition on mount)
+      if (prevSearchRef.current !== searchQuery) {
+        prevSearchRef.current = searchQuery;
+        setPsakim([]);
+        setHasMore(true);
+      }
       setDebouncedSearch(searchQuery);
-      setPsakim([]);
-      setHasMore(true);
     }, 300);
     return () => clearTimeout(timer);
   }, [searchQuery]);
@@ -93,23 +101,38 @@ const PsakDinTab = () => {
     })();
   }, []);
 
+  const pendingScrollRestore = useRef<number | null>(null);
+  const pendingScrollCount = useRef<number>(0);
+
   useEffect(() => {
-    loadPsakim(0, true);
+    const savedPos = sessionStorage.getItem(SCROLL_POS_KEY);
+    const savedCount = sessionStorage.getItem(SCROLL_COUNT_KEY);
+    if (savedPos && savedCount) {
+      pendingScrollRestore.current = Number(savedPos);
+      const count = Math.max(PAGE_SIZE, Number(savedCount));
+      pendingScrollCount.current = count;
+      sessionStorage.removeItem(SCROLL_POS_KEY);
+      sessionStorage.removeItem(SCROLL_COUNT_KEY);
+      loadPsakim(0, true, count);
+    } else {
+      loadPsakim(0, true);
+    }
     loadTotalUnlinkedCount();
   }, [debouncedSearch, courtFilter, fileTypeFilter, sortOrder]);
 
   // Restore scroll position after returning from psak viewer
   useEffect(() => {
-    if (!loading && psakim.length > 0) {
-      const saved = sessionStorage.getItem(SCROLL_POS_KEY);
-      if (saved) {
-        sessionStorage.removeItem(SCROLL_POS_KEY);
+    if (!loading && pendingScrollRestore.current !== null && psakim.length >= pendingScrollCount.current) {
+      const pos = pendingScrollRestore.current;
+      pendingScrollRestore.current = null;
+      pendingScrollCount.current = 0;
+      requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           if (scrollContainerRef.current) {
-            scrollContainerRef.current.scrollTop = Number(saved);
+            scrollContainerRef.current.scrollTop = pos;
           }
         });
-      }
+      });
     }
   }, [loading, psakim.length]);
 
@@ -144,7 +167,7 @@ const PsakDinTab = () => {
     }
   }, [linkCountsData]);
 
-  const loadPsakim = useCallback(async (offset: number, isInitial: boolean) => {
+  const loadPsakim = useCallback(async (offset: number, isInitial: boolean, limitOverride?: number) => {
     if (isInitial) setLoading(true);
     else setLoadingMore(true);
 
@@ -203,13 +226,14 @@ const PsakDinTab = () => {
         query = query.is('source_url', null);
       }
 
-      const { data, error, count } = await query.range(offset, offset + PAGE_SIZE - 1);
+      const limit = limitOverride || PAGE_SIZE;
+      const { data, error, count } = await query.range(offset, offset + limit - 1);
 
       if (error) throw error;
 
       const newData = data || [];
       setTotalCount(count || 0);
-      setHasMore(newData.length === PAGE_SIZE);
+      setHasMore(newData.length === limit);
 
       if (isInitial) {
         setPsakim(newData);
@@ -270,10 +294,14 @@ const PsakDinTab = () => {
   };
 
   const handlePsakClick = (psak: PsakDinRow) => {
-    // Save scroll position before navigating
+    // Save scroll position and loaded item count before navigating
     if (scrollContainerRef.current) {
       sessionStorage.setItem(SCROLL_POS_KEY, String(scrollContainerRef.current.scrollTop));
+      sessionStorage.setItem(SCROLL_COUNT_KEY, String(psakim.length));
     }
+
+    // Track as recently viewed for home page "פסקי דין אחרונים"
+    trackRecentPsak(psak.id);
 
     const sourceUrl = psak.source_url;
     const preferred = getViewerPreference() ?? "embedpdf";
@@ -294,9 +322,10 @@ const PsakDinTab = () => {
 
   const handleSwitchViewer = (psak: PsakDinRow, e: React.MouseEvent) => {
     e.stopPropagation();
-    // Save scroll position before navigating
+    // Save scroll position and loaded item count before navigating
     if (scrollContainerRef.current) {
       sessionStorage.setItem(SCROLL_POS_KEY, String(scrollContainerRef.current.scrollTop));
+      sessionStorage.setItem(SCROLL_COUNT_KEY, String(psakim.length));
     }
     const current = getViewerPreference() ?? "embedpdf";
     const next: ViewerMode = current === "dialog" ? "embedpdf" : "dialog";
@@ -375,8 +404,38 @@ const PsakDinTab = () => {
     });
   };
 
-  const selectAllForBulk = () => {
-    setSelectedForBulk(new Set(psakim.map(p => p.id)));
+  const selectAllForBulk = async () => {
+    setSelectingAll(true);
+    try {
+      const BATCH = 1000;
+      const allIds: string[] = [];
+      let offset = 0;
+      while (true) {
+        let query = supabase
+          .from('psakei_din')
+          .select('id')
+          .range(offset, offset + BATCH - 1);
+        if (debouncedSearch) {
+          query = query.or(`title.ilike.%${debouncedSearch}%,court.ilike.%${debouncedSearch}%,summary.ilike.%${debouncedSearch}%`);
+        }
+        if (courtFilter !== 'all') query = query.eq('court', courtFilter);
+        if (fileTypeFilter !== 'all') {
+          if (fileTypeFilter === 'pdf') query = query.like('source_url', '%.pdf%');
+          else if (fileTypeFilter === 'word') query = query.or('source_url.like.%.doc%,source_url.like.%.docx%,source_url.like.%.rtf%,source_url.like.%.odt%');
+          else if (fileTypeFilter === 'text') query = query.or('source_url.like.%.txt%,source_url.like.%.text%,source_url.like.%.md%,source_url.like.%.csv%');
+          else if (fileTypeFilter === 'html') query = query.not('source_url', 'is', null).not('source_url', 'like', '%.pdf%').not('source_url', 'like', '%.doc%').not('source_url', 'like', '%.txt%');
+          else if (fileTypeFilter === 'none') query = query.is('source_url', null);
+        }
+        const { data } = await query;
+        if (!data || data.length === 0) break;
+        allIds.push(...data.map(d => d.id));
+        if (data.length < BATCH) break;
+        offset += BATCH;
+      }
+      setSelectedForBulk(new Set(allIds));
+    } finally {
+      setSelectingAll(false);
+    }
   };
 
   const clearBulkSelection = () => {
@@ -562,11 +621,12 @@ const PsakDinTab = () => {
                 {/* Bulk Actions Bar */}
                 <BulkActionsBar
                   selectedCount={selectedForBulk.size}
-                  totalCount={psakim.length}
+                  totalCount={totalCount}
                   onSelectAll={selectAllForBulk}
                   onClearSelection={clearBulkSelection}
                   selectedIds={Array.from(selectedForBulk)}
                   onDeleted={() => handleDeletePsak()}
+                  selectingAll={selectingAll}
                 />
 
                 {/* Analysis Progress */}

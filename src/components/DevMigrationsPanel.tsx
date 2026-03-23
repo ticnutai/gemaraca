@@ -298,13 +298,13 @@ export default function DevMigrationsPanel({ open, onClose }: { open: boolean; o
                 placeholder="שם המיגרציה *"
                 value={migrationName}
                 onChange={e => setMigrationName(e.target.value)}
-                className="bg-input border-border"
+                className="bg-gray-900 border-gray-600 text-white placeholder:text-gray-400"
               />
               <Input
                 placeholder="תיאור (אופציונלי)"
                 value={description}
                 onChange={e => setDescription(e.target.value)}
-                className="bg-input border-border"
+                className="bg-gray-900 border-gray-600 text-white placeholder:text-gray-400"
               />
             </div>
 
@@ -313,7 +313,7 @@ export default function DevMigrationsPanel({ open, onClose }: { open: boolean; o
                 placeholder={`-- כתוב SQL כאן...\n-- CREATE TABLE, ALTER TABLE, INSERT, UPDATE...\n-- תומך בפקודות מתקדמות: functions, triggers, policies`}
                 value={sqlContent}
                 onChange={e => { setSqlContent(e.target.value); setAnalysis(null); }}
-                className="font-mono text-sm min-h-[200px] bg-input border-border resize-y"
+                className="font-mono text-sm min-h-[200px] bg-gray-900 border-gray-600 text-white placeholder:text-gray-400 resize-y"
                 dir="ltr"
               />
               <div className="absolute top-2 left-2 flex gap-1">
@@ -331,7 +331,7 @@ export default function DevMigrationsPanel({ open, onClose }: { open: boolean; o
             <div className="flex gap-2 items-center">
               <label className="cursor-pointer">
                 <input type="file" accept=".sql,.txt,.json" onChange={handleFileUpload} className="hidden" />
-                <Button variant="outline" size="sm" asChild>
+                <Button variant="outline" size="sm" asChild className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700">
                   <span><Upload className="h-4 w-4 ml-1" />העלאת קובץ</span>
                 </Button>
               </label>
@@ -341,6 +341,7 @@ export default function DevMigrationsPanel({ open, onClose }: { open: boolean; o
                 size="sm"
                 onClick={handleAnalyze}
                 disabled={!sqlContent || isAnalyzing}
+                className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700"
               >
                 {isAnalyzing ? <Loader2 className="h-4 w-4 ml-1 animate-spin" /> : <Search className="h-4 w-4 ml-1" />}
                 ניתוח
@@ -352,6 +353,7 @@ export default function DevMigrationsPanel({ open, onClose }: { open: boolean; o
                 onClick={handleExecute}
                 disabled={isExecuting || !sqlContent || !migrationName}
                 className={cn(
+                  "bg-green-600 hover:bg-green-700 text-white",
                   analysis?.isDestructive && "bg-destructive hover:bg-destructive/90"
                 )}
               >
@@ -435,9 +437,9 @@ export default function DevMigrationsPanel({ open, onClose }: { open: boolean; o
 
           {/* HTTP Import Tab */}
           <TabsContent value="http" className="flex-1 overflow-y-auto overflow-x-hidden space-y-3 mt-2 px-3">
-            <Card>
+            <Card className="bg-gray-900 border-gray-700">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2">
+                <CardTitle className="text-sm flex items-center gap-2 text-white">
                   <Globe className="h-4 w-4" />
                   ייבוא מיגרציה מ-URL
                 </CardTitle>
@@ -451,10 +453,10 @@ export default function DevMigrationsPanel({ open, onClose }: { open: boolean; o
                     placeholder="https://example.com/migration.sql"
                     value={urlInput}
                     onChange={e => setUrlInput(e.target.value)}
-                    className="flex-1 font-mono text-sm bg-input border-border"
+                    className="flex-1 font-mono text-sm bg-gray-900 border-gray-600 text-white placeholder:text-gray-400"
                     dir="ltr"
                   />
-                  <Button onClick={handleFetchUrl} disabled={isFetching || !urlInput}>
+                  <Button onClick={handleFetchUrl} disabled={isFetching || !urlInput} className="bg-blue-600 hover:bg-blue-700 text-white">
                     {isFetching ? <Loader2 className="h-4 w-4 ml-1 animate-spin" /> : <Download className="h-4 w-4 ml-1" />}
                     שלוף
                   </Button>
@@ -472,11 +474,12 @@ export default function DevMigrationsPanel({ open, onClose }: { open: boolean; o
                         placeholder="שם המיגרציה"
                         value={migrationName}
                         onChange={e => setMigrationName(e.target.value)}
-                        className="flex-1 bg-input border-border"
+                        className="flex-1 bg-gray-900 border-gray-600 text-white placeholder:text-gray-400"
                       />
                       <Button
                         onClick={handleExecute}
                         disabled={isExecuting || !migrationName}
+                        className="bg-green-600 hover:bg-green-700 text-white"
                       >
                         {isExecuting ? <Loader2 className="h-4 w-4 ml-1 animate-spin" /> : <Play className="h-4 w-4 ml-1" />}
                         הרצה
@@ -487,25 +490,25 @@ export default function DevMigrationsPanel({ open, onClose }: { open: boolean; o
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-gray-900 border-gray-700">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2">
+                <CardTitle className="text-sm flex items-center gap-2 text-white">
                   <FileCode className="h-4 w-4" />
                   פורמטים נתמכים
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="p-2 bg-muted/30 rounded">
+                <div className="grid grid-cols-2 gap-2 text-xs text-gray-300">
+                  <div className="p-2 bg-gray-800 rounded">
                     <strong>.sql</strong> - קובץ SQL ישיר
                   </div>
-                  <div className="p-2 bg-muted/30 rounded">
+                  <div className="p-2 bg-gray-800 rounded">
                     <strong>.json</strong> - {`{ "sql": "...", "name": "..." }`}
                   </div>
-                  <div className="p-2 bg-muted/30 rounded">
+                  <div className="p-2 bg-gray-800 rounded">
                     <strong>HTML</strong> - חילוץ מ-pre/code
                   </div>
-                  <div className="p-2 bg-muted/30 rounded">
+                  <div className="p-2 bg-gray-800 rounded">
                     <strong>JSON Array</strong> - מערך פקודות SQL
                   </div>
                 </div>
@@ -534,7 +537,7 @@ export default function DevMigrationsPanel({ open, onClose }: { open: boolean; o
               ) : (
                 <div className="space-y-2 p-1">
                   {migrations.map(m => (
-                    <Card key={m.id} className="border-border">
+                    <Card key={m.id} className="bg-gray-900 border-gray-700">
                       <CardContent className="p-3">
                         <div className="flex items-center gap-2">
                           {statusIcon(m.status)}

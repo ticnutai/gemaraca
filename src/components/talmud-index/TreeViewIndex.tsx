@@ -72,7 +72,15 @@ export default memo(function TreeViewIndex({ grouped, onValidate, onClickRef, on
                     const dafKey = `${tractate}-${daf}`;
                     const isDafOpen = openDafs[dafKey] ?? false;
                     const amudGroups = groupByAmud(dafRefs);
-                    const hasMultipleAmudim = amudGroups.length > 1 || (amudGroups.length === 1 && amudGroups[0].amud !== '_none');
+                    // Always build a/b groups
+                    const amudMap: Record<string, TalmudRefWithPsak[]> = { a: [], b: [] };
+                    let hasNone = false;
+                    for (const g of amudGroups) {
+                      if (g.amud === '_none') { hasNone = true; }
+                      if (!amudMap[g.amud]) amudMap[g.amud] = [];
+                      amudMap[g.amud].push(...g.refs);
+                    }
+                    const allAmudKeys = ['a', 'b', ...(hasNone ? ['_none'] : [])];
 
                     return (
                       <Collapsible
@@ -87,39 +95,35 @@ export default memo(function TreeViewIndex({ grouped, onValidate, onClickRef, on
                         </CollapsibleTrigger>
                         <CollapsibleContent>
                           <div className="mr-5 space-y-1 py-1 border-r border-border/30 pr-3">
-                            {hasMultipleAmudim ? (
-                              amudGroups.map(({ amud, refs: amudRefs }) => {
-                                const amudKey = `${dafKey}-${amud}`;
-                                const isAmudOpen = openAmuds[amudKey] ?? false;
-                                const amudLabel = amud === 'a' ? 'ע״א' : amud === 'b' ? 'ע״ב' : 'לא צוין';
+                            {allAmudKeys.map(amud => {
+                              const amudKey = `${dafKey}-${amud}`;
+                              const isAmudOpen = openAmuds[amudKey] ?? false;
+                              const amudLabel = amud === 'a' ? 'עמוד א׳' : amud === 'b' ? 'עמוד ב׳' : 'כללי';
+                              const amudRefs = amudMap[amud] || [];
 
-                                return (
-                                  <Collapsible
-                                    key={amudKey}
-                                    open={isAmudOpen}
-                                    onOpenChange={(v) => setOpenAmuds(prev => ({ ...prev, [amudKey]: v }))}
-                                  >
-                                    <CollapsibleTrigger className="flex items-center gap-2 w-full px-2 py-1 rounded hover:bg-muted/20 transition-colors text-right text-sm">
-                                      <span className="font-medium text-accent-foreground">{amudLabel}</span>
-                                      <ChevronDown className={`w-3 h-3 shrink-0 transition-transform ${isAmudOpen ? '' : 'rotate-90'}`} />
-                                      <Badge variant="outline" className="text-[9px] ml-auto">{amudRefs.length}</Badge>
-                                    </CollapsibleTrigger>
-                                    <CollapsibleContent>
-                                      <div className="mr-4 space-y-2 py-1 border-r border-border/20 pr-3">
-                                        {amudRefs.map(ref => (
-                                          <RefCard key={ref.id} data={ref} onValidate={onValidate} onClickRef={onClickRef} onCorrect={onCorrect} highlightColor={highlightColor} highlightBg={highlightBg} />
-                                        ))}
-                                      </div>
-                                    </CollapsibleContent>
-                                  </Collapsible>
-                                );
-                              })
-                            ) : (
-                              // Only one group without amud, show refs directly
-                              amudGroups[0]?.refs.map(ref => (
-                                <RefCard key={ref.id} data={ref} onValidate={onValidate} onClickRef={onClickRef} onCorrect={onCorrect} highlightColor={highlightColor} highlightBg={highlightBg} />
-                              ))
-                            )}
+                              return (
+                                <Collapsible
+                                  key={amudKey}
+                                  open={isAmudOpen}
+                                  onOpenChange={(v) => setOpenAmuds(prev => ({ ...prev, [amudKey]: v }))}
+                                >
+                                  <CollapsibleTrigger className="flex items-center gap-2 w-full px-2 py-1 rounded hover:bg-muted/20 transition-colors text-right text-sm">
+                                    <span className="font-medium text-accent-foreground">{amudLabel}</span>
+                                    <ChevronDown className={`w-3 h-3 shrink-0 transition-transform ${isAmudOpen ? '' : 'rotate-90'}`} />
+                                    <Badge variant="outline" className="text-[9px] ml-auto">{amudRefs.length}</Badge>
+                                  </CollapsibleTrigger>
+                                  <CollapsibleContent>
+                                    <div className="mr-4 space-y-2 py-1 border-r border-border/20 pr-3">
+                                      {amudRefs.length > 0 ? amudRefs.map(ref => (
+                                        <RefCard key={ref.id} data={ref} onValidate={onValidate} onClickRef={onClickRef} onCorrect={onCorrect} highlightColor={highlightColor} highlightBg={highlightBg} />
+                                      )) : (
+                                        <div className="text-xs text-muted-foreground py-2 text-center">אין פסקי דין לעמוד זה</div>
+                                      )}
+                                    </div>
+                                  </CollapsibleContent>
+                                </Collapsible>
+                              );
+                            })}
                           </div>
                         </CollapsibleContent>
                       </Collapsible>

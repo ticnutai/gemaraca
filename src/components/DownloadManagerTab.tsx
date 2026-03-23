@@ -56,6 +56,8 @@ const DownloadManagerTab = () => {
   const [hasMore, setHasMore] = useState(true);
   const [downloadCount, setDownloadCount] = useState<string>("all");
   const [downloadFormat, setDownloadFormat] = useState<DownloadFormat>("html");
+  const [loadingAll, setLoadingAll] = useState(false);
+  const [fetchingForDownload, setFetchingForDownload] = useState(false);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -163,6 +165,35 @@ const DownloadManagerTab = () => {
     return () => observer.disconnect();
   }, [hasMore, loading, loadingMore, items.length, loadItems]);
 
+  // Fetch items from DB with pagination (for large downloads)
+  const fetchItemsForDownload = useCallback(async (limit: number): Promise<PsakDinItem[]> => {
+    const BATCH = 1000;
+    const results: PsakDinItem[] = [];
+    let offset = 0;
+
+    while (results.length < limit) {
+      const needed = Math.min(BATCH, limit - results.length);
+      let query = supabase
+        .from("psakei_din")
+        .select("id, title, court, year, summary")
+        .order("year", { ascending: false });
+
+      if (debouncedSearch) {
+        query = query.or(`title.ilike.%${debouncedSearch}%,court.ilike.%${debouncedSearch}%,summary.ilike.%${debouncedSearch}%`);
+      }
+      if (courtFilter !== "all") query = query.eq("court", courtFilter);
+      if (yearFilter !== "all") query = query.eq("year", parseInt(yearFilter));
+
+      const { data, error } = await query.range(offset, offset + needed - 1);
+      if (error || !data || data.length === 0) break;
+      results.push(...data);
+      if (data.length < needed) break;
+      offset += data.length;
+    }
+
+    return results;
+  }, [debouncedSearch, courtFilter, yearFilter]);
+
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -172,9 +203,17 @@ const DownloadManagerTab = () => {
     });
   }, []);
 
-  const selectAll = useCallback(() => {
-    setSelectedIds(new Set(items.map((i) => i.id)));
-  }, [items]);
+  const selectAll = useCallback(async () => {
+    setLoadingAll(true);
+    try {
+      const allItems = await fetchItemsForDownload(totalCount || 99999);
+      setItems(allItems);
+      setSelectedIds(new Set(allItems.map((i) => i.id)));
+      setHasMore(false);
+    } finally {
+      setLoadingAll(false);
+    }
+  }, [fetchItemsForDownload, totalCount]);
 
   const deselectAll = useCallback(() => {
     setSelectedIds(new Set());
@@ -182,26 +221,49 @@ const DownloadManagerTab = () => {
 
   const handleDownload = useCallback(
     async () => {
-      let selected = items.filter((i) => selectedIds.has(i.id));
-      if (selected.length === 0) return;
+      const limit = downloadCount === "all"
+        ? (selectedIds.size > 0 ? selectedIds.size : totalCount)
+        : parseInt(downloadCount);
 
-      if (downloadCount !== "all") {
-        const limit = parseInt(downloadCount);
-        if (!isNaN(limit) && limit > 0) {
-          selected = selected.slice(0, limit);
+      if (!limit || limit <= 0) return;
+
+      setFetchingForDownload(true);
+      try {
+        let toDownload: PsakDinItem[];
+
+        // If user manually selected items and count is "all", respect selection
+        if (downloadCount === "all" && selectedIds.size > 0) {
+          const loaded = items.filter((i) => selectedIds.has(i.id));
+          if (loaded.length >= selectedIds.size) {
+            toDownload = loaded;
+          } else {
+            toDownload = await fetchItemsForDownload(selectedIds.size);
+            toDownload = toDownload.filter((i) => selectedIds.has(i.id));
+          }
+        } else {
+          // Fetch from DB to ensure we have enough items
+          const loaded = items.filter((i) => selectedIds.has(i.id));
+          if (loaded.length >= limit) {
+            toDownload = loaded.slice(0, limit);
+          } else {
+            toDownload = await fetchItemsForDownload(limit);
+          }
         }
-      }
 
-      await startDownload(selected, downloadFormat);
+        if (toDownload.length === 0) return;
+        await startDownload(toDownload, downloadFormat);
+      } finally {
+        setFetchingForDownload(false);
+      }
     },
-    [items, selectedIds, startDownload, downloadCount, downloadFormat]
+    [items, selectedIds, startDownload, downloadCount, downloadFormat, totalCount, fetchItemsForDownload]
   );
 
-  const allLoaded = items.length > 0 && items.every((i) => selectedIds.has(i.id));
+  const allSelected = items.length > 0 && items.every((i) => selectedIds.has(i.id)) && selectedIds.size === totalCount;
 
   const effectiveDownloadCount = downloadCount === "all"
-    ? selectedIds.size
-    : Math.min(parseInt(downloadCount) || selectedIds.size, selectedIds.size);
+    ? (selectedIds.size > 0 ? selectedIds.size : totalCount)
+    : Math.min(parseInt(downloadCount) || 0, selectedIds.size > 0 ? selectedIds.size : totalCount);
 
   return (
     <div className="p-4 md:p-6 space-y-4" dir="rtl">
@@ -298,14 +360,17 @@ const DownloadManagerTab = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={allLoaded ? deselectAll : selectAll}
+            onClick={allSelected ? deselectAll : selectAll}
+            disabled={loadingAll}
           >
-            {allLoaded ? (
+            {loadingAll ? (
+              <Loader2 className="w-4 h-4 ml-1 animate-spin" />
+            ) : allSelected ? (
               <Square className="w-4 h-4 ml-1" />
             ) : (
               <CheckSquare className="w-4 h-4 ml-1" />
             )}
-            {allLoaded ? "בטל הכל" : `בחר הכל (${items.length})`}
+            {loadingAll ? "טוען..." : allSelected ? "בטל הכל" : `בחר הכל (${totalCount.toLocaleString()})`}
           </Button>
           {selectedIds.size > 0 && (
             <Badge variant="default">
@@ -320,13 +385,14 @@ const DownloadManagerTab = () => {
               <SelectValue placeholder="כמות להורדה" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">הכל ({selectedIds.size})</SelectItem>
+              <SelectItem value="all">הכל ({(selectedIds.size > 0 ? selectedIds.size : totalCount).toLocaleString()})</SelectItem>
               <SelectItem value="10">10 פסקים</SelectItem>
               <SelectItem value="25">25 פסקים</SelectItem>
               <SelectItem value="50">50 פסקים</SelectItem>
               <SelectItem value="100">100 פסקים</SelectItem>
               <SelectItem value="200">200 פסקים</SelectItem>
               <SelectItem value="500">500 פסקים</SelectItem>
+              <SelectItem value="1000">1000 פסקים</SelectItem>
             </SelectContent>
           </Select>
 
@@ -349,15 +415,15 @@ const DownloadManagerTab = () => {
 
           <Button
             onClick={() => handleDownload()}
-            disabled={selectedIds.size === 0 || !!activeSession}
+            disabled={!!activeSession || fetchingForDownload}
             className="gap-2"
           >
-            {activeSession ? (
+            {activeSession || fetchingForDownload ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <Package className="w-4 h-4" />
             )}
-            הורד כ-ZIP ({effectiveDownloadCount})
+            {fetchingForDownload ? "מכין הורדה..." : `הורד כ-ZIP (${effectiveDownloadCount.toLocaleString()})`}
           </Button>
         </div>
       </div>

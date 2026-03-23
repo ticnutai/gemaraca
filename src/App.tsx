@@ -21,6 +21,7 @@ const EmbedPdfViewerPage = lazy(() => import("./pages/EmbedPdfViewerPage"));
 const SettingsButton = lazy(() => import("./components/SettingsButton").then(m => ({ default: m.SettingsButton })));
 const GlobalUploadProgress = lazy(() => import("./components/GlobalUploadProgress"));
 const GlobalDownloadProgress = lazy(() => import("./components/GlobalDownloadProgress"));
+const GlobalDeleteProgress = lazy(() => import("./components/GlobalDeleteProgress"));
 const AiTutorChat = lazy(() => import("./components/AiTutorChat"));
 const OfflineIndicator = lazy(() => import("./components/OfflineIndicator"));
 
@@ -48,6 +49,7 @@ const App = () => (
             <SettingsButton />
             <GlobalUploadProgress />
             <GlobalDownloadProgress />
+            <GlobalDeleteProgress />
             <AiTutorChat />
             <OfflineIndicator />
             <Routes>

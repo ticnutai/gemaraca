@@ -332,6 +332,22 @@ export const useShasDownloadStore = create<ShasDownloadStore>()(
         isPaused: state.isPaused,
         lastUpdated: state.lastUpdated,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        // On app restart: if was running before, auto-resume after refreshing from server
+        if (state.isRunning && !state.isPaused) {
+          // Reset active downloads list (workers are gone after page reload)
+          state.activeDownloads = [];
+          // Refresh from server then resume
+          setTimeout(() => {
+            const store = useShasDownloadStore.getState();
+            store._refreshFromServer().then(() => {
+              _abortController = new AbortController();
+              store._processQueue();
+            });
+          }, 1000);
+        }
+      },
     }
   )
 );

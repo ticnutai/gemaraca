@@ -1433,7 +1433,58 @@ const BeautifyPsakDinTab = () => {
                     </Button>
                     <Button variant="outline" size="sm" onClick={handleDownload}>
                       <Download className="h-4 w-4 ml-1" />
-                      הורד
+                      הורד HTML
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={async () => {
+                      if (!htmlResult) return;
+                      try {
+                        const { generateDocx } = await import('@/lib/docxGenerator');
+                        const doc = new DOMParser().parseFromString(htmlResult, 'text/html');
+                        doc.querySelectorAll('style, script, link, meta, title, head').forEach(el => el.remove());
+                        doc.querySelectorAll('p, div, br, h1, h2, h3, h4, h5, h6, li, tr, hr, blockquote').forEach(el => {
+                          el.insertAdjacentText('beforebegin', '\n');
+                        });
+                        const plainText = (doc.body?.textContent || '').replace(/[ \t]+/g, ' ').replace(/\n[ \t]*/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+                        const blob = await generateDocx({
+                          title: loadedPsakTitle || 'פסק דין',
+                          court: 'לא צוין',
+                          year: new Date().getFullYear(),
+                          full_text: plainText,
+                        });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `${loadedPsakTitle || 'psak-din'}.docx`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                        toast({ title: 'קובץ DOCX הורד בהצלחה' });
+                      } catch (err) {
+                        console.error('DOCX export error:', err);
+                        toast({ title: 'שגיאה בייצוא DOCX', variant: 'destructive' });
+                      }
+                    }}>
+                      <Download className="h-4 w-4 ml-1" />
+                      הורד WORD
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => {
+                      if (!htmlResult) return;
+                      const doc = new DOMParser().parseFromString(htmlResult, 'text/html');
+                      doc.querySelectorAll('style, script, link, meta, title, head').forEach(el => el.remove());
+                      doc.querySelectorAll('p, div, br, h1, h2, h3, h4, h5, h6, li, tr, hr, blockquote').forEach(el => {
+                        el.insertAdjacentText('beforebegin', '\n');
+                      });
+                      const plainText = (doc.body?.textContent || '').replace(/[ \t]+/g, ' ').replace(/\n[ \t]*/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+                      const blob = new Blob([`\uFEFF${plainText}`], { type: 'text/plain;charset=utf-8' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `${loadedPsakTitle || 'psak-din'}.txt`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                      toast({ title: 'קובץ TXT הורד בהצלחה' });
+                    }}>
+                      <Download className="h-4 w-4 ml-1" />
+                      הורד TXT
                     </Button>
                     {loadedPsakId && !isBatchMode && (
                       <Button variant="outline" size="sm" onClick={handleSave} disabled={isSaving}>

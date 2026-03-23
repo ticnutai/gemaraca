@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { trackRecentPsak } from "@/lib/recentPsakim";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -585,6 +586,7 @@ const SmartIndexTab = () => {
 
   // Load psak for dialog
   const handlePsakClick = async (id: string) => {
+    trackRecentPsak(id);
     const { data } = await supabase
       .from('psakei_din')
       .select('*')

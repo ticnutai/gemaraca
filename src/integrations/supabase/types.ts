@@ -757,6 +757,30 @@ export type Database = {
         }
         Relationships: []
       }
+      user_preferences: {
+        Row: {
+          id: string
+          user_id: string
+          viewer_mode: string
+          recently_viewed_psakim: string[]
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          viewer_mode?: string
+          recently_viewed_psakim?: string[]
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          viewer_mode?: string
+          recently_viewed_psakim?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_pinned_items: {
         Row: {
           amud: string | null
