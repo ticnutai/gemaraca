@@ -94,6 +94,39 @@ export type Database = {
         }
         Relationships: []
       }
+      gemara_edit_snapshots: {
+        Row: {
+          created_at: string
+          edited_html: string
+          id: string
+          sugya_id: string
+          text_settings: Json | null
+          updated_at: string
+          user_id: string
+          view_mode: string
+        }
+        Insert: {
+          created_at?: string
+          edited_html?: string
+          id?: string
+          sugya_id: string
+          text_settings?: Json | null
+          updated_at?: string
+          user_id: string
+          view_mode?: string
+        }
+        Update: {
+          created_at?: string
+          edited_html?: string
+          id?: string
+          sugya_id?: string
+          text_settings?: Json | null
+          updated_at?: string
+          user_id?: string
+          view_mode?: string
+        }
+        Relationships: []
+      }
       gemara_pages: {
         Row: {
           book: string | null
@@ -407,6 +440,7 @@ export type Database = {
           created_at: string
           full_text: string | null
           id: string
+          search_vector: unknown
           source_url: string | null
           summary: string
           tags: string[] | null
@@ -423,6 +457,7 @@ export type Database = {
           created_at?: string
           full_text?: string | null
           id?: string
+          search_vector?: unknown
           source_url?: string | null
           summary: string
           tags?: string[] | null
@@ -439,6 +474,7 @@ export type Database = {
           created_at?: string
           full_text?: string | null
           id?: string
+          search_vector?: unknown
           source_url?: string | null
           summary?: string
           tags?: string[] | null
@@ -588,6 +624,7 @@ export type Database = {
           confidence_factors: Json | null
           confidence_score: number | null
           context_snippet: string | null
+          corrected_normalized: string | null
           created_at: string
           daf: string
           id: string
@@ -605,6 +642,7 @@ export type Database = {
           confidence_factors?: Json | null
           confidence_score?: number | null
           context_snippet?: string | null
+          corrected_normalized?: string | null
           created_at?: string
           daf: string
           id?: string
@@ -622,6 +660,7 @@ export type Database = {
           confidence_factors?: Json | null
           confidence_score?: number | null
           context_snippet?: string | null
+          corrected_normalized?: string | null
           created_at?: string
           daf?: string
           id?: string
@@ -730,6 +769,8 @@ export type Database = {
       user_books: {
         Row: {
           created_at: string | null
+          edited_text: string | null
+          edited_text_updated_at: string | null
           file_name: string | null
           file_url: string
           id: string
@@ -739,6 +780,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          edited_text?: string | null
+          edited_text_updated_at?: string | null
           file_name?: string | null
           file_url: string
           id?: string
@@ -748,6 +791,8 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          edited_text?: string | null
+          edited_text_updated_at?: string | null
           file_name?: string | null
           file_url?: string
           id?: string

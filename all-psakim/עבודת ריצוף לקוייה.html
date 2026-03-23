@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+  <meta charset="utf-8">
+  <title>עבודת ריצוף לקוייה</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=David+Libre:wght@400;700&family=Frank+Ruhl+Libre:wght@400;700&display=swap');
+    :root{--primary:#1a237e;--primary-light:#3949ab;--accent:#c5a55a;--bg:#fafafa;--card:#fff;--text:#212121;--text-secondary:#555;--border:#e0e0e0}
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{font-size:16px}
+    body{font-family:'David Libre','Frank Ruhl Libre',serif;background:var(--bg);color:var(--text);line-height:1.9;direction:rtl}
+    .psak-header{background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;padding:40px 20px 30px;text-align:center;position:relative}
+    .psak-header::after{content:'';position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);width:60px;height:4px;background:var(--accent);border-radius:2px}
+    .psak-header h1{font-size:2rem;font-weight:700;margin-bottom:8px;font-family:'Frank Ruhl Libre',serif}
+    .psak-header .subtitle{font-size:.95rem;opacity:.85}
+    .meta-bar{max-width:850px;margin:40px auto 20px;display:flex;flex-wrap:wrap;gap:12px;justify-content:center;padding:0 20px}
+    .meta-item{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 18px;font-size:.85rem;display:flex;align-items:center;gap:6px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+    .meta-item .label{font-weight:700;color:var(--primary)}
+    .psak-body{max-width:850px;margin:30px auto;padding:0 20px}
+    .psak-card{background:var(--card);border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.07);padding:40px 45px;margin-bottom:30px}
+    h1{font-size:1.8rem;color:var(--primary);margin:30px 0 15px;font-family:'Frank Ruhl Libre',serif}
+    h2{font-size:1.4rem;color:var(--primary);margin:28px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--accent);font-family:'Frank Ruhl Libre',serif}
+    h3{font-size:1.15rem;color:var(--primary-light);margin:20px 0 10px}
+    p,div.section,.toggle-title{margin-bottom:14px;text-align:justify}
+    span{font-family:inherit!important;color:inherit!important}
+    .section-title{font-weight:700;font-size:1.1rem;color:var(--primary);margin-bottom:6px}
+    .toggle-title{font-weight:600;color:var(--primary-light);cursor:default}
+    .toggle-title:before{content:''!important}
+    .file-title{background:var(--primary)!important;color:#fff!important;padding:8px 20px!important;border-radius:6px!important;font-size:1.2rem!important;display:inline-block!important;position:static!important;right:auto!important;margin-bottom:15px}
+    #file-num{font-size:.9rem!important;color:var(--text-secondary);float:none!important}
+    .pagename{font-size:1.6rem!important;color:var(--primary)!important;text-align:center;margin:15px 0!important}
+    a.file-tag{background:var(--primary-light)!important;border-radius:4px;font-size:.8rem}
+    .ogen{background-color:rgba(197,165,90,.2)!important;border-radius:2px}
+    .ogen::after{content:''!important}
+    .highlight{background-color:rgba(255,235,59,.4)!important}
+    .selOgen:before{display:none!important}
+    hr{border:none;border-top:1px solid var(--border);margin:25px 0}
+    blockquote{border-right:4px solid var(--accent);padding:12px 20px;margin:15px 0;background:rgba(197,165,90,.06);border-radius:0 8px 8px 0}
+    .psak-footer{text-align:center;padding:20px;color:#999;font-size:.75rem;border-top:1px solid var(--border);margin-top:20px}
+    .psak-footer a{color:var(--primary-light)}
+    @media print{body{background:#fff}.psak-header{background:var(--primary);-webkit-print-color-adjust:exact;print-color-adjust:exact}.psak-card{box-shadow:none;border:1px solid #ddd}}
+    @media(max-width:600px){.psak-card{padding:20px 18px}.psak-header h1{font-size:1.5rem}h2{font-size:1.2rem}}
+  </style>
+</head>
+<body>
+  <header class="psak-header">
+    <h1>עבודת ריצוף לקוייה</h1>
+    <div class="subtitle">נתיבות המשפט · מס׳ סידורי 1866</div>
+  </header>
+  <div class="meta-bar">
+    
+    <div class="meta-item"><span class="label">תאריך</span> כ"ח תשרי תשע"ט</div>
+    <div class="meta-item"><span class="label">דיינים</span> הרב אבירם ערן, הרב חשאי אברהם, הרב אהרון רון אל</div>
+    <div class="meta-item"><span class="label">בית דין</span> נתיבות המשפט</div>
+  </div>
+  <main class="psak-body">
+    <article class="psak-card">
+      <h2 class="MsoNormal" dir="RTL"><b><span lang="HE">פסק דין<o:p></o:p></b></span></h2><p class="MsoNormal" dir="RTL">לאחר חתימה על שטר
+בוררות, ושמיעת טענות ומענות הצדדים, ביקור ביה"ד בנכס וביקור בעל מקצוע מטעם
+ביה"ד.</p><h2 class="MsoNormal" dir="RTL"><b><span lang="HE">תמצית פרוטוקול</b><b><o:p></o:p></b></span></h2><h2 class="MsoNormal" dir="RTL"><b><span lang="HE">טענות צד א': <o:p></o:p></b></span></h2><p class="MsoNormal" dir="RTL">פניתי אליו ב17/7
+לעשות ריצוף בכל הבית, פירוק והדבקת קרמיקה 80 על 80 גובה ס"מ וחצי, בכל הבית
+כולל פירוק והדבקה באמבטיה, וסיכה, תיקונים וצביעה בקירות, סוכם על 10,500 ₪ מתוכם
+שילמתי 3000 ₪ הבאתי לו מפתח ב1/8 אמרתי לו שיסיים ב10/8, היו צריכים להכניס
+שוכרים, כל החומרים היו במקום. הריצוף עלה 7800 ₪.<o:p></o:p></p><p class="MsoNormal" dir="RTL">לא סיים את העבודה,
+כמה ימים לא עבד, אמר שנתקע באמבטיה, התחיל מהחדר הפנימי, עשה בדיקה עם חוט דייג,
+היו מקומות ללא ריצוף, לא רצה להוריד את המדבקות מהקרמיקה, הבאתי 5 רצפים שילמתי
+להם 6400 ₪, עשו את הפנלים, אחרי ששטפו ראינו שהריצוף לא במקום והיו עוד מקומות לא
+מרוצפים, צבעתי את הבית שילמתי 400 ₪ לרובה. החזיר את המקלחון לא טוב, במקלחת אין
+שיפוע היה צריך להתקין סף, נזילה מהשירותים התקנה לא טובה.<o:p></o:p></p><p class="MsoNormal" dir="RTL">תובע: 28,000 ₪ עבור
+פירוק וריצוף מחדש כולל חומר ועבודה.<o:p></o:p></p><h2 class="MsoNormal" dir="RTL"><b><span lang="HE">טענות צד ב': <o:p></o:p></b></span></h2><p class="MsoNormal" dir="RTL">אין סיבה שאמשיך
+לעבוד אם קיבלתי רק 3000 ₪, אמרתי לו כסף לפי קצב העבודה, אמרתי לו מראש שיש
+הפרשים, ביקש באותו קו עם הדירה הסמוכה עשיתי אותו קו, בדקתי עם שטיכמוס, עשיתי
+שיפועים כמו שביקש, סמוך לקיר צריך קצת לעלות ולכן זה נראה שקע, יש הפרשי גבהים
+בגלל הבית עצמו, הוא דרך וטייל על הקרמיקה וזה גרם לתזוזות, הוספתי לו ללא תשלום
+הדבקת קרמיקה בחוץ, לא היה כלול החזרת והתקנת כיור, אסלה, ומקלחון, גם פירוק
+והתקנת גבס.<o:p></o:p></p><p class="MsoNormal" dir="RTL">החומר היה בעייתי
+אריח הקרמיקה עצמו לא ישר (מציג בפי ביה"ד את הפרשי הגבהים) ולכן אי אפשר
+להגיע לרמת דיוק של מאה אחוז. ביקש שיפוע, בנוסף הוא דרך על הריצוף ולכן יצא עקום.
+פירוק אריחים היה רק בחדר, עבדתי עם הדבקה ופלס.<o:p></o:p></p><p class="MsoNormal" dir="RTL">לשאלת ביה"ד: מה
+הנחת בין אריחי הריצוף? ספייסרים. <o:p></o:p></p><p class="MsoNormal" dir="RTL">זה היה "ספייסר
+מתפלס"? לא ספייסר רגיל.<o:p></o:p></p><p class="MsoNormal" dir="RTL">תובע: 10,500 ₪ ,
+ועוד תוספות שלא סוכמו בסה"כ 8000 ₪ התקבל 3000 ₪.<o:p></o:p></p><p class="MsoNormal" dir="RTL">סה"כ תובע:
+15,500 ₪ <o:p></o:p></p><h2 class="MsoNormal" dir="RTL"><b><span lang="HE">תגובת צד א':</b> <o:p></o:p></span></h2><p class="MsoNormal" dir="RTL">לא דרכתי על הריצוף,
+הגבס וההתקנה החוזרת כלולה בהסכם אם מפרקים צריך להחזיר, אמר לי שהריצוף יהיה
+"פלס", אמר לי שיש לו חיתוך לייזר, וראה שזה 80 על 80. <o:p></o:p></p><p class="MsoNormal" dir="RTL">דרכתי על אריח אחד,
+אמר לי תזהר והוא סידר אותו לא דרכתי כל הבית.<o:p></o:p></p><p class="MsoNormal" dir="RTL">בקשתי קומפלט כולל
+רובה וצבע ולהחליף את הגבס במקלחת, אמר לי מפלסת לייזר אתה תראה פלס. לא ביקשתי
+שיפוע, ביקשתי פלטה כל הבית, בדקתי את האריחים אצל בעל מקצוע היו ישרים אחד על
+אחד, למה לא הבאת מפלסת בעבודה.<o:p></o:p></p><p class="MsoNormal" dir="RTL">לשאלת ביה"ד
+מדוע המשכת לעבוד בזמן שהעבודה היתה לקויה? לא ראיתי את הפרשי הגבהים רק אחרי
+שהשלמתי את הריצוף וניקתי את הבית ראיתי את ההפרשים.<o:p></o:p></p><p class="MsoNormal" dir="RTL">לשאלת ביה"ד האם
+הצדדים מוכנים להתפשר? צד א' לא מוכן להתפשר.</p><h2 class="MsoNormal" dir="RTL"><b><span lang="HE">נימוקים ופירוט
+להחלטה</b><b><o:p></o:p></b></span></h2><p class="MsoNormal" dir="RTL">היות ובין הצדדים
+הסכם בכתב, אך הכחשות וחוסר תיאום במספר נושאים דבר שגרם לחילוקי דעות, והפסקת
+העבודה ע"י צד ב', לכן ביה"ד פוסק בהתאם לסיכומים המפורשים בכתב, וביחס
+למכלול הטענות והמענות בהתאם לחו"ד בעל המקצוע, ביחס לאיכות העבודה, תוספות
+שלא סוכמו והשלמות שלא בוצעו.<o:p></o:p></p><p class="MsoNormal" dir="RTL">הסכם עבודה כלל ריצוף
+והדבקה קרמיקה של כל הבית, הכולל פירוק הריצוף והאריחים הישנים, וצביעת ותיקון
+הקירות, בהסכם לא מצוין תאריך יעד, ואופן פריסת התשלומים.<o:p></o:p></p><p class="MsoNormal" dir="RTL">סה"כ לתשלום
+10,500 ₪ מתוכם שולם 3000 ₪, מוסכם על הצדדים כי סך 9000 ₪ עבור הריצוף, ו1500 ₪
+עבור תיקוני קיר וצביעה.<o:p></o:p></p><p class="MsoNormal" dir="RTL">צד ב' לא סיים את
+מלוא העבודה (צביעה, פנלים, רובה, וסיומי ריצוף) לטענתו בשל אי תזרים כספי, הפרעות
+של אזעקות, ועיכובים מצד צד א'. אמנם לטענת צד א' סוכם כי העבודה תסתיים ב10/8,
+והתשלום יתקבל בסוף, יצוין כי בהסכם לא נכתב פרטים על זמן הסיום וצורת התשלום.<o:p></o:p></p><p class="MsoNormal" dir="RTL">מוסכם על הצדדים כי
+צד ב' השלים בעצמו את הרובה, פנלים וארחי קרמיקה נוספים שלא הודבקו.<o:p></o:p></p><p class="MsoNormal" dir="RTL">היות ונושא הרכבת
+הכלים הסניטריים לא נכתב בחוזה יש לחייב את צד א' כך גם על הדבקת הקרמיקה בחצר.<o:p></o:p></p><p class="MsoNormal" dir="RTL">לגבי פירוק הכלים
+הסניטריים ופירוק והתקנת הגבס, פעולות אלו הינם כלולות בכוונת ההסכם ע"פ צורת
+העבודה ואין לצד ב' תביעה על עבודות אלו.<o:p></o:p></p><p class="MsoNormal" dir="RTL">ביה"ד הביא
+בהסכמת הצדדים בעל מקצוע שיאמוד עלויות ויעריך את הבניה, לפיה קבע כי אכן אין
+אשרות להגיע לגובה אפס בהדבקה כזו אך העבודה הכללית לקויה (הפרשי גבהים רבים בין
+אריחי הקרמיקה, שיפוע "הפוך במקלחת").<o:p></o:p></p><p class="MsoNormal" dir="RTL">על אף טענת צד ב' כי
+הפרשי הגבהים בריצוף נובע בשל הפרש גובה האריח עצמו ובשל דריכת צד א' על גבי
+האריחים, מכל מקום מכלול הליקויים מעידים כי העבודה לא בוצעה כנדרש, ואף לדברי צד
+ב' לא הונח ספייסר מתפלס- המיוחד להדבקת אריחי קרמיקה גדולים, בכדי למנוע הפרשי
+גבהים.</p><p class="MsoNormal" dir="RTL"><span lang="HE">פירוט תוספות: התקנת
+כיור ושירותים 300 ₪, על התקנת המחיצה אין לחייב בשל התקנה לקויה, הדבקת קרמיקה
+בחצר 100 ₪.<o:p></o:p></span></p><p class="MsoNormal" dir="RTL">הפחתה עבור עבודות
+שלא בוצעו: צביעה 1000 ₪ רובה מקלחת 300 ₪, רובה בכל הבית 600 ₪, פנלים והשלמת
+ריצוף 800 ₪, ניקוי הבית מהעבודה 400 ₪.<o:p></o:p></p><p class="MsoNormal" dir="RTL">על הורדת ההדבקה
+מאריחי הקרמיקה אין לחייב את צד ב'.<o:p></o:p></p><p class="MsoNormal" dir="RTL">סיכום יתרת החוב
+ע"פ ההסכם ומכלול הטענות ואומדן בעל המקצוע: 10,500 ₪ מתוכם שולם 3000 ₪,
+יתרה 7500 ₪,תוספות 400 ₪, הפחתה 3100 ₪ סה"כ יתרה 4800 ₪.<o:p></o:p></p><p class="MsoNormal" dir="RTL">סיכום הוצאותיו של צד
+א': 3000 ₪ מקדמה, כ-10,000 &nbsp;₪ עבור חומרי בניה, (יתר ההוצאות עבור השלמת
+הריצוף והצביעה הופחתו מהחשבון).<o:p></o:p></p><p class="MsoNormal" dir="RTL">היות וכאמור כללות
+העבודה לקויה ויש בה גרימת הפסד ישיר על הוצאות החומר של צד א' ביחס לאיכות התמורה
+שקיבל, לכן יצא זה בזה, ואין לצדדים חוב זה על זה.<o:p></o:p></p><p class="MsoNormal" dir="RTL">תביעת צד א' בנוסף
+לעלות הרכבת ועבודה מחודשת, נדחית היות ואחריות צד ב' יכולה להתייחס רק להפסדים,
+נזקים ואיכות העבודה.<o:p></o:p></p><h2 class="MsoNormal" dir="RTL"><b><span lang="HE">להלן החלטת
+ביה"ד:<o:p></o:p></b></span></h2><p class="MsoNormal" dir="RTL">לאחר הבאת בעל מקצוע
+שיאמוד את איכות הבניה נמצא כי איכות העבודה לקויה במספר תחומים, ונדרש פירוק
+והחלפת אריחים להבאת הבית לידי גמר, דבר המיסב לצד א' נזק על החומר שלא הורכב
+כנדרש, וירידת ערך כללית לעבודה.<o:p></o:p></p><p class="MsoNormal" dir="RTL">לאחר שיכלול הסכומים
+ע"פ אומדן בעלי המקצוע, בהתאם לאיכות העבודה הירוד כנגד הוצאותיו של צד א'
+ביחס לתמורה שקיבל, אין לצד א' חיוב לשלם תשלום נוסף והתביעות ההדדיות נדחו זו
+בזו.</p><h2 class="MsoNormal" dir="RTL"><b><span lang="HE">באנו על החתום</b></span></h2><h3 class="MsoNormal" dir="RTL"><span lang="HE">(-) הרב רון אל
+אהרון, אב"ד &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(-)
+הרב אברהם חשאי, דיין&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (-) הרב ערן
+אבירם, דיין &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<o:p></o:p></span></h3><h3><o:p>&nbsp;</o:p></h3>
+    </article>
+  </main>
+  <footer class="psak-footer">
+    מקור: <a href="https://www.psakim.org/Psakim/File/1866" target="_blank">psakim.org — פסק 1866</a>
+  </footer>
+</body>
+</html>

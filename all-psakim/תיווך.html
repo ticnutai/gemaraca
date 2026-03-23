@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+  <meta charset="utf-8">
+  <title>תיווך</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=David+Libre:wght@400;700&family=Frank+Ruhl+Libre:wght@400;700&display=swap');
+    :root{--primary:#1a237e;--primary-light:#3949ab;--accent:#c5a55a;--bg:#fafafa;--card:#fff;--text:#212121;--text-secondary:#555;--border:#e0e0e0}
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{font-size:16px}
+    body{font-family:'David Libre','Frank Ruhl Libre',serif;background:var(--bg);color:var(--text);line-height:1.9;direction:rtl}
+    .psak-header{background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;padding:40px 20px 30px;text-align:center;position:relative}
+    .psak-header::after{content:'';position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);width:60px;height:4px;background:var(--accent);border-radius:2px}
+    .psak-header h1{font-size:2rem;font-weight:700;margin-bottom:8px;font-family:'Frank Ruhl Libre',serif}
+    .psak-header .subtitle{font-size:.95rem;opacity:.85}
+    .meta-bar{max-width:850px;margin:40px auto 20px;display:flex;flex-wrap:wrap;gap:12px;justify-content:center;padding:0 20px}
+    .meta-item{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 18px;font-size:.85rem;display:flex;align-items:center;gap:6px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+    .meta-item .label{font-weight:700;color:var(--primary)}
+    .psak-body{max-width:850px;margin:30px auto;padding:0 20px}
+    .psak-card{background:var(--card);border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.07);padding:40px 45px;margin-bottom:30px}
+    h1{font-size:1.8rem;color:var(--primary);margin:30px 0 15px;font-family:'Frank Ruhl Libre',serif}
+    h2{font-size:1.4rem;color:var(--primary);margin:28px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--accent);font-family:'Frank Ruhl Libre',serif}
+    h3{font-size:1.15rem;color:var(--primary-light);margin:20px 0 10px}
+    p,div.section,.toggle-title{margin-bottom:14px;text-align:justify}
+    span{font-family:inherit!important;color:inherit!important}
+    .section-title{font-weight:700;font-size:1.1rem;color:var(--primary);margin-bottom:6px}
+    .toggle-title{font-weight:600;color:var(--primary-light);cursor:default}
+    .toggle-title:before{content:''!important}
+    .file-title{background:var(--primary)!important;color:#fff!important;padding:8px 20px!important;border-radius:6px!important;font-size:1.2rem!important;display:inline-block!important;position:static!important;right:auto!important;margin-bottom:15px}
+    #file-num{font-size:.9rem!important;color:var(--text-secondary);float:none!important}
+    .pagename{font-size:1.6rem!important;color:var(--primary)!important;text-align:center;margin:15px 0!important}
+    a.file-tag{background:var(--primary-light)!important;border-radius:4px;font-size:.8rem}
+    .ogen{background-color:rgba(197,165,90,.2)!important;border-radius:2px}
+    .ogen::after{content:''!important}
+    .highlight{background-color:rgba(255,235,59,.4)!important}
+    .selOgen:before{display:none!important}
+    hr{border:none;border-top:1px solid var(--border);margin:25px 0}
+    blockquote{border-right:4px solid var(--accent);padding:12px 20px;margin:15px 0;background:rgba(197,165,90,.06);border-radius:0 8px 8px 0}
+    .psak-footer{text-align:center;padding:20px;color:#999;font-size:.75rem;border-top:1px solid var(--border);margin-top:20px}
+    .psak-footer a{color:var(--primary-light)}
+    @media print{body{background:#fff}.psak-header{background:var(--primary);-webkit-print-color-adjust:exact;print-color-adjust:exact}.psak-card{box-shadow:none;border:1px solid #ddd}}
+    @media(max-width:600px){.psak-card{padding:20px 18px}.psak-header h1{font-size:1.5rem}h2{font-size:1.2rem}}
+  </style>
+</head>
+<body>
+  <header class="psak-header">
+    <h1>תיווך</h1>
+    <div class="subtitle">דרכי תורה - בראשות הרב אשר וייס · מס׳ סידורי 2496</div>
+  </header>
+  <div class="meta-bar">
+    
+    <div class="meta-item"><span class="label">תאריך</span> י"ט תמוז תשע"ח</div>
+    <div class="meta-item"><span class="label">דיינים</span> הרב קצנלבוגן הלל, הרב גרטנר צבי, הרב טולדאנו עובדיה יוסף</div>
+    <div class="meta-item"><span class="label">בית דין</span> דרכי תורה - בראשות הרב אשר וייס</div>
+  </div>
+  <main class="psak-body">
+    <article class="psak-card">
+      <p class="MsoNormal" dir="RTL">הופיעו הצדדים והציגו טענותיהם, כדלהלן: התובעת
+הראתה דירה לנתבעים והחתימה את נתבע א' על הסכם
+תיווך בו התחייב לשלם 2 אחוז + מע"מ באם יקנה את הדירה. התובעת המשיכה ללוות
+את המו"מ שהתקדם והתבשל עד כדי חתימה על הסכם מכר (בתמורה של 1,940,000
+ש"ח), אך ברגע האחרון, ביום שנקבע למעמד חתימת ההסכם, חזרו בהם הנתבעים,
+בנימוק שאינם מוכנים להתחייב בתשלומים עם לו"ז קבוע, כל עוד לא מכרו את דירת
+מגוריהם הנוכחית. כעבור שנה ויותר, משסיימו את הליך מכירת דירת מגוריהם, פנו
+ביזמתם למוכר הדירה שהראתה להם התובעת בשעתו, המוכר הודיע לתובעת על כך וזו פנתה
+לנתבעים בדרישה שיערבו אותה בסגירת העיסקה וקבלת עזרתה, כאשר לטענתה בכל מקרה יצטרכו
+לשלם על כך תיווך, הנתבעים התעלמו מפניית התובעת ובסופו של דבר השלימו את העיסקה בכוחות
+עצמם בסך 1,730,000 ₪ (מחיר נמוך בכ-200 אלף ש"ח ממה שעמדו לסגור בתחילה).<o:p></o:p></p><p class="MsoNormal" dir="RTL">התובעת פנתה לנתבעים
+בדרישה לקבל את דמי התיווך המגיעים לה עפ"י הסכם התיווך שביניהם, לאחר
+דו"ד שילמו הנתבעים לתובעת סך 15,000 ₪ ובהתאם חתמה לו התובעת שקיבלה את
+הסכום הנ"ל כדמי תיווך על הדירה.<o:p></o:p></p><p class="MsoNormal" dir="RTL">תביעת התובעת,לקבל את יתרת דמי התיווך
+המגיעים לה (בסך 19,600 ₪ פלוס מע"מ) הן עפ"י הסכם התיווך, הן מחמת
+שלדבריה היא זו שהיתה הגורם היעיל בעסקה זו– לדבריה, אין בהחלטת הנתבעים להחיות את
+העסקה תוך פנייה ישירה למוכר הדירה, תוך סירוב ללא נימוק או הצדקה לערב התובעת
+בהמשך המגעים, בכדי לקעקע את אושיות שני הטיעונים דלעיל. <o:p></o:p></p><h2 class="MsoNormal" dir="RTL"><strong>תגובת הנתבעים:</strong> </h2><p class="MsoNormal" dir="RTL">א' חתם על ההסכם בחושך ללא
+שיכל לקרוא את כל פרטיו, ב' התובעת מילאה את פרטי הדירה בביתהאחרישחתם על ההסכם,
+ג' הזמן הרב שעבר מאז שהתובעת הראתה להם את הדירה ועד למועד רכישת הדירה, מה גם שבמהלך
+הזמן הזה יכל לראות את פרטי הדירה בפרסומים רבים, ובהיותו מתגורר גם בבניין סמוך
+לבניין בו ממוקמת הדירה. ד' במאמץ מרובה הצליח להפחית את מחיר הדירה בכ200 אלף שקל
+מהמחיר שנדרשו לשלם ע"פ הסכם מכר הראשון שלא נחתם ברגע האחרון. ה' בזמן שחלף
+התעניינו בדירות אחרות, ואף התובעת חיפשה קונים אחרים. ו' הסכום ששולם לתובעת היה
+תמורת התביעה כולה. <o:p></o:p></p><p class="MsoNormal" dir="RTL">התובעת לעומתה משיבה לטענות אלו, א' החתימה
+על הסכם התיווך נעשתה כדין וכנהוג בתחום זה כאשר הנתבע יכול היה לעיין היטב בכל
+האמור בו. ב' הנתבעים פנו למוכר לרכוש את הדירה כמה חודשים בלבד אחריירידת העסקה
+הראשונה מעל הפרק, תיכף אחרי שסיימו את הליך מכיר דירת מגוריהם. ג' חלק מהתקופה בה
+עמדה הדירה למכירה, המוכרים חתמו לה על הסכם בלעדיות שבו כבר איפשרו לה למכור את
+הדירה בסכום קרוב לסכום בו רכשו הנתבעים את הדירה בסוף.ד' באישור קבלת ה-15
+אש"ח אין מחילה כל שהיא, אלא שבכדי להציל מידי הנתבעים מה שאפשר, הסכימה התובעת
+לקבל כל סכום שיוצע, אך מעולם לא התכוונה בכך לוותר על יתרת סכום המגיע לה בדין,
+ועל כן מיד לאחר מכן פנתה לבית דין בתביעה על יתרת החוב.<o:p></o:p></p><p class="MsoNormal" dir="RTL">לאחר עיון בטענות הצדדים ובספרי הפוסקים,
+הננו להחליט כדלהלן:</p><h2 class="MsoNormal" dir="RTL"><b>פסק דין<o:p></o:p></b></h2><p class="MsoListParagraphCxSpFirst" dir="RTL"><!--[if !supportLists]-->א<span id="ogen1" class="ogen ogen1-dest"><span lang="HE">.<span>&nbsp;&nbsp;&nbsp;&nbsp; <span id="ogen2" class="ogen ogen2-dest"><span lang="HE"><span id="ogen1" class="ogen ogen1-dest"><span lang="HE">חתימה על הסכם, </span></span>מחייבת,</span></span></span></span></span>&nbsp;אף אם לא הקפיד או לא יכל החותם לקרוא את הכתוב מחמת חשכת לילה או
+כל סיבה אחרת, על אחת כמה וכמה בכעין מקרה דנן שמדובר בהסכם תיווך סטנדרטי ומקובל,
+ללא כל הפתעות או "שפנים" שנשלפו מן הכובע ברגע אמת. כמו"כ אין ממש
+בטענה שפרטי הדירה מולאו לאחר מכן, אחר שעל דעת כן חתם ולשני הצדדים היה ברור
+וידוע שהסכם התיווך שביניהם מתייחס לדירה זו שהראתה התובעת.<o:p></o:p></p><p class="MsoListParagraphCxSpMiddle" dir="RTL"><!--[if !supportLists]-->ב.<span>&nbsp; <span id="ogen4" class="ogen ogen4-dest"><span lang="HE"><span>&nbsp;</span>על פי ההלכה ולהב</span></span></span>דיל על פי חוק, הסכם תיווך מחייב את המקבל שירות ממנו לכל דין וענין, גם
+כאשר הלקוח מעלה-כבנידון דידן-טיעונים מטיעונים שונים המצביעים לכאורה על כך
+שבסופו של יום לא ברור לחלוטין כי המתווך היווה גורם יעיל בסגירת העסקה. לו יהא
+כדברי הלקוח, ככל שהעניין ניתן לפרשנות ואין ראיה חותכת שכדבריו כך הוה, ההסכם
+מחייב. לשם כך בדיוק באו הסכמים מעין אלו, למנוע את קיפוח זכויות המתווך גם במקרים
+של "שטח אפור" ואי-בהירות מסויימת.<o:p></o:p></p><p class="MsoListParagraphCxSpMiddle" dir="RTL"><!--[if !supportLists]-->ג.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>הדברים
+דלעיל סעיף ב נכונים שבעתיים במקרה דנן, שכן ביה"ד לא השתכנע כי מדובר אכן בעסקה
+חדשה בה התובעת לא היוותה גורם יעיל כלל ועיקר. הלא אין חולק כי התובעת היא זו שתיווכה
+בראשונה את הדירה נשואת הדיון לנתבעים, היא זו שליוותה המו"מ עד (ולא עד
+בכלל) לכדי חתימת הסכם מכר, והיא זו שהיתה מוכנה להמשיך ללוות את העסקה לידי גמר
+אחרי שעלתה שוב על הפרק, כמסתבר תוך הורדת המחיר בצורה משמעותית לא פחות מזה שעשו
+הנתבעים, ואילו הנתבעים הם שסירבו להצעה זו. אין בכל ההתרחשויות שבהמשך וכפי
+שתוארו לעיל בפרוטרוט, בכדי לשנות את אמיתות פשוטה זו.<o:p></o:p></p><p class="MsoListParagraphCxSpMiddle" dir="RTL"><!--[if !supportLists]-->ד.<span> <span id="ogen5" class="ogen ogen5-dest"><span lang="HE"><span> &nbsp;</span>קבלת הסכום החלקי שהציעו </span></span></span>הנתבעים לשלם, וחתימת התובעת על אישור קבלתו, לא מהווה וויתור
+או מחילה על יתרת החוב, מאחר ואין באישור משמעות ברורה על מחילת יתרת החוב.<o:p></o:p></p><p class="MsoListParagraphCxSpLast" dir="RTL"><!--[if !supportLists]-->ה.<span>&nbsp;&nbsp;&nbsp;&nbsp; </span><!--[endif]-->לאור האמור,
+על הנתבע לשלם לתובעת את יתרת דמי התיווך בסך 19,600 ₪ בתוספת מע"מ כדין, זאת
+תוך 30 יום.<o:p></o:p></p><p class="MsoNormal" dir="RTL"><b><span dir="RTL">"והאמת והשלום אהבו"<o:p></o:p></span></b></p><p class="MsoNormal" dir="RTL"><b>באעה"ח ביום י"ט תמוז תשע"ח&nbsp; (2-7-2018) <o:p></o:p></b></p><h3 class="MsoNormal" dir="RTL"><b>&nbsp;( - ) עובדיה יוסף טולדאנו- דיין&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ( - ) צבי גרטנר -
+אב"ד&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ( - ) הלל קצנלבוגן-
+דיין<o:p></o:p></b></h3><p class="MsoNormal" dir="RTL"><b>העתק נאמן
+למקור</b><b><o:p></o:p></b></p>
+    </article>
+  </main>
+  <footer class="psak-footer">
+    מקור: <a href="https://www.psakim.org/Psakim/File/2496" target="_blank">psakim.org — פסק 2496</a>
+  </footer>
+</body>
+</html>

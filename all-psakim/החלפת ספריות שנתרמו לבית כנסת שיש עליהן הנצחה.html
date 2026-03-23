@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+  <meta charset="utf-8">
+  <title>החלפת ספריות שנתרמו לבית כנסת שיש עליהן הנצחה</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=David+Libre:wght@400;700&family=Frank+Ruhl+Libre:wght@400;700&display=swap');
+    :root{--primary:#1a237e;--primary-light:#3949ab;--accent:#c5a55a;--bg:#fafafa;--card:#fff;--text:#212121;--text-secondary:#555;--border:#e0e0e0}
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{font-size:16px}
+    body{font-family:'David Libre','Frank Ruhl Libre',serif;background:var(--bg);color:var(--text);line-height:1.9;direction:rtl}
+    .psak-header{background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;padding:40px 20px 30px;text-align:center;position:relative}
+    .psak-header::after{content:'';position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);width:60px;height:4px;background:var(--accent);border-radius:2px}
+    .psak-header h1{font-size:2rem;font-weight:700;margin-bottom:8px;font-family:'Frank Ruhl Libre',serif}
+    .psak-header .subtitle{font-size:.95rem;opacity:.85}
+    .meta-bar{max-width:850px;margin:40px auto 20px;display:flex;flex-wrap:wrap;gap:12px;justify-content:center;padding:0 20px}
+    .meta-item{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 18px;font-size:.85rem;display:flex;align-items:center;gap:6px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+    .meta-item .label{font-weight:700;color:var(--primary)}
+    .psak-body{max-width:850px;margin:30px auto;padding:0 20px}
+    .psak-card{background:var(--card);border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.07);padding:40px 45px;margin-bottom:30px}
+    h1{font-size:1.8rem;color:var(--primary);margin:30px 0 15px;font-family:'Frank Ruhl Libre',serif}
+    h2{font-size:1.4rem;color:var(--primary);margin:28px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--accent);font-family:'Frank Ruhl Libre',serif}
+    h3{font-size:1.15rem;color:var(--primary-light);margin:20px 0 10px}
+    p,div.section,.toggle-title{margin-bottom:14px;text-align:justify}
+    span{font-family:inherit!important;color:inherit!important}
+    .section-title{font-weight:700;font-size:1.1rem;color:var(--primary);margin-bottom:6px}
+    .toggle-title{font-weight:600;color:var(--primary-light);cursor:default}
+    .toggle-title:before{content:''!important}
+    .file-title{background:var(--primary)!important;color:#fff!important;padding:8px 20px!important;border-radius:6px!important;font-size:1.2rem!important;display:inline-block!important;position:static!important;right:auto!important;margin-bottom:15px}
+    #file-num{font-size:.9rem!important;color:var(--text-secondary);float:none!important}
+    .pagename{font-size:1.6rem!important;color:var(--primary)!important;text-align:center;margin:15px 0!important}
+    a.file-tag{background:var(--primary-light)!important;border-radius:4px;font-size:.8rem}
+    .ogen{background-color:rgba(197,165,90,.2)!important;border-radius:2px}
+    .ogen::after{content:''!important}
+    .highlight{background-color:rgba(255,235,59,.4)!important}
+    .selOgen:before{display:none!important}
+    hr{border:none;border-top:1px solid var(--border);margin:25px 0}
+    blockquote{border-right:4px solid var(--accent);padding:12px 20px;margin:15px 0;background:rgba(197,165,90,.06);border-radius:0 8px 8px 0}
+    .psak-footer{text-align:center;padding:20px;color:#999;font-size:.75rem;border-top:1px solid var(--border);margin-top:20px}
+    .psak-footer a{color:var(--primary-light)}
+    @media print{body{background:#fff}.psak-header{background:var(--primary);-webkit-print-color-adjust:exact;print-color-adjust:exact}.psak-card{box-shadow:none;border:1px solid #ddd}}
+    @media(max-width:600px){.psak-card{padding:20px 18px}.psak-header h1{font-size:1.5rem}h2{font-size:1.2rem}}
+  </style>
+</head>
+<body>
+  <header class="psak-header">
+    <h1>החלפת ספריות שנתרמו לבית כנסת שיש עליהן הנצחה</h1>
+    <div class="subtitle">מצפה יריחו · מס׳ סידורי 2375</div>
+  </header>
+  <div class="meta-bar">
+    
+    <div class="meta-item"><span class="label">תאריך</span> כ"ז אדר ב תשע"ט</div>
+    <div class="meta-item"><span class="label">דיינים</span> הרב קרויזר יהודה, הרב פז ברוך, הרב רטבי ישועה</div>
+    <div class="meta-item"><span class="label">בית דין</span> מצפה יריחו</div>
+  </div>
+  <main class="psak-body">
+    <article class="psak-card">
+      <p class="MsoNormal" dir="RTL">תיק 06/19<o:p></o:p></p><h1 class="MsoNormal" align="center" dir="RTL"><b><span lang="HE">פסק דין הצהרתי<o:p></o:p></b></span></h1><p class="MsoNormal" dir="RTL"><b><span lang="HE">נשאלנו על ידי ועד בית הכנסת אם מותר להחליף ארונות ספרים של ספריה
+קיימת, שנתרמה בזמנו לעילוי נשמת קרובים עם שילוט, בארונות חדשים? אם כן, באילו
+תנאים?<o:p></o:p></b></span></p><h2 class="MsoNormal" dir="RTL"><b><span lang="HE">הנדון:</b></span></h2><p class="MsoNormal" dir="RTL">ועדת בית כנסת מתכננת שיפוץ נרחב בספרית בית הכנסת במסגרתו מתכננים
+להחליף ארונות הספרים של הספריה. דא עקא, יש התנגדות של התורמים של ארונות הספרים
+המקוריים, שטוענים שהתרומה שלהם תלך לאבדון יחד עם עילוי הנשמה ליקיריהם והשילוט
+של ההנצחה. ועדת בית הכנסת פנתה לבית הדין להנחיות בנדון.<o:p></o:p></p><h2 class="MsoNormal" dir="RTL"><b><span lang="HE">הפסק:<o:p></o:p></b></span></h2><h2 class="MsoNormal" dir="RTL"><b><span lang="HE">תוכן הפסק:<o:p></o:p></b></span></h2><p class="MsoListParagraphCxSpFirst" dir="RTL"><!--[if !supportLists]--><b><span>1.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></b><b>האם יש לארונות הספרים קדושת בית כנסת?</b><b><o:p></o:p></b></span></p><p class="MsoListParagraphCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span>2.</b>&nbsp; &nbsp; &nbsp;&nbsp;<b>האם ואיך מוכרים כלי בית כנסת שיש עליהם קדושת בית כנסת?</b><b><o:p></o:p></b></span></p><p class="MsoListParagraphCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span>3.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></b><b>עיון בגמרא ערכין ו:</b><b><o:p></o:p></b></span></p><p class="MsoListParagraphCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span>4.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></b><b>ההבדל בין נשתקע ללא נשתקע שם התורם מהתרומה</b><b><o:p></o:p></b></span></p><p class="MsoListParagraphCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span>5.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></b><b>המקורות בש"ס שדנים על שנוי יעוד תרומה<o:p></o:p></b></span></p><p class="MsoListParagraphCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span>6.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></b><b>האם המקורות בערכין ו. וב"ב ח: דנים בתרומה שנשתקע שם התורם ממנה
+או לא?</b><b><o:p></o:p></b></span></p><p class="MsoListParagraphCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span>7.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></b><b>עיון בערכין ו.</b><b><o:p></o:p></b></span></p><p class="MsoListParagraphCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span>8.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></b><b>עיון בכמה שאלות בגדר נשתקע שם התורם מן התרומה<o:p></o:p></b></span></p><p class="MsoListParagraphCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span>9.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></b><b>החילוק בין תרומה של כסף מיוזמת התורם לתרומה שבאה בעקבות גביית חובה
+של הצבור כאשר שתיהן נתרמו לכיס של הצבור</b><b><o:p></o:p></b></span></p><p class="MsoListParagraphCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span>10.<span>&nbsp;&nbsp;&nbsp;&nbsp;</span></b><b>האם יש הבדל בדיני שינוי בין תורם כסף מזומן לבין תורם כלי?<o:p></o:p></b></span></p><p class="MsoListParagraphCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span>11.<span>&nbsp;&nbsp;&nbsp;&nbsp;</span></b><b>האם שלטי הנצחה גורמים לתרומה לדין של "לא נשתקע שם התורם ממנה"?</b><b><o:p></o:p></b></span></p><p class="MsoListParagraphCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span>12.<span>&nbsp;&nbsp;&nbsp;&nbsp;</span></b><b>האם מותר להסיר השלט אם מוכרים או נותנים הארונות לאחרים?</b><b><o:p></o:p></b></span></p><p class="MsoListParagraphCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span>13.<span>&nbsp;&nbsp;&nbsp;&nbsp;</span></b><b>ההבדל בין נשתקע שם התורם מהתרומה ללא נשתקע<o:p></o:p></b></span></p><p class="MsoListParagraphCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span>14.<span>&nbsp;&nbsp;&nbsp;&nbsp;</span></b><b>פירוש הרא"ש במקורות אלו<o:p></o:p></b></span></p><p class="MsoListParagraphCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span>15.&nbsp;&nbsp;<span>&nbsp;&nbsp;</span></b><b>במקרה שלא נשתקע שם התורם, האם הצבור יכול לשנות התרומה לדבר מצווה
+פחות מהמטרה לשמה נתרמה או רק למטרה יותר חשובה?</b><b><o:p></o:p></b></span></p><p class="MsoListParagraphCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span>16.&nbsp; &nbsp;<span>&nbsp;</span></b><b>למה יש לספסלים ולווילונות של בית הכנסת קדושה חמורה אבל על הנר
+והמנורה רק קדושה קלה? האם דין ארונות הספרים כנר או כספסלים?</b><b><o:p></o:p></b></span></p><p class="MsoListParagraphCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span>17.&nbsp; &nbsp;<span>&nbsp;</span></b><b>מה ההבדל בין נשתקע שם התורם מהתרומה ללא נשתקע? האם ההבדל קיים גם
+בדבר שיש בו קדושה חמורה?</b><b><o:p></o:p></b></span></p><p class="MsoListParagraphCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span>18.<span>&nbsp;&nbsp;&nbsp;&nbsp;</span></b><b>לא נשתקע שם התורם מהתרומה<o:p></o:p></b></span></p><p class="MsoListParagraphCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span>19.<span>&nbsp;&nbsp;&nbsp;&nbsp;</span></b><b>נשתקע שם התורם מהתרומה</b><b><o:p></o:p></b></span></p><p class="MsoListParagraphCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span>20.<span>&nbsp;&nbsp;&nbsp;&nbsp;</span></b><b>האם הצבור יכולים לבטל הקדושה גוף ארונות הספרים כאשר לא נשתקע שם
+בעלים מהם, לפי מה שקבענו שיש בהם קדושה חמורה?<o:p></o:p></b></span></p><p class="MsoListParagraphCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span>21.<span>&nbsp;&nbsp;&nbsp;&nbsp;</span></b><b>האם הצבור יכול לשנות יעוד של דבר שנשתקע שם בעלים ממנו רק לצורכי
+העיר או גם לצורך פרטי?</b><b><o:p></o:p></b></span></p><p class="MsoListParagraphCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span>22.<span>&nbsp;&nbsp;&nbsp;&nbsp;</span></b><b>מה פירוש המונח "לשנותה"? האם מכר בכלל או רק מסירת החפץ
+כמות שהוא?<o:p></o:p></b></span></p><p class="MsoListParagraphCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span>23.<span>&nbsp;&nbsp;&nbsp;&nbsp;</span></b><b>האם מותר לזרוק את הפריט לפח או להפקירו שיתקלקל בחוץ?</b><o:p></o:p></span></p><p class="MsoListParagraphCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span>24.<span>&nbsp;&nbsp;&nbsp;&nbsp;</span></b><b>האם מותר לשנות יעוד חפץ שלא נשתקע שם התורם ממנו לשימוש זהה בחשיבותו לשימוש המקורי או
+רק לשימוש יותר חשוב?</b><b><o:p></o:p></b></span></p><p class="MsoListParagraphCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span>25.<span>&nbsp;&nbsp;&nbsp;&nbsp;</span></b><b>האם מותר לצבור ליתן הפריט במתנה לאחר?<o:p></o:p></b></span></p><p class="MsoListParagraphCxSpMiddle" dir="RTL"><!--[if !supportLists]--><b><span>26.<span>&nbsp;&nbsp;&nbsp;&nbsp;</span></b><b>סיכום כללי של הפסק:</b><b><o:p></o:p></b></span></p><p class="MsoListParagraphCxSpLast" dir="RTL"><b><span lang="HE"><o:p>&nbsp;</o:p></b></span></p><p class="MsoNormal" dir="RTL">צריכים לעיין בכמה שאלות בנדון:<o:p></o:p></p><p class="MsoListParagraphCxSpFirst" dir="RTL"><!--[if !supportLists]--><span>1.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>האם יש לארונות הספרים בספרית בית הכנסת קדושת בית כנסת?<o:p></o:p></span></p><p class="MsoListParagraphCxSpLast" dir="RTL"><!--[if !supportLists]--><span>2.&nbsp; &nbsp; &nbsp; מה הכללים של החלפת ריהוט של בית כנסת? האם הדין שונה אם יש או אין
+קדושת בית כנסת על הריהוט?<o:p></o:p></span></p><p class="MsoNormal" dir="RTL">נדון בשאלות אלו והמסתעף בע"ה.<o:p></o:p></p><h2 class="MsoListParagraph" dir="RTL"><b><span lang="HE"><span id="ogen28" class="ogen ogen28-dest"><strong><span>1.</strong>&nbsp; &nbsp; &nbsp; &nbsp;<strong>האם יש לארונות הספרים קדושת בית כנסת</strong></span>?</span></b><b><o:p></o:p></b></span></h2><p class="MsoNormal" dir="RTL"><span lang="HE">מצאנו בש"ס קדושת בית כנסת על נר או מנורה שנתרמו לבית כנסת
+(<span id="ogen1" class="ogen ogen1-dest"><span lang="HE">ערכין ו:</span></span>) – עיין בהמשך באיזו קדושה מדובר - וכן על
+הבימה ומטפחות הספרים וכו' (<span id="ogen2" class="ogen ogen2-dest">מגילה כה:-כו.). מקורות אלו לא פותרים השאלה שלנו.
+המקור ממסכת מגילה דן בתשמישי ספר תורה היינו הבימה ומטפחות הספרים או על מבנה בית
+הכנסת עצמו. אין כאן התייחסות לריהוט בית הכנסת. המקור בערכין ו: אכן דן בריהוט
+אבל זה של הדברים שבאים להאיר את בית הכנסת, האם אפשר להשליך מהם לכסאות, שולחנות
+וספריה כנדון דידן?<o:p></o:p></span></span></p><p class="MsoNormal" dir="RTL">עיין <span id="ogen3" class="ogen ogen3-dest">רמב"ם תפילה יא,טו:<o:p></o:p></span></p><blockquote><p class="MsoNormal" dir="RTL">"וכל כלי בית הכנסת כבית הכנסת".<o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">ונראה שמקור הרמב"ם מה<span id="ogen4" class="ogen ogen4-dest">ירושלמי (מגילה ג,א) מובא בר"ן (מגילה
+ז: בדפי הרי"ף ד"ה ירושלמי):<o:p></o:p></span></p><blockquote><p class="MsoNormal" dir="RTL">"כל כלי בית הכנסת כבית הכנסת".<o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">ושם הירושלמי מוסיף כמו שמובא שם בר"ן הנ"ל:<o:p></o:p></p><blockquote><p class="MsoNormal" dir="RTL">"ספסילא וקלטירא כבית הכנסת".<o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">מובא במ"א קנג,טו. משמעות הדבר שכל דבר שמשמש את בית הכנסת דינו
+כבית הכנסת כולל כסאות, שולחנות וכו'. והיה נראה מכאן שהוא הדין לארונות הספרים של
+הספריה שגם כן תהיה בהם קדושה שכן בסופו של דבר הם חלק מבית הכנסת.<o:p></o:p></p><p class="MsoNormal" dir="RTL">מיהו יש לעיין, שה<span id="ogen5" class="ogen ogen5-dest">מחבר קנג,ז כתב:<o:p></o:p></span></p><blockquote><p class="MsoNormal" dir="RTL">"והוא הדין לכל דברי קדושה הנזכרים כאן".<o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">ובמ"ב לז:<o:p></o:p></p><blockquote><p class="MsoNormal" dir="RTL">"פרוש כגון תיבה ומטפחות וכדומה המוזכר בסעיף ב..."<o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">כאן נראה שהמחבר פירש שהקדושה חלה רק על הדברים המוזכרים במפורש
+בשו"ע! ואם כן אין מקור שחלה קדושה על ספסלים ויריעות וכל כלי בית הכנסת ודלא
+כירושלמי הנ"ל!? ובנוסף לכך המחבר השמיט הרמב"ם הנ"ל ש"כל כלי
+בית הכנסת כבית הכנסת". ולפי דבריו ז"ל היה נראה שאין קדושה חלה על
+ספסלים וכו' ולכן גם לא על ארונות ספרים של בית הכנסת!<o:p></o:p></p><p class="MsoNormal" dir="RTL">מיהו נראה קצת קשה לומר שהמחבר משמיט הרמב"ם והירושלמי בלי
+שבב"י העיר על כך ולכן היה נראה הלכה למעשה לפסוק כירושלמי שיש קדושה על
+הספסלים והוא הדין על ארונות הספרים של הספריה.<o:p></o:p></p><h4 class="MsoNormal" dir="RTL"><b><span lang="HE">סיכום פרק זה:<o:p></o:p></b></span></h4><p class="MsoNormal" dir="RTL">קדושה חלה על הספסלים והיריעות של בית הכנסת ונראה שהוא הדין על
+ארונות הספרים של הספריה כמו שכתוב בירושלמי, מובא במ"א קנג,טו.<o:p></o:p></p><p class="MsoNormal" dir="RTL">אחרי שקבענו שיש קדושה על ארונות הספרים יש לעיין אם ואיך הגבאים
+יכולים למכור ולהחליף ארונות ספרים אלו של הספריה.<o:p></o:p></p><p class="MsoNormal" dir="RTL">נעיין עכשיו בשאלה זו בע"ה.<o:p></o:p></p><p class="MsoListParagraphCxSpFirst" dir="RTL"><!--[if !supportLists]--><b><span>1.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></b><!--[endif]--><b><o:p>&nbsp;</o:p></b></span></p><h2 class="MsoListParagraphCxSpLast" dir="RTL"><!--[if !supportLists]--><b><span>2.</b>&nbsp; &nbsp; &nbsp; ‏<b>האם ואיך מוכרים כלי בית כנסת שיש עליהם קדושת בית כנסת?</b><b><o:p></o:p></b></span></h2><p class="MsoNormal" dir="RTL">המקור המרכזי לעיון בשאלה זו הוא בערכין ו:, נעיין במקור זה
+בע"ה.<o:p></o:p></p><h2 class="MsoListParagraph" dir="RTL"><!--[if !supportLists]--><b><span>3.</b>&nbsp; &nbsp; &nbsp;&nbsp;<b>עיון בגמרא ערכין ו:</b><b><o:p></o:p></b></span></h2><p class="MsoNormal" dir="RTL">עיין ב<span id="ogen6" class="ogen ogen6-dest">ערכין ו: :<o:p></o:p></span></p><blockquote><p class="MsoNormal" dir="RTL">"ת"ר ישראל שהתנדב מנורה או נר לבית הכנסת אסור לשנותו. סבר
+רבי חייא בר אבא למימר לא שנא לדבר הרשות ולא שנא לדבר מצוה<b>. </b>אמר ליה רבי
+אמי הכי אמר רבי יוחנן לא שנא אלא לדבר הרשותאבל לדבר מצוה מותר לשנותה,
+מדאמר ר' אסי אמר רבי יוחנן עובד כוכבים שהתנדב מנורה או נר לבית הכנסת <b>עד שלא
+נשתקע שם בעליה אסור לשנותה, משנשקע שם בעליה מותר לשנותה</b>. למאי? אילימא לדבר
+הרשות? מאי איריא עובד כוכבים? אפילו ישראל נמי! אלא לדבר מצוה וטעמא דעובד כוכבים
+הוא דפעי אבל ישראל דלא פעי שפיר דמי שעזרק טייעא אינדב שרגא לבי כנישתא דרב
+יהודה, שנייה רחבא ואיקפד רבא... וא"ד שנייה חזני פומפדיתא ואיקפד רחבא
+ואיקפד רבה..."<o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">רואים במקור הנ"ל שני מצבים:<o:p></o:p></p><p class="MsoListParagraphCxSpFirst" dir="RTL"><!--[if !supportLists]--><span lang="HE">א.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>לפני שנשתקע שם התורם מהחפץ.<o:p></o:p></span></p><p class="MsoListParagraphCxSpLast" dir="RTL"><!--[if !supportLists]--><span lang="HE">ב.&nbsp; &nbsp; &nbsp; אחרי שנשתקע שם התורם מהחפץ.<o:p></o:p></span></p><p class="MsoNormal" dir="RTL">נדון בשני מצבים אלו בע"ה.<o:p></o:p></p><h2 class="MsoListParagraph" dir="RTL"><!--[if !supportLists]--><b><span>4.</b>&nbsp; &nbsp; &nbsp; <strong>ההבדל בין נשתקע ללא נשתקע שם התורם מהתרומה</strong></span></h2><p class="MsoNormal" dir="RTL">נאמר בגמרא הנ"ל שאם נכרי תורם כלי לבית הכנסת אסור לשנותו אם לא
+נשתקע שם התורם ממנו אפילו לדבר מצוה בגלל שנכרי "פעי" אבל אם ישראל
+תורם כלי לבית הכנסת מותר לשנותה "לדבר מצוה" אע"פ שלא נשתקע שם
+התורם ממנו.<o:p></o:p></p><p class="MsoNormal" dir="RTL">רש"י שם ד"ה מדאמר פירש פעי היינו:<o:p></o:p></p><blockquote><p class="MsoNormal" dir="RTL">"...דפעי וצועק למה שניתם ממה שנתתי..."<o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">והרמב"ם פירש בהלכות&nbsp;<span id="ogen9" class="ogen ogen9-dest">מתנות עניים ח,ז:<o:p></o:p></span></p><blockquote><p class="MsoNormal" dir="RTL">"שמא יאמר הגוי הקדשתי דבר לבית הכנסת של יהודים ומכרו אותו
+לעצמן".<o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">וברא"ש בשו"ת יג,יד מובא שם שברדב"ז פירש שאצל גוי יש
+חילול השם. וזה נראה קרוב לדברי הרמב"ם.<o:p></o:p></p><p class="MsoNormal" dir="RTL">אם נשתקע שם התורם ממנו אפשר לשנותו אפילו אם נכרי תרם הכלי בגלל שאין
+חשש של "פעי" בגלל שכבר לא מכירים הכלי שהנכרי תרם.<o:p></o:p></p><p class="MsoNormal" dir="RTL"><span id="ogen30" class="ogen ogen30-dest">הגמרא לא מגדירה איזה שנוי מותר לבצע כאשר נשתקע שם התורם ממנו. האם
+רק לדבר מצוה כדין לא נשתקע שם בעליה ממנו או גם לדבר הרשות?<o:p></o:p></span></p><p class="MsoNormal" dir="RTL">יש בשאלה זו מחלוקת ראשונים. <o:p></o:p></p><p class="MsoNormal" dir="RTL">מתוס' ערכין ו: ד"ה אילימא משמע שאפשר לשנות התרומה רק לדבר מצוה
+אפילו אם נשתקע שם התורם ממנו. אבל הרמב"ם (<span id="ogen7" class="ogen ogen7-dest">מתנות עניים ח,ו) וכן הרא"ש
+ב"ב (א,כט) והרי"ף שם ועוד הרבה ראשונים כתבו שאם נשתקע שם התורם
+מהתרומה אפשר לשנות גם לדבר הרשות וכך פסק השו"ע יו"ד רנט,ג.<o:p></o:p></span></p><p class="MsoNormal" dir="RTL">נמצאנו למדים להלכה שמותר לשנות כלי שלא נשתקע שם התורם ממנו אך ורק
+לדבר מצוה. כלי שנשתקע שם התורם ממנו אפשר לשנות גם לדבר הרשות.<o:p></o:p></p><p class="MsoNormal" dir="RTL">מובן ההבדל בין נשתקע ולא נשתקע אצל נכרי, שהרי גוי "פעי"
+ולכן מתבקש הבדל בדין בין נשתקע שאין חשש של "פעי" לבין לא נשתקע שיש
+חשש של "פעי" אבל אצל ישראל שאינו "פעי" למה יש הבדל בין
+נשתקע ללא נשתקע? למה קדושת בית הכנסת תלויה בנשתקע או לא נשתקע שם התורם מהתרומה?<o:p></o:p></p><p class="MsoNormal" dir="RTL">לפני שנדון בשאלה זו בע"ה נדון במקורות אחרים שדנים בשנוי תרומות
+ונעיין אם הם עולים בקנה אחד עם הנאמר במקור הנ"ל ערכין ו:.<o:p></o:p></p><h2 class="MsoListParagraph" dir="RTL"><!--[if !supportLists]--><b><span>5.</b>&nbsp; &nbsp; &nbsp; <strong>המקורות בש"ס שדנים על שנוי יעוד תרומה</strong></span></h2><p class="MsoNormal" dir="RTL">כתבנו למעלה שכאשר נשתקע שם התורם מהתרומה מותר לשנות התרומה לדבר
+הרשות וכאשר לא נשתקע מותר רק לדבר מצווה.<o:p></o:p></p><p class="MsoNormal" dir="RTL">נביא עכשיו עוד שתי גמרות שעוסקות בשנוי יעוד תרומה ונראה אם הנאמר שם
+מתאים לנאמר במקור הנ"ל בערכין ו:.<o:p></o:p></p><p class="MsoNormal" dir="RTL">כתוב <b>ב<span id="ogen10" class="ogen ogen10-dest"><strong>ערכין ו</strong>.</b>:<o:p></o:p></span></p><blockquote><p class="MsoNormal" dir="RTL">"ת"ר סלע זו לצדקה עד שלא באת ליד גבאי מותר לשנותה. משבאת
+ליד גבאי אסור לשנותה. איני והא רבי ינאי יזיף ופרע? שאני רבי ינאי דניחא להו
+לעניים דכמה דמשהי מעשי ומייתי להו".<o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">נאמר כאן שאחרי שהתרומה הגיעה לידי הגבאי אסור לשנותה, משמעות הדבר
+שאסור לשנות כלל! זה נראה סותר המקור שלנו בערכין ו: שמותר לשנותה לדבר מצוה אם לא
+נשתקע שם התורם ועוד יותר סותר הדין שאם נשתקע מותר לשנות גם לדבר הרשות?<o:p></o:p></p><p class="MsoNormal" dir="RTL">כתוב ב<strong><span id="ogen11" class="ogen ogen11-dest">ב"ב ח:</strong>&nbsp;:<o:p></o:p></span></p><blockquote><p class="MsoNormal" dir="RTL">"תנו רבנן... תמחוי בכל יום קופה מערב שבת לערב שבת. תמחוי לעניי
+עולם קופה לעניי העיר. ורשאים בני העיר לעשות קופה תמחוי ותמחוי קופה ולשנותה לכל
+מה שירצו". <o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">יש לעיין מה הכוונה "לכל מה שירצו" הנאמר כאן? האם מדובר
+לכל צורך ציבורי שבני העיר רואים לנכון? ואם כן זה מתאים למה שנאמר במקור בערכין
+ו: שיכולים לשנות התרומה לדבר הרשות אם נשתקע שם התורם ממנה! או דילמה יכולים לשנות
+רק לצרכי עניים וכדומה ואז זה יותר מתאים לדין של לא נשתקע שם התורם מהתרומה?<o:p></o:p></p><p class="MsoNormal" dir="RTL">נאמרו כמה פירושים בהבנת המקורות הנ"ל. אנו נתמקד בדעת
+הרא"ש (ב"ב א,כט) שהוא קרוב לשיטת הרמב"ם וזו השיטה שנפסקה להלכה.<o:p></o:p></p><p class="MsoNormal" dir="RTL">נתחיל עם שאלה מקדימה ועקרונית. האם המקורות הנ"ל דנים בתרומה שנשתקע
+שם התורם ממנה או תרומה שלא נשתקע שם התורם ממנה? זו שאלה שבלעדיה אי אפשר להתקדם
+בניתוח שלנו.<o:p></o:p></p><h2 class="MsoListParagraph" dir="RTL"><!--[if !supportLists]--><b><span>6.</b>&nbsp; &nbsp; &nbsp; <strong>האם המקורות בערכין ו. וב"ב ח: דנים בתרומה שנשתקע שם התורם ממנה או לא</strong><b>?<o:p></o:p></b></span></h2><p class="MsoNormal" dir="RTL">נראה מסברא שלא יתכן לדבר במושגים של לא נשתקע שם התורם, כאשר מדובר
+במגבית של כסף מזומן. הרי כסף הוא סתמי ואין לו שייכות ואפשרות לקשור בין התורם לכסף
+שנתרם. אם כן נראה שתרומה של כסף דינו כנשתקע שם התורם ממנו בגלל שמראש לא היה שמו
+של התורם על הכסף!<o:p></o:p></p><p class="MsoNormal" dir="RTL">כך גם נראה מהרא"ש הנ"ל שהביא ראיה שמה שנאמר בגמרא
+בב"ב הנ"ל "לשנותה לכל מה שירצו" פירושו, לדבר הרשות, בגלל
+שכך הפירוש בסוגין בערכין ו: והרי בערכין ו: מותר לשנות לדבר הרשות רק כאשר נשתקע
+שם התורם מהתרומה! ע"כ שהרא"ש הבין שבב"ב מדובר בנשתקע שם התורם
+ממנה, שאם לא כן אין דמיון כלל לנלמד! עיין בכל זה בהמשך בע"ה.<o:p></o:p></p><p class="MsoNormal" dir="RTL">מיהו נראה לסייג את הנאמר למעלה.<o:p></o:p></p><p class="MsoNormal" dir="RTL">עיין ט"ז יו"ד רנט,ה שהקשה שיש סתירה בין הנאמר בערכין ו:
+הנ"ל שאחרי שנשתקע שם בעלים מהתרומה מותר לשנותה לדבר הרשות לעומת מה שנפסק <span id="ogen12" class="ogen ogen12-dest">שם רנט,ב בשם הרא"ש שצדקות שנתרמו לצורך מסויים אסור לשנותן לשימוש פחות
+בחשיבות ממה שנתרמו בעבורו. ולמה לא? הרי נאמר בערכין ו: שמותר לשנות תרומה אפילו לדבר
+הרשות אם נשתקע שם התורם ממנה? והט"ז תירץ שבסעיף ב' מדובר שלא נשתקע שם
+התורם מהתרומה ולכן חלות עליה המגבלות הנ"ל ואין לבני העיר יד חפשית לשנותה
+לדבר הרשות.<o:p></o:p></span></p><p class="MsoNormal" dir="RTL">והרי בפשטות מדובר בקנט,ב בנדבה של כסף שסתם צדקות היינו כסף, ומכל
+מקום חל על התרומה דין של לא נשתקע שם התורם ממנה! והרי כתבנו למעלה שכסף אין לו
+שייכות ולכן אי אפשר להתייחס לתרומה של כסף כ"לא נשתקע שם התורם ממנו"?<o:p></o:p></p><p class="MsoNormal" dir="RTL">לכן נראה לסייג שתרומה של כסף דינה כלא נשתקע שם התורם ממנה אם
+מתקיימים בה שני תנאים:<o:p></o:p></p><p class="MsoListParagraphCxSpFirst" dir="RTL"><!--[if !supportLists]--><span lang="HE">א.&nbsp; &nbsp; &nbsp; היוזמה של התרומה באה מהתורם.<o:p></o:p></span></p><p class="MsoListParagraphCxSpLast" dir="RTL"><!--[if !supportLists]--><span lang="HE">ב.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>התורם מייעד את הכסף לצורך מסוים.<o:p></o:p></span></p><p class="MsoNormal" dir="RTL">כסף זה שנתרם ביוזמת התורם ולא במגבית חובה של העיר ושיש לו יעוד
+מיוחד מהתורם, דינו כלא נשתקע שם התורם ממנו אע"פ שמדובר בכסף. והטעם, כיוון שכסף
+זה מחכה למימוש היעוד שלו ולכן לא נשתקע שם התורם ממנו. זה המצב שהרא"ש
+בשו"ת התיחס אליו ונפסק ביו"ד רנט,ב הנ"ל וכסף כזה מותר לשנות רק
+ליעוד יותר חשוב מהיעוד המקורי.<o:p></o:p></p><p class="MsoNormal" dir="RTL">לעומת הנ"ל, הנאמר בב"ב הוא במגבית של בני העיר שמתרימים
+מכל תושב לצורכי העיר לפי כללי הגביה של העיר. שם היוזמה איננה של התורם והכסף
+נמצא בידי העיר לצרכי העיר. כסף כזה דינו כנשתקע שם התורם ממנו בגלל שהכסף נכנס
+לקופה הכללית לצרכי העיר ואין שום זיהוי בין התורם והכסף. <o:p></o:p></p><p class="MsoNormal" dir="RTL">ואכן, מפורש בב"ב שם שמדובר בגביה ציבורית שהרי מדובר בגביה
+לתמחוי ולקופה של העיר ונאמר בגמרא שם שאלו נגבים בשנים בגלל שאין שררה על הציבור
+פחות משנים וממשכנים על הצדקות ואפילו בערב שבת. מבואר שמדובר בגביה ציבורית. ובזה
+קיים הדין שבני העיר יכולים לשנות הכסף גם לדברי רשות ולא רק לדבר מצווה. <o:p></o:p></p><p class="MsoNormal" dir="RTL">לאור זה יש לעיין בערכין ו. אם מדובר בנשתקע שם התורם מהתרומה או לא?<o:p></o:p></p><h2 class="MsoListParagraph" dir="RTL"><!--[if !supportLists]--><b><span>7.</b>&nbsp; &nbsp; &nbsp; <strong>עיון בערכין ו</strong><b>.<o:p></o:p></b></span></h2><p class="MsoNormal" dir="RTL">דין הגמרא שם כנשתקע שם התורם מן התרומה. כך נראה מדברי הרא"ש הנ"ל
+שכתב שאע"פ שהגבאי לא יכול לשנות התרומה בני העיר יכולים לשנות גם לדבר הרשות,
+דין זה יתכן רק אם דין התרומה כנשתקע שם הבעלים ממנה, כמו שראינו בערכין ו:
+הנ"ל, שגם בני העיר יכולים לשנות תרומה לדבר הרשות רק אם נשתקע שם התורם מן
+התרומה וכמו שנפסק ב<span id="ogen13" class="ogen ogen13-dest">רנט,ג הנ"ל:<o:p></o:p></span></p><blockquote><p class="MsoNormal" dir="RTL">"ישראל שהתנדב נר או מנורה לבית הכנסת אם נשתקע שם בעליה מעליה...
+יכולים <b>הצבור</b> לשנותה לדבר הרשות..."<o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">זאת אומרת שכח צבור לשנות לדבר הרשות הוא רק בדבר שנשתקע שם התורם
+מעליו! אם כן, אם הרא"ש כותב שהנאמר בערכיו ו. "משבאה לידי גבאי אין
+לשנותה" מתייחס רק לגבאי אבל צבור יכולים לשנותה, ע"כ מדובר בנשתקע שם
+התורם מהתרומה.<o:p></o:p></p><p class="MsoNormal" dir="RTL"><span id="ogen34" class="ogen ogen34-dest">ונשאלת השאלה, הרי נראה שבערכין ו. הנ"ל לא מדובר בגביה של הצבור
+שכופים היחיד לתרום לצרכי העיר אלא ביוזמת היחיד שהרי הוא אמר "סלע זו
+לצדקה" משמע שהיחיד יזם התרומה ובכל זאת דינו כנשתקע שם התורם ממנה?<o:p></o:p></span></p><p class="MsoNormal" dir="RTL">ונראה לומר ששם אכן מדובר ביוזמת התורם מיהו שם הוא תורם
+ל"צדקה" היינו למטרה הקבועה של העיר שנקראת "צדקה" אין שם
+ייחוד של הכסף לאיזו מטרה מיוחדת שהתורם חפץ ביקרה כגון לעניים מסויימים וכדומה,
+אלא ייעוד לצדקה הכללית של העיר, ובזה דינו כנשתקע שמו מעליה הואיל ואין כאן ייעוד
+מיוחד למטרה ספציפית.<o:p></o:p></p><p class="MsoNormal" dir="RTL">מכאן ראיה למה שכתבנו למעלה שכדי שיהיה על כסף דין של "לא נשתקע
+שמו ממנו" צריכים להתקיים שני תנאים:<o:p></o:p></p><p class="MsoListParagraphCxSpFirst" dir="RTL"><!--[if !supportLists]--><span>1.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>שהתרומה היא ביוזמת היחיד ולא כתוצאה של מגבית חובה של הצבור.<o:p></o:p></span></p><p class="MsoListParagraphCxSpLast" dir="RTL"><!--[if !supportLists]--><span>2.&nbsp; &nbsp; &nbsp; שהתרומה תהיה למטרה מיוחדת ספציפית ולא לכיס הקבוע של העיר.<o:p></o:p></span></p><p class="MsoNormal" dir="RTL">במקרה של ערכין ו. רק התקיים תנאי אחד מהתנאים הנ"ל, היינו
+שהתרומה היתה ביוזמת התורם ולא על פי מגבית חובה של הצבור, אבל לא התקיים התנאי
+השני בגלל ששם לא היה ייעוד למטרה מיוחדת, אלא תרומה לכיס הקבוע של העיר לצדקה,
+ולכן דין התרומה כנשתקע שם התורם ממנה.<o:p></o:p></p><p class="MsoNormal" dir="RTL">ונראה שדבר זה מפורש ברמ"א <span id="ogen14" class="ogen ogen14-dest">יו"ד רנו,ד.<o:p></o:p></span></p><p class="MsoNormal" dir="RTL">המחבר פסק שם הגמרא בב"ב ח: הנ"ל "...ולשנותה לכל מה
+שירצו מצרכי צבור...", הרמ"א הוסיף:<o:p></o:p></p><blockquote><p class="MsoNormal" dir="RTL">"וה"ה ליחיד שהתנדב צדקה ונתנה לגבאי (הצבור יכול לשנותה
+לדבר הרשות)... וכן אם פירש הנותן ואמר שיתנו לעניי העיר או לעני פלוני אין להם
+לשנות אפילו לת"ח".<o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">הרמ"א מחלק בין מי שנדב מיוזמתו ונתן לגבאי של העיר, שבזה בני העיר
+יכולים לשנות הכסף לכל דבר וע"כ דינו כנשתקע שם התורם מן התרומה. מיהו אם
+התורם יזם התרומה וגם ייעד הכסף למטרה מסויימת, בני העיר לא יכולים לשנות לדבר
+אחר! ע"כ דינו כלא נשתקע שם התורם ממנו.<o:p></o:p></p><p class="MsoNormal" dir="RTL">תנא דמסייע לחלק הראשון של הרמ"א אפשר למצוא בר"ן בב"ב
+ח: ד"ה רשאין שכתב שאפילו אם מתנדב מיוזמתו לצבור, הצבור יכולים לעשות כרצונם
+בכסף. מיהו ע"ש שכתב שהרשב"א חולק על כך וסובר שיחיד המתנדב, אפילו אם
+מתנדב לצבור, הצבור לא יכולים לעשות בתרומה מה שרוצים. הרי שלפי הרשב"א יש
+לתרומה זו דין לא נשתקע שם התורם ממנה. מיהו הלכה כר"ן כמו שהרא"ש
+והרמ"א כתבו.<o:p></o:p></p><p class="MsoNormal" dir="RTL">מיהו ע"ש ט"ז ד וש"ך י שהקשו שבערכין ו: נאמר שאם לא
+נשתקע שם התורם מהתרומה בני העיר יכולים לשנות למצווה אחרת, ואילו בנידון של
+הרמ"א אסור לשנות כלל? ותירצו שהמקרה של הרמ"א שונה בגלל שזכו בה
+העניים. אם כן אולי אין ראיה מהרמ"א ליסוד הנ"ל? נראה שבכל זאת יש ראיה
+בגלל שרק בגלל שיש כאן דין של לא נשתקע שם התורם מן התרומה, זכו בה העניים. אבל אם
+היה חל דין נשתקע שם התורם מן התרומה לא היו זוכים בה העניים. וראיה לכך, שאם נדב
+סתם לעיר ונשתקע שם בעלים ממנה, העניים לא זוכים בכסף בגלל שהם תחת רשות העיר ולכן
+אין העניים יכולים לזכות בתרומה.<o:p></o:p></p><p class="MsoNormal" dir="RTL">עוד ראיה להנ"ל מסתירה בין הט"ז יו"ד רנט,ג לט"ז
+רנט,ה.<o:p></o:p></p><p class="MsoNormal" dir="RTL">הט"ז בס"ק ה הנ"ל כתב שהדין שנפסק ברנט,ב במחבר, היינו
+שמי שמתנדב תרומה לצבור אסור לצבור לשנות הכסף למטרה פחותה מזו שנתרם בעבורה, מדובר
+כאשר לא נשתקע שם התורם מהתרומה, ומה שנפסק בסעיף ג שאפשר לשנות לכל מטרה מתייחס לתרומה
+שנשתקע שם התורם ממנה. הט"ז בס"ק ג ענה על השאלה הזו באופן אחר.
+הט"ז שאל על מה שכתוב ברנט,ב הנ"ל שאסור לצבור לשנות תרומה למטרה פחותה:<o:p></o:p></p><blockquote><p class="MsoNormal" dir="RTL">"ואע"ג דהרא"ש (ב"ב א,כט) סבירא ליה כר"ת
+דיכולין בני העיר לשנות לדבר הרשות, כמו שכתוב בסימן רנו, מכל מקום הא כתב
+הרא"ש שם דדוקא בדבר קבוע אמרינן כן..."<o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">הט"ז תירץ בס"ק ג שהחילוק בין ערכין ו: שדומה לב"ב ח:
+שמותר לצבור לשנות תרומה למה שירצו נאמר בגביית חובה של הצבור היינו "דבר
+קבוע" פירוש גביית קבע שהצבור גובה לענות לצרכים קבועים של צדקה וכו'. ומה שנאמר
+בסעיף ב שהצבור לא יכול לשנות, שם מדובר בתרומה שהתורם יזם והתנדב.<o:p></o:p></p><p class="MsoNormal" dir="RTL">עכשיו התשובה הזו של ס"ק ג לכאורה סותרת התשובה שהט"ז עצמו
+תירץ ס"ק ה שהחילוק בין הסעיפים הוא שבסעיף ב מדובר בלא נשתקע שמו מה שאין כן
+בסעיף ג מדובר בנשתקע שם התורם!?<o:p></o:p></p><p class="MsoNormal" dir="RTL">אלא נראה כנ"ל שאין סתירה אלא היינו הך. הגדר של "לא נשתקע
+שמו ממנו" תלוי בזה שהתורם יזם התרומה, ואינו גביית חובה של הצבור. כמו
+שהט"ז כתב בס"ק ג, גביית חובה של הצבור דינה כנשתקע שם התורם מהתרומה. <o:p></o:p></p><h4 class="MsoNormal" dir="RTL"><b><span lang="HE">סיכום פרק זה: <o:p></o:p></b></span></h4><p class="MsoNormal" dir="RTL">כדי שיהיה לתרומה של כסף מזומן דין של "לא נשתקע שמו ממנה"
+צריכים להתקיים בו שני תנאים:<o:p></o:p></p><p class="MsoListParagraphCxSpFirst" dir="RTL"><!--[if !supportLists]--><span>1.&nbsp; &nbsp; &nbsp; שהתרומה היא ביוזמת התורם ואינה חלק ממגבית חובה של הצבור.<o:p></o:p></span></p><p class="MsoListParagraphCxSpLast" dir="RTL"><!--[if !supportLists]--><span>2.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>שהתורם ייעד התרומה למטרה מסויימת ולא תרם אותה לכיס הקבוע של הצבור.<o:p></o:p></span></p><p class="MsoNormal" dir="RTL">זה הדין בסימן רנט,ב שבזה הצבור לא יכול לשנות התרומה לדבר הרשות אלא
+לדבר מצווה יותר חשובה מהמטרה שנתרמה בעבורה.<o:p></o:p></p><p class="MsoNormal" dir="RTL">אם חסר אחד משני תנאים אלו דין התרומה כנשתקע שם התורם ממנה שהצבור
+יכול לשנות את יעוד התרומה לדבר הרשות.<o:p></o:p></p><p class="MsoNormal" dir="RTL">לאור הנ"ל תירצנו השאלה ששאלנו למעלה.<o:p></o:p></p><p class="MsoNormal" dir="RTL"><b><span lang="HE">סיכום</b> – האם המקורות
+בערכין ו. וב"ב ח: דנים בתרומה שנשתקע שם התורם ממנה או לא? <o:p></o:p></span></p><p class="MsoNormal" dir="RTL">ראינו שבשני המקורות הנ"ל מדובר בנשתקע שם התורם מהם.<o:p></o:p></p><p class="MsoNormal" dir="RTL">עכשיו אפשר לחזור לדיון המקורי הנ"ל היינו לברר מה דין שינוי צדקה
+שנשתקע שם התורם ממנה ומה דין שינוי צדקה שלא נשתקע שם התורם ממנה. אמנם, לפני
+שנעשה כן נעיין עוד בכללי נשתקע שם התורם ממנה או לא. בירור זה יעזור לנו לקבוע מה
+המעמד של ארונות הספרים שהם נשוא פסק זה, אם דינם כנשתקע שם התורם מהם או לא.<o:p></o:p></p><p class="MsoNormal" dir="RTL">נעיין עכשיו בכמה שאלות של בירור מתי דין התרומה כנשתקע שם התורם ממנה
+ומתי לא.<o:p></o:p></p><h2 class="MsoListParagraph" dir="RTL"><!--[if !supportLists]--><b><span>8.</b>&nbsp; &nbsp; &nbsp;&nbsp;<b>עיון בכמה שאלות בגדר נשתקע שם תורם מן התרומה</b></span></h2><p class="MsoNormal" dir="RTL">נתחיל בשאלה אם דין תרומה של כסף שאין בה אפילו תנאי אחד מו התנאים
+המוזכרים מעלה, זהה לגמרי לתרומה של כסף שמתקיים בה תנאי אחד מהתנאים הנ"ל,
+כגון כסף שנתרם ביוזמת התורם לכיס הקבוע של הצבור? <o:p></o:p></p><h2 class="MsoListParagraph" dir="RTL"><!--[if !supportLists]--><b><span>9.</b>&nbsp; &nbsp; &nbsp;&nbsp;<b>החילוק בין תרומה של כסף מיוזמת התורם לתרומה שבאה בעקבות גביית חובה
+של הצבור כאשר שתיהן נתרמו לכיס של הצבור<o:p></o:p></b></span></h2><p class="MsoNormal" dir="RTL">מצאנו הבדל בין מי שתורם במסגרת מגבית העיר לבין מי שתורם לצדקת העיר
+מיוזמתו.<o:p></o:p></p><p class="MsoNormal" dir="RTL">עיין <span id="ogen15" class="ogen ogen15-dest">יו"ד רנא,ה ברמ"א. המחבר כתב שם:<o:p></o:p></span></p><blockquote><p class="MsoNormal" dir="RTL">"מי שנתן ממון לצדקה אין לו וליורשיו שום כח בהם..."<o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">הרמ"א הוסיף על כך:<o:p></o:p></p><blockquote><p class="MsoNormal" dir="RTL"><span lang="HE">"אבל קודם שבאו לידי גבאי, אם נדר צדקה סתם נותנין לקרוביו
+העניים דאומדין דעתו... וכל זה בפוסק צדקה לבד אבל אם פוסק צדקה עם בני העיר על
+דעת בני העיר נדר, והם יעשו מה שירצו".<o:p></o:p></span></p></blockquote><p class="MsoNormal" dir="RTL">הרי מבואר שלפני שהכסף בא לידי הגבאי יש הבדל בין מי שנדר צדקה מעצמו
+לכיס של העיר לבין מי שנדר בגלל מגבית העיר. מי שנדר מעצמו אומדים דעתו ליתן לקרובים
+שלו אבל אם נדר עם העיר אז לא אומדים דעתו בגלל שדעתו כדעת העיר בזה.<o:p></o:p></p><h4 class="MsoNormal" dir="RTL"><b><span lang="HE">סיכום פרק זה:<o:p></o:p></b></span></h4><p class="MsoNormal" dir="RTL">יש הבדל בין תרומה שבמסגרת גביה של העיר שבזה גם לפני שהגיעה לידי
+הגבאי אסור לתורם לשנות וליתן למקום אחר, מה שאין כן בתורם מיוזמתו לכיס העיר, שם
+אפשר לשנות למטרה אחרת אם לא הגיע לידי הגבאי.<o:p></o:p></p><p class="MsoNormal" dir="RTL">אחרי כל הנאמר כאן יש לעיין אם יש הבדל בין תורם כסף מזומן לבין תורם
+כלי? האם הכללים שקבענו למעלה נכונים רק במזומנים אבל התורם כלי דינו שונה או דילמא
+דינם זהה?<o:p></o:p></p><h2 class="MsoListParagraph" dir="RTL"><!--[if !supportLists]--><b><span>10.<span>&nbsp; &nbsp;&nbsp;</span></b><b>האם יש הבדל בדיני שינוי בין תורם כסף מזומן לבין תורם כלי?<o:p></o:p></b></span></h2><p class="MsoNormal" dir="RTL">ראינו בב"ב שהצבור יכול לשנות תמחוי וקופה לאיזו מטרה צבורית
+שירצה, והרי בתמחוי הצבור תורם מצרכים להאכלת העניים באותו יום לעומת גבית הקופה
+שהיא גבית כסף מזומן לצורך כל השבוע. כאשר גובים מצרכים יש גביית חובה של הצבור של
+מצרכים ולא כסף מזומן, ודינו כגביית כסף והצבור יכול לשנות. רואים שאין הבדל בין
+גביית כסף לגביית חפצים לעניין גביית חובה של הצבור!<o:p></o:p></p><p class="MsoNormal" dir="RTL">ברם לא נראה שיש משם ראיה בגלל שהמצרכים שגובים לתמחוי אין שמו של
+התורם עליהם מלכתחילה שהרי הם דברים בסיסיים שכולם תורמים. וגם אין כלל דעתו של
+התורם שיהיה איזה זיהוי בינו לבין המצרכים. ולכן שם לא מתחילה כלל השאלה אם שם
+התורם עליהם מלכתחילה.<o:p></o:p></p><p class="MsoNormal" dir="RTL">בערכין ו: נאמר שכלי שנתרם לבית הכנסת יש לו דין "לא נשתקע שם
+התורם ממנו" כל עוד זוכרים מי התורם. האם בגמרא שם מתקיימים שני התנאים
+הנ"ל:<o:p></o:p></p><p class="MsoListParagraphCxSpFirst" dir="RTL"><!--[if !supportLists]--><span lang="HE">א.&nbsp; &nbsp; &nbsp; שנתרמו ביוזמת התורם ולא בתור גביית חובה של הצבור.<o:p></o:p></span></p><p class="MsoListParagraphCxSpLast" dir="RTL"><!--[if !supportLists]--><span lang="HE">ב.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>שהתורם ייעד התרומה למטרה מסויימת?<o:p></o:p></span></p><p class="MsoNormal" dir="RTL">נראה שאכן מתקיימים בגמרא שם שני התנאים הנ"ל ולכן דין הכלי כלא
+נשתקע שם התורם ממנו וזה כדין כסף כנ"ל.<o:p></o:p></p><p class="MsoNormal" dir="RTL">נמצאנו למדים שאין לנו מקור להאיר עינינו בשאלה זו.<o:p></o:p></p><p class="MsoNormal" dir="RTL">בסברא היה נראה שדין תרומה של כלי שונה מדין תרומת כסף מהסיבה שהזכרנו
+בריש דברינו שאין זיהוי בין הכסף והתורם בעקרון ולכן שם צריכים תנאים מיוחדים ליצירת
+הזיקה בין התורם לכסף שהוא תרם, היינו שני התנאים הנ"ל שהתורם יזם התרומה ולא
+היתה גביית חובה וגם שהתורם ייעד הכסף למטרה מיוחדת, בתרומת כלי הזיקה קיימת
+מלכתחילה בגלל שמדובר בכלי מסוים ומוכר.<o:p></o:p></p><p class="MsoNormal" dir="RTL">אמנם יש להסתפק אם בכל תרומה של כלי קיים דין לא נשתקע שם התורם ממנו,
+גם אם היתה גביית חובה לתרום כלי מסויים, או שבזה גם בכלי אין שם התורם עליו?<o:p></o:p></p><p class="MsoNormal" dir="RTL">נראה שאם קיים תנאי אחד לכל הפחות היינו שהתורם יזם התרומה ולא במסגרת
+גביית חובה, בזה דין לא נשתקע שמו ממנו קיים, גם אם היוזמה לתרום כלי מסויים היתה
+של הצבור.<o:p></o:p></p><p class="MsoNormal" dir="RTL">מיהו אם הגביה היא חובה, אע"פ שגבו כלי או חפץ, שם יש להסתפק אם
+דינו כ"נשתקע שמו ממנו" בגלל שכל כולו בידי הצבור לעשות בו כרצונו כמו
+שכתבנו למעלה.<o:p></o:p></p><h4 class="MsoNormal" dir="RTL"><b><span lang="HE">סיכום פרק זה:<o:p></o:p></b></span></h4><p class="MsoNormal" dir="RTL">דין תרומת כלי שונה מדין תרומת כסף.<o:p></o:p></p><p class="MsoNormal" dir="RTL">לכסף יש דין של "לא נשתקע שמו ממנו" רק אם מתקיימים שני
+התנאים הנ"ל:<o:p></o:p></p><p class="MsoListParagraphCxSpFirst" dir="RTL"><!--[if !supportLists]--><span lang="HE">א.&nbsp; &nbsp; &nbsp; שנתרמו ביוזמת התורם ולא בתור גביית חובה של הצבור.<o:p></o:p></span></p><p class="MsoListParagraphCxSpLast" dir="RTL"><!--[if !supportLists]--><span lang="HE">ב.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>שהתורם ייעד התרומה למטרה מסויימת.<o:p></o:p></span></p><p class="MsoNormal" dir="RTL">אבל אם תורם כלי אע"פ שרק התקיים תנאי אחד מן הנ"ל, היינו
+שהתרומה היתה ביוזמת התורם, יש לכלי דין "לא נשתקע שמו ממנו", אם אכן לא
+נשתקע שמו ממנו, אע"פ שתרומת כלי זה דווקא היתה לפי בחירת הצבור.<o:p></o:p></p><p class="MsoNormal" dir="RTL">אם הכלי נגבה בגביית חובה יש להסתפק אם חל עליו הדין של "לא
+נשתקע שם התורם ממנו".<o:p></o:p></p><p class="MsoNormal" dir="RTL">אבחנה זו חשובה בגלל שבנדון של תרומת ארונות הספרים של הספריה בבית
+הכנסת, מדובר בתרומה שהיתה ביוזמת התורם ולא מגביית חובה מחד, ומאידך מדובר בתרומה
+של כלי!<o:p></o:p></p><p class="MsoNormal" dir="RTL">לפי זה היה נראה שדין הארונות כלא נשתקע שם התורם מהתרומה שהרי מדובר
+בתרומה של כלי מסויים, היינו ארונות הספרים, אע"פ שהצבור בחר לבקש תרומות של
+ארונות ספרים ולא התורם. התורם רק מילא אחרי בקשת הצבור בזה. מכל מקום הואיל
+ומדובר בכלי דינו כלא נשתקע שם התורם ממנו.<o:p></o:p></p><p class="MsoNormal" dir="RTL">ברם בנידון דידן התורמים לא הביאו את ארונות הספרים לבית הכנסת! הם
+תרמו כסף כאשר הצבור פרסם שרצונו לקנות ארונות ספרים. אם כן מדובר בתרומת כסף
+ביוזמת התורם אבל לא לפי בחירת הייעוד של התורם. בזה דינו כנשתקע שם התורם ממנו!
+אם כן דין הארונות שהצבור יכול לשנות אותם גם לדבר רשות!<o:p></o:p></p><p class="MsoNormal" dir="RTL">אמנם יש לעיין. יש על חלק מן הארונות שלטי הנצחה. האם זה משנה את דינם?<o:p></o:p></p><h2 class="MsoListParagraph" dir="RTL"><!--[if !supportLists]--><span><b>11.&nbsp; &nbsp;&nbsp;</b></span><b>האם שלטי הנצחה גורמים לתרומה לדין של "לא נשתקע שם התורם ממנה"?</b></h2><p class="MsoNormal" dir="RTL">עיין רדב"ז (מתנות עניים ח,ו):<o:p></o:p></p><blockquote><p class="MsoNormal" dir="RTL">"ואיכא למידק הרי שהיה שם בעליה חקוק עליה אם מותר לשנותה או לא?
+וי"ל כל זמן שמזכירין את שמו מתוך מה שחקוק עליה ומכירין אותו שזה הכלי איש
+פלוני הקדישו, אסור לשנותו. אבל אם אין מכירין אותו הרי נשתקע שם בעליה ומותר
+לשנותו כ"נ לי".<o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">וכך נפסק ברמ"א <span id="ogen16" class="ogen ogen16-dest">יו"ד רנט,ג:<o:p></o:p></span></p><blockquote><p class="MsoNormal" dir="RTL">"וכל זמן ששם בעלים חקוק על הכלים, לא נשתקע שם בעלים".<o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">הרי אם שמו חקוק על הכלי דינו כלא נשתקע שמו ממנו כל עוד שמכירים
+התורם. ונראה שדין לא נשתקע שמו ממנו קיים אם מכירים התורם באמצעות השמות שבשלט
+אע"פ שלא מכירים את שמות הנפטרים עצמם.<o:p></o:p></p><p class="MsoNormal" dir="RTL">כל זה כאשר תרמו כלי והציבו עליו שלט זכרון. נדון דידן קצת יותר מורכב
+בגלל שבנדון דידן תרמו כסף שדינו כנשתקע שם התורם ממנו בגלל שאין זיקה בין הכסף
+לתורם לפי מה שכתבנו למעלה, שאם לא קויימו שני התנאים הנ"ל דינו כנשתקע שמו
+ממנו, אבל אם התנו להציב שלט זכרון על מה שנקנה בכסף זה, האם דין הכסף קובע או דין
+השלט?<o:p></o:p></p><p class="MsoNormal" dir="RTL">ונראה שאם התנו מראש להציב שלט זכרון על ארונות הספרים דינן כלא נשתקע
+שם התורם ממנו בגלל שזה לא גרע ממצב שהתורם יזם מראש מה לעשות עם הכסף. יש כאן שלט
+של התורם ולכן נראה שבזה מזהים התרומה של הכסף עם התורם כמו הדין שהתורם עצמו ייעד
+הכסף למטרה זו מלכתחילה.<o:p></o:p></p><h4 class="MsoNormal" dir="RTL"><b><span lang="HE">סיכום פרק זה:<o:p></o:p></b></span></h4><p class="MsoNormal" dir="RTL">שלט זכרון יש לו דין של לא נשתקע שם התורם מתרומתו אם מכירים שם התורם
+על השלט.<o:p></o:p></p><p class="MsoNormal" dir="RTL">והוא הדין אם לא מכירים השם על השלט אבל מכירים התורם באמצעות השמות
+על השלט כגון אם תורם לע"נ הוריו וכדומה.<o:p></o:p></p><p class="MsoNormal" dir="RTL">וכן אם תרם כסף באופן שאין על התרומה דין לא נשתקע שם התורם מהכסף,
+אבל התנו מראש להציב שלט על הכלי, בזה גם יש דין לא נשתקע שם התורם מהתרומה.<o:p></o:p></p><h2 class="MsoListParagraph" dir="RTL"><!--[if !supportLists]--><b><span>12.</b>&nbsp; &nbsp;&nbsp;<b>האם מותר להסיר השלט אם מוכרים או נותנים הארונות לאחרים?<o:p></o:p></b></span></h2><p class="MsoNormal" dir="RTL">ראינו מדברי הרדב"ז והרמ"א הנ"ל ששלט זכרון מחיל על ארונות
+הספרים דין "לא נשתקע שם בעלים מהם". לפי המקורות הנ"ל אין לשלט
+עדיפות על כלי בלי שלט שיש בו דין "לא נשתקע שם בעלים ממנו". היתרון של
+השלט הוא לשמר זכרון התורם על הכלי וכך לשמר עליו דין "לא נשתקע שם התורם
+ממנו". לא מעבר לכך.<o:p></o:p></p><p class="MsoNormal" dir="RTL">אם כן אפשר להסיר השלט אם מוכרים או מוסרים הכלי לפי כללי ההלכה
+שיבוארו בהמשך בע"ה.<o:p></o:p></p><h4 class="MsoNormal" dir="RTL"><b><span lang="HE">סיכום פרק זה:<o:p></o:p></b></span></h4><p class="MsoNormal" dir="RTL">שלט הנצחה מחיל על הכלי דין לא נשתקע שם התורם מן הכלי ולא מעבר לכך.
+אם כן כאשר מוכרים או מוסרים הכלי לפי כללי ההלכה מותר להוריד השלט. לפנים משורת
+הדין אפשר לשמר זכרון התורמים באופן כזה או אחר. <o:p></o:p></p><h4 class="MsoNormal" dir="RTL"><b><span lang="HE">סיכום חלק זה של הפסק:<o:p></o:p></b></span></h4><p class="MsoNormal" dir="RTL">דין ארונות הספרים שיש עליהם שלטי זכרון כדין כלי שלא נשתקע שם התורם
+ממנו.<o:p></o:p></p><p class="MsoNormal" dir="RTL">אין לכלי עם שלט עדיפות על דין כלי שלא נשתקע שם התורם ממנו ולכן כאשר
+מוכרים או מוסרים הכלי לפי דין, מותר להסיר השלט.<o:p></o:p></p><p class="MsoNormal" dir="RTL">לפנים משורת הדין אפשר לשמר הזכרון באופן כזה או אחר.<o:p></o:p></p><p class="MsoNormal" dir="RTL">דין הארונות שאין עליהם שלטי זכרון כדין כלי שנשתקע שם התורם מהם.<o:p></o:p></p><p class="MsoNormal" dir="RTL">עכשיו נחזור לדיון שהתחלנו בו למעלה:<o:p></o:p></p><h2 class="MsoListParagraph" dir="RTL"><!--[if !supportLists]--><b><span>13.</b>&nbsp; &nbsp;&nbsp;<b>ההבדל בין נשתקע שם התורם מהתרומה ללא נשתקע</b><b><o:p></o:p></b></span></h2><p class="MsoNormal" dir="RTL">לצורך בירור שאלה זו עלינו לחזור לגמרא בערכין ו: הנ"ל.<o:p></o:p></p><p class="MsoNormal" dir="RTL">כבר ציטטנו למעלה את הגמרא בערכין ו: שמחלקת בין נשתקע שם התורם
+מהתרומה לבין לא נשתקע שם התורם מהתרומה. נאמר בגמרא מפורשות שכאשר לא נשתקע שם
+בעלים ממנו אפשר לשנות הכלי לדבר מצווה בלבד. הגמרא לא אומרת מה הדין כאשר נשתקע
+שם התורם מן הכלי ויש בזה מחלוקת ראשונים כאשר התוס' סוברים שאפשר לשנות רק לדבר
+מצווה כדין לא נשתקע שם בעלים אבל הלכה כדעת הרמב"ם והרא"ש ועוד הרבה
+ראשונים שאם נשתקע שם הבעלים אפשר לשנות הכלי גם לדבר רשות.<o:p></o:p></p><p class="MsoNormal" dir="RTL">וכבר הבאנו למעלה שיש עוד שני מקורות שדנים בשנוי תרומה: ב"ב ח:
+וערכין ו.<o:p></o:p></p><p class="MsoNormal" dir="RTL">נצטט שוב גמרות אלו ונעיין בהבדלים שבין המקור המרכזי שלנו היינו
+ערכין ו: לשני מקורות אלו.<o:p></o:p></p><p class="MsoNormal" dir="RTL">כתוב <b>ב<span id="ogen17" class="ogen ogen17-dest"><strong>ערכין ו</strong>.</b>:<o:p></o:p></span></p><blockquote><p class="MsoNormal" dir="RTL">"ת"ר סלע זו לצדקה עד שלא באת ליד גבאי מותר לשנותה. משבאת
+ליד גבאי אסור לשנותה. איני והא רבי ינאי יזיף ופרע? שאני רבי ינאי דניחא להו
+לעניים דכמה דמשהי מעשי ומייתי להו".<o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">נאמר כאן שאחרי שהתרומה הגיעה לידי הגבאי אסור לשנותה כלל! זה נראה
+סותר המקור שלנו בערכין ו: שמותר לשנותה לדבר מצוה אם לא נשתקע שם התורם ועוד יותר
+סותר הדין שאם נשתקע מותר לשנות גם לדבר הרשות?<o:p></o:p></p><p class="MsoNormal" dir="RTL">כתוב ב<span id="ogen18" class="ogen ogen18-dest">ב"ב ח:&nbsp;:<o:p></o:p></span></p><blockquote><p class="MsoNormal" dir="RTL">"תנו רבנן... תמחוי בכל יום קופה מערב שבת לערב שבת. תמחוי לעניי
+עולם קופה לעניי העיר. ורשאים בני העיר לעשות קופה תמחוי ותמחוי קופה ולשנותה לכל
+מה שירצו". <o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">יש לעיין מה הכוונה "לכל מה שירצו" הנאמר כאן? האם מדובר
+לכל צורך ציבורי שבני העיר רואים לנכון? אם כן, זה מתאים למה שנאמר במקור בערכין
+ו: שיכולים לשנותה לדבר הרשות אם נשתקע שם התורם מהתרומה! או דילמא יכולים לשנות
+רק לצרכי עניים וכדומה ואז זה יותר מתאים לדין של לא נשתקע שם התורם מהתרומה?<o:p></o:p></p><p class="MsoNormal" dir="RTL">נאמרו כמה פירושים בהבנת המקורות הנ"ל. אנו נתמקד בדעת
+הרא"ש (ב"ב א,כט) שהוא קרוב לשיטת הרמב"ם והיא השיטה שנפסקה להלכה.<o:p></o:p></p><h2 class="MsoListParagraph" dir="RTL"><!--[if !supportLists]--><b><span>14.</b>&nbsp; &nbsp;&nbsp;<b>פירוש הרא"ש במקורות אלו<o:p></o:p></b></span></h2><p class="MsoNormal" dir="RTL">נציין כאן כמה קביעות של הרא"ש:<o:p></o:p></p><p class="MsoListParagraphCxSpFirst" dir="RTL"><!--[if !supportLists]--><span lang="HE">א.&nbsp; &nbsp; &nbsp; הרא"ש פירש שכוונת הגמרא בב"ב ח: "ולשנותה לכל מה
+שירצו" היא שבני העיר יכולים לשנות הקופה והתמחוי לכל צרכי צבור שהם רואים
+לנכון על סמך הקביעה בערכין ו: שכאשר נשתקע שם התורם מהתרומה אפשר לשנות לצרכי
+צבור.<o:p></o:p></span></p><p class="MsoListParagraphCxSpMiddle" dir="RTL"><!--[if !supportLists]--><span lang="HE">ב.&nbsp; &nbsp; &nbsp; הרא"ש פירש שבערכין ו. כאשר התורם אמר "סלע זו לצדקה"
+הצבור יכול לשנות הסלע לכל צורך אפילו דבר הרשות כדין נשתקע שם התורם בערכין ו:.<o:p></o:p></span></p><p class="MsoListParagraphCxSpLast" dir="RTL"><!--[if !supportLists]--><span lang="HE">ג.&nbsp; &nbsp; &nbsp; &nbsp;הרא"ש פירש שבערכין ו. כאשר התורם אמר "סלע זו לצדקה"
+ונאמר על כך "משבאת לידי גבאי אינו יכול לשנותה" פירוש שהגבאי אינו יכול
+לשנות הכסף לדבר רשות אבל יכול לשנות לדבר מצווה כדין לא נשתקע שם התורם ממנו
+בערכין ו:.<o:p></o:p></span></p><p class="MsoNormal" dir="RTL">ונראה שיש סתירה בדברי הרא"ש שמצד אחד פירש שהגמרא בערכין ו.
+דינה כנשתקע שם התורם מהתרומה ולכן יכולים לשנותה לכל דבר, ומאידך כתב שבערכין ו:
+מדובר בלא נשתקע שם בעלים מהתרומה, ולכן אפשר לגבאי לשנות אך ורק לדבר מצווה?<o:p></o:p></p><p class="MsoNormal" dir="RTL">ועוד קשה שהרא"ש מצד אחד כתב שבערכין ו: הגורם שמשנה התרומה הוא
+הצבור, ולכן למד שבערכין ו. הצבור יכול לשנות לכל דבר מה שאין כן הגבאי, ומאידך
+כתב שהגורם המשנה בערכין ו: הוא הגבאים ולכן למד משם שבערכין ו. הגבאי יכול לשנות
+לדבר מצווה כמו בערכין ו: אע"פ שכתוב בערכין ו. "משבאת לידי גבאי אסור
+לשנותה"?<o:p></o:p></p><p class="MsoNormal" dir="RTL">עיון בדברי הרא"ש מראה שהרא"ש ציין לשתי פיסקאות שונות
+בערכין ו: באחד הוא כתב שהגורם המשנה הוא הצבור, ובשני כתב שהגורם המשנה הוא
+הגבאים.<o:p></o:p></p><p>נאמר בערכין ו: א. "ת"ר ישראל שהתנדב מנורה או נר לבית
+הכנסת אסור לשנותה... לא שנו אלא לדבר הרשות אבל לדבר מצוה מותר לשנותה..." ב.
+אחר הפיסקה הנ"ל יש שם מעשה ש"עזרק טייעא אינדב שרגא לבי כנישתא... שנייה
+חזני דפומבדיתא ואיקפד רחבא..."<br></p><p class="MsoNormal" dir="RTL">יש כאן שתי פיסקאות. הרא"ש הבין שבפסקה הראשונה הגורם המשנה הוא
+הצבור ובפסקה השניה הגורם המשנה הוא הגבאים כמו שכתוב שם מפורשות "שנייה חזני
+דפומבדיתא".<o:p></o:p></p><p class="MsoNormal" dir="RTL">בפסקה הראשונה נאמר החילוק בין נשתקע ללא נשתקע שבנשתקע אפשר לשנות
+לדבר רשות ובלא נשתקע רק לדבר מצווה – וכל זה נאמר בצבור שבא לשנות.<o:p></o:p></p><p class="MsoNormal" dir="RTL">בפסקה השניה מדובר בשנוי כאשר נשתקע שם התורם, ולפי הרא"ש מדובר
+בשנוי לדבר מצוה, כמו שהוא כתב ולמד משם שמה שנאמר בערכין ו. "משבאת לידי
+גבאי אסור לשנותה" היינו לדבר רשות אבל מותר לשנותה לדבר מצוה. <o:p></o:p></p><p class="MsoNormal" dir="RTL">יוצא:<o:p></o:p></p><p class="MsoListParagraphCxSpFirst" dir="RTL"><!--[if !supportLists]--><span lang="HE">א.&nbsp; &nbsp; &nbsp; גבאי יכול לשנות אך ורק לדבר מצוה אפילו אם נשתקע שם תורם ממנו.<o:p></o:p></span></p><p class="MsoListParagraphCxSpMiddle" dir="RTL"><!--[if !supportLists]--><span lang="HE">ב.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>רק צבור יכול לשנות לדבר הרשות אם נשתקע שם תורם ממנו, לגבאי אין
+יכולת כזו.<o:p></o:p></span></p><p class="MsoListParagraphCxSpLast" dir="RTL"><!--[if !supportLists]--><span lang="HE">ג.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>צבור יכול לשנות לדבר רשות רק אם נשתקע שם התורם ממנו. אם לא נשתקע שם
+התורם ממנו, גם צבור לא יכול לשנות לדבר רשות.<o:p></o:p></span></p><p class="MsoNormal" dir="RTL">וכל המסקנות הנ"ל כתובות בפסיקת השו"ע הנ"ל <span id="ogen19" class="ogen ogen19-dest">יו"ד רנט,ג:<o:p></o:p></span></p><blockquote><p class="MsoNormal" dir="RTL">"ישראל שהתנדב נר או מנורה לבית הכנסת אם נשתקע שם בעלים מעליה...
+יכולים הצבור לשנותה אפילו לדבר רשות... ואם לא נשתקע שם בעליה מעליה אין יכולין
+לשנותה לדבר רשות אבל לדבר מצוה יכולים לשנותה..."<o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">מבואר שגם צבור לא יכול לשנות נדבה שלא נשתקע שם התורם ממנה לדבר רשות
+ודווקא צבור יכול לשנות נדבה שנשתקע שם התורם ממנה לדבר רשות מה שאין כן גבאי.
+וכ"כ שם הש"ך ט ד"ה יכולין הצבור וכו':<o:p></o:p></p><blockquote><p class="MsoNormal" dir="RTL">"דוקא צבור אבל גבאי לא".<o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">לגבי הדין שגבאי יכול לשנות צדקה לדבר מצוה, למעלה, לא מוזכר
+בשו"ע אבל הש"ך רנט,א כתב כן בשם הרא"ש הנ"ל וכתב
+שהמהרי"ק כתב שכן עיקר.<o:p></o:p></p><p class="MsoNormal" dir="RTL">נראה שבנדון דידן דין הגבאים כדין הצבור בגלל שהמזכירות מסרה את בית
+הכנסת לניהול הגבאים וכמעט ולא מתערבת בנעשה בבית הכנסת ולכן דינם כפסיקת
+ה<span id="ogen20" class="ogen ogen20-dest">רמ"א רנו,ד:<o:p></o:p></span></p><blockquote><p class="MsoNormal" dir="RTL">"והוא הדין לגבאי הממונה מבני העיר".<o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">וע"ש בש"ך ח שמדובר בגבאי שהצבור מסמיך לפעול בצדקה כראות
+עיניו. וזה המצב בגבאים בבית הכנסת שבנדון.<o:p></o:p></p><h4 class="MsoNormal" dir="RTL"><b><span lang="HE">סיכום פרק זה:<o:p></o:p></b></span></h4><p class="MsoListParagraphCxSpFirst" dir="RTL"><!--[if !supportLists]--><span lang="HE">א.&nbsp; &nbsp; &nbsp; רק צבור יכול לשנות לדבר רשות אם נשתקע שם התורם ממנו, לגבאים אין
+יכולת זו.<o:p></o:p></span></p><p class="MsoListParagraphCxSpMiddle" dir="RTL"><!--[if !supportLists]--><span lang="HE">ב.<span>&nbsp; &nbsp; &nbsp;&nbsp;</span>צבור יכול לשנות לדבר הרשות רק דבר שנשתקע שם בעלים ממנו. אם לא נשתקע
+אי אפשר לשנות.<o:p></o:p></span></p><p class="MsoListParagraphCxSpMiddle" dir="RTL"><!--[if !supportLists]--><span lang="HE">ג.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>גבאים יכולים לשנות לדבר מצוה בלבד בין נשתקע שם התורם בין לא נשתקע.<o:p></o:p></span></p><p class="MsoListParagraphCxSpLast" dir="RTL"><!--[if !supportLists]--><span lang="HE">ד.&nbsp; &nbsp; &nbsp; גבאים שממונים על ידי הצבור ויש להם יד חפשי לעשות בבית הכנסת כראות
+עיניהם דינם כצבור.<o:p></o:p></span></p><p class="MsoNormal" dir="RTL">נעיין עכשיו בכמה דברים הקשורים לדין נשתקע ולא נשתקע שם התורם מהתרומה.<o:p></o:p></p><h2 class="MsoListParagraph" dir="RTL"><!--[if !supportLists]--><b><span>15.</b>&nbsp; &nbsp;&nbsp;<b>במקרה שלא נשתקע שם התורם, האם הצבור יכול לשנות התרומה לדבר מצווה
+פחות מהמטרה לשמה נתרמה או רק למטרה יותר חשובה?<o:p></o:p></b></span></h2><p class="MsoNormal" dir="RTL">עיין בגמרא שכתוב שאפשר לשנות כלי שלא נשתקע שם בעלים ממנו "לדבר
+מצוה" וכן בשו"ע "אבל לדבר מצוה יכולין לשנות" אין כאן מגבלה
+אם מדובר לדבר מצוה יותר חשוב מהמטרה המקורית או לא.<o:p></o:p></p><p class="MsoNormal" dir="RTL">ועיין ש"ך רנט,יא שציין למרדכי ב"ב תצב שהמהר"ם
+מרוטנברג כתב על דין זה, שאפשר לשנות אפילו לדבר מצוה "דפחותה מניה, דדוקא
+גבי תשמיש קדושה אמרינן מעלין בקודש ולא מורידין". וע"ש בש"ך שהביא
+שהד"מ רנט,ד כתב שהמרדכי חולק על דברי הרא"ש הנ"ל שנפסקו ברנט,ב
+שמי שמתנדב כסף לבית מדרש אסור להשתמש בו לבית הכנסת בגלל שמדובר בפיחות בקדושתם?<o:p></o:p></p><p class="MsoNormal" dir="RTL">לפי הד"מ רואים שיש מחלוקת עקרונית בין הרא"ש ומהר"ם לפי
+הרא"ש יש על בית כנסת קדושה חמורה ולמהר"ם יש על בית כנסת ובית מדרש
+קדושת מצוות בלבד. ומחלוקת זו באה לידי ביטוי בשאלה אם אפשר לשנות ממטרה חשובה
+יותר למטרה קלה או לא. לפי הרא"ש אסור בגלל שיש על הכסף קדושה חמורה ולפי
+מהר"ם מותר.<o:p></o:p></p><p class="MsoNormal" dir="RTL">מיהו הב"ח (מובא בש"ך שם) כתב לחלק בין קדושת בית הכנסת
+עצמה שדינה כתשמישי קדושה ואסור להוריד מקדושתה, לבין הנר והמנורה שהם נשוא הדין
+של המהר"ם שהם אינם חלק מבית הכנסת עצמו אלא באים לשרת המתפללים ולכן דינם
+כתשמישי מצוה. תשמישי מצוה אפשר לשנות למצוה פחותה מהמצווה המקורית.<o:p></o:p></p><p class="MsoNormal" dir="RTL">נראה שיש ראיה ברורה לדברי הב"ח שאין חולק על כך שיש לבית הכנסת
+קדושה חמורה, שהרי מפורש ב<span id="ogen22" class="ogen ogen22-dest">מגילה כו. שאם מכרו בית הכנסת אסור לקנות בדמיו רחוב גם
+לרבי מנחם בר יוסי שסובר שיש על הרחוב קדושה! ע"כ שיש לבית הכנסת קדושה חמורה.
+וכן מפורש במגילה כז. שאסור לעשות מבית מדרש בית כנסת בגלל שקדושתו פחותה.
+ע"כ שיש לבית הכנסת ובית המדרש עצמם דין דבר שבקדושה וכן נפסק מפורש
+באו"ח קנג,א.<o:p></o:p></span></p><p class="MsoNormal" dir="RTL">כאמור לפי הב"ח אין כלל מחלוקת בין הרא"ש והמהר"ם
+במרדכי הנ"ל, אלא יש חילוק בין קדושת מצוות, שבה אפשר לשנות למטרה פחותה,
+לבין קדושה חמורה, שבה אי אפשר לשנות לקדושה פחותה.<o:p></o:p></p><p class="MsoNormal" dir="RTL">ברם עיין ש"ך שם שהביא מהרי"ק קכח שכתב שאין חולק על המהר"ם
+שאפשר לשנות למצוה פחותה, ומה שהרא"ש פסק שאי אפשר לשנות לקדושה קלה זה רק אם
+אי אפשר להשלים החסרון על ידי גבייה אחרת, אבל אם אפשר להשלים הגביה על ידי מגבית
+נוספת אפשר לשנות לקדושה קלה. זאת אומרת המהרי"ק סובר שאין קדושה חמורה על
+גוף המעות שנגבו לבית כנסת או בית מדרש כמו שאין קדושה חמורה על הנר. האיסור לשנות
+לחשיבות קלה יותר, הוא רק מצד התורם שהקצה הכסף לצורך מסוים והוא מקפיד על כך
+שהמטרה שהוא הקציב תעשה. ולכן אסור לשנות. אבל אם אפשר להשיג המטרה על ידי מגבית
+נוספת, מותר לשנות גם לצורך פחות חשוב.<o:p></o:p></p><p class="MsoNormal" dir="RTL">והרי זה נראה כסותר את מה שהוכחנו שלבית הכנסת ובית המדרש יש קדושה חמורה, ולפי המהרי"ק נראה שלכל הדעות אין קדושה חמורה לבית הכנסת?<o:p></o:p></p><p class="MsoNormal" dir="RTL">ברם הש"ך הרגיש בשאלה זו וכתב:<o:p></o:p></p><blockquote><p class="MsoNormal" dir="RTL">"ונראה דסבירא ליה דמעות שהתנדב לצורך בית הכנסת [לא] עדיף
+מתשמישי מצוה כיון שאין שם קדושה על המעות".<o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">פירוש לפירושו הש"ך כתב שיש קדושה על בית הכנסת עצמו אבל לפי המהרי"ק
+הכסף שנגבה לבית הכנסת שאני ואין עליו קדושה חמורה אלא קדושת מצווה כמו המנורה
+והנר.<o:p></o:p></p><p class="MsoNormal" dir="RTL">לפי זה יוצא שיש על בית הכנסת קדושה חמורה לכל הדעות ועל הנר אין
+קדושה חמורה ואפשר לשנותו לשימוש פחות. מחלוקת מהרי"ק וב"ח היא אם יש
+קדושה חמורה על כסף שנגבה לצורך בית הכנסת. לפי מהרי"ק אין קדושה חמורה ולפי
+הב"ח יש.<o:p></o:p></p><p class="MsoNormal" dir="RTL">יש לעיין אמנם בדעת הרמב"ן מובא בר"ן מגילה ח. ד"ה
+ומאן שכתב שז' טובי העיר יכולים להפקיע קדושת בית הכנסת מבית הכנסת ומהמעות שקבלו:<o:p></o:p></p><blockquote><p class="MsoNormal" dir="RTL">"דבית הכנסת עשו אותו כתשמישי מצוה כסוכה ולולב שנזרקין לאחר
+מצותן ובזמן מצוה יש בהם קדושה של כבוד... לפיכך בית הכנסת כל זמן שבני העיר רוצין
+בו נוהגין בו קדושה אפילו בחורבנו שהרי עדיין לא עבר זמן מצותו... אבל כשנמלכו בני
+העיר למכרו... לפי שעבר זמן מצותו ונפקעה קדושתו..."<o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">משמעות הרמב"ן שיש על גוף בית הכנסת קדושת מצוות בלבד?<o:p></o:p></p><p class="MsoNormal" dir="RTL">אלא לא נראה כן בגלל שהרמב"ן כתב בשאלתו שם ש"כיון דשמעתין
+מוכחא דבית הכנסת יש בו קדושה... היאך נמכר..." זאת אומרת מוכח שיש על בית
+הכנסת קדושה חמורה! ובתשובתו הוא ז"ל לא חזר בו מעמדה זו אלא כתב שהחילו על
+הקדושה החמורה, דין קדושת מצוות לעניין זה שאם סיימו להשתמש בבית הכנסת הקדושה
+פוקעת. הרמב"ן לא כתב שעצם הקדושה היא של מצוות אלא שדיני הקדושה החמורה במקרה
+זה דומים לקדושת מצוות לעניין פקיעת הקדושה כאשר נגמר השימוש בחפץ.<b><o:p></o:p></b></p><h4 class="MsoNormal" dir="RTL"><b><span lang="HE">סיכום פרק זה:<o:p></o:p></b></span></h4><p class="MsoNormal" dir="RTL">יש על גוף בית הכנסת קדושה חמורה ולכן אסור להפקיע אותה על קדושה
+פחותה. על הנר והמנורה יש קדושה פחותה שמותר להפקיע על קדושה קלה לפי הב"ח
+ומהרי"ק והש"ך, וכן הלכה, אע"פ שמהד"מ משמע שדין זה של נר
+ומנורה במחלוקת רא"ש ומהר"ם קיימת.<o:p></o:p></p><p class="MsoNormal" dir="RTL">ברם יש לעיין שלמעלה הבאנו דברי הרמב"ם "כלי בית הכנסת כבית
+הכנסת" ומקורו מן הירושלמי שפירט שספסלים ווילונות של בית הכנסת כבית הכנסת.
+משמעות הדבר שיש להם קדושה חמורה כבית הכנסת עצמו. אם כן מאי שנא הנר והמנורה שיש להם
+קדושת מצוות בלבד?<o:p></o:p></p><p class="MsoNormal" dir="RTL">נעיין בשאלה זו בע"ה.<o:p></o:p></p><h2 class="MsoListParagraph" dir="RTL"><!--[if !supportLists]--><b><span>16.</b>&nbsp; &nbsp;&nbsp;<b>למה יש לספסלים ולווילונות של בית הכנסת קדושה חמורה אבל על הנר והמנורה
+רק קדושה קלה? האם דין ארונות הספרים כנר או כספסלים?<o:p></o:p></b></span></h2><p class="MsoNormal" dir="RTL">הב"ח כתב שנר בא לשרת המתפלל ולכן יש עליו קדושת מצוות בלבד.<o:p></o:p></p><p class="MsoNormal" dir="RTL">מיהו זה קשה בגלל שגם הספסלים באים לשרת המתפלל ובכל זאת יש עליהם
+קדושה חמורה?<o:p></o:p></p><p class="MsoNormal" dir="RTL">ונראה לומר שכוונת הב"ח שנר ומנורה אינם נצרכים למתפלל כל כך
+בגלל שרוב התפילות ביום כאשר קיים אור ולכן הם באים לשרת המתפלל ולא נחשבים חלק
+אינטגרלי מבית הכנסת מה שאין כן ספסלים שהם ריהוט של בית הכנסת שאי אפשר בלעדיהם
+ולכן דינם כבית הכנסת עצמו וחלה עליהם קדושה חמורה.<o:p></o:p></p><p class="MsoNormal" dir="RTL">לאור זה יש לעיין בדין ארונות הספרים שבאים לשרת הספרים והסדורים
+ואינם באים לשרת המתפלל כלל אלא הם חלק מריהוט בית הכנסת. מה דינם? כספסלים או
+כמנורה?<o:p></o:p></p><p class="MsoNormal" dir="RTL">והיה נראה שארונות הספרים דינם כווילונות שמוזכרים בירושלמי שיש עליהם
+קדושת בית הכנסת בגלל שגם הם אינם באים לשרת המתפלל אלא ליפות את בית הכנסת ולכן הם
+ריהוט בית הכנסת ועליהם קדושת בית הכנסת. והוא הדין והוא הטעם ארונות הספרים הם
+חלק מריהוט בית הכנסת ואינם באים לשרת המתפלל, היינו אינם באים לשרת אותו בשימוש
+שאינו חיוני, כדי שנאמר שיש עליהם קדושת מצוות בלבד.<o:p></o:p></p><h4 class="MsoNormal" dir="RTL"><b><span lang="HE">סיכום פרק זה:<o:p></o:p></b></span></h4><p class="MsoNormal" dir="RTL">יש על ארונות הספרים בבית הכנסת קדושת בית הכנסת.<o:p></o:p></p><p class="MsoNormal" dir="RTL">יש לעיין עכשיו מה ההבדל בין נשתקע שם התורם מהתרומה ללא נשתקע שמו
+ואם ההבדל הזה נכון גם בדברים שיש בהם קדושה חמורה?<o:p></o:p></p><h2 class="MsoListParagraph" dir="RTL"><!--[if !supportLists]--><b><span>17.</b>&nbsp; &nbsp;&nbsp;<b>מה ההבדל בין נשתקע שם התורם מהתרומה ללא נשתקע? האם ההבדל קיים גם
+בדבר שיש בו קדושה חמורה?</b><b><o:p></o:p></b></span></h2><p class="MsoNormal" dir="RTL">מצאנו בתרומה שלא נשתקע שם התורם ממנה חומרא שלא מצאנו בשאר התרומות. בשאר
+התרומות הצבור יכול לשנות התרומה לדבר רשות וז' טובי העיר יכולים גם לבטל הקדושה
+של בית הכנסת על ידי מכירתו וגם לבטל הקדושה על הכסף שקבלו בעבור המכירה. ברם
+במנורה שלא נשתקע שם התורם ממנה גם הצבור, ונראה שהכוונה לז' טובי העיר במעמד אנשי
+העיר, לא יכול לשנות לדבר הרשות. ונראה שגם מכירת הפריט תוך התנייה שהכסף יהיה
+חולין לא תקפה.<o:p></o:p></p><p class="MsoNormal" dir="RTL">לעומת זאת כאשר נשתקע שם התורם מהתרומה יש לה דין יותר קל מתרומות
+אחרות שבזה הצבור יכול לשנות את גוף החפץ לדבר הרשות מה שאין כן בבית כנסת או פריט
+אחר עם קדושה, אין בכחו של הצבור לבטל הקדושה מהחפץ עצמו, יש סמכות למכור החפץ
+ולהתנות שלא תהיה קדושה על המעות. עוד קולא, לפי הרמב"ם אין לצבור סמכות
+להתנות לבטל הקדושה ממעות שמקבלים עבור מכר של חפץ שיש בו קדושה. יש לו סמכות
+להתנות אך ורק על מותר המעות שנשאר אם קונים משהוא אחר במקום החפץ הנמכר, ונשאר
+כסף. ובנדון דידן אפשר להתנות על גוף החפץ לשנותו לדבר הרשות.<o:p></o:p></p><p class="MsoNormal" dir="RTL">נדון בשתי המציאויות האלו בע"ה.<o:p></o:p></p><h2 class="MsoListParagraph" dir="RTL"><!--[if !supportLists]--><b><span>18.</b>&nbsp; &nbsp;&nbsp;<b>לא נשתקע שם התורם מהתרומה<o:p></o:p></b></span></h2><p class="MsoNormal" dir="RTL">כתבנו למעלה שדין חפץ שלא נשתקע שם התורם ממנו יותר חמור מחפץ אחר בזה
+שגם ז' טובי העיר במעמד אנשי העיר לא יכולים לבטל הקדושה מהחפץ ואפילו על ידי
+מכירתו והתנייה על הכסף.<o:p></o:p></p><p class="MsoNormal" dir="RTL">ונראה שסיבת הדין נעוצה בבטוי שהגמרא בערכין ו: הנ"ל בוחרת לתיאור
+מצב שלא נשתקע שם התורם מהתרומה. הבטוי הוא "לא נשתקע שם <b>בעלים</b>
+ממנו". ויש לתמוה איך הגמרא קוראת לתורם "בעלים" על החפץ כאשר הוא
+כבר נמצא בידי הגבאי ואין לתורם שום סמכות עליו כמו שנפסק "משבאתה לידי גבאי
+אסור לשנותה"?<o:p></o:p></p><p class="MsoNormal" dir="RTL">ונראה לומר שכוונת הגמרא כאן שאע"פ שהחפץ הגיע לידי הגבאי ובזה
+בדרך כלל מסתיימת בעלות התורם עליו, בנדון דידן שעדיין שם התורם ניכר על החפץ,
+הדין שונה ויש שיור בבעלות של התורם על החפץ אע"פ שנמצא בידי הגבאי. השיור
+הזה בבעלות של התורם שנשאר על החפץ קושרת את ידי הצבור ומונעת מהם לעשות בחפץ
+כראות עיניהם.<o:p></o:p></p><p class="MsoNormal" dir="RTL">וכן משמעות הלשון של הר"ן בב"ב ח: ד"ה רשאין:<o:p></o:p></p><blockquote><p class="MsoNormal" dir="RTL">"...אבל יחיד שהתנדב מנורה או נר, אי אמרינן שלא על דעתן היה
+מתנדב, (היינו כאשר נשתקע שם התורם ממנו) מה להן לשנותה".<o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">רואים שכל עוד לא נשתקע שם התורם מהתרומה, הפריט לא נמסרה לידי הצבור,
+אלא יש שיור של התורם עליו ולכן אי אפשר לשנותו.<o:p></o:p></p><p class="MsoNormal" dir="RTL">ברם אע"פ שהשיור בבעלות התורם מונע מהצבור לשנות החפץ לדבר
+הרשות, גם אם התורם יסכים לשנוי זה, אין בהסכמתו כלום ויהיה אסור לצבור לשנות החפץ
+לדבר הרשות! כך מבואר בש"ך רנט,י שם שכתב שכל הסעיף שאוסר שנוי לדבר רשות
+נאמר כאשר התורם מסכים לשנוי זה! עיין שם שהש"ך ביאר בכך את דברי המרדכי ב"ב
+תצב שהתיר שנוי בחפץ שנתרם כאשר הוא עדיין במצב של הזמנה, היינו קודם שהספיקו
+להשתמש בו, והש"ך ביאר שזה דוקא בהסכמת התורם. בלי הסכמתו אסור שנוי גם לפני השימוש.
+מכאן שאחרי שהשתמשו בחפץ, אסור השנוי גם בהסכמת התורם! ושם כתוב שגם לצבור אסור
+לשנות! יוצא שאסור לצבור לשנות חפץ שלא נשתקע שם התורם ממנו גם אם התורם מסכים!<o:p></o:p></p><p class="MsoNormal" dir="RTL">ונראה מכאן שכל ששם בעלים עליו, יש לחפץ קדושה שלא מאפשרת לשנותו לדבר
+רשות, אף על פי שהתורם מרשה לשנות. ועיין במקורות וציונים ברמב"ם פרנקל,
+מתנות עניים ח,ז בשם שו"ת ר"א מזרחי מג:<o:p></o:p></p><blockquote><p class="MsoNormal" dir="RTL">"שכל ששם בעלים עליה אם משנים לחול איכא קצת חילול השם שנראה
+מוציאים אותה מקדושתה..." <o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">מאידך מותר לשנות לדבר מצוה ואפילו לשימוש פחות מהשימוש המקורי אם
+מדובר במנורה או נר כמו שכתבנו למעלה, בגלל שיש עליהם קדושת מצוות בלבד. מיהו
+ארונות ספרים אסור לשנות לשימוש פחות בגלל שיש להם קדושה חמורה כמו שכתבנו.<o:p></o:p></p><h4 class="MsoNormal" dir="RTL"><b><span lang="HE">סיכום פרק זה:<o:p></o:p></b></span></h4><p class="MsoNormal" dir="RTL">פריט שהתנדבו ושם התורם לא נשתקע ממנו אסור לשנותו לדבר רשות אפילו אם
+הצבור רוצה בכך ואפילו אם התורם עצמו מסכים לכך.<o:p></o:p></p><p class="MsoNormal" dir="RTL">נדון עכשיו בנשתקע שם התורם מהתרומה.<o:p></o:p></p><h2 class="MsoListParagraph" dir="RTL"><!--[if !supportLists]--><b><span>19.</b>&nbsp; &nbsp;&nbsp;<b>נשתקע שם התורם מהתרומה<o:p></o:p></b></span></h2><p class="MsoNormal" dir="RTL">כתבנו שאם נשתקע שם התורם מהתרומה הצבור יכול לשנות הפריט לדבר הרשות,
+ומשמעות הדברים שהצבור יכול למסור גוף הפריט לדבר רשות אף על פי שבדרך כלל צריך
+לפדות הקדושה על דבר אחר ואז אפשר להתנות על גוף הדבר שהתקבל תמורתו. אי אפשר לבטל
+הקדושה מגוף החפץ בלי פדיון. כאן שאני ומסמכות הצבור לבטל הקדושה מגוף החפץ גם בלי
+פדיון.<o:p></o:p></p><p class="MsoNormal" dir="RTL">ועיין רא"ש ב"ב א,כט כאשר בא לפרש הדין שהצבור יכול לשנות
+קופה לכל דבר, שמקורו מדין פריט שנשתקע שם התורם ממנו כתב:<o:p></o:p></p><blockquote><p class="MsoNormal" dir="RTL">"והטעם לפי שהמתנדב להביא ליד צבור על דעת הצבור הוא
+מתנדב".<o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">והדבר בא ללמד ונמצא למד, שזה גם הטעם של נשתקע שם התורם ממנו.<o:p></o:p></p><p class="MsoNormal" dir="RTL">וכעין זה כתבו ראשונים אחרים. <o:p></o:p></p><p class="MsoNormal" dir="RTL">עיין מאירי בב"ב שם ח: ד"ה זה שכתב:<o:p></o:p></p><blockquote><p class="MsoNormal" dir="RTL">"ואם נשתקע אף לדבר הרשות מותר. טעם הדבר מפני שאותו הקדש היה
+לצורך בית הכנסת ובית המדרש צורך בני העיר הוא, וברשות שלהם הוא שהרי יש להם רשות
+למכרה אף למשתי ביה שכרא".<o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">ועיין בר"ן שם ד"ה ורשאין:<o:p></o:p></p><blockquote><p class="MsoNormal" dir="RTL">"...אלא הכל תלוי בדעתם והכא נמי מוכח מערכין ו:.. אם נשתקע שם
+בעליה מותר לשנותה אפילו לדבר רשות. וליכא למימר דצרכי בית הכנסת (שאני) לפי שאף
+בית הכנסת עצמו מוכרין אפילו למישתא ביה שכרא? דכי אמרינן הכי הני מילי בבית הכנסת
+דידהו, אבל יחיד שמתנדב מנורה או נר, אי אמרינן שלא על דעתן היה מתנדב מה להן
+לשנותה?! אלא ודאי טעמא דמילתא כדאמרינן שכל המתנדב ומוסר לפרנסי הציבור על דעתן
+הוא מתנדב... שכל מה שאדם מתנדב לבית הכנסת כגון נר ומנורה וספר תורה וכיוצא בזה
+על דעת בני העיר הוא מתנדב..."<o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">נמצאנו למדין שכאשר נשתקע שם התורם מהתרומה, המתנדב מוסר אותו לידי
+הצבור לעשות בו כרצונם הטוב, ואפילו לדבר הרשות ואפילו באופן יותר קל מבית הכנסת
+עצמו, ששם צריך למכור ולפדות הקדושה מה שאין כן בנדון זה שאפשר להשתמש בגוף הדבר
+לדבר הרשות בלי פדיון כלל כמו שראינו שר"ת למד מדין זה לשלם לשומרי העיר
+בכספי קופה. וזה שימוש ישיר בכסף לצורך אחר. ומקורו ממנורה. משמע שמותר לשנות המנורה
+עצמה לדבר רשות בלי פדיון בגלל שהמתנדב על דעת הצבור מתנדב.<o:p></o:p></p><p class="MsoNormal" dir="RTL">מיהו יש לעיין. הדין הנ"ל מובן במנורה ונר שיש עליהם קדושת מצוות
+בלבד כמו שהבאנו למעלה בשם המרדכי, וממילא דינם "תשמישי מצוה נזרקין"
+כמו שכתוב במגילה כח: ולכן אחרי שנשתקע שם בעלים מהם והם נמסרו לצבור והצבור מחליט
+שתם שימושם, אפשר להשתמש בגוף הדבר לחולין. אבל מה נאמר בארונות הספרים שיש בהם
+קדושה חמורה? האם גם בהם נומר שהצבור יכול לעשות בהם כרצונם ולבטל גוף הקדושה מהם
+גם בלי פדיון?<o:p></o:p></p><p class="MsoNormal" dir="RTL">נדון בשאלה זו עכשיו בע"ה.<o:p></o:p></p><h2 class="MsoListParagraph" dir="RTL"><!--[if !supportLists]--><b><span>20.</b>&nbsp; &nbsp;&nbsp;<b>האם הצבור יכולים לבטל הקדושה מגוף ארונות הספרים כאשר לא נשתקע שם
+בעלים מהם, לפי מה שקבענו שיש בהם קדושה חמורה?<o:p></o:p></b></span></h2><p class="MsoNormal" dir="RTL">עיין בציטוט מהר"ן למעלה שהוא ז"ל כלל דין ספר תורה וכיוצא בו
+עם דין נר ומנורה, משמע שדינם שווה ובכולם הצבור יכול לבטל הקדושה מגוף הדבר. וז"ל:<o:p></o:p></p><blockquote><p class="MsoNormal" dir="RTL">"שכל מה שאדם מתנדב לבית הכנסת כגון נר ומנורה וספר תורה וכיוצא
+בזה על דעת בני העיר הוא מתנדב..."<o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">משמעות הדבר שדין כולם שווה וכמו שבסמכות הצבור לבטל הקדושה מנר או
+מנורה כך בסמכותם לבטל הקדושה מפריט שיש בו קדושה חמורה בגלל שכן גם הוא ניתן על
+דעת הצבור.<o:p></o:p></p><p class="MsoNormal" dir="RTL">מיהו יש לעיין שכל זה נכון בחפצים שאפשר לבטל קדושתם כגון נר ומנורה
+אבל איך דין זה בא לידי ביטוי בספר תורה? ברור שאי אפשר לבטל קדושת ספר תורה!<o:p></o:p></p><p class="MsoNormal" dir="RTL">והיה נראה שכוונת הר"ן כאן שהצבור יכול למכור הספר תורה אחרי
+שנשתקע שם בעלים ממנו ולהשתמש בכסף לכל מטרה שנראה להם. וזה כעין הדעה הראשונה
+שהמחבר הביא באו"ח קנג,י שיחיד שקונה ספר תורה יכול למכור אותו ולהשתמש בדמיו
+למה שרוצה בגלל שעל שלו יש ליחיד כח של ז' טובי העיר במעמד אנשי העיר ויכול להתנות
+על הדמים וכו'.<o:p></o:p></p><p class="MsoNormal" dir="RTL">ונראה שזו כוונת הר"ן כאן שאחרי שנשתקע שם התורם, ספר התורה נמסר
+לידי הצבור לעשות בו כרצונם ואפילו למכור ולהשתמש בדמיו למה שירצו.<o:p></o:p></p><p class="MsoNormal" dir="RTL">ובזה מתורצת קושיית המ"א שם מובא במ"ב סא שתמה על המנהג
+שהצבור מוכרים ספרי תורה שנתרמו לבית הכנסת:<o:p></o:p></p><blockquote><p class="MsoNormal" dir="RTL">"וצריך עיון על מה סומכין העולם שמוכרין ספר תורה ומשתמשין
+בדמיהן אפילו נתנו לבית הכנסת?"<o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">ולפי מה שכתבנו זו שיטת הר"ן כאן שאחרי שנשתקע שם בעלים מן
+התרומה הצבור יכול לעשות בו ובדמיו מה שירצו ואפילו דבר רשות בגלל שהיחיד מוסר
+החפץ לצבור לגמרי.<o:p></o:p></p><p class="MsoNormal" dir="RTL">ועיין שם ב"מ סב שי"א שגם הדעה השניה שמובאת במחבר שם שאוסרת
+על יחיד למכור ספר תורה של עצמו ולעשות כרצונו בכסף, מודה שבתשמישי קדושה מותר. אם
+כן לפי מה שכתבנו כאן, בדברים שיש עליהם קדושת בית הכנסת בלבד, שאפשר לבטל, יהיה
+מותר לבטל קדושתם כאשר נשתקע שם התורם מהם לכל הדעות.<o:p></o:p></p><p class="MsoNormal" dir="RTL">מיהו כל זה נאמר על חפצים כגון נר ומנורה וספר תורה וכיוצא בהם. אבל
+בבית הכנסת עצמו לא מצאנו חילוק בין נשתקע שמו של התורם ללא נשקע. בית כנסת אסור
+למכור בכל אופן אפילו אם נתרם ונשתקע שם התורם ממנו אלא על פי דין. <o:p></o:p></p><h4 class="MsoNormal" dir="RTL"><b><span lang="HE">סיכום פרק זה:<o:p></o:p></b></span></h4><p class="MsoNormal" dir="RTL">יש בסמכות הצבור לבטל קדושה גם בדברים שיש עליהם קדושת בית כנסת, כגון
+ארונות ספרים, לאחר שנשתקע שם בעלים מהם. <o:p></o:p></p><h2 class="MsoListParagraph" dir="RTL"><!--[if !supportLists]--><b><span>21.</b>&nbsp; &nbsp;&nbsp;<b>האם הצבור יכול לשנות יעוד של דבר שנשתקע שם בעלים ממנו רק לצורכי
+העיר או גם לצורך פרטי?<o:p></o:p></b></span></h2><p class="MsoNormal" dir="RTL">עיין ב<span id="ogen24" class="ogen ogen24-dest">יו"ד רנו,ד שצבור יכול לשנות תמחוי וקופה "לכל מה
+שיראה לו מצרכי צבור". ברנט,ג המחבר כתב סתם:<o:p></o:p></span></p><blockquote><p class="MsoNormal" dir="RTL">"יכולין הצבור לשנותו אפילו לדבר הרשות".<o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">המחבר לא ציין כאן שצריך דווקא לצרכי צבור. האם להשליך מה שנאמר בסימן
+רנו על הנאמר בסימן רנט ונאמר שאם נשתקע שם בעלים ממנו מותר רק לצורכי ציבור?<o:p></o:p></p><p class="MsoNormal" dir="RTL">והיה נראה שלשון המחבר מדויקת בזה ואפשר לשנות דבר שנשתקע שם התורם ממנו
+גם לדבר רשות שאינו צרכי צבור הואיל וניתן על דעת הצבור.<o:p></o:p></p><p class="MsoNormal" dir="RTL">ואף על פי שמקור הדין ברנו,ד הוא מהגמרא בערכין ו. הנ"ל, ואם כן
+יוצא שהנלמד יותר חמור מאיפה שנלמד ממנו, נראה ששאני קופה ותמחוי שהם צרכים
+מובהקים של העיר ולכן שם צריכים לשמור את ייעודם העיקרי מה שאין כן תרומה לבית
+הכנסת שהיא על דעת הצבור, כאשר הצבור מפקיעים הקדושה מעל הפריט, הם יכולים למסור
+הפריט גם לדבר רשות שאינו צרכי צבור.<o:p></o:p></p><h4 class="MsoNormal" dir="RTL"><b><span lang="HE">סיכום פרק זה:<o:p></o:p></b></span></h4><p class="MsoNormal" dir="RTL">הצבור יכולים למסור דבר שנשתקע שם התורם ממנו גם לדבר רשות שאינו צרכי
+צבור.<o:p></o:p></p><p class="MsoNormal" dir="RTL">עכשיו יש לעיין מה נכלל במושג "לשנותה"? האם הצבור יכול
+למכור הפריט? או רק לשנות היעוד של הפריט אבל אסור יהיה למכור אותו?<o:p></o:p></p><p class="MsoNormal" dir="RTL">נעיין בשאלה זו עכשיו בע"ה.<o:p></o:p></p><h2 class="MsoListParagraph" dir="RTL"><!--[if !supportLists]--><b><span>22.</b>&nbsp; &nbsp;&nbsp;<b>מה פירוש המונח "לשנותה"? האם מכר בכלל או רק מסירת החפץ כמות
+שהוא? <o:p></o:p></b></span></h2><p class="MsoNormal" dir="RTL">כבר כתבנו שפירוש "לשנותה" היינו למצוא ייעוד חדש לאותו
+פריט. לפי"ז כתבנו שאם נשתקע שם התורם מהתרומה מותר למסור הפריט לשימוש של
+רשות וגם לשימוש פרטי ואם לא נשתקע שם התורם מותר למסור הפריט למצווה אחרת.<o:p></o:p></p><p class="MsoNormal" dir="RTL">כך דייקנו ממה שר"ת למד מהדין בערכין ו: שמה שכתוב בב"ב
+"ולשנותה לכל דבר" לגבי קופה ותמחוי פירושו שאפשר להשתמש בכספי הקופה
+לשומרי העיר. שם יש שימוש ישיר ואחר בגוף הדבר הנתרם בלי פדיון. וכן גם ארונות
+הספרים שנשתקע שם התורם מהם מותר יהיה למסור אותם לשימוש ביתי של אדם פרטי.<o:p></o:p></p><p class="MsoNormal" dir="RTL">יש לעיין אם מותר למכור החפץ ולהשתמש בכסף לדבר מצווה כאשר לא נשתקע
+שם הבעלים מהם? זה נראה יותר חמור בגלל שגוף החפץ שעליו השלט יפסיק לשמש עלוי נשמה
+וההנצחה תלך לאיבוד מה שאין כן כאשר גוף החפץ עם השילוט נמסר לשימוש אחר כמות
+שהוא.<o:p></o:p></p><p class="MsoNormal" dir="RTL">כבר כתבנו שהצבור לא יכול להתנות לבטל הייעוד של התרומה "למישתי
+בה שכרא" כדין מכירת בית הכנסת בגלל שכאן שם התורם עליה ולכן ברור שיהיה לכסף
+אותו דין של הפריט עצמו. השאלה היא אם אפשר למכור הפריט ובזה מבטלים את "שם בעליו
+ממנו" שהרי עכשיו הקדושה חלה על הכסף, ואין זיהוי בין התורם לכסף או לשימוש
+החדש שיעשו בכסף? וכן אם מדובר בהנצחה, מתבטל השלט וההנצחה שהיתה עליו?<o:p></o:p></p><p class="MsoNormal" dir="RTL">נראה שמותר לצבור למכור הפריט ולהשתמש בכסף למצוה אחרת אף על פי שבזה
+מתבטל "שם בעליו ממנו". וראיה משו"ת הרא"ש יג,יד שנפסק ברנט,ב
+הנ"ל.<o:p></o:p></p><p class="MsoNormal" dir="RTL">הרא"ש שם כתב שמותר לשנות כסף שהתנדב לצורך בניית בית כנסת, לממן
+לימוד תורה במקום, בגלל שלימוד תורה הוא מטרה יותר חשובה מבית כנסת, אף על פי שיש
+על כסף זה דין "לא נשתקע שמו ממנו" כמו שהט"ז הנ"ל רנט,ה כתב.<o:p></o:p></p><p class="MsoNormal" dir="RTL">ברם כאשר משתמשים בכסף זה לממן לימוד תורה במקום, ברור שמבטלים שם
+התורם מהכסף לטווח הארוך! בית כנסת יעמוד שנים רבות ותהיה הנצחה של שם התורם בבית
+הכנסת לאורך זמן, מה שאין כן במימון לימוד תורה, שם השימוש כלה שאחרי זמן הלימוד
+כבר לא יזכרו את התורם כלל. ובכל זאת הרא"ש התיר ואמת המידה היחידה שלו
+ז"ל היתה אם השימוש יותר חשוב מהשימוש המקורי או לא והוא ז"ל הבין שדעת
+התורם לעשות בכסף מה שההלכה קובעת שמותר.<o:p></o:p></p><p class="MsoNormal" dir="RTL">לפי זה היה נראה שמותר למכור פריט שלא נשתקע שם בעליו ממנו ולהשתמש
+בכסף לצורך מצווה, אף על פי שעל ידי זה מתבטל שם התורם מהפריט – כיוון שאין שם
+התורם על הפריט או השימוש החדש שהרי מדובר בדבר חדש שאף פעם לא היה מזוהה עם התורם
+ואם כן איך יהיה שם התורם עליו?!<o:p></o:p></p><p class="MsoNormal" dir="RTL">לפי זה יוצא שהעדיפות שמעניק שם התורם המופיע על החפץ היא החלת דין
+חמור על החפץ שמונע מהצבור לבטל הקדושה מעל החפץ גם על ידי מכירתו והתנייה על
+הכסף. שם התורם על החפץ אינו מתכון לשימור ההנצחה על החפץ לעולמי עולמים. אצל נכרי
+ש"פעי" כל עוד שם התורם על החפץ אסור למכור את החפץ או לפגוע בהנצחת שמו
+של הנכרי. אבל אצל ישראל שציית דינא, אין מטרת שם התורם על החפץ לשמר לנצח את שמו
+על החפץ, אלא מטרת שמו עליו היא למנוע ביטול הקדושה על ידי הצבור.<o:p></o:p></p><h4 class="MsoNormal" dir="RTL"><b><span lang="HE">סיכום פרק זה:<o:p></o:p></b></span></h4><p class="MsoNormal" dir="RTL">מותר לצבור למכור חפץ ששם התורם עליו אבל עליהם להשתמש בכסף לצורך
+מצוה. אם מדובר בפריט שדין קדושת מצוות עליו אפשר להשתמש למצווה פחותה ואם קדושה
+חמורה עליו חובה להשתמש למטרה יותר חשובה. נדון אם מותר להשתמש למטרה באותה רמת
+חשיבות של הפריט המקורי בהמשך בע"ה.<o:p></o:p></p><p class="MsoNormal" dir="RTL">נדון עכשיו בשאלה אם הצבור יכול לזרוק הפריט שנשתקע שם התורם ממנו לפח
+או להשאירו בחוץ להתקלקל מעצמו? ומה הדין בלא נשתקע שם התורם ממנו?<o:p></o:p></p><h2 class="MsoListParagraph" dir="RTL"><!--[if !supportLists]--><b><span>23.</b>&nbsp; &nbsp;&nbsp;<b>האם מותר לזרוק את הפריט לפח או להפקירו שיתקלקל בחוץ?<o:p></o:p></b></span></h2><p class="MsoNormal" dir="RTL">אם לא נשתקע שם התורם מהחפץ ברור שאי אפשר להשליך החפץ לפח האשפה שהרי
+קדושה עליו! כתבנו כבר שהצבור לא יכולים להפקיע הקדושה מהחפץ וגם לא מעל המעות
+שקבלו על ידי מכירה החפץ – קל וחומר שאי אפשר יהיה לזרוק החפץ לפח!<o:p></o:p></p><p class="MsoNormal" dir="RTL">וכן נראה שאסור להשאיר החפץ בחוץ עד שיתקלקל בגלל שגם בזה יש זלזול
+בקדושת הפריט. ואף על פי שמצאנו שכך נוהגים בקדשים "ירעה עד שיסתאב"
+וכדומה, כך עושים כאשר אסור השימוש בחפץ והוא מהווה מכשול לרבים, אבל חפץ שיש בו
+שימוש אסור להשאיר בחוץ כדי שיתקלקל.<o:p></o:p></p><p class="MsoNormal" dir="RTL">ונראה שהוא הדין אם נשתקע שמו ממנו. אף על פי שהדין הוא שאפשר לשנותו
+לדבר רשות, אין זה אומר שאפשר לזרוק אותו לפח או להשאירו בחוץ להתקלקל. צריך למצוא
+לו פתרון הולם לפי הכללים הנ"ל.<o:p></o:p></p><p class="MsoNormal" dir="RTL">מיהו אם נשתקע שמו מעליו והחפץ הוא במצב כזה שאף אחד לא רוצה לקבלו,
+נראה שאפשר לשים אותו במקום צנוע, הואיל וזה דומה לקדשים שאין להם שימוש שדינם
+"ירעה עד שיסתאב" וצ"ע.<o:p></o:p></p><h4 class="MsoNormal" dir="RTL"><b><span lang="HE">סיכום פרק זה:<o:p></o:p></b></span></h4><p class="MsoNormal" dir="RTL">אסור לזרוק פריט שנתרם לבית הכנסת לפח, בין אם נשתקע שם התורם ממנו
+בין אם לאו והוא הדין שאסור להשאיר החפץ בחוץ להתקלקל.<o:p></o:p></p><p class="MsoNormal" dir="RTL">מיהו אם נשתקע שם התורם ממנו והחפץ הוא במצב שאף אחד לא רוצה אותו.
+נראה שאפשר להניח אותו במקום צנוע להתקלקל, ואז יהיה מותר לזרוק אותו.<o:p></o:p></p><p class="MsoNormal" dir="RTL">עכשיו נדון בשאלה אם מותר לשנות פריט שלא נשתקע שם התורם ממנו ויש בו
+קדושה חמורה לשימוש שחשיבותו זהה לחשיבות השימוש המקורי או רק לשימוש יותר חשוב?<o:p></o:p></p><h2 class="MsoListParagraph" dir="RTL"><!--[if !supportLists]--><b><span>24.</b>&nbsp; &nbsp;&nbsp;<b>האם מותר לשנות יעוד חפץ שלא נשתקע שם התורם ממנו לשימוש זהה בחשיבותו לשימוש המקורי או
+רק לשימוש יותר חשוב?</b><b><o:p></o:p></b></span></h2><p class="MsoNormal" dir="RTL">עיין <span id="ogen26" class="ogen ogen26-dest">או"ח קנג,ד שם מופיעות שתי דעות אם מותר לקנות בדמי קדושה
+אחת דבר שקדושתו זהה לקדושה הראשונה או לא. הי"א הראשון אוסר והי"א השני
+מתיר. וע"ש בביאור הלכה שהפרי מגדים הכריע כשיטה השניה בגלל שהיא בתרייתא אבל
+הביאור הלכה כתב שהמאירי כתב שרוב הגאונים סוברים שצריך עילוי דוקא. ועיין
+מ"ב י שכל זה בדיעבד כאשר כבר מכרו אבל אסור לכתחילה למכור כדי לקנות דבר
+באותה רמת קדושה אלא אם כן הראשון היה מקולקל או קטן מדי, אבל בשביל יפה ממנו אסור
+למכור.<o:p></o:p></span></p><p class="MsoNormal" dir="RTL">מותר למכור כדי להשתמש בכסף למטרה יותר חשובה מהמטרה המקורית. וכן
+מותר לפדות הפריט על כסף כדי להשתמש בכסף למטרה יותר חשובה כדין מכר.<o:p></o:p></p><p class="MsoNormal" dir="RTL">מיהו ברור שמותר למסור החפץ כמות שהוא לשימוש זהה לזה שהיה בו
+וכ"כ מ"ב קנג,סז.<o:p></o:p></p><h4 class="MsoNormal" dir="RTL"><b><span lang="HE">סיכום פרק זה:<o:p></o:p></b></span></h4><p class="MsoNormal" dir="RTL">אסור למכור את ארונות הספרים כדי לקנות חדשים אלא אם כן הראשונים היו
+מקולקלים או שאינם מכילים מספיק אבל לייפוי אסור.<o:p></o:p></p><p class="MsoNormal" dir="RTL">מותר למכור אותם כדי לקנות משהוא יותר חשוב כגון ספרים או סדורים.<o:p></o:p></p><p class="MsoNormal" dir="RTL">כמו כן מותר לפדות הפריט על שוויו ולהשתמש בכסף למטרה יותר חשובה
+מהמנטרה המקורית.<o:p></o:p></p><p class="MsoNormal" dir="RTL">מותר למסור הפריט כמות שהוא לשימוש באותה קדושה.<o:p></o:p></p><p class="MsoNormal" dir="RTL">נדון עכשיו בשאלה אם הצבור יכול ליתן הפריט שלא נשתקע שם התורם ממנו
+במתנה? האם יש בזה שימור הקדושה או לא?<o:p></o:p></p><h2 class="MsoListParagraph" dir="RTL"><!--[if !supportLists]--><b><span>25.</b>&nbsp; &nbsp;&nbsp;<b>האם מותר לצבור ליתן הפריט במתנה לאחר?<o:p></o:p></b></span></h2><p class="MsoNormal" dir="RTL">עיין <span id="ogen27" class="ogen ogen27-dest">מגילה כו. שם כתוב שמותר ליתן בית כנסת במתנה לאחר ויש בזה פדיון
+הקדושה:<o:p></o:p></span></p><blockquote><p class="MsoNormal" dir="RTL">"אי לאו דהוה ליה הנאה מיניה לא הוה יהיב ליה הדר הוה ליה מתנה
+כמכר".<o:p></o:p></p></blockquote><p class="MsoNormal" dir="RTL">מיהו עיין מ"ב קנג,מה שיש מחלוקת ראשונים בזה. לדעת הרי"ף, הרא"ש
+והר"ן מותר רק על ידי שבעה טובי העיר במעמד אנשי העיר. ולפי הרמב"ן, הריטב"א
+והרשב"א מספיק ז' טובי העיר.<o:p></o:p></p><p class="MsoNormal" dir="RTL">לפי הדעה שצריכים בזה ז' טובי העיר ומעמד אנשי העיר, יש במתנה זו
+ירידה בקדושה ולכן צריך שדווקא אלו יתנו המתנה בגלל שיש בכוחם לבטל קדושה מהדבר
+עצמו שניתן כמו שראינו למעלה. לפי הדעה השניה, המתנה בעצמה דינה כפדיון מהסיבה
+המובאת בגמרא.<o:p></o:p></p><p class="MsoNormal" dir="RTL">לפי מה שהוכחנו למעלה שבדבר שלא נשתקע שם התורם ממנו, אין סמכות גם
+לז' טובי העיר במעמד אנשי העיר להוריד מקדושתו, אסור יהיה ליתנו במתנה גם אם הצבור
+מסכים לכך. מיהו לדעה השניה יהיה מותר.<o:p></o:p></p><p class="MsoNormal" dir="RTL">נראה להכריע כאן שאסור ליתן במתנה משתי סיבות:<o:p></o:p></p><p class="MsoListParagraphCxSpFirst" dir="RTL"><!--[if !supportLists]--><span lang="HE">א.&nbsp; &nbsp; &nbsp; המ"ב הביא דעה זו בסתם והמתירים בתור "ויש אומרים".<o:p></o:p></span></p><p class="MsoListParagraphCxSpMiddle" dir="RTL"><!--[if !supportLists]--><span lang="HE">ב.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>גם לפי הדעות שמתנה כמכר עדיין יש מחלוקת. לפי הרמב"ן (מובא
+בר"ן ח. בדפי הרי"ף) שהוא מהמתירים הנ"ל סובר:<o:p></o:p></span></p><blockquote><p class="MsoListParagraphCxSpMiddle" dir="RTL"><span dir="RTL"><span dir="RTL">"אי לאו דיהיב להו מידי דדבר מצוה כגון
+תיבה ומטפחות או ספרים לא היו נמלכין טובי העיר לתת לו בית הכנסת זו".<o:p></o:p></span></span></p></blockquote><p class="MsoListParagraphCxSpMiddle" dir="RTL">זאת אומרת שמותר רק אם יש להניח שהגבאים נתנו להמקבל החפץ בגלל שהוא
+כבר נתן בעבר חפצי מצוה לבית הכנסת. וע"ש שהר"ן חולק וכתב:<o:p></o:p></p><blockquote><p class="MsoListParagraphCxSpMiddle" dir="RTL"><span lang="HE">"אההיא הנאה דהוו להו מיניה שהרי הן כמחוייבים לשלם לו גמול וכיון
+דמפקעה אמידי דהיינו ההיא הנאה אע"פ שיצאה לחולין אין בכך כלום שרשאין הן בכך
+ז' טובי העיר במעמד אנשי העיר".<o:p></o:p></span></p></blockquote><p class="MsoListParagraphCxSpMiddle" dir="RTL">לפי ההסבר של הרמב"ן יהיה אסור ליתן ארונות הספרים כמתנה כדי
+להפקיע קדושתם, בגלל שברור שהגבאים ירצו להפטר מארונות ספרים אלו באופן הכי מהיר
+וודאי שלא מתקיימת בזה האומדנא של הרמב"ן שהגבאים רק יתנו למי שכבר קבלו ממנו
+חפצי מצווה. לפי ההסבר של הר"ן אולי יהיה מותר בגלל שסוף סוף המקבל ירצה
+להטיב עם בית הכנסת שנתן לו מתנה.<o:p></o:p></p><p class="MsoListParagraphCxSpMiddle" dir="RTL">הואיל ולפי הסבר הרמב"ן, שהוא מהמתירים הנ"ל, אסור בנדון
+דידן ליתן ארונות הספרים במתנה, ולפי הדעה הראשונה אסור בכל אופן, נראה להכריע
+שבנדון דידן אסור ליתן ארונות הספרים בתור מתנה.<o:p></o:p></p><p class="MsoListParagraphCxSpLast" dir="RTL">מיהו אם המשתמש ישתמש בארונות הספרים לאותה מטרה שלמענה נתרמו, היינו
+אכסון ספרי קודש, מותר ליתן אותם לכל אדם כמו שהמ"ב פסק קנג,סז.<o:p></o:p></p><h4 class="MsoNormal" dir="RTL"><b><span lang="HE">סיכום פרק זה:<o:p></o:p></b></span></h4><p class="MsoNormal" dir="RTL">אסור ליתן ארונות הספרים שיש עליהם שלטי זכרון במתנה כדי שהמקבל יעשה בהם
+כרצונו. <o:p></o:p></p><p class="MsoNormal" dir="RTL">מותר ליתן אותם אם המקבל ישתמש בהם לאותה מטרה שנתרמו למענה – היינו
+לאכסן ספרי קודש.<o:p></o:p></p><p class="MsoNormal" dir="RTL">אם נשתקע שם בעלים מהם מותר ליתן אותם מתנה ולמקבל מותר להשתמש בהם כל
+שימוש שהוא.<o:p></o:p></p><h2 class="MsoNormal" dir="RTL"><b><span lang="HE">26.&nbsp; &nbsp; סיכום כללי של הפסק:<o:p></o:p></b></span></h2><p class="MsoNormal" dir="RTL"><b><span lang="HE">ארונות ספרים שיש עליהם שלטי זכרון</b> דינם כלא נשתקע שם התורם מהם<b>.<o:p></o:p></b></span></p><p class="MsoNormal" dir="RTL">מותר לגבאים למסור אותם לשימוש זהה לזה שמשמשים כרגע, היינו אכסון
+ספרי קודש.<o:p></o:p></p><p class="MsoNormal" dir="RTL">אסור למסור אותם לשימוש פחות.<o:p></o:p></p><p class="MsoNormal" dir="RTL">מותר למכור אותם ולהשתמש בכסף לצורך יותר חשוב ממה שמשמשים כרגע.<o:p></o:p></p><p class="MsoNormal" dir="RTL">אסור לזרוק אותם לפח או להשאיר אותם במקום שיתקלקלו בו.<o:p></o:p></p><p class="MsoNormal" dir="RTL">אסור ליתן אותם במתנה.<o:p></o:p></p><p class="MsoNormal" dir="RTL">אפשר להחזיר אותם לתורם שהוא יעמוד בכללים הנ"ל.<o:p></o:p></p><p class="MsoNormal" dir="RTL">אפשר לפדות הארונות על כסף, ולהשתמש בכסף למטרה יותר חשובה מזה של ארונות
+הספרים כגון לקנות ספרים או סדורים.<o:p></o:p></p><p class="MsoNormal" dir="RTL">אפשר להוריד השלט מהארונות אם מוכרים אותם או מוסרים אותם כדין
+הנ"ל.<o:p></o:p></p><p class="MsoNormal" dir="RTL"><b><span lang="HE">ארונות ספרים שאין עליהם שלט</b> דינם כנשתקע שם התורם מהם.<o:p></o:p></span></p><p class="MsoNormal" dir="RTL">מותר למסור אותם לכל שימוש שהוא.<o:p></o:p></p><p class="MsoNormal" dir="RTL">מותר ליתן אותם במתנה.<o:p></o:p></p><p class="MsoNormal" dir="RTL">מותר למכור אותם ולהשתמש בכסף לכל צורך שהוא.<o:p></o:p></p><p class="MsoNormal" dir="RTL">אסור לזרוק אותם לפח או להשאיר אותם במקום שיתקלקלו.<o:p></o:p></p><p class="MsoNormal" dir="RTL">אם אין עליהם קופצים ואין מה לעשות איתם אפשר אולי להשאיר אותם במקום
+צנוע שיתקלקלו ואז יהיה מותר לזרוק אותם. ונראה שהוא הדין לארונות עם שלט אחרי
+שפדו אותם על שווים כנ"ל.</p><h3><strong><br>הרב יהודה קרויזר - מרא דאתרא.&nbsp; &nbsp; <br>הרב ברוך פז.&nbsp; &nbsp; &nbsp;<br>הרב ישועה רטבי.</strong><o:p></o:p></h3><p class="MsoNormal" dir="RTL">ניתן: כ"ז אדר ב תשע"ט<o:p></o:p></p><p class="MsoNormal" dir="RTL"><span>3 אפריל 2019<o:p></o:p></span></p>
+    </article>
+  </main>
+  <footer class="psak-footer">
+    מקור: <a href="https://www.psakim.org/Psakim/File/2375" target="_blank">psakim.org — פסק 2375</a>
+  </footer>
+</body>
+</html>
