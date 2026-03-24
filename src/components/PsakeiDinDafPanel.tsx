@@ -259,6 +259,7 @@ export default function PsakeiDinDafPanel({
     'embedded-pdf': 'PDF מוטמע',
     'embedpdf': 'EmbedPDF (pdfium)',
     'embedpdf-page': 'EmbedPDF (דף מלא)',
+    'google-viewer': 'Google Viewer',
   };
 
   const setAsDefault = useCallback((type: ViewerType) => {

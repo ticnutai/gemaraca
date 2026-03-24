@@ -4,6 +4,7 @@ import {
   Loader2, Crown, Star, Flame, TrendingUp,
   Building2, Calendar, Download, ExternalLink,
   X, Minus, Maximize2, Minimize2, Compass, GripVertical,
+  CheckCircle2, BookOpenCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SEDARIM, getMasechtotBySeder, MASECHTOT, Masechet } from "@/lib/masechtotData";
@@ -19,10 +20,10 @@ import { useQuery } from "@tanstack/react-query";
 import PsakDinViewDialog from "./PsakDinViewDialog";
 import FileTypeBadge from "./FileTypeBadge";
 import SummaryToggle from "./SummaryToggle";
+import { useExplorerPanelStore, PanelLayout } from "@/stores/explorerPanelStore";
 import { useGemaraDownloadStore } from "@/stores/gemaraDownloadStore";
 import { buildMasechetJob, buildSederJob, buildShasJob } from "@/hooks/useGemaraDownloadEngine";
 import { useToast } from "@/hooks/use-toast";
-import { useExplorerPanelStore, PanelLayout } from "@/stores/explorerPanelStore";
 
 // ─── Types ──────────────────────────────────────────────
 type Step = "sedarim" | "masechtot" | "dafim" | "amudim" | "psakim";
@@ -31,7 +32,7 @@ interface PsakCount {
   [masechetSefaria: string]: {
     total: number;
     byDaf: { [daf: number]: number };
-    byAmud: { [key: string]: number }; // "2a", "2b"
+    byAmud: { [key: string]: number };
   };
 }
 
@@ -110,6 +111,89 @@ export default function FloatingExplorerPanel() {
     return l;
   }, [layout]);
 
+  // ─── Loaded pages query (from gemara_pages + shas_download_progress) ──
+  const { data: loadedPages = {} } = useQuery<Record<string, Set<string>>>({
+    queryKey: ["explorer-loaded-pages"],
+    queryFn: async () => {
+      // Use shas_download_progress as source of truth for completion
+      const { data: progressData } = await supabase
+        .from("shas_download_progress")
+        .select("masechet, loaded_pages, total_pages, status");
+
+      const result: Record<string, Set<string>> = {};
+
+      // For completed masechtot, mark all pages as loaded
+      for (const row of (progressData || [])) {
+        if (row.status === "completed" || row.status === "done") {
+          const m = MASECHTOT.find(ms => ms.hebrewName === row.masechet || ms.sefariaName === row.masechet);
+          if (m) {
+            result[m.sefariaName] = new Set<string>();
+            for (let daf = 2; daf <= m.maxDaf; daf++) {
+              result[m.sefariaName].add(`${daf}a`);
+              result[m.sefariaName].add(`${daf}b`);
+            }
+          }
+        }
+      }
+
+      // Also query gemara_pages for specific loaded pages
+      const { data: pages } = await supabase
+        .from("gemara_pages")
+        .select("sugya_id, masechet")
+        .limit(1000);
+
+      // If we hit limit, do batched fetch
+      let allPages = pages || [];
+      if (allPages.length === 1000) {
+        let offset = 1000;
+        let more = true;
+        while (more) {
+          const { data: batch } = await supabase
+            .from("gemara_pages")
+            .select("sugya_id, masechet")
+            .range(offset, offset + 999);
+          if (batch && batch.length > 0) {
+            allPages = [...allPages, ...batch];
+            offset += batch.length;
+            if (batch.length < 1000) more = false;
+          } else {
+            more = false;
+          }
+        }
+      }
+
+      for (const page of allPages) {
+        const m = MASECHTOT.find(ms =>
+          ms.sefariaName === page.masechet ||
+          ms.hebrewName === page.masechet ||
+          page.sugya_id?.toLowerCase().startsWith(ms.sefariaName.toLowerCase() + "_")
+        );
+        if (m) {
+          if (!result[m.sefariaName]) result[m.sefariaName] = new Set<string>();
+          // Extract daf+amud from sugya_id like "bava_batra_2a"
+          const prefix = m.sefariaName.toLowerCase() + "_";
+          if (page.sugya_id?.toLowerCase().startsWith(prefix)) {
+            const rest = page.sugya_id.slice(prefix.length);
+            result[m.sefariaName].add(rest);
+          }
+        }
+      }
+
+      return result;
+    },
+    staleTime: 2 * 60 * 1000,
+    enabled: isOpen,
+  });
+
+  // Compute loaded counts per masechet
+  const masechetLoadedCount = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const [key, pages] of Object.entries(loadedPages)) {
+      counts[key] = pages.size;
+    }
+    return counts;
+  }, [loadedPages]);
+
   // ─── Psak counts query ────────────────────────────────
   const { data: psakCounts = {} } = useQuery<PsakCount>({
     queryKey: ["floating-explorer-psak-counts"],
@@ -167,6 +251,21 @@ export default function FloatingExplorerPanel() {
     return result;
   }, [psakCounts]);
 
+  // Loaded page counts per seder
+  const sederLoadedCounts = useMemo(() => {
+    const result: Record<string, { loaded: number; total: number }> = {};
+    for (const seder of SEDARIM) {
+      let loaded = 0;
+      let total = 0;
+      for (const m of getMasechtotBySeder(seder)) {
+        loaded += masechetLoadedCount[m.sefariaName] || 0;
+        total += (m.maxDaf - 1) * 2; // Each daf has 2 amudim
+      }
+      result[seder] = { loaded, total };
+    }
+    return result;
+  }, [masechetLoadedCount]);
+
   // ─── Navigation handlers ─────────────────────────────
   const resetNav = () => {
     setStep("sedarim");
@@ -189,6 +288,14 @@ export default function FloatingExplorerPanel() {
   const handleMasechetSelect = (m: Masechet) => { setSelectedMasechetLocal(m); setStep("dafim"); };
   const handleDafSelect = (daf: number) => { setSelectedDaf(daf); setStep("amudim"); };
 
+  // Navigate directly to gemara page
+  const navigateToPage = useCallback((masechet: Masechet, daf: number, amud: "a" | "b") => {
+    const sugyaId = `${masechet.sefariaName.toLowerCase()}_${daf}${amud}`;
+    setSelectedMasechet(masechet.hebrewName);
+    setActiveTab("gemara");
+    navigate(`/sugya/${sugyaId}`);
+  }, [navigate, setSelectedMasechet, setActiveTab]);
+
   const handleAmudSelect = useCallback(async (amud: "a" | "b") => {
     if (!selectedMasechetLocal || selectedDaf === null) return;
     setSelectedAmud(amud);
@@ -202,10 +309,7 @@ export default function FloatingExplorerPanel() {
 
     if (!hasPsakim) {
       // Navigate directly to the Gemara page
-      const sugyaId = `${masechet.sefariaName.toLowerCase()}_${selectedDaf}${amud}`;
-      setSelectedMasechet(masechet.hebrewName);
-      setActiveTab("gemara");
-      navigate(`/sugya/${sugyaId}`);
+      navigateToPage(masechet, selectedDaf, amud);
       return;
     }
 
@@ -258,14 +362,11 @@ export default function FloatingExplorerPanel() {
     } finally {
       setLoadingPsakim(false);
     }
-  }, [selectedMasechetLocal, selectedDaf, psakCounts, navigate, setSelectedMasechet, setActiveTab]);
+  }, [selectedMasechetLocal, selectedDaf, psakCounts, navigateToPage]);
 
   const navigateToAmud = () => {
     if (!selectedMasechetLocal || selectedDaf === null || !selectedAmud) return;
-    const sugyaId = `${selectedMasechetLocal.sefariaName.toLowerCase()}_${selectedDaf}${selectedAmud}`;
-    setSelectedMasechet(selectedMasechetLocal.hebrewName);
-    setActiveTab("gemara");
-    navigate(`/sugya/${sugyaId}`);
+    navigateToPage(selectedMasechetLocal, selectedDaf, selectedAmud);
   };
 
   // ─── Drag ─────────────────────────────────────────────
@@ -444,12 +545,21 @@ export default function FloatingExplorerPanel() {
                     <Download className="h-4 w-4" />
                     הורד את כל הש״ס
                   </button>
+                  {/* Summary bar */}
+                  <div className="flex items-center justify-center gap-2 p-2.5 rounded-xl border border-primary/20 bg-primary/5 text-sm">
+                    <BookOpenCheck className="h-4 w-4 text-primary" />
+                    <span className="font-semibold text-primary">
+                      {Object.values(masechetLoadedCount).reduce((a, b) => a + b, 0).toLocaleString()} עמודים במסד הנתונים
+                    </span>
+                  </div>
                   <div className="grid grid-cols-2 gap-2">
                     {SEDARIM.map((seder) => {
                       const meta = SEDER_META[seder] || SEDER_META["זרעים"];
                       const Icon = meta.icon;
                       const count = sederCounts[seder] || 0;
                       const masechtot = getMasechtotBySeder(seder);
+                      const sederLoaded = sederLoadedCounts[seder];
+                      const loadedPct = sederLoaded?.total ? Math.round((sederLoaded.loaded / sederLoaded.total) * 100) : 0;
                       return (
                         <button
                           key={seder}
@@ -473,15 +583,14 @@ export default function FloatingExplorerPanel() {
                           </div>
                           <h3 className="font-bold text-base mt-2">סדר {seder}</h3>
                           <div className="flex items-center justify-between mt-1">
-                            <span
-                              role="button"
-                              tabIndex={0}
-                              onClick={(e) => { e.stopPropagation(); enqueueJob(buildSederJob(seder)); }}
-                              className="p-1 rounded-lg bg-background/70 hover:bg-primary/20 transition-colors cursor-pointer"
-                              title={`הורד סדר ${seder}`}
-                            >
-                              <Download className="h-3 w-3 text-primary" />
-                            </span>
+                            {loadedPct === 100 ? (
+                              <div className="flex items-center gap-1 text-green-600">
+                                <CheckCircle2 className="h-3 w-3" />
+                                <span className="text-[10px] font-medium">הושלם</span>
+                              </div>
+                            ) : (
+                              <span className="text-[10px] text-muted-foreground">{sederLoaded?.loaded || 0} עמודים</span>
+                            )}
                             <p className="text-xs text-muted-foreground">{masechtot.length} מסכתות</p>
                           </div>
                         </button>
@@ -505,6 +614,10 @@ export default function FloatingExplorerPanel() {
                     const count = psakCounts[m.sefariaName]?.total || 0;
                     const dafCount = Object.keys(psakCounts[m.sefariaName]?.byDaf || {}).length;
                     const coverage = Math.round((dafCount / (m.maxDaf - 1)) * 100);
+                    const loaded = masechetLoadedCount[m.sefariaName] || 0;
+                    const totalAmudim = (m.maxDaf - 1) * 2;
+                    const loadedPct = Math.round((loaded / totalAmudim) * 100);
+                    const isComplete = loadedPct >= 95;
                     return (
                       <div key={m.englishName} className="flex items-stretch gap-1.5">
                         <button
@@ -515,14 +628,15 @@ export default function FloatingExplorerPanel() {
                             <div className="flex items-center gap-2">
                               <h4 className="font-bold text-sm">{m.hebrewName}</h4>
                               <span className="text-[10px] text-muted-foreground">({m.maxDaf - 1} דפים)</span>
+                              {isComplete && <CheckCircle2 className="h-3.5 w-3.5 text-green-600 shrink-0" />}
                             </div>
-                            {count > 0 && (
+                            {(count > 0 || loaded > 0) && (
                               <div className="mt-1.5">
                                 <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-0.5">
-                                  <span>{coverage}% כיסוי</span>
-                                  <span>{dafCount} דפים</span>
+                                  <span>{loaded} עמודים טעונים</span>
+                                  {count > 0 && <span>{dafCount} דפים עם פסקים ({coverage}%)</span>}
                                 </div>
-                                <Progress value={coverage} className="h-1" />
+                                <Progress value={loadedPct} className="h-1" />
                               </div>
                             )}
                           </div>
@@ -552,51 +666,71 @@ export default function FloatingExplorerPanel() {
               )}
 
               {/* ──── Dafim ──── */}
-              {step === "dafim" && selectedMasechetLocal && (
-                <div>
-                  <button
-                    onClick={() => enqueueJob(buildMasechetJob(selectedMasechetLocal))}
-                    className="w-full flex items-center justify-center gap-2 p-2 mb-2 rounded-xl border border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 transition-all text-primary text-xs font-semibold"
-                  >
-                    <Download className="h-3.5 w-3.5" />
-                    הורד {selectedMasechetLocal.hebrewName}
-                  </button>
-                  {(psakCounts[selectedMasechetLocal.sefariaName]?.total || 0) > 0 && (
+              {step === "dafim" && selectedMasechetLocal && (() => {
+                const loaded = masechetLoadedCount[selectedMasechetLocal.sefariaName] || 0;
+                const totalAmudim = (selectedMasechetLocal.maxDaf - 1) * 2;
+                const loadedPct = Math.round((loaded / totalAmudim) * 100);
+                return (
+                  <div>
+                    {/* Status bar */}
                     <div className="flex items-center gap-2 mb-3 p-2.5 rounded-lg bg-primary/5 border border-primary/10">
-                      <Scale className="h-4 w-4 text-primary" />
-                      <span className="text-xs font-medium">
-                        {psakCounts[selectedMasechetLocal.sefariaName]?.total} פסקי דין · {Object.keys(psakCounts[selectedMasechetLocal.sefariaName]?.byDaf || {}).length} דפים
+                      <BookOpenCheck className="h-4 w-4 text-primary" />
+                      <span className="text-xs font-medium flex-1">
+                        {loaded} / {totalAmudim} עמודים ({loadedPct}%)
                       </span>
+                      {(psakCounts[selectedMasechetLocal.sefariaName]?.total || 0) > 0 && (
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Scale className="h-3 w-3" />
+                          {psakCounts[selectedMasechetLocal.sefariaName]?.total} פסקים
+                        </span>
+                      )}
                     </div>
-                  )}
-                  <div className="grid grid-cols-5 sm:grid-cols-6 gap-1.5">
-                    {Array.from({ length: selectedMasechetLocal.maxDaf - 1 }, (_, i) => i + 2).map((daf) => {
-                      const pCount = psakCounts[selectedMasechetLocal.sefariaName]?.byDaf[daf] || 0;
-                      return (
-                        <button
-                          key={daf}
-                          onClick={() => handleDafSelect(daf)}
-                          className={cn(
-                            "relative p-2 rounded-lg text-sm font-medium transition-all duration-200",
-                            "border min-h-[40px] flex flex-col items-center justify-center",
-                            "hover:scale-105 active:scale-95",
-                            pCount > 0
-                              ? cn("bg-gradient-to-br from-accent to-accent/80 text-accent-foreground border-accent/50 hover:shadow-lg", pCount >= 5 && "ring-2 ring-primary/40")
-                              : "bg-card border-border hover:border-accent/50 hover:bg-accent/5 text-foreground"
-                          )}
-                        >
-                          <span>{toHebrewNumeral(daf)}</span>
-                          {pCount > 0 && (
-                            <span className="absolute -top-1 -left-1 bg-primary text-primary-foreground text-[8px] font-bold rounded-full min-w-[14px] h-3.5 flex items-center justify-center px-0.5 shadow">
-                              {pCount}
-                            </span>
-                          )}
-                        </button>
-                      );
-                    })}
+                    <button
+                      onClick={() => enqueueJob(buildMasechetJob(selectedMasechetLocal))}
+                      className="w-full flex items-center justify-center gap-2 p-2 mb-2 rounded-xl border border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 transition-all text-primary text-xs font-semibold"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      הורד {selectedMasechetLocal.hebrewName}
+                    </button>
+                    <div className="grid grid-cols-5 sm:grid-cols-6 gap-1.5">
+                      {Array.from({ length: selectedMasechetLocal.maxDaf - 1 }, (_, i) => i + 2).map((daf) => {
+                        const pCount = psakCounts[selectedMasechetLocal.sefariaName]?.byDaf[daf] || 0;
+                        const pageSet = loadedPages[selectedMasechetLocal.sefariaName];
+                        const hasA = pageSet?.has(`${daf}a`);
+                        const hasB = pageSet?.has(`${daf}b`);
+                        const isLoaded = hasA || hasB;
+                        const isFull = hasA && hasB;
+                        return (
+                          <button
+                            key={daf}
+                            onClick={() => handleDafSelect(daf)}
+                            className={cn(
+                              "relative p-2 rounded-lg text-sm font-medium transition-all duration-200",
+                              "border min-h-[40px] flex flex-col items-center justify-center",
+                              "hover:scale-105 active:scale-95",
+                              pCount > 0
+                                ? cn("bg-gradient-to-br from-accent to-accent/80 text-accent-foreground border-accent/50 hover:shadow-lg", pCount >= 5 && "ring-2 ring-primary/40")
+                                : isLoaded
+                                  ? "bg-green-500/10 border-green-500/30 hover:bg-green-500/20 text-foreground"
+                                  : "bg-card border-border hover:border-accent/50 hover:bg-accent/5 text-foreground"
+                            )}
+                          >
+                            <span>{toHebrewNumeral(daf)}</span>
+                            {pCount > 0 && (
+                              <span className="absolute -top-1 -left-1 bg-primary text-primary-foreground text-[8px] font-bold rounded-full min-w-[14px] h-3.5 flex items-center justify-center px-0.5 shadow">
+                                {pCount}
+                              </span>
+                            )}
+                            {isFull && !pCount && (
+                              <CheckCircle2 className="absolute -top-1 -left-1 h-3.5 w-3.5 text-green-600" />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* ──── Amudim ──── */}
               {step === "amudim" && selectedMasechetLocal && selectedDaf !== null && (
@@ -612,6 +746,7 @@ export default function FloatingExplorerPanel() {
                       const amudKey = `${selectedDaf}${amud}`;
                       const amudCount = psakCounts[selectedMasechetLocal.sefariaName]?.byAmud[amudKey] || 0;
                       const label = amud === "a" ? "עמוד א׳" : "עמוד ב׳";
+                      const isPageLoaded = loadedPages[selectedMasechetLocal.sefariaName]?.has(amudKey);
                       return (
                         <button
                           key={amud}
@@ -621,10 +756,18 @@ export default function FloatingExplorerPanel() {
                             "hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]",
                             amudCount > 0
                               ? "border-primary/50 bg-primary/5 hover:bg-primary/10"
-                              : "border-border hover:border-primary/30 bg-card hover:bg-accent/5"
+                              : isPageLoaded
+                                ? "border-green-500/40 bg-green-500/5 hover:bg-green-500/10"
+                                : "border-border hover:border-primary/30 bg-card hover:bg-accent/5"
                           )}
                         >
                           <span className="text-2xl font-bold">{label}</span>
+                          {isPageLoaded && (
+                            <span className="flex items-center gap-1 text-green-600 text-xs">
+                              <CheckCircle2 className="h-3 w-3" />
+                              במסד הנתונים
+                            </span>
+                          )}
                           {amudCount > 0 && (
                             <Badge variant="secondary" className="text-xs">
                               <Scale className="h-3 w-3 mr-1" />
@@ -640,12 +783,7 @@ export default function FloatingExplorerPanel() {
                       variant="outline"
                       size="sm"
                       className="gap-1"
-                      onClick={() => {
-                        const sugyaId = `${selectedMasechetLocal.sefariaName.toLowerCase()}_${selectedDaf}a`;
-                        setSelectedMasechet(selectedMasechetLocal.hebrewName);
-                        setActiveTab("gemara");
-                        navigate(`/sugya/${sugyaId}`);
-                      }}
+                      onClick={() => navigateToPage(selectedMasechetLocal, selectedDaf, "a")}
                     >
                       <ExternalLink className="h-3.5 w-3.5" />
                       פתח דף בגמרא
