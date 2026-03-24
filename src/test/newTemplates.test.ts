@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeAll } from "vitest";
 import { TEMPLATES, generateFromTemplate } from "@/lib/psakDinTemplates";
 import type { ParsedPsakDin } from "@/lib/psakDinParser";
 

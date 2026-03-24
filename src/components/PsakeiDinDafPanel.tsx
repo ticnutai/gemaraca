@@ -64,7 +64,7 @@ const PSAK_VIEWER_DEFAULT_KEY = 'psak-din-default-viewer';
 const PSAK_VIEW_MODE_KEY = 'psak-din-view-mode';
 const LAZY_BATCH = 12;
 
-type ViewerType = 'regular' | 'embedded-pdf' | 'embedpdf' | 'embedpdf-page';
+type ViewerType = 'regular' | 'embedded-pdf' | 'embedpdf' | 'embedpdf-page' | 'google-viewer';
 type ViewMode = "list" | "grid" | "compact" | "table" | "magazine" | "timeline" | "kanban" | "split";
 type SortField = "title" | "year" | "court" | "references" | "relevance";
 type SortDir = "asc" | "desc";
