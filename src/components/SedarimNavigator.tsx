@@ -15,8 +15,8 @@ import SummaryToggle from "./SummaryToggle";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useExplorerPanelStore } from "@/stores/explorerPanelStore";
 
-const MasechetExplorerDialog = lazy(() => import("./MasechetExplorerDialog"));
 const GemaraPsakDinIndex = lazy(() => import("./GemaraPsakDinIndex"));
 const TalmudTreeView = lazy(() => import("./TalmudTreeView"));
 
@@ -51,7 +51,6 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
   const [managingMasechet, setManagingMasechet] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
-  const [explorerOpen, setExplorerOpen] = useState(false);
   const queryClient = useQueryClient();
 
   // Auto-expand seder + masechet when selectedMasechet is set from context (e.g. sidebar click)
@@ -322,10 +321,10 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
             <span className="hidden sm:inline">עץ</span>
           </button>
           <button
-            onClick={() => { setViewMode('explorer'); setExplorerOpen(true); }}
+            onClick={() => { useExplorerPanelStore.getState().open(); }}
             className={cn(
               'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
-              viewMode === 'explorer' ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-muted text-muted-foreground'
+              'hover:bg-muted text-muted-foreground'
             )}
           >
             <Compass className="h-3.5 w-3.5" />
@@ -333,13 +332,6 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
           </button>
         </div>
       </div>
-
-      {/* Explorer Dialog — lazy loaded */}
-      {viewMode === 'explorer' && (
-        <Suspense fallback={null}>
-          <MasechetExplorerDialog open={explorerOpen} onOpenChange={(o) => { setExplorerOpen(o); if (!o) setViewMode('grid'); }} />
-        </Suspense>
-      )}
 
       {/* ──── Grid View (original) ──── */}
       {viewMode === 'grid' && (

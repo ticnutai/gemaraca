@@ -24,6 +24,7 @@ const GlobalDownloadProgress = lazy(() => import("./components/GlobalDownloadPro
 const GlobalDeleteProgress = lazy(() => import("./components/GlobalDeleteProgress"));
 const AiTutorChat = lazy(() => import("./components/AiTutorChat"));
 const OfflineIndicator = lazy(() => import("./components/OfflineIndicator"));
+const FloatingExplorerPanel = lazy(() => import("./components/FloatingExplorerPanel"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -52,6 +53,7 @@ const App = () => (
             <GlobalDeleteProgress />
             <AiTutorChat />
             <OfflineIndicator />
+            <FloatingExplorerPanel />
             <Routes>
               <Route path="/auth" element={<Auth />} />
               <Route path="/reset-password" element={<ResetPassword />} />
