@@ -181,7 +181,7 @@ const TreeNode = memo(function TreeNode({
   const borderColor = depth === 0 ? BRANCH_COLORS[node.text]?.split(" ")[0] || "border-border/30" : "border-border/30";
 
   return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
       <CollapsibleTrigger className="flex items-center gap-2 w-full px-4 py-2.5 rounded-lg hover:bg-blue-900/10 transition-colors text-right">
         {showBranchIcon && <BranchIcon name={node.text} className="w-5 h-5" />}
         <span className={`${depth < 2 ? "font-bold" : "font-medium"} text-blue-900 dark:text-blue-300`} style={{ fontSize: depth === 0 ? "1.125rem" : "1rem" }}>
@@ -954,8 +954,8 @@ export default function SourcesIndexTab() {
             <Card>
               <CardContent className="p-3" dir="rtl">
                 {viewMode === "tree" && (
-                  <ScrollArea className="h-[calc(100vh-500px)]">
-                    <div className="space-y-1">
+                  <ScrollArea className="h-[calc(100vh-500px)]" dir="rtl">
+                    <div className="space-y-1 w-full text-right" dir="rtl">
                       {sourcesTree.children?.map((branch) => (
                         <TreeNode
                           key={branch.id}
