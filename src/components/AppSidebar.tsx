@@ -64,6 +64,13 @@ const menuItems = [
     description: "אינדקס תלמודי מתקדם",
   },
   {
+    id: "sources-index",
+    title: "מפתח המקורות",
+    icon: BookOpen,
+    description: "אינדקס היררכי של מקורות הלכה מפסקי דין",
+    badge: "חדש",
+  },
+  {
     id: "bulk-shas",
     title: "הורדת ש\"ס",
     icon: Database,
