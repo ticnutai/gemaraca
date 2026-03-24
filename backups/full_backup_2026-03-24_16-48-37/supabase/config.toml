@@ -1,0 +1,58 @@
+project_id = "jaotdqumpcfhcbkgtfib"
+
+[functions.search-psak-din]
+verify_jwt = false
+
+[functions.analyze-psak-din]
+verify_jwt = false
+
+[functions.get-gemara-text]
+verify_jwt = false
+
+[functions.get-commentaries]
+verify_jwt = false
+
+[functions.search-lexicon]
+verify_jwt = false
+
+[functions.load-daf]
+verify_jwt = false
+
+[functions.upload-psak-din]
+verify_jwt = false
+
+[functions.cleanup-duplicates]
+verify_jwt = false
+
+[functions.bulk-analyze]
+verify_jwt = false
+
+[functions.generate-modern-examples]
+verify_jwt = false
+
+[functions.ai-tutor]
+verify_jwt = false
+
+[functions.extract-references]
+verify_jwt = false
+
+[functions.run-migration]
+verify_jwt = false
+
+[functions.bulk-load-shas]
+verify_jwt = false
+
+[functions.ask-about-daf]
+verify_jwt = false
+
+[functions.beautify-psak-din]
+verify_jwt = false
+
+[functions.generate-quiz]
+verify_jwt = false
+
+[functions.learning-recommendations]
+verify_jwt = false
+
+[functions.summarize-sugya]
+verify_jwt = false

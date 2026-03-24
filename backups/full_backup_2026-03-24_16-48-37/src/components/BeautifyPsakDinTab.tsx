@@ -1,0 +1,1778 @@
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import { MASECHTOT } from "@/lib/masechtotData";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Progress } from "@/components/ui/progress";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
+  Paintbrush, Upload, Download, Sparkles, FileText, Loader2, Eye, Code,
+  RotateCcw, Database, Save, Copy, Search, X, CheckSquare, Square,
+  Play, Pause, CheckCircle2, AlertCircle, ExternalLink, Pencil, Trash2,
+  LayoutTemplate, Plus, Minus, Type, AlignRight, Bold, Link2, Link2Off, Lock, Unlock,
+} from "lucide-react";
+import { parsePsakDinText, isPsakDinFormat } from "@/lib/psakDinParser";
+import { generatePsakDinHtml } from "@/lib/psakDinHtmlTemplate";
+import { TEMPLATES, generateFromTemplate } from "@/lib/psakDinTemplates";
+import type { TemplateInfo } from "@/lib/psakDinTemplates";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+type ViewMode = "preview" | "source";
+
+interface DbPsakItem {
+  id: string;
+  title: string;
+  court: string;
+  year: number;
+  summary: string;
+  beautify_count?: number;
+}
+
+type JobStatus = "pending" | "processing" | "done" | "error";
+
+interface BatchJob {
+  id: string;
+  title: string;
+  status: JobStatus;
+  html: string;
+  rawText: string;
+  error?: string;
+}
+
+// --- Concurrency helper ---
+async function processWithConcurrency<T>(
+  items: T[],
+  concurrency: number,
+  fn: (item: T, index: number) => Promise<void>,
+) {
+  let cursor = 0;
+  const run = async () => {
+    while (cursor < items.length) {
+      const idx = cursor++;
+      await fn(items[idx], idx);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, run));
+}
+
+const CONCURRENCY = 3;
+const DB_PAGE = 50;
+const TYPOGRAPHY_PROFILE_KEY = "beautify-typography-profile-v1";
+const FONT_OPTIONS = [
+  { value: "'David','Times New Roman',serif", label: "דוד" },
+  { value: "'Frank Ruhl Libre','David',serif", label: "פרנק רוהל" },
+  { value: "'Heebo','Arial',sans-serif", label: "חיבו" },
+  { value: "'Rubik','Arial',sans-serif", label: "רוביק" },
+  { value: "'Arial',sans-serif", label: "אריאל" },
+  { value: "'Noto Serif Hebrew','David',serif", label: "נוטו סריף" },
+];
+
+/** Detect HTML content and extract plain text */
+function stripHtmlToText(input: string): string {
+  // Quick check — if no HTML tags, return as-is
+  if (!/<[a-z][\s\S]*>/i.test(input)) return input;
+
+  const doc = new DOMParser().parseFromString(input, 'text/html');
+
+  // Remove elements whose text content is NOT real document content
+  doc.querySelectorAll('style, script, link, meta, title, head').forEach(el => el.remove());
+
+  // Inject line breaks before block-level elements so textContent preserves paragraphs
+  doc.querySelectorAll('p, div, br, h1, h2, h3, h4, h5, h6, li, tr, hr, blockquote').forEach(el => {
+    el.insertAdjacentText('beforebegin', '\n');
+  });
+
+  const text = doc.body?.textContent || '';
+  // Collapse excessive whitespace while preserving paragraph breaks
+  return text.replace(/[ \t]+/g, ' ').replace(/\n[ \t]*/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+
+const BeautifyPsakDinTab = () => {
+  // --- Single mode state ---
+  const [rawText, setRawText] = useState("");
+  const [htmlResult, setHtmlResult] = useState("");
+  const [viewMode, setViewMode] = useState<ViewMode>("preview");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isAiProcessing, setIsAiProcessing] = useState(false);
+  const [aiProgress, setAiProgress] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [loadedPsakId, setLoadedPsakId] = useState<string | null>(null);
+  const [loadedPsakTitle, setLoadedPsakTitle] = useState("");
+  const [leftFontFamily, setLeftFontFamily] = useState(FONT_OPTIONS[0].value);
+  const [leftFontSize, setLeftFontSize] = useState(16);
+  const [leftBold, setLeftBold] = useState(false);
+  const [rightFontFamily, setRightFontFamily] = useState(FONT_OPTIONS[0].value);
+  const [rightFontSize, setRightFontSize] = useState(16);
+  const [rightBold, setRightBold] = useState(false);
+  const [isScrollSync, setIsScrollSync] = useState(false);
+  const [syncMode, setSyncMode] = useState<"ratio" | "section">("ratio");
+  const [isPreviewLocked, setIsPreviewLocked] = useState(false);
+
+  // --- Template selection ---
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("classic");
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+  const selectedTemplateInfo = useMemo(
+    () => TEMPLATES.find(t => t.id === selectedTemplate) ?? TEMPLATES[0],
+    [selectedTemplate],
+  );
+
+  // --- DB Picker state ---
+  const [showDbPicker, setShowDbPicker] = useState(false);
+  const [dbItems, setDbItems] = useState<DbPsakItem[]>([]);
+  const [dbSearch, setDbSearch] = useState("");
+  const [dbLoading, setDbLoading] = useState(false);
+  const [dbLoadingMore, setDbLoadingMore] = useState(false);
+  const [dbHasMore, setDbHasMore] = useState(false);
+  const [dbOffset, setDbOffset] = useState(0);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [dbBeautifyFilter, setDbBeautifyFilter] = useState<"all" | "beautified" | "not_beautified">("all");
+  const [dbSortBy, setDbSortBy] = useState<"year" | "title">("year");
+  const [dbLoadCount, setDbLoadCount] = useState<number>(DB_PAGE);
+  const [dbMasechetFilter, setDbMasechetFilter] = useState<string>("all");
+  const [masechetPsakIds, setMasechetPsakIds] = useState<Set<string> | null>(null);
+
+  // --- Batch state ---
+  const [batchJobs, setBatchJobs] = useState<BatchJob[]>([]);
+  const [batchRunning, setBatchRunning] = useState(false);
+  const [previewJobId, setPreviewJobId] = useState<string | null>(null);
+  const batchAbortRef = useRef(false);
+
+  // --- Inline edit/delete state ---
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState("");
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const scrollSentinelRef = useRef<HTMLDivElement>(null);
+  const rawTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const sourceTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const previewIframeRef = useRef<HTMLIFrameElement | null>(null);
+  const syncBusyRef = useRef(false);
+  const iframeScrollCleanupRef = useRef<(() => void) | null>(null);
+  const { toast } = useToast();
+
+  const sectionAnchorMap = useMemo(() => {
+    if (!rawText.trim()) return [] as Array<{ anchor: string; index: number }>;
+    try {
+      const parsed = parsePsakDinText(rawText);
+      return parsed.sections
+        .map((sec, i) => {
+          const idx = sec.title ? rawText.indexOf(sec.title) : -1;
+          return { anchor: `sec-${i}`, index: idx >= 0 ? idx : Math.floor((i / Math.max(parsed.sections.length, 1)) * rawText.length) };
+        })
+        .filter(s => s.index >= 0)
+        .sort((a, b) => a.index - b.index);
+    } catch {
+      return [] as Array<{ anchor: string; index: number }>;
+    }
+  }, [rawText]);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(TYPOGRAPHY_PROFILE_KEY);
+      if (!saved) return;
+      const data = JSON.parse(saved) as {
+        leftFontFamily?: string;
+        leftFontSize?: number;
+        leftBold?: boolean;
+        rightFontFamily?: string;
+        rightFontSize?: number;
+        rightBold?: boolean;
+        isScrollSync?: boolean;
+        syncMode?: "ratio" | "section";
+      };
+      if (data.leftFontFamily) setLeftFontFamily(data.leftFontFamily);
+      if (typeof data.leftFontSize === "number") setLeftFontSize(data.leftFontSize);
+      if (typeof data.leftBold === "boolean") setLeftBold(data.leftBold);
+      if (data.rightFontFamily) setRightFontFamily(data.rightFontFamily);
+      if (typeof data.rightFontSize === "number") setRightFontSize(data.rightFontSize);
+      if (typeof data.rightBold === "boolean") setRightBold(data.rightBold);
+      if (typeof data.isScrollSync === "boolean") setIsScrollSync(data.isScrollSync);
+      if (data.syncMode === "ratio" || data.syncMode === "section") setSyncMode(data.syncMode);
+    } catch {
+      // Ignore invalid saved profile
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(TYPOGRAPHY_PROFILE_KEY, JSON.stringify({
+        leftFontFamily,
+        leftFontSize,
+        leftBold,
+        rightFontFamily,
+        rightFontSize,
+        rightBold,
+        isScrollSync,
+        syncMode,
+      }));
+    } catch {
+      // Ignore storage quota issues
+    }
+  }, [
+    leftFontFamily,
+    leftFontSize,
+    leftBold,
+    rightFontFamily,
+    rightFontSize,
+    rightBold,
+    isScrollSync,
+    syncMode,
+  ]);
+
+  const applyPreviewTypography = useCallback(() => {
+    const doc = previewIframeRef.current?.contentDocument;
+    if (!doc?.body) return;
+    doc.body.style.fontFamily = rightFontFamily;
+    doc.body.style.fontSize = `${rightFontSize}px`;
+    doc.body.style.fontWeight = rightBold ? "700" : "400";
+    doc.body.style.lineHeight = "1.8";
+  }, [rightFontFamily, rightFontSize, rightBold]);
+
+  const syncRawToOutput = useCallback(() => {
+    if (!isScrollSync || syncBusyRef.current) return;
+    const raw = rawTextareaRef.current;
+    if (!raw) return;
+    const rawMax = Math.max(1, raw.scrollHeight - raw.clientHeight);
+    const ratio = raw.scrollTop / rawMax;
+
+    syncBusyRef.current = true;
+    if (viewMode === "source" && sourceTextareaRef.current) {
+      const dst = sourceTextareaRef.current;
+      const dstMax = Math.max(1, dst.scrollHeight - dst.clientHeight);
+      dst.scrollTop = ratio * dstMax;
+    }
+    if (viewMode === "preview") {
+      const win = previewIframeRef.current?.contentWindow;
+      const doc = previewIframeRef.current?.contentDocument;
+      if (win && doc) {
+        if (syncMode === "section" && sectionAnchorMap.length > 0) {
+          const approxPos = Math.floor(ratio * rawText.length);
+          let chosen = sectionAnchorMap[0];
+          for (const sec of sectionAnchorMap) {
+            if (sec.index <= approxPos) chosen = sec;
+            else break;
+          }
+          const target = doc.getElementById(chosen.anchor);
+          if (target) target.scrollIntoView({ block: "start", behavior: "auto" });
+          else {
+            const root = doc.scrollingElement || doc.documentElement || doc.body;
+            const dstMax = Math.max(1, root.scrollHeight - win.innerHeight);
+            win.scrollTo({ top: ratio * dstMax, behavior: "auto" });
+          }
+        } else {
+          const root = doc.scrollingElement || doc.documentElement || doc.body;
+          const dstMax = Math.max(1, root.scrollHeight - win.innerHeight);
+          win.scrollTo({ top: ratio * dstMax, behavior: "auto" });
+        }
+      }
+    }
+    setTimeout(() => { syncBusyRef.current = false; }, 0);
+  }, [isScrollSync, viewMode, syncMode, sectionAnchorMap, rawText.length]);
+
+  const syncOutputToRaw = useCallback((ratio: number) => {
+    if (!isScrollSync || syncBusyRef.current) return;
+    const raw = rawTextareaRef.current;
+    if (!raw) return;
+    syncBusyRef.current = true;
+    const rawMax = Math.max(1, raw.scrollHeight - raw.clientHeight);
+    raw.scrollTop = ratio * rawMax;
+    setTimeout(() => { syncBusyRef.current = false; }, 0);
+  }, [isScrollSync]);
+
+  useEffect(() => {
+    applyPreviewTypography();
+  }, [htmlResult, applyPreviewTypography]);
+
+  useEffect(() => {
+    iframeScrollCleanupRef.current?.();
+    iframeScrollCleanupRef.current = null;
+    if (viewMode !== "preview" || !isScrollSync) return;
+
+    const iframe = previewIframeRef.current;
+    const win = iframe?.contentWindow;
+    const doc = iframe?.contentDocument;
+    if (!iframe || !win || !doc) return;
+
+    const onScroll = () => {
+      if (syncBusyRef.current) return;
+      const root = doc.scrollingElement || doc.documentElement || doc.body;
+      const max = Math.max(1, root.scrollHeight - win.innerHeight);
+      if (syncMode === "section" && sectionAnchorMap.length > 0) {
+        const sections = Array.from(doc.querySelectorAll<HTMLElement>("[id^='sec-']"));
+        let currentAnchor: string | null = null;
+        for (const el of sections) {
+          const rect = el.getBoundingClientRect();
+          if (rect.top <= 120) currentAnchor = el.id;
+          else break;
+        }
+        if (currentAnchor) {
+          const mapped = sectionAnchorMap.find(s => s.anchor === currentAnchor);
+          if (mapped) {
+            syncOutputToRaw(mapped.index / Math.max(rawText.length, 1));
+            return;
+          }
+        }
+      }
+      syncOutputToRaw(root.scrollTop / max);
+    };
+
+    win.addEventListener("scroll", onScroll, { passive: true });
+    iframeScrollCleanupRef.current = () => win.removeEventListener("scroll", onScroll);
+
+    return () => {
+      iframeScrollCleanupRef.current?.();
+      iframeScrollCleanupRef.current = null;
+    };
+  }, [viewMode, isScrollSync, htmlResult, syncOutputToRaw, syncMode, sectionAnchorMap, rawText.length]);
+
+  // ===== FILE UPLOAD =====
+  const handleFileUpload = useCallback((file: File) => {
+    if (!file.name.endsWith(".txt") && !file.name.endsWith(".html") && file.type !== "text/plain") {
+      toast({ title: "שגיאה", description: "נא להעלות קובץ טקסט (.txt)", variant: "destructive" });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      if (text) setRawText(text);
+    };
+    reader.readAsText(file, "UTF-8");
+  }, [toast]);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file) handleFileUpload(file);
+  }, [handleFileUpload]);
+
+  // ===== LOAD MASECHET PSAK IDS =====
+  useEffect(() => {
+    if (dbMasechetFilter === "all") {
+      setMasechetPsakIds(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const PAGE = 1000;
+      let off = 0;
+      const ids = new Set<string>();
+      let more = true;
+      while (more) {
+        const { data } = await supabase
+          .from("talmud_references")
+          .select("psak_din_id")
+          .eq("tractate", dbMasechetFilter)
+          .range(off, off + PAGE - 1);
+        if (!data || data.length === 0) { more = false; break; }
+        for (const r of data) ids.add(r.psak_din_id);
+        if (data.length < PAGE) more = false;
+        off += PAGE;
+      }
+      if (!cancelled) setMasechetPsakIds(ids);
+    })();
+    return () => { cancelled = true; };
+  }, [dbMasechetFilter]);
+
+  // ===== DB PICKER LOADING =====
+  const loadDbItems = useCallback(async (search: string, offset: number, append: boolean, pageSize?: number) => {
+    if (append) setDbLoadingMore(true);
+    else setDbLoading(true);
+    const limit = pageSize || dbLoadCount;
+    try {
+      // If masechet filter active and we have IDs
+      if (masechetPsakIds !== null && masechetPsakIds.size === 0) {
+        setDbItems([]);
+        setDbHasMore(false);
+        setDbOffset(0);
+        return;
+      }
+
+      if (masechetPsakIds !== null) {
+        // Fetch ALL matching psakim by chunking .in() queries (max ~200 IDs per chunk to avoid URL limit)
+        const allIds = [...masechetPsakIds];
+        const CHUNK = 200;
+        let allItems: DbPsakItem[] = [];
+
+        for (let c = 0; c < allIds.length; c += CHUNK) {
+          const chunk = allIds.slice(c, c + CHUNK);
+          let query = supabase
+            .from("psakei_din")
+            .select("id, title, court, year, summary, beautify_count")
+            .in("id", chunk);
+
+          if (dbSortBy === "title") query = query.order("title", { ascending: true });
+          else query = query.order("year", { ascending: false });
+
+          if (search.trim()) {
+            query = query.or(`title.ilike.%${search}%,court.ilike.%${search}%,summary.ilike.%${search}%`);
+          }
+          if (dbBeautifyFilter === "beautified") query = query.gt("beautify_count", 0);
+          else if (dbBeautifyFilter === "not_beautified") query = query.or("beautify_count.is.null,beautify_count.eq.0");
+
+          const { data, error } = await query;
+          if (error) throw error;
+          if (data) allItems = allItems.concat(data.map(d => ({ ...d, beautify_count: d.beautify_count || 0 })));
+        }
+
+        // Sort combined results
+        if (dbSortBy === "title") allItems.sort((a, b) => a.title.localeCompare(b.title));
+        else allItems.sort((a, b) => b.year - a.year);
+
+        setDbItems(allItems);
+        setDbHasMore(false);
+        setDbOffset(allItems.length);
+      } else {
+        // Normal load (no masechet filter)
+        let query = supabase
+          .from("psakei_din")
+          .select("id, title, court, year, summary, beautify_count")
+          .range(offset, offset + limit - 1);
+
+        if (dbSortBy === "title") query = query.order("title", { ascending: true });
+        else query = query.order("year", { ascending: false });
+
+        if (search.trim()) {
+          query = query.or(`title.ilike.%${search}%,court.ilike.%${search}%,summary.ilike.%${search}%`);
+        }
+        if (dbBeautifyFilter === "beautified") query = query.gt("beautify_count", 0);
+        else if (dbBeautifyFilter === "not_beautified") query = query.or("beautify_count.is.null,beautify_count.eq.0");
+
+        const { data, error } = await query;
+        if (error) throw error;
+
+        const items = (data || []).map(d => ({ ...d, beautify_count: d.beautify_count || 0 }));
+        setDbHasMore(items.length === limit);
+        if (append) {
+          setDbItems(prev => [...prev, ...items]);
+        } else {
+          setDbItems(items);
+        }
+        setDbOffset(offset + items.length);
+      }
+    } catch {
+      toast({ title: "שגיאה", description: "שגיאה בטעינת פסקי דין מהמאגר", variant: "destructive" });
+    } finally {
+      setDbLoading(false);
+      setDbLoadingMore(false);
+    }
+  }, [toast, dbSortBy, dbBeautifyFilter, dbLoadCount, masechetPsakIds]);
+
+  const openDbPicker = useCallback(() => {
+    setShowDbPicker(true);
+    setDbSearch("");
+    setDbOffset(0);
+    setSelectedIds(new Set());
+    setDbMasechetFilter("all");
+    loadDbItems("", 0, false);
+  }, [loadDbItems]);
+
+  // Debounced search + filter/sort change
+  useEffect(() => {
+    if (!showDbPicker) return;
+    const timer = setTimeout(() => {
+      setDbOffset(0);
+      loadDbItems(dbSearch, 0, false);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [dbSearch, showDbPicker, loadDbItems, dbBeautifyFilter, dbSortBy, masechetPsakIds]);
+
+  // Lazy loading with IntersectionObserver
+  useEffect(() => {
+    if (!showDbPicker || !dbHasMore || dbLoadingMore) return;
+    const sentinel = scrollSentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadDbItems(dbSearch, dbOffset, true);
+        }
+      },
+      { threshold: 0.1 },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [showDbPicker, dbHasMore, dbLoadingMore, dbSearch, dbOffset, loadDbItems]);
+
+  // ===== SELECTION =====
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAll = useCallback(() => {
+    setSelectedIds(prev => {
+      if (prev.size > 0 && prev.size === dbItems.length) return new Set();
+      return new Set(dbItems.map(i => i.id));
+    });
+  }, [dbItems]);
+
+  const handleRenameItem = useCallback(async (id: string, newTitle: string) => {
+    if (!newTitle.trim()) return;
+    try {
+      const { error } = await supabase.from("psakei_din").update({ title: newTitle.trim() }).eq("id", id);
+      if (error) throw error;
+      setDbItems(prev => prev.map(i => i.id === id ? { ...i, title: newTitle.trim() } : i));
+      toast({ title: "עודכן", description: "שם פסק הדין עודכן" });
+    } catch {
+      toast({ title: "שגיאה", description: "שגיאה בעדכון השם", variant: "destructive" });
+    }
+    setEditingItemId(null);
+  }, [toast]);
+
+  const handleDeleteItem = useCallback(async (id: string) => {
+    if (!confirm("למחוק פסק דין זה?")) return;
+    try {
+      const { error } = await supabase.from("psakei_din").delete().eq("id", id);
+      if (error) throw error;
+      setDbItems(prev => prev.filter(i => i.id !== id));
+      setSelectedIds(prev => { const n = new Set(prev); n.delete(id); return n; });
+      toast({ title: "נמחק", description: "פסק הדין נמחק" });
+    } catch {
+      toast({ title: "שגיאה", description: "שגיאה במחיקה", variant: "destructive" });
+    }
+  }, [toast]);
+
+  // ===== LOAD SINGLE FROM DB =====
+  const handleLoadSingle = useCallback(async (item: DbPsakItem) => {
+    setShowDbPicker(false);
+    setIsProcessing(true);
+    setBatchJobs([]);
+    try {
+      const { data, error } = await supabase
+        .from("psakei_din")
+        .select("id, title, court, year, summary, full_text, case_number, source_url, tags")
+        .eq("id", item.id)
+        .single();
+      if (error) throw error;
+
+      const text = data.full_text || data.summary || "";
+      setRawText(stripHtmlToText(text));
+      setLoadedPsakId(data.id);
+      setLoadedPsakTitle(data.title);
+      setHtmlResult("");
+      toast({ title: "נטען", description: `"${"${data.title}"}" נטען מהמאגר` });
+    } catch {
+      toast({ title: "שגיאה", description: "שגיאה בטעינת פסק הדין", variant: "destructive" });
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [toast]);
+
+  // ===== LOAD MULTI & BATCH PROCESS =====
+  const handleLoadMultiple = useCallback(async () => {
+    if (selectedIds.size === 0) return;
+    setShowDbPicker(false);
+    const selectedItems = dbItems.filter(i => selectedIds.has(i.id));
+
+    const jobs: BatchJob[] = selectedItems.map(item => ({
+      id: item.id,
+      title: item.title,
+      status: "pending" as JobStatus,
+      html: "",
+      rawText: "",
+    }));
+    setBatchJobs(jobs);
+    setRawText("");
+    setHtmlResult("");
+    setLoadedPsakId(null);
+    setLoadedPsakTitle("");
+    setPreviewJobId(null);
+    setBatchRunning(true);
+    batchAbortRef.current = false;
+
+    await processWithConcurrency(jobs, CONCURRENCY, async (job) => {
+      if (batchAbortRef.current) return;
+
+      setBatchJobs(prev => prev.map(j => j.id === job.id ? { ...j, status: "processing" } : j));
+
+      try {
+        const { data, error } = await supabase
+          .from("psakei_din")
+          .select("full_text, summary")
+          .eq("id", job.id)
+          .single();
+        if (error) throw error;
+
+        const text = stripHtmlToText(data.full_text || data.summary || "");
+
+        // Yield to main thread between CPU work
+        await new Promise<void>(resolve => {
+          setTimeout(() => {
+            try {
+              const parsed = parsePsakDinText(text);
+              const html = generatePsakDinHtml(parsed);
+              setBatchJobs(prev => prev.map(j =>
+                j.id === job.id ? { ...j, status: "done", html, rawText: text } : j
+              ));
+            } catch (e) {
+              setBatchJobs(prev => prev.map(j =>
+                j.id === job.id ? { ...j, status: "error", rawText: text, error: e instanceof Error ? e.message : "שגיאה" } : j
+              ));
+            }
+            resolve();
+          }, 0);
+        });
+      } catch (e) {
+        setBatchJobs(prev => prev.map(j =>
+          j.id === job.id ? { ...j, status: "error", error: e instanceof Error ? e.message : "שגיאה בטעינה" } : j
+        ));
+      }
+    });
+
+    setBatchRunning(false);
+    toast({ title: "הושלם", description: `${selectedItems.length} פסקי דין עובדו` });
+  }, [selectedIds, dbItems, toast]);
+
+  const handleAbortBatch = useCallback(() => {
+    batchAbortRef.current = true;
+  }, []);
+
+  // ===== BATCH SAVE ALL =====
+  const handleBatchSave = useCallback(async (mode: "save" | "duplicate") => {
+    const doneJobs = batchJobs.filter(j => j.status === "done" && j.html);
+    if (doneJobs.length === 0) return;
+    setIsSaving(true);
+
+    let successCount = 0;
+    let failCount = 0;
+
+    await processWithConcurrency(doneJobs, CONCURRENCY, async (job) => {
+      try {
+        const fileId = mode === "duplicate" ? crypto.randomUUID() : job.id;
+        const fileName = `beautified/${fileId}-${Date.now()}.html`;
+        const blob = new Blob([job.html], { type: "text/html;charset=utf-8" });
+
+        await supabase.storage
+          .from("psakei-din-files")
+          .upload(fileName, blob, { contentType: "text/html", upsert: true });
+
+        const { data: urlData } = supabase.storage
+          .from("psakei-din-files")
+          .getPublicUrl(fileName);
+
+        if (mode === "save") {
+          const { data: current } = await supabase.from("psakei_din").select("beautify_count").eq("id", job.id).single();
+          const newCount = ((current?.beautify_count as number) || 0) + 1;
+          const { error } = await supabase
+            .from("psakei_din")
+            .update({ full_text: job.html, source_url: urlData?.publicUrl || undefined, beautify_count: newCount })
+            .eq("id", job.id);
+          if (error) throw error;
+        } else {
+          const parsed = parsePsakDinText(job.rawText);
+          const { error } = await supabase
+            .from("psakei_din")
+            .insert({
+              id: fileId,
+              title: `${job.title} (מעוצב)`,
+              court: parsed.court || "לא ידוע",
+              year: parsed.year || new Date().getFullYear(),
+              case_number: parsed.caseNumber || null,
+              summary: parsed.summary || job.rawText.slice(0, 500),
+              full_text: job.html,
+              source_url: urlData?.publicUrl || null,
+              tags: ["מעוצב"],
+              beautify_count: 1,
+            });
+          if (error) throw error;
+        }
+        successCount++;
+      } catch {
+        failCount++;
+      }
+    });
+
+    setIsSaving(false);
+    toast({
+      title: mode === "save" ? "נשמרו" : "שוכפלו ונשמרו",
+      description: `${successCount} הצליחו${failCount > 0 ? `, ${failCount} נכשלו` : ""}`,
+      variant: failCount > 0 ? "destructive" : undefined,
+    });
+  }, [batchJobs, toast]);
+
+  // ===== SINGLE FORMAT =====
+  const handleFormat = useCallback(() => {
+    if (!rawText.trim()) {
+      toast({ title: "שגיאה", description: "נא להדביק טקסט או להעלות קובץ", variant: "destructive" });
+      return;
+    }
+    setIsProcessing(true);
+    try {
+      const parsed = parsePsakDinText(rawText);
+      const html = generateFromTemplate(selectedTemplate, parsed);
+      setHtmlResult(html);
+      setViewMode("preview");
+      const tmpl = TEMPLATES.find(t => t.id === selectedTemplate);
+      toast({ title: "הצלחה", description: `פסק הדין עוצב בתבנית "${tmpl?.name || "קלאסי"}"` });
+    } catch {
+      toast({ title: "שגיאה", description: "שגיאה בעיבוד הטקסט", variant: "destructive" });
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [rawText, toast, selectedTemplate]);
+
+  const handleTemplateChange = useCallback((templateId: string) => {
+    setSelectedTemplate(templateId);
+    if (!rawText.trim() || !htmlResult) return;
+
+    const tmpl = TEMPLATES.find(t => t.id === templateId);
+    if (tmpl?.requiresAi) {
+      toast({
+        title: "תבנית AI נבחרה",
+        description: "לחצו על כפתור AI כדי לעדכן את התצוגה בתבנית זו",
+      });
+      return;
+    }
+
+    try {
+      const parsed = parsePsakDinText(rawText);
+      const html = generateFromTemplate(templateId, parsed);
+      setHtmlResult(html);
+      setViewMode("preview");
+      toast({ title: "התצוגה עודכנה", description: `הוחלפה לתבנית "${tmpl?.name || "קלאסי"}"` });
+    } catch {
+      toast({ title: "שגיאה", description: "לא ניתן לעדכן תבנית לתצוגה הנוכחית", variant: "destructive" });
+    }
+  }, [rawText, htmlResult, toast]);
+
+  // ===== SINGLE AI ENHANCE =====
+  const handleAiEnhance = useCallback(async () => {
+    if (!rawText.trim()) {
+      toast({ title: "שגיאה", description: "נא להדביק טקסט או להעלות קובץ", variant: "destructive" });
+      return;
+    }
+    setIsAiProcessing(true);
+    setAiProgress(selectedTemplate === "ai-summary" ? "מסכם עם AI..." : "מתחבר ל-AI...");
+    setHtmlResult("");
+
+    try {
+      const session = (await supabase.auth.getSession()).data.session;
+      const token = session?.access_token;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const supabaseUrl = (supabase as any).supabaseUrl ?? (supabase as any).rest?.url?.replace("/rest/v1", "") ?? "";
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const anonKey = (supabase as any).supabaseKey ?? (supabase as any).rest?.headers?.apikey ?? "";
+
+      const res = await fetch(`${supabaseUrl}/functions/v1/beautify-psak-din`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+          "apikey": anonKey,
+        },
+        body: JSON.stringify({
+          fullText: rawText,
+          ...(selectedTemplate === "ai-summary" ? { mode: "summary" } : {}),
+        }),
+      });
+
+      if (!res.ok) throw new Error(`שגיאת שרת: ${res.status}`);
+
+      const contentType = res.headers.get("content-type") || "";
+
+      if (contentType.includes("text/event-stream") && res.body) {
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let accumulated = "";
+        setAiProgress("מעבד ומעצב...");
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split("\n");
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
+            const payload = line.slice(6).trim();
+            try {
+              const parsed = JSON.parse(payload);
+              if (parsed.error) throw new Error(parsed.error);
+              if (parsed.done && parsed.html) {
+                accumulated = parsed.html;
+                break;
+              }
+              if (parsed.chunk) {
+                accumulated += parsed.chunk;
+                setHtmlResult(accumulated);
+              }
+            } catch (e) {
+              if (e instanceof Error && e.message !== "Unexpected end of JSON input") throw e;
+            }
+          }
+        }
+
+        if (accumulated) {
+          setHtmlResult(accumulated);
+          setViewMode("preview");
+          const desc = selectedTemplate === "ai-summary" ? "סיכום AI נוצר בהצלחה" : "פסק הדין עוצב בעזרת AI";
+          toast({ title: "הצלחה", description: desc });
+        } else {
+          toast({ title: "שגיאה", description: "לא התקבל תוצאה מה-AI", variant: "destructive" });
+        }
+      } else {
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+      }
+    } catch (err) {
+      toast({
+        title: "שגיאת AI",
+        description: err instanceof Error ? err.message : "שגיאה לא צפויה",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAiProcessing(false);
+      setAiProgress("");
+    }
+  }, [rawText, toast, selectedTemplate]);
+
+  // ===== SINGLE SAVE =====
+  const handleSave = useCallback(async () => {
+    if (!htmlResult || !loadedPsakId) return;
+    setIsSaving(true);
+    try {
+      const fileName = `beautified/${loadedPsakId}-${Date.now()}.html`;
+      const blob = new Blob([htmlResult], { type: "text/html;charset=utf-8" });
+      await supabase.storage.from("psakei-din-files").upload(fileName, blob, { contentType: "text/html", upsert: true });
+      const { data: urlData } = supabase.storage.from("psakei-din-files").getPublicUrl(fileName);
+
+      // Fetch current beautify_count to increment
+      const { data: current } = await supabase.from("psakei_din").select("beautify_count").eq("id", loadedPsakId).single();
+      const newCount = ((current?.beautify_count as number) || 0) + 1;
+
+      const { error } = await supabase.from("psakei_din")
+        .update({ full_text: htmlResult, source_url: urlData?.publicUrl || undefined, beautify_count: newCount })
+        .eq("id", loadedPsakId);
+      if (error) throw error;
+
+      toast({ title: "נשמר", description: `"${loadedPsakTitle}" עודכן בהצלחה` });
+    } catch {
+      toast({ title: "שגיאה", description: "שגיאה בשמירת פסק הדין", variant: "destructive" });
+    } finally {
+      setIsSaving(false);
+    }
+  }, [htmlResult, loadedPsakId, loadedPsakTitle, toast]);
+
+  // ===== SINGLE DUPLICATE =====
+  const handleDuplicateAndSave = useCallback(async () => {
+    if (!htmlResult) return;
+    setIsSaving(true);
+    try {
+      const newId = crypto.randomUUID();
+      const fileName = `beautified/${newId}.html`;
+      const blob = new Blob([htmlResult], { type: "text/html;charset=utf-8" });
+      await supabase.storage.from("psakei-din-files").upload(fileName, blob, { contentType: "text/html", upsert: true });
+      const { data: urlData } = supabase.storage.from("psakei-din-files").getPublicUrl(fileName);
+
+      const parsed = parsePsakDinText(rawText);
+      const { error } = await supabase.from("psakei_din").insert({
+        id: newId,
+        title: `${loadedPsakTitle || parsed.title} (מעוצב)`,
+        court: parsed.court || "לא ידוע",
+        year: parsed.year || new Date().getFullYear(),
+        case_number: parsed.caseNumber || null,
+        summary: parsed.summary || rawText.slice(0, 500),
+        full_text: htmlResult,
+        source_url: urlData?.publicUrl || null,
+        tags: ["מעוצב"],
+        beautify_count: 1,
+      });
+      if (error) throw error;
+
+      setLoadedPsakId(newId);
+      setLoadedPsakTitle(`${loadedPsakTitle || parsed.title} (מעוצב)`);
+      toast({ title: "נשמר", description: "פסק דין מעוצב נשמר כפריט חדש" });
+    } catch {
+      toast({ title: "שגיאה", description: "שגיאה בשמירת העותק", variant: "destructive" });
+    } finally {
+      setIsSaving(false);
+    }
+  }, [htmlResult, rawText, loadedPsakTitle, toast]);
+
+  const handleDownload = useCallback(() => {
+    if (!htmlResult) return;
+    const blob = new Blob([htmlResult], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "psak-din-formatted.html";
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [htmlResult]);
+
+  // ===== OPEN IN BROWSER WITH EDITING TOOLBAR =====
+  const handleOpenInBrowser = useCallback(() => {
+    if (!htmlResult) return;
+    const toolbarCss = `
+      #editor-toolbar {
+        position: sticky; top: 0; z-index: 999;
+        background: #0B1F5B; color: #fff;
+        display: flex; flex-wrap: wrap; align-items: center; gap: 4px;
+        padding: 6px 12px; font-family: sans-serif; direction: rtl;
+      }
+      #editor-toolbar button, #editor-toolbar select {
+        background: rgba(255,255,255,0.15); color: #fff; border: none;
+        border-radius: 4px; padding: 4px 10px; cursor: pointer; font-size: 14px;
+      }
+      #editor-toolbar button:hover { background: rgba(255,255,255,0.3); }
+      #editor-toolbar .sep { width: 1px; height: 24px; background: rgba(255,255,255,0.3); margin: 0 4px; }
+      #editor-toolbar select { padding: 4px 6px; }
+      #editor-toolbar select option { color: #000; }
+    `;
+    const toolbarHtml = `
+      <div id="editor-toolbar">
+        <button onclick="document.execCommand('bold')" title="\u05de\u05d5\u05d3\u05d2\u05e9"><b>B</b></button>
+        <button onclick="document.execCommand('italic')" title="\u05e0\u05d8\u05d5\u05d9"><i>I</i></button>
+        <button onclick="document.execCommand('underline')" title="\u05e7\u05d5 \u05ea\u05d7\u05ea\u05d5\u05df"><u>U</u></button>
+        <button onclick="document.execCommand('strikeThrough')" title="\u05e7\u05d5 \u05d7\u05d5\u05e6\u05d4"><s>S</s></button>
+        <div class="sep"></div>
+        <select onchange="document.execCommand('fontSize',false,this.value);this.selectedIndex=0">
+          <option>\u05d2\u05d5\u05d3\u05dc</option>
+          <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+          <option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option>
+        </select>
+        <select onchange="document.execCommand('foreColor',false,this.value);this.selectedIndex=0">
+          <option>\u05e6\u05d1\u05e2</option>
+          <option value="#000000" style="color:#000">\u25a0 \u05e9\u05d7\u05d5\u05e8</option>
+          <option value="#0B1F5B" style="color:#0B1F5B">\u25a0 \u05db\u05d7\u05d5\u05dc</option>
+          <option value="#c0392b" style="color:#c0392b">\u25a0 \u05d0\u05d3\u05d5\u05dd</option>
+          <option value="#27ae60" style="color:#27ae60">\u25a0 \u05d9\u05e8\u05d5\u05e7</option>
+          <option value="#D4AF37" style="color:#D4AF37">\u25a0 \u05d6\u05d4\u05d1</option>
+        </select>
+        <select onchange="document.execCommand('hiliteColor',false,this.value);this.selectedIndex=0">
+          <option>\u05d4\u05d3\u05d2\u05e9\u05d4</option>
+          <option value="#ffff00" style="background:#ffff00">\u05e6\u05d4\u05d5\u05d1</option>
+          <option value="#90EE90" style="background:#90EE90">\u05d9\u05e8\u05d5\u05e7</option>
+          <option value="#ADD8E6" style="background:#ADD8E6">\u05ea\u05db\u05dc\u05ea</option>
+          <option value="#FFB6C1" style="background:#FFB6C1">\u05d5\u05e8\u05d5\u05d3</option>
+          <option value="transparent">\u05dc\u05dc\u05d0</option>
+        </select>
+        <div class="sep"></div>
+        <button onclick="document.execCommand('justifyRight')" title="\u05d9\u05d9\u05e9\u05d5\u05e8 \u05dc\u05d9\u05de\u05d9\u05df">\u2261</button>
+        <button onclick="document.execCommand('justifyCenter')" title="\u05de\u05e8\u05db\u05d5\u05d6">\u2550</button>
+        <button onclick="document.execCommand('justifyLeft')" title="\u05d9\u05d9\u05e9\u05d5\u05e8 \u05dc\u05e9\u05de\u05d0\u05dc">\u2261</button>
+        <button onclick="document.execCommand('justifyFull')" title="\u05de\u05d9\u05d5\u05e9\u05e8">\u2630</button>
+        <div class="sep"></div>
+        <button onclick="document.execCommand('insertUnorderedList')" title="\u05e8\u05e9\u05d9\u05de\u05d4">\u2022</button>
+        <button onclick="document.execCommand('insertOrderedList')" title="\u05de\u05e1\u05e4\u05d5\u05e8">1.</button>
+        <button onclick="document.execCommand('indent')" title="\u05d4\u05d6\u05d7\u05d4">\u21e5</button>
+        <button onclick="document.execCommand('outdent')" title="\u05d4\u05e7\u05d8\u05e0\u05d4">\u21e4</button>
+        <div class="sep"></div>
+        <button onclick="document.execCommand('undo')" title="\u05d1\u05d8\u05dc">\u21a9</button>
+        <button onclick="document.execCommand('redo')" title="\u05d7\u05d6\u05d5\u05e8">\u21aa</button>
+        <button onclick="document.execCommand('removeFormat')" title="\u05e0\u05e7\u05d4 \u05e2\u05d9\u05e6\u05d5\u05d1">\u2718</button>
+        <div class="sep"></div>
+        <button onclick="window.print()" title="\u05d4\u05d3\u05e4\u05e1\u05d4">\ud83d\udda8\ufe0f</button>
+        <button onclick="(function(){var b=new Blob([document.querySelector('.container').outerHTML],{type:'text/html'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='psak-din-edited.html';a.click()})()" title="\u05e9\u05de\u05d5\u05e8 HTML">\ud83d\udcbe</button>
+      </div>
+    `;
+
+    // Inject toolbar + contentEditable into the HTML
+    const editableHtml = htmlResult.replace(
+      /<body([^>]*)>/i,
+      `<body$1><style>${toolbarCss}</style>${toolbarHtml}`,
+    ).replace(
+      /class="container"/,
+      'class="container" contenteditable="true" spellcheck="true"',
+    );
+
+    const blob = new Blob([editableHtml], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank");
+    // Revoke after delay to allow browser to load
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  }, [htmlResult]);
+
+  const handleReset = useCallback(() => {
+    setRawText("");
+    setHtmlResult("");
+    setViewMode("preview");
+    setLoadedPsakId(null);
+    setLoadedPsakTitle("");
+    setBatchJobs([]);
+    setPreviewJobId(null);
+  }, []);
+
+  // ===== BATCH DOWNLOAD ALL =====
+  const handleBatchDownloadAll = useCallback(() => {
+    const doneJobs = batchJobs.filter(j => j.status === "done" && j.html);
+    for (const job of doneJobs) {
+      const blob = new Blob([job.html], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${job.title.replace(/[/\\?%*:|"<>]/g, "-")}.html`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  }, [batchJobs]);
+
+  // ===== COMPUTED =====
+  const isFormatted = isPsakDinFormat(rawText);
+  const isBatchMode = batchJobs.length > 0;
+  const batchDone = batchJobs.filter(j => j.status === "done").length;
+  const batchError = batchJobs.filter(j => j.status === "error").length;
+  const batchTotal = batchJobs.length;
+  const batchProgress = batchTotal > 0 ? Math.round(((batchDone + batchError) / batchTotal) * 100) : 0;
+  const previewJob = useMemo(() => batchJobs.find(j => j.id === previewJobId), [batchJobs, previewJobId]);
+
+  return (
+    <div className="p-3 md:p-6 space-y-4 h-full overflow-y-auto">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-4">
+        <Paintbrush className="h-6 w-6 text-primary" />
+        <div className="flex-1">
+          <h2 className="text-xl font-bold">עיצוב פסקי דין</h2>
+          <p className="text-sm text-muted-foreground">
+            הדביקו טקסט, העלו קובץ, או בחרו מהמאגר — ניתן לעצב כמה פסקי דין במקביל
+          </p>
+        </div>
+        <div className="w-[200px] hidden md:block">
+          <Select value={selectedTemplate} onValueChange={handleTemplateChange}>
+            <SelectTrigger className="h-9">
+              <SelectValue>
+                <span className="inline-flex items-center gap-1.5 text-sm">
+                  <LayoutTemplate className="h-3.5 w-3.5" />
+                  <span>{selectedTemplateInfo.icon} {selectedTemplateInfo.name}</span>
+                </span>
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {TEMPLATES.map(tmpl => (
+                <SelectItem key={tmpl.id} value={tmpl.id}>
+                  <span className="inline-flex items-center gap-2">
+                    <span>{tmpl.icon}</span>
+                    <span>{tmpl.name}</span>
+                    {tmpl.requiresAi && <span className="text-[10px] text-muted-foreground">AI</span>}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <Button variant="outline" onClick={openDbPicker}>
+          <Database className="h-4 w-4 ml-2" />
+          טען מהמאגר
+        </Button>
+      </div>
+
+      {/* ===== BATCH MODE ===== */}
+      {isBatchMode && (
+        <Card>
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <h3 className="font-semibold flex items-center gap-2">
+                <CheckSquare className="h-4 w-4" />
+                עיבוד {batchTotal} פסקי דין
+                {batchRunning && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
+              </h3>
+              <div className="flex gap-2 flex-wrap">
+                {batchRunning && (
+                  <Button variant="destructive" size="sm" onClick={handleAbortBatch}>
+                    <Pause className="h-4 w-4 ml-1" />
+                    עצור
+                  </Button>
+                )}
+                {!batchRunning && batchDone > 0 && (
+                  <>
+                    <Button variant="outline" size="sm" onClick={handleBatchDownloadAll}>
+                      <Download className="h-4 w-4 ml-1" />
+                      הורד הכל ({batchDone})
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleBatchSave("save")} disabled={isSaving}>
+                      {isSaving ? <Loader2 className="h-4 w-4 ml-1 animate-spin" /> : <Save className="h-4 w-4 ml-1" />}
+                      שמור הכל
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleBatchSave("duplicate")} disabled={isSaving}>
+                      {isSaving ? <Loader2 className="h-4 w-4 ml-1 animate-spin" /> : <Copy className="h-4 w-4 ml-1" />}
+                      שכפל ושמור הכל
+                    </Button>
+                  </>
+                )}
+                <Button variant="ghost" size="sm" onClick={handleReset}>
+                  <RotateCcw className="h-4 w-4 ml-1" />
+                  נקה
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Progress value={batchProgress} className="flex-1" />
+              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                {batchDone + batchError}/{batchTotal}
+                {batchError > 0 && ` (${batchError} שגיאות)`}
+              </span>
+            </div>
+
+            <ScrollArea className="max-h-[200px]">
+              <div className="space-y-1">
+                {batchJobs.map(job => (
+                  <button
+                    key={job.id}
+                    onClick={() => {
+                      if (job.status === "done") {
+                        setPreviewJobId(job.id);
+                        setHtmlResult(job.html);
+                        setRawText(job.rawText);
+                        setViewMode("preview");
+                      }
+                    }}
+                    className={`w-full flex items-center gap-2 p-2 rounded-md text-sm text-right transition-colors
+                      ${previewJobId === job.id ? "bg-primary/10 border border-primary/30" : "hover:bg-accent"}
+                      ${job.status === "done" ? "cursor-pointer" : "cursor-default"}`}
+                  >
+                    {job.status === "pending" && <Square className="h-4 w-4 text-muted-foreground shrink-0" />}
+                    {job.status === "processing" && <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />}
+                    {job.status === "done" && <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />}
+                    {job.status === "error" && <AlertCircle className="h-4 w-4 text-destructive shrink-0" />}
+                    <span className="truncate flex-1">{job.title}</span>
+                    {job.status === "done" && (
+                      <Badge variant="secondary" className="text-[10px] shrink-0">מוכן</Badge>
+                    )}
+                    {job.status === "error" && (
+                      <Badge variant="destructive" className="text-[10px] shrink-0">שגיאה</Badge>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ===== SINGLE MODE / PREVIEW ===== */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Input Panel */}
+        <Card>
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <h3 className="font-semibold flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                טקסט מקור
+                {loadedPsakTitle && (
+                  <span className="text-xs font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded truncate max-w-[200px]">
+                    {loadedPsakTitle}
+                  </span>
+                )}
+              </h3>
+              <div className="flex gap-2 flex-wrap">
+                <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                  <Upload className="h-4 w-4 ml-1" />
+                  העלה קובץ
+                </Button>
+                {rawText && (
+                  <Button variant="ghost" size="sm" onClick={handleReset}>
+                    <RotateCcw className="h-4 w-4 ml-1" />
+                    נקה
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".txt,text/plain"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleFileUpload(file);
+              }}
+            />
+
+            <div onDrop={handleDrop} onDragOver={(e) => e.preventDefault()}>
+              <div className="mb-2 flex items-center gap-2 flex-wrap">
+                <Type className="h-4 w-4 text-muted-foreground" />
+                <Select value={leftFontFamily} onValueChange={setLeftFontFamily}>
+                  <SelectTrigger className="w-[140px] h-8 text-xs">
+                    <SelectValue placeholder="גופן" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FONT_OPTIONS.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setLeftBold(v => !v)}>
+                  <Bold className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setLeftFontSize(v => Math.max(12, v - 1))}>
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <span className="text-xs text-muted-foreground w-9 text-center">{leftFontSize}</span>
+                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setLeftFontSize(v => Math.min(28, v + 1))}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={isScrollSync ? "default" : "outline"}
+                  size="sm"
+                  className="h-8"
+                  onClick={() => setIsScrollSync(v => !v)}
+                  title="סנכרון גלילה בין שני הצדדים"
+                >
+                  {isScrollSync ? <Link2 className="h-4 w-4 ml-1" /> : <Link2Off className="h-4 w-4 ml-1" />}
+                  סנכרון גלילה
+                </Button>
+                {isScrollSync && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => setSyncMode(v => (v === "ratio" ? "section" : "ratio"))}
+                    title="מעבר בין סנכרון יחסי לסנכרון חכם לפי סעיפים"
+                  >
+                    <AlignRight className="h-4 w-4 ml-1" />
+                    {syncMode === "ratio" ? "סנכרון יחסי" : "סנכרון חכם"}
+                  </Button>
+                )}
+              </div>
+              <Textarea
+                ref={rawTextareaRef}
+                value={rawText}
+                onChange={(e) => setRawText(e.target.value)}
+                onScroll={syncRawToOutput}
+                placeholder="הדביקו כאן את טקסט פסק הדין הגולמי, או גררו קובץ TXT לכאן..."
+                className="min-h-[350px] font-mono text-sm leading-relaxed resize-y"
+                dir="rtl"
+                style={{
+                  fontFamily: leftFontFamily,
+                  fontSize: `${leftFontSize}px`,
+                  fontWeight: leftBold ? 700 : 400,
+                }}
+              />
+            </div>
+
+            {rawText && (
+              <p className="text-xs text-muted-foreground">
+                {rawText.length.toLocaleString()} תווים
+                {isFormatted && " • זוהה מבנה פסק דין ✓"}
+              </p>
+            )}
+
+            {/* Template Selector */}
+            <div className="space-y-2">
+              <button
+                onClick={() => setShowTemplateSelector(v => !v)}
+                className="w-full flex items-center justify-between px-3 py-2 rounded-lg border bg-muted/30 hover:bg-muted/60 transition-colors text-sm"
+              >
+                <div className="flex items-center gap-2">
+                  <LayoutTemplate className="h-4 w-4 text-primary" />
+                  <span className="font-medium">תבנית עיצוב:</span>
+                  <span className="text-muted-foreground">
+                    {selectedTemplateInfo.icon}{" "}
+                    {selectedTemplateInfo.name}
+                  </span>
+                </div>
+                <Badge variant="outline" className="text-[10px]">
+                  {selectedTemplateInfo.requiresAi ? "AI" : "מקומי"}
+                </Badge>
+              </button>
+
+              {showTemplateSelector && (
+                <div className="border rounded-lg p-2 space-y-1 bg-background shadow-sm max-h-[280px] overflow-y-auto">
+                  {TEMPLATES.filter(t => !t.requiresAi).length > 0 && (
+                    <div className="text-[10px] font-semibold text-muted-foreground px-2 py-1 uppercase tracking-wider">ללא AI</div>
+                  )}
+                  {TEMPLATES.filter(t => !t.requiresAi).map(tmpl => (
+                    <button
+                      key={tmpl.id}
+                      onClick={() => { setSelectedTemplate(tmpl.id); setShowTemplateSelector(false); }}
+                      className={`w-full flex items-start gap-2.5 p-2.5 rounded-md text-right transition-colors ${
+                        selectedTemplate === tmpl.id
+                          ? "bg-primary/10 border border-primary/30"
+                          : "hover:bg-accent"
+                      }`}
+                    >
+                      <span className="text-lg mt-0.5">{tmpl.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">{tmpl.name}</span>
+                          {tmpl.hasIndex && <Badge variant="secondary" className="text-[9px] px-1 py-0">אינדקס</Badge>}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">{tmpl.description}</p>
+                      </div>
+                      {selectedTemplate === tmpl.id && <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-1" />}
+                    </button>
+                  ))}
+                  {TEMPLATES.filter(t => t.requiresAi).length > 0 && (
+                    <div className="text-[10px] font-semibold text-muted-foreground px-2 py-1 uppercase tracking-wider mt-1 border-t pt-2">עם AI</div>
+                  )}
+                  {TEMPLATES.filter(t => t.requiresAi).map(tmpl => (
+                    <button
+                      key={tmpl.id}
+                      onClick={() => { setSelectedTemplate(tmpl.id); setShowTemplateSelector(false); }}
+                      className={`w-full flex items-start gap-2.5 p-2.5 rounded-md text-right transition-colors ${
+                        selectedTemplate === tmpl.id
+                          ? "bg-primary/10 border border-primary/30"
+                          : "hover:bg-accent"
+                      }`}
+                    >
+                      <span className="text-lg mt-0.5">{tmpl.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">{tmpl.name}</span>
+                          <Badge className="text-[9px] px-1.5 py-0 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-0">AI</Badge>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">{tmpl.description}</p>
+                      </div>
+                      {selectedTemplate === tmpl.id && <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-1" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-2 flex-wrap">
+              {TEMPLATES.find(t => t.id === selectedTemplate)?.requiresAi ? (
+                <Button onClick={handleAiEnhance} disabled={!rawText.trim() || isProcessing || isAiProcessing} className="flex-1">
+                  {isAiProcessing ? <Loader2 className="h-4 w-4 ml-2 animate-spin" /> : <Sparkles className="h-4 w-4 ml-2" />}
+                  {isAiProcessing ? aiProgress : `עצב עם AI — ${TEMPLATES.find(t => t.id === selectedTemplate)?.name}`}
+                </Button>
+              ) : (
+                <Button onClick={handleFormat} disabled={!rawText.trim() || isProcessing || isAiProcessing} className="flex-1">
+                  {isProcessing ? <Loader2 className="h-4 w-4 ml-2 animate-spin" /> : <Paintbrush className="h-4 w-4 ml-2" />}
+                  עצב — {TEMPLATES.find(t => t.id === selectedTemplate)?.name}
+                </Button>
+              )}
+              {!TEMPLATES.find(t => t.id === selectedTemplate)?.requiresAi && (
+                <Button onClick={handleAiEnhance} disabled={!rawText.trim() || isProcessing || isAiProcessing} variant="secondary" size="sm">
+                  {isAiProcessing ? <Loader2 className="h-4 w-4 ml-1 animate-spin" /> : <Sparkles className="h-4 w-4 ml-1" />}
+                  AI
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Output Panel */}
+        <Card>
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <h3 className="font-semibold flex items-center gap-2">
+                <Eye className="h-4 w-4" />
+                תצוגה מקדימה
+                {previewJob && (
+                  <span className="text-xs font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded truncate max-w-[200px]">
+                    {previewJob.title}
+                  </span>
+                )}
+              </h3>
+              <div className="flex gap-2 flex-wrap">
+                <Select value={rightFontFamily} onValueChange={setRightFontFamily}>
+                  <SelectTrigger className="w-[135px] h-9 text-xs">
+                    <SelectValue placeholder="גופן תצוגה" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FONT_OPTIONS.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button variant={rightBold ? "default" : "outline"} size="icon" className="h-9 w-9" onClick={() => setRightBold(v => !v)}>
+                  <Bold className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => setRightFontSize(v => Math.max(12, v - 1))}>
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <span className="text-xs text-muted-foreground w-9 text-center self-center">{rightFontSize}</span>
+                <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => setRightFontSize(v => Math.min(28, v + 1))}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+                <div className="w-[190px]">
+                  <Select value={selectedTemplate} onValueChange={handleTemplateChange}>
+                    <SelectTrigger className="h-9">
+                      <SelectValue>
+                        <span className="inline-flex items-center gap-1.5 text-sm">
+                          <LayoutTemplate className="h-3.5 w-3.5" />
+                          <span>{selectedTemplateInfo.icon} {selectedTemplateInfo.name}</span>
+                        </span>
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TEMPLATES.map(tmpl => (
+                        <SelectItem key={tmpl.id} value={tmpl.id}>
+                          <span className="inline-flex items-center gap-2">
+                            <span>{tmpl.icon}</span>
+                            <span>{tmpl.name}</span>
+                            {tmpl.requiresAi && <span className="text-[10px] text-muted-foreground">AI</span>}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button variant={viewMode === "preview" ? "default" : "outline"} size="sm" onClick={() => setViewMode("preview")}>
+                  <Eye className="h-3 w-3 ml-1" />
+                  תצוגה
+                </Button>
+                <Button variant={viewMode === "source" ? "default" : "outline"} size="sm" onClick={() => setViewMode("source")}>
+                  <Code className="h-3 w-3 ml-1" />
+                  קוד
+                </Button>
+                {viewMode === "preview" && (
+                  <Button variant={isPreviewLocked ? "default" : "outline"} size="sm" onClick={() => setIsPreviewLocked(v => !v)}>
+                    {isPreviewLocked ? <Lock className="h-4 w-4 ml-1" /> : <Unlock className="h-4 w-4 ml-1" />}
+                    {isPreviewLocked ? "תצוגה נעולה" : "נעילת תצוגה"}
+                  </Button>
+                )}
+                {htmlResult && (
+                  <>
+                    <Button variant="outline" size="sm" onClick={handleOpenInBrowser} title="פתח בדפדפן עם עריכה">
+                      <ExternalLink className="h-4 w-4 ml-1" />
+                      ערוך בדפדפן
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={handleDownload}>
+                      <Download className="h-4 w-4 ml-1" />
+                      הורד HTML
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={async () => {
+                      if (!htmlResult) return;
+                      try {
+                        const { generateDocx } = await import('@/lib/docxGenerator');
+                        const doc = new DOMParser().parseFromString(htmlResult, 'text/html');
+                        doc.querySelectorAll('style, script, link, meta, title, head').forEach(el => el.remove());
+                        doc.querySelectorAll('p, div, br, h1, h2, h3, h4, h5, h6, li, tr, hr, blockquote').forEach(el => {
+                          el.insertAdjacentText('beforebegin', '\n');
+                        });
+                        const plainText = (doc.body?.textContent || '').replace(/[ \t]+/g, ' ').replace(/\n[ \t]*/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+                        const blob = await generateDocx({
+                          title: loadedPsakTitle || 'פסק דין',
+                          court: 'לא צוין',
+                          year: new Date().getFullYear(),
+                          full_text: plainText,
+                        });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `${loadedPsakTitle || 'psak-din'}.docx`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                        toast({ title: 'קובץ DOCX הורד בהצלחה' });
+                      } catch (err) {
+                        console.error('DOCX export error:', err);
+                        toast({ title: 'שגיאה בייצוא DOCX', variant: 'destructive' });
+                      }
+                    }}>
+                      <Download className="h-4 w-4 ml-1" />
+                      הורד WORD
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => {
+                      if (!htmlResult) return;
+                      const doc = new DOMParser().parseFromString(htmlResult, 'text/html');
+                      doc.querySelectorAll('style, script, link, meta, title, head').forEach(el => el.remove());
+                      doc.querySelectorAll('p, div, br, h1, h2, h3, h4, h5, h6, li, tr, hr, blockquote').forEach(el => {
+                        el.insertAdjacentText('beforebegin', '\n');
+                      });
+                      const plainText = (doc.body?.textContent || '').replace(/[ \t]+/g, ' ').replace(/\n[ \t]*/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+                      const blob = new Blob([`\uFEFF${plainText}`], { type: 'text/plain;charset=utf-8' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `${loadedPsakTitle || 'psak-din'}.txt`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                      toast({ title: 'קובץ TXT הורד בהצלחה' });
+                    }}>
+                      <Download className="h-4 w-4 ml-1" />
+                      הורד TXT
+                    </Button>
+                    {loadedPsakId && !isBatchMode && (
+                      <Button variant="outline" size="sm" onClick={handleSave} disabled={isSaving}>
+                        {isSaving ? <Loader2 className="h-4 w-4 ml-1 animate-spin" /> : <Save className="h-4 w-4 ml-1" />}
+                        שמור
+                      </Button>
+                    )}
+                    {!isBatchMode && (
+                      <Button variant="outline" size="sm" onClick={handleDuplicateAndSave} disabled={isSaving}>
+                        {isSaving ? <Loader2 className="h-4 w-4 ml-1 animate-spin" /> : <Copy className="h-4 w-4 ml-1" />}
+                        שכפל ושמור
+                      </Button>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+
+            {htmlResult ? (
+              viewMode === "preview" ? (
+                <div className="relative">
+                  <iframe
+                    ref={previewIframeRef}
+                    srcDoc={htmlResult}
+                    className="w-full min-h-[400px] border rounded-md bg-white"
+                    sandbox="allow-same-origin allow-scripts"
+                    title="תצוגה מקדימה של פסק דין מעוצב"
+                    onLoad={applyPreviewTypography}
+                    style={{ pointerEvents: isPreviewLocked ? "none" : "auto" }}
+                  />
+                  {isPreviewLocked && (
+                    <div className="absolute inset-0 flex items-center justify-center rounded-md bg-white/10 backdrop-blur-[1px]">
+                      <Badge variant="secondary" className="text-sm px-3 py-1.5">
+                        <Lock className="h-4 w-4 ml-1" />
+                        מצב תצוגה נעול
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Textarea
+                  ref={sourceTextareaRef}
+                  value={htmlResult}
+                  readOnly
+                  onScroll={() => {
+                    if (!isScrollSync || syncBusyRef.current) return;
+                    const src = sourceTextareaRef.current;
+                    if (!src) return;
+                    const srcMax = Math.max(1, src.scrollHeight - src.clientHeight);
+                    syncOutputToRaw(src.scrollTop / srcMax);
+                  }}
+                  className="min-h-[400px] font-mono text-xs leading-relaxed resize-y"
+                  dir="ltr"
+                  style={{
+                    fontFamily: rightFontFamily,
+                    fontSize: `${rightFontSize}px`,
+                    fontWeight: rightBold ? 700 : 400,
+                  }}
+                />
+              )
+            ) : (
+              <div className="min-h-[400px] flex items-center justify-center border rounded-md bg-muted/30">
+                <div className="text-center text-muted-foreground">
+                  <Paintbrush className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                  <p>{isBatchMode ? "לחצו על פסק דין מוכן לצפייה בתוצאה" : 'הדביקו טקסט ולחצו "עצב" לצפייה בתוצאה'}</p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ===== DB PICKER — NON-MODAL SLIDE PANEL ===== */}
+      {showDbPicker && (
+        <div className="fixed inset-y-0 left-0 w-full max-w-xl z-50 shadow-2xl border-r bg-background flex flex-col" dir="rtl">
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 border-b">
+            <h3 className="text-lg font-bold flex items-center gap-2">
+              <Database className="h-5 w-5" />
+              טען פסקי דין מהמאגר
+            </h3>
+            <Button variant="ghost" size="icon" onClick={() => setShowDbPicker(false)}>
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+
+          {/* Search + Filters */}
+          <div className="p-3 border-b space-y-2">
+            <div className="relative">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={dbSearch}
+                onChange={(e) => setDbSearch(e.target.value)}
+                placeholder="חיפוש לפי כותרת, בית דין או תקציר..."
+                className="pr-9"
+                dir="rtl"
+                autoFocus
+              />
+            </div>
+            <div className="flex gap-2 flex-wrap items-center">
+              <Select value={dbMasechetFilter} onValueChange={(v) => setDbMasechetFilter(v)}>
+                <SelectTrigger className="w-[150px] h-8 text-xs">
+                  <SelectValue placeholder="לפי מסכת" />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  <SelectItem value="all">כל המסכתות</SelectItem>
+                  {MASECHTOT.map(m => (
+                    <SelectItem key={m.hebrewName} value={m.hebrewName}>{m.hebrewName}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={dbBeautifyFilter} onValueChange={(v) => setDbBeautifyFilter(v as typeof dbBeautifyFilter)}>
+                <SelectTrigger className="w-[120px] h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">הכל</SelectItem>
+                  <SelectItem value="beautified">עוצבו ✓</SelectItem>
+                  <SelectItem value="not_beautified">לא עוצבו</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={dbSortBy} onValueChange={(v) => setDbSortBy(v as typeof dbSortBy)}>
+                <SelectTrigger className="w-[110px] h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="year">לפי שנה</SelectItem>
+                  <SelectItem value="title">לפי שם</SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="flex items-center gap-1 mr-auto">
+                <label className="text-xs text-muted-foreground whitespace-nowrap">כמות:</label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={500}
+                  value={dbLoadCount}
+                  onChange={(e) => {
+                    const v = parseInt(e.target.value) || DB_PAGE;
+                    setDbLoadCount(Math.min(500, Math.max(1, v)));
+                  }}
+                  className="w-[70px] h-8 text-xs text-center"
+                />
+              </div>
+              {masechetPsakIds !== null && (
+                <Badge variant="outline" className="text-xs">
+                  {masechetPsakIds.size} פסקי דין למסכת
+                </Badge>
+              )}
+            </div>
+          </div>
+
+          {/* Selection bar */}
+          <div className="flex items-center justify-between px-4 py-2 bg-muted/50 border-b text-sm">
+            <label
+              className="flex items-center gap-2 text-primary hover:underline cursor-pointer select-none"
+            >
+              <Checkbox
+                checked={dbItems.length > 0 && selectedIds.size === dbItems.length}
+                onCheckedChange={() => toggleSelectAll()}
+              />
+              {selectedIds.size > 0 && selectedIds.size === dbItems.length ? "בטל הכל" : "בחר הכל"}
+            </label>
+            <div className="flex items-center gap-2">
+              {selectedIds.size > 0 && (
+                <Badge variant="secondary">{selectedIds.size} נבחרו</Badge>
+              )}
+              <Button
+                size="sm"
+                disabled={selectedIds.size === 0}
+                onClick={handleLoadMultiple}
+              >
+                <Play className="h-4 w-4 ml-1" />
+                עצב {selectedIds.size > 0 ? `${selectedIds.size} פסקי דין` : ""}
+              </Button>
+              {selectedIds.size === 1 && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const item = dbItems.find(i => selectedIds.has(i.id));
+                    if (item) handleLoadSingle(item);
+                  }}
+                >
+                  טען יחיד
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Items list */}
+          <div className="flex-1 overflow-y-auto">
+            {dbLoading ? (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : dbItems.length === 0 ? (
+              <div className="text-center py-16 text-muted-foreground">לא נמצאו פסקי דין</div>
+            ) : (
+              <div className="divide-y">
+                {dbItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className={`group flex items-start gap-3 p-3 transition-colors hover:bg-accent/50 relative
+                      ${selectedIds.has(item.id) ? "bg-primary/5" : ""}`}
+                  >
+                    <Checkbox
+                      checked={selectedIds.has(item.id)}
+                      onCheckedChange={() => toggleSelect(item.id)}
+                      className="mt-1 shrink-0"
+                    />
+                    <div className="flex-1 min-w-0 cursor-pointer" onClick={() => handleLoadSingle(item)}>
+                      {editingItemId === item.id ? (
+                        <Input
+                          autoFocus
+                          value={editingTitle}
+                          onChange={(e) => setEditingTitle(e.target.value)}
+                          onBlur={() => handleRenameItem(item.id, editingTitle)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleRenameItem(item.id, editingTitle);
+                            if (e.key === "Escape") setEditingItemId(null);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="h-7 text-sm"
+                        />
+                      ) : (
+                        <div className="font-medium text-sm truncate flex items-center gap-2">
+                          {item.title}
+                          {(item.beautify_count || 0) > 0 && (
+                            <Badge className="gap-1 text-[10px] px-1.5 py-0 bg-amber-500/15 text-amber-600 border border-amber-500/30 dark:text-amber-400 shrink-0">
+                              <Paintbrush className="w-2.5 h-2.5" />
+                              עוצב {item.beautify_count}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+                      <div className="text-xs text-muted-foreground mt-0.5 flex gap-2 flex-wrap">
+                        <span>{item.court}</span>
+                        {item.year > 0 && <><span>•</span><span>{item.year}</span></>}
+                      </div>
+                      {item.summary && (
+                        <div className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.summary}</div>
+                      )}
+                    </div>
+                    {/* Hover action icons */}
+                    <div className="hidden group-hover:flex items-center gap-1 shrink-0 mt-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        title="ערוך שם"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingItemId(item.id);
+                          setEditingTitle(item.title);
+                        }}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-destructive hover:text-destructive"
+                        title="מחק"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteItem(item.id);
+                        }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                {/* Infinite scroll sentinel */}
+                <div ref={scrollSentinelRef} className="h-4" />
+                {dbLoadingMore && (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default BeautifyPsakDinTab;

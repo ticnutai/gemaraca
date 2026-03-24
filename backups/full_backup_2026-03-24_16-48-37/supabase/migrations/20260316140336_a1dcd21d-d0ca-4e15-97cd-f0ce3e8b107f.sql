@@ -1,0 +1,1 @@
+ALTER TABLE public.psakei_din ADD COLUMN IF NOT EXISTS beautify_count integer NOT NULL DEFAULT 0;
