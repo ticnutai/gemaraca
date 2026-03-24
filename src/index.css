@@ -10,47 +10,47 @@ All colors MUST be HSL.
   /* Theme: Classic - Default (לבן, נייבי חזק, זהב) */
   :root,
   .theme-classic {
-    --background: 220 10% 93%;
-    --foreground: 223 62% 15%;
+    --background: 0 0% 100%;
+    --foreground: 220 70% 12%;
 
-    --card: 220 12% 95%;
-    --card-foreground: 223 62% 15%;
+    --card: 0 0% 99%;
+    --card-foreground: 220 70% 12%;
 
-    --popover: 220 12% 95%;
-    --popover-foreground: 223 62% 15%;
+    --popover: 0 0% 99%;
+    --popover-foreground: 220 70% 12%;
 
-    --primary: 223 62% 15%;
+    --primary: 220 70% 12%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 12% 90%;
-    --secondary-foreground: 223 62% 15%;
+    --secondary: 220 15% 95%;
+    --secondary-foreground: 220 70% 12%;
 
-    --muted: 220 12% 89%;
-    --muted-foreground: 223 28% 35%;
+    --muted: 220 12% 96%;
+    --muted-foreground: 220 40% 35%;
 
-    --accent: 42 56% 44%;
-    --accent-foreground: 223 62% 12%;
+    --accent: 40 72% 42%;
+    --accent-foreground: 220 70% 10%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 42 42% 57%;
+    --border: 40 55% 48%;
     --input: 220 12% 95%;
-    --ring: 42 56% 44%;
+    --ring: 40 72% 42%;
 
     --radius: 0.5rem;
     
-    --shadow-card: 0 1px 3px 0 hsl(223 62% 15% / 0.08);
-    --shadow-hover: 0 4px 12px -2px hsl(42 56% 44% / 0.25);
+    --shadow-card: 0 1px 3px 0 hsl(220 70% 12% / 0.06);
+    --shadow-hover: 0 4px 12px -2px hsl(40 72% 42% / 0.2);
 
-    --sidebar-background: 220 14% 96%;
-    --sidebar-foreground: 223 62% 15%;
-    --sidebar-primary: 223 62% 15%;
+    --sidebar-background: 0 0% 99%;
+    --sidebar-foreground: 220 70% 12%;
+    --sidebar-primary: 220 70% 12%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 42 56% 44%;
-    --sidebar-accent-foreground: 223 62% 12%;
-    --sidebar-border: 42 42% 57%;
-    --sidebar-ring: 42 56% 44%;
+    --sidebar-accent: 40 72% 42%;
+    --sidebar-accent-foreground: 220 70% 10%;
+    --sidebar-border: 40 55% 48%;
+    --sidebar-ring: 40 72% 42%;
   }
 
   /* Theme: Midnight - חצות (כהה יוקרתי) */
@@ -141,47 +141,47 @@ All colors MUST be HSL.
 
   /* Theme: Navy Gold - נייבי זהב (לבן, כחול נייבי חזק וזהב) */
   .theme-navy-gold {
-    --background: 220 10% 93%;
-    --foreground: 223 62% 15%;
+    --background: 0 0% 100%;
+    --foreground: 220 70% 12%;
 
-    --card: 220 12% 95%;
-    --card-foreground: 223 62% 15%;
+    --card: 0 0% 99%;
+    --card-foreground: 220 70% 12%;
 
-    --popover: 220 12% 95%;
-    --popover-foreground: 223 62% 15%;
+    --popover: 0 0% 99%;
+    --popover-foreground: 220 70% 12%;
 
-    --primary: 223 62% 15%;
+    --primary: 220 70% 12%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 12% 90%;
-    --secondary-foreground: 223 62% 15%;
+    --secondary: 220 15% 95%;
+    --secondary-foreground: 220 70% 12%;
 
-    --muted: 220 12% 89%;
-    --muted-foreground: 223 28% 35%;
+    --muted: 220 12% 96%;
+    --muted-foreground: 220 40% 35%;
 
-    --accent: 42 56% 44%;
-    --accent-foreground: 223 62% 12%;
+    --accent: 40 72% 42%;
+    --accent-foreground: 220 70% 10%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 42 42% 57%;
+    --border: 40 55% 48%;
     --input: 220 12% 95%;
-    --ring: 42 56% 44%;
+    --ring: 40 72% 42%;
 
     --radius: 0.5rem;
 
-    --shadow-card: 0 1px 3px 0 hsl(223 62% 15% / 0.08);
-    --shadow-hover: 0 4px 12px -2px hsl(42 56% 44% / 0.25);
+    --shadow-card: 0 1px 3px 0 hsl(220 70% 12% / 0.06);
+    --shadow-hover: 0 4px 12px -2px hsl(40 72% 42% / 0.2);
 
-    --sidebar-background: 220 14% 96%;
-    --sidebar-foreground: 223 62% 15%;
-    --sidebar-primary: 223 62% 15%;
+    --sidebar-background: 0 0% 99%;
+    --sidebar-foreground: 220 70% 12%;
+    --sidebar-primary: 220 70% 12%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 42 56% 44%;
-    --sidebar-accent-foreground: 223 62% 12%;
-    --sidebar-border: 42 42% 57%;
-    --sidebar-ring: 42 56% 44%;
+    --sidebar-accent: 40 72% 42%;
+    --sidebar-accent-foreground: 220 70% 10%;
+    --sidebar-border: 40 55% 48%;
+    --sidebar-ring: 40 72% 42%;
   }
 }
 

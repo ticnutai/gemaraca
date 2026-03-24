@@ -19,10 +19,12 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 const THEME_STORAGE_KEY = "gemara-theme";
 const CUSTOM_COLORS_KEY = "gemara-custom-colors";
-const DEFAULT_THEME: Theme = "navy-gold";
 
 export const themes: { id: Theme; name: string; description: string }[] = [
-  { id: "navy-gold", name: "נייבי זהב", description: "אפור בהיר, כחול נייבי וזהב" },
+  { id: "classic", name: "קלאסי", description: "קרם וזהב - יוקרתי ונקי" },
+  { id: "midnight", name: "חצות", description: "כהה עם נגיעות זהב" },
+  { id: "royal", name: "מלכותי", description: "כחול עמוק וכסף" },
+  { id: "navy-gold", name: "נייבי זהב", description: "לבן, כחול נייבי חזק ומסגרות זהב" },
   { id: "custom", name: "מותאם אישית", description: "בחר צבעים משלך" },
 ];
 
@@ -130,11 +132,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem(THEME_STORAGE_KEY) as Theme;
-      if (saved === "navy-gold" || saved === "classic") {
-        return DEFAULT_THEME;
+      if (saved && themes.find(t => t.id === saved)) {
+        return saved;
       }
     }
-    return DEFAULT_THEME;
+    return "classic";
   });
 
   const [customColors, setCustomColorsState] = useState<CustomColors>(() => {
@@ -162,11 +164,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     } else {
       clearCustomColors();
       document.documentElement.classList.add(`theme-${theme}`);
-    }
-
-    // Keep storage normalized so legacy values do not come back on refresh.
-    if (theme !== "custom") {
-      localStorage.setItem(THEME_STORAGE_KEY, DEFAULT_THEME);
     }
   }, [theme, customColors]);
 
