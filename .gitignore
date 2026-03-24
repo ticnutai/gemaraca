@@ -26,6 +26,29 @@ dist-ssr
 # Reference projects
 clever-doc-indexer-main/
 
+# Temp debug files
+tmp-*
+
+# Test output/debug files
+*_results.txt
+push_output.txt
+test_*.py
+run_ocr_test.py
+test-nav-url.txt
+test-url.txt
+test_hebrew.png
+
+# Test/sample psakim folders (not for repo)
+psakim-*/
+sample-psakim/
+downloaded-psakim/
+
+# Test artifacts
+test-results/
+playwright-report/
+test-nav-url.txt
+test-url.txt
+
 # Supabase temp
 supabase/.temp/
 .vercel

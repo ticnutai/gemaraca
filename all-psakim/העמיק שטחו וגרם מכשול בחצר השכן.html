@@ -41,6 +41,45 @@
     .psak-footer a{color:var(--primary-light)}
     @media print{body{background:#fff}.psak-header{background:var(--primary);-webkit-print-color-adjust:exact;print-color-adjust:exact}.psak-card{box-shadow:none;border:1px solid #ddd}}
     @media(max-width:600px){.psak-card{padding:20px 18px}.psak-header h1{font-size:1.5rem}h2{font-size:1.2rem}}
+    /* === סיידבר תוכן עניינים — צד ימין === */
+    .toc-toggle{position:fixed;top:12px;right:12px;z-index:1001;background:var(--primary);color:#fff;border:none;border-radius:50%;width:44px;height:44px;font-size:1.3rem;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.2);transition:transform .2s}
+    .toc-toggle:hover{transform:scale(1.1)}
+    .toc-sidebar{position:fixed;top:0;right:0;width:280px;height:100vh;background:var(--card,#fff);border-left:3px solid var(--accent,#c5a55a);box-shadow:-4px 0 20px rgba(0,0,0,.1);z-index:1000;overflow-y:auto;transform:translateX(100%);transition:transform .3s ease;padding:60px 0 20px;direction:rtl}
+    .toc-sidebar.open{transform:translateX(0)}
+    .toc-sidebar h3{text-align:center;color:var(--primary,#1a237e);font-size:1.1rem;margin:0 0 12px;padding:0 15px 10px;border-bottom:2px solid var(--accent,#c5a55a);font-family:'Frank Ruhl Libre',serif}
+    .toc-sidebar ul{list-style:none;padding:0;margin:0}
+    .toc-sidebar li{border-bottom:1px solid rgba(0,0,0,.05)}
+    .toc-sidebar li a{display:block;padding:10px 20px;color:var(--text,#212121);text-decoration:none;font-size:.88rem;line-height:1.5;transition:background .15s,border-left-color .15s;border-left:3px solid transparent}
+    .toc-sidebar li a:hover,.toc-sidebar li a.active{background:rgba(26,35,126,.06);border-left-color:var(--accent,#c5a55a);color:var(--primary,#1a237e)}
+    .toc-sidebar li.toc-h3 a{padding-right:35px;font-size:.82rem;color:var(--text-secondary,#555)}
+    .toc-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.3);z-index:999;opacity:0;pointer-events:none;transition:opacity .3s}
+    .toc-overlay.open{opacity:1;pointer-events:auto}
+    @media(min-width:1200px){
+      .toc-sidebar{transform:translateX(0);box-shadow:none}
+      .toc-toggle{display:none}
+      .toc-overlay{display:none}
+      .psak-body{margin-left:auto;margin-right:300px}
+      .psak-header,.meta-bar{padding-right:290px}
+      .psak-footer{padding-right:290px}
+    }
+    @media(max-width:600px){.toc-sidebar{width:260px}}
+    /* === שיפורי עיצוב === */
+    html{scroll-behavior:smooth}
+    h2{scroll-margin-top:20px}
+    h3{scroll-margin-top:20px}
+    .ogen{background-color:rgba(197,165,90,.15)!important;border-radius:3px;padding:1px 4px}
+
+  </style>
+
+  <!-- Sefaria Auto-Linker: הפיכת מראי מקומות לקישורים -->
+  <script
+    charset="utf-8"
+    src="https://www.sefaria.org/linker.v3.js"
+    data-mode="popup-click"
+  ></script>
+  <style>
+    .sefaria-ref { color: var(--primary-light, #3949ab) !important; cursor: pointer; border-bottom: 1px dashed var(--accent, #c5a55a); transition: border-color 0.2s; }
+    .sefaria-ref:hover { border-bottom-color: var(--primary, #1a237e); background-color: rgba(197,165,90,0.1); }
   </style>
 </head>
 <body>
@@ -185,5 +224,82 @@
   <footer class="psak-footer">
     מקור: <a href="https://www.psakim.org/Psakim/File/1662" target="_blank">psakim.org — פסק 1662</a>
   </footer>
+<script>
+(function(){
+  // Build TOC from headings
+  var card = document.querySelector('.psak-card');
+  if(!card) return;
+  var headings = card.querySelectorAll('h1, h2, h3, .Heading230, .Bodytext50');
+  if(headings.length < 2) return;
+
+  // Assign IDs and collect TOC items
+  var items = [];
+  var seen = new Set();
+  var idx = 0;
+  headings.forEach(function(h){
+    var text = h.textContent.replace(/\s+/g,' ').trim();
+    if(!text || text.length < 2 || text === 'פסק דין') return;
+    // Skip exact duplicates (same heading text appearing twice)
+    if(seen.has(text)) return;
+    seen.add(text);
+    var id = 'toc-' + (idx++);
+    h.id = id;
+    var level = h.tagName === 'H3' ? 'h3' : 'h2';
+    if(h.tagName === 'H1' && h.closest('.psak-header')) return;
+    items.push({id:id, text:text, level:level});
+  });
+  if(items.length < 2) return;
+
+  // Create sidebar HTML
+  var sidebar = document.createElement('nav');
+  sidebar.className = 'toc-sidebar';
+  sidebar.innerHTML = '<h3>תוכן עניינים</h3><ul>' +
+    items.map(function(it){
+      return '<li class="toc-'+it.level+'"><a href="#'+it.id+'">'+it.text+'</a></li>';
+    }).join('') + '</ul>';
+  document.body.appendChild(sidebar);
+
+  // Create toggle button
+  var btn = document.createElement('button');
+  btn.className = 'toc-toggle';
+  btn.innerHTML = '☰';
+  btn.setAttribute('aria-label','תוכן עניינים');
+  document.body.appendChild(btn);
+
+  // Create overlay
+  var overlay = document.createElement('div');
+  overlay.className = 'toc-overlay';
+  document.body.appendChild(overlay);
+
+  function toggle(){
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('open');
+  }
+  btn.addEventListener('click', toggle);
+  overlay.addEventListener('click', toggle);
+
+  // Close on link click (mobile)
+  sidebar.querySelectorAll('a').forEach(function(a){
+    a.addEventListener('click', function(){
+      if(window.innerWidth < 1200) toggle();
+    });
+  });
+
+  // Highlight active section on scroll
+  var tocLinks = sidebar.querySelectorAll('a');
+  var headingEls = items.map(function(it){ return document.getElementById(it.id); });
+  window.addEventListener('scroll', function(){
+    var scrollPos = window.scrollY + 100;
+    var active = 0;
+    headingEls.forEach(function(el, i){
+      if(el && el.offsetTop <= scrollPos) active = i;
+    });
+    tocLinks.forEach(function(a,i){
+      a.classList.toggle('active', i === active);
+    });
+  }, {passive:true});
+})();
+</script>
+
 </body>
 </html>

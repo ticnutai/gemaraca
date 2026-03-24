@@ -23,6 +23,46 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const outputDir = join(__dirname, '..', 'all-psakim');
 const manifestPath = join(outputDir, 'manifest.json');
 
+// ── App base URL — update to your deployed domain ───────────
+const APP_BASE_URL = 'https://gemaraca.lovable.app';
+
+// ── Masechet Hebrew→Sefaria name mapping ────────────────────
+const MASECHET_MAP = {
+  'ברכות':'Berakhot','שבת':'Shabbat','עירובין':'Eruvin','פסחים':'Pesachim',
+  'שקלים':'Shekalim','יומא':'Yoma','סוכה':'Sukkah','ביצה':'Beitzah',
+  'ראש השנה':'Rosh_Hashanah','תענית':'Taanit','מגילה':'Megillah',
+  'מועד קטן':'Moed_Katan','חגיגה':'Chagigah','יבמות':'Yevamot',
+  'כתובות':'Ketubot','נדרים':'Nedarim','נזיר':'Nazir','סוטה':'Sotah',
+  'גיטין':'Gittin','קידושין':'Kiddushin','בבא קמא':'Bava_Kamma',
+  'בבא מציעא':'Bava_Metzia','בבא בתרא':'Bava_Batra','סנהדרין':'Sanhedrin',
+  'מכות':'Makkot','שבועות':'Shevuot','עבודה זרה':'Avodah_Zarah',
+  'הוריות':'Horayot','זבחים':'Zevachim','מנחות':'Menachot','חולין':'Chullin',
+  'בכורות':'Bekhorot','ערכין':'Arakhin','תמורה':'Temurah','כריתות':'Keritot',
+  'מעילה':'Meilah','תמיד':'Tamid','נידה':'Niddah',
+};
+
+// ── Hebrew gematria → number ────────────────────────────────
+function gematriaToNumber(heb) {
+  const v = {'א':1,'ב':2,'ג':3,'ד':4,'ה':5,'ו':6,'ז':7,'ח':8,'ט':9,
+    'י':10,'כ':20,'ך':20,'ל':30,'מ':40,'ם':40,'נ':50,'ן':50,'ס':60,
+    'ע':70,'פ':80,'ף':80,'צ':90,'ץ':90,'ק':100,'ר':200,'ש':300,'ת':400};
+  let sum = 0;
+  for (const ch of heb.replace(/[^א-ת]/g, '')) sum += v[ch] || 0;
+  return sum;
+}
+
+// ── Build internal app URL for a source tag ─────────────────
+function buildSourceUrl(sourcePath) {
+  const parts = sourcePath.split(' ← ').map(s => s.trim());
+  if (parts[0] !== 'בבלי' || parts.length < 4) return null;
+  const sefariaName = MASECHET_MAP[parts[1]];
+  if (!sefariaName) return null;
+  const dafNum = gematriaToNumber(parts[2].replace(/^דף\s*/, ''));
+  if (!dafNum) return null;
+  const amud = (parts[3] || '').replace(/^עמוד\s*/, '').trim() === 'ב' ? 'b' : 'a';
+  return `${APP_BASE_URL}/sugya/${sefariaName.toLowerCase()}_${dafNum}${amud}`;
+}
+
 // ── Parse CLI args ──────────────────────────────────────────
 const args = process.argv.slice(2);
 let fromId = 1;
@@ -143,7 +183,65 @@ function stripInlineStyles(html) {
     .replace(/\s*id="docs-internal-guid-[^"]*"/gi, '');
 }
 
+// Remove all <span> tags iteratively (handles nesting)
+function removeSpans(html) {
+  let prev = '';
+  let cur = html;
+  for (let i = 0; i < 10 && cur !== prev; i++) {
+    prev = cur;
+    cur = cur.replace(/<span[^>]*>([\s\S]*?)<\/span>/gi, '$1');
+  }
+  cur = cur.replace(/<span[^>]*>\s*<\/span>/gi, '');
+  return cur;
+}
+
+// Extract tags (נושאים + מקורות) from the full original HTML
+function extractTags(html) {
+  const tagsStart = html.indexOf('תגיות');
+  if (tagsStart === -1) return { subjects: [], sources: [] };
+
+  const tagsSection = html.substring(tagsStart, html.indexOf('</body>', tagsStart) || html.length);
+
+  const subjects = [];
+  const sources = [];
+
+  // ── נושאים (subjects) — uses firstLevels divs ──
+  const subjectsStart = tagsSection.indexOf('subjectsTree');
+  const sourcesStart = tagsSection.indexOf('sourcesTree');
+  
+  if (subjectsStart > -1) {
+    const subjectsEnd = sourcesStart > -1 ? sourcesStart : tagsSection.length;
+    const subjectsHtml = tagsSection.substring(subjectsStart, subjectsEnd);
+    const firstLevels = subjectsHtml.split('firstLevels');
+    for (let i = 1; i < firstLevels.length; i++) {
+      const fl = firstLevels[i];
+      const flLinks = fl.match(/<a[^>]*>[^<]+<\/a>/gi) || [];
+      const path = flLinks.map(l => (l.match(/>([^<]+)</) || [])[1]?.trim())
+        .filter(t => t && t !== 'לחץ כאן' && t !== 'לחץ');
+      if (path.length > 0) subjects.push(path.join(' ← '));
+    }
+  }
+
+  // ── מקורות (sources) — uses nested ul/li jstree structure ──
+  if (sourcesStart > -1) {
+    const sourcesHtml = tagsSection.substring(sourcesStart);
+    const rootItems = sourcesHtml.split(/jstree-open/g);
+    for (let i = 1; i < rootItems.length; i++) {
+      const item = rootItems[i];
+      const links = item.match(/<a[^>]*>[^<]+<\/a>/gi) || [];
+      const path = links.map(l => (l.match(/>([^<]+)</) || [])[1]?.trim())
+        .filter(t => t && t !== 'לחץ כאן' && t !== 'לחץ');
+      if (path.length > 0) sources.push(path.join(' ← '));
+    }
+  }
+
+  return { subjects, sources };
+}
+
 function extractContent(html) {
+  // Extract tags BEFORE stripping scripts/styles
+  const tags = extractTags(html);
+
   html = html.replace(/<script[\s\S]*?<\/script>/gi, '');
   html = html.replace(/<style[\s\S]*?<\/style>/gi, '');
 
@@ -193,14 +291,13 @@ function extractContent(html) {
     .replace(/<a[^>]*>\s*<\/a>/gi, '')
     .replace(/<a[^>]*href="\/"[^>]*>[^<]*<\/a>/gi, '')
     .replace(/<a[^>]*href="\/Psakim[^"]*"[^>]*>[^<]*<\/a>/gi, '')
-    .replace(/<a[^>]*class="file-tag"[^>]*>[\s\S]*?<\/a>/gi, '')
+    // file-tag links preserved — Sefaria linker will handle source references
     .replace(/<nav[\s\S]*?<\/nav>/gi, '')
     .replace(/<div[^>]*id="basad"[^>]*>[^<]*<\/div>/gi, '');
 
   bodyHtml = stripInlineStyles(bodyHtml);
-
-  bodyHtml = bodyHtml.replace(/<span[^>]*>([\s\S]*?)<\/span>/gi, '$1');
-  bodyHtml = bodyHtml.replace(/<span[^>]*>\s*<\/span>/gi, '');
+  // Iteratively remove all spans (handles nested spans cleanly)
+  bodyHtml = removeSpans(bodyHtml);
 
   bodyHtml = bodyHtml
     .replace(/<div[^>]*>\s*<\/div>/g, '')
@@ -243,13 +340,13 @@ function extractContent(html) {
     bodyHtml = bodyHtml.replace(new RegExp(`<p[^>]*>\\s*${sec}\\s*<\\/p>`, 'gi'), `<h2>${sec}</h2>`);
   }
 
-  return { rawTitle, metaInfo, bodyHtml };
+  return { rawTitle, metaInfo, bodyHtml, tags };
 }
 
 // ── Build styled HTML ───────────────────────────────────────
 
 function buildStyledHtml(data, id) {
-  const { rawTitle, metaInfo, bodyHtml } = data;
+  const { rawTitle, metaInfo, bodyHtml, tags } = data;
   let cleanBody = bodyHtml;
 
   const metaStart = cleanBody.indexOf('שם בית דין');
@@ -272,6 +369,30 @@ function buildStyledHtml(data, id) {
   const judges = metaInfo.judges || '';
   const caseNum = metaInfo.caseNum || '';
   const date = decodeEntities(metaInfo.date || '');
+
+  // Build tags section HTML
+  let tagsHtml = '';
+  if (tags && (tags.subjects.length > 0 || tags.sources.length > 0)) {
+    tagsHtml = '<section class="tags-section"><h2>תגיות ומקורות</h2><div class="tags-container">';
+    if (tags.subjects.length > 0) {
+      tagsHtml += '<div class="tags-group"><h3>נושאים</h3><div class="tags-list">';
+      tags.subjects.forEach(s => { tagsHtml += `<span class="tag-pill tag-subject">${s}</span>`; });
+      tagsHtml += '</div></div>';
+    }
+    if (tags.sources.length > 0) {
+      tagsHtml += '<div class="tags-group"><h3>מקורות</h3><div class="tags-list">';
+      tags.sources.forEach(s => {
+        const url = buildSourceUrl(s);
+        if (url) {
+          tagsHtml += `<a class="tag-pill tag-source" href="${url}" target="_blank" rel="noopener">${s}</a>`;
+        } else {
+          tagsHtml += `<span class="tag-pill tag-source">${s}</span>`;
+        }
+      });
+      tagsHtml += '</div></div>';
+    }
+    tagsHtml += '</div></section>';
+  }
 
   return `<!DOCTYPE html>
 <html dir="rtl" lang="he">
@@ -306,7 +427,7 @@ function buildStyledHtml(data, id) {
     #file-num{font-size:.9rem!important;color:var(--text-secondary);float:none!important}
     .pagename{font-size:1.6rem!important;color:var(--primary)!important;text-align:center;margin:15px 0!important}
     a.file-tag{background:var(--primary-light)!important;border-radius:4px;font-size:.8rem}
-    .ogen{background-color:rgba(197,165,90,.2)!important;border-radius:2px}
+    .ogen{background-color:rgba(197,165,90,.2)!important;border-radius:2px;padding:1px 3px}
     .ogen::after{content:''!important}
     .highlight{background-color:rgba(255,235,59,.4)!important}
     .selOgen:before{display:none!important}
@@ -314,9 +435,42 @@ function buildStyledHtml(data, id) {
     blockquote{border-right:4px solid var(--accent);padding:12px 20px;margin:15px 0;background:rgba(197,165,90,.06);border-radius:0 8px 8px 0}
     .psak-footer{text-align:center;padding:20px;color:#999;font-size:.75rem;border-top:1px solid var(--border);margin-top:20px}
     .psak-footer a{color:var(--primary-light)}
-    @media print{body{background:#fff}.psak-header{background:var(--primary);-webkit-print-color-adjust:exact;print-color-adjust:exact}.psak-card{box-shadow:none;border:1px solid #ddd}}
-    @media(max-width:600px){.psak-card{padding:20px 18px}.psak-header h1{font-size:1.5rem}h2{font-size:1.2rem}}
+    @media print{body{background:#fff}.psak-header{background:var(--primary);-webkit-print-color-adjust:exact;print-color-adjust:exact}.psak-card{box-shadow:none;border:1px solid #ddd}.toc-sidebar,.toc-toggle,.toc-overlay{display:none!important}}
+    @media(max-width:600px){.psak-card{padding:20px 18px}.psak-header h1{font-size:1.5rem}h2{font-size:1.2rem}.toc-sidebar{width:260px}}
+    /* === סיידבר תוכן עניינים === */
+    .toc-toggle{position:fixed;top:12px;right:12px;z-index:1001;background:var(--primary);color:#fff;border:none;border-radius:50%;width:44px;height:44px;font-size:1.3rem;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.2);transition:transform .2s}
+    .toc-toggle:hover{transform:scale(1.1)}
+    .toc-sidebar{position:fixed;top:0;right:0;width:280px;height:100vh;background:var(--card,#fff);border-left:3px solid var(--accent,#c5a55a);box-shadow:-4px 0 20px rgba(0,0,0,.1);z-index:1000;overflow-y:auto;transform:translateX(100%);transition:transform .3s ease;padding:60px 0 20px;direction:rtl}
+    .toc-sidebar.open{transform:translateX(0)}
+    .toc-sidebar h3{text-align:center;color:var(--primary,#1a237e);font-size:1.1rem;margin:0 0 12px;padding:0 15px 10px;border-bottom:2px solid var(--accent,#c5a55a);font-family:'Frank Ruhl Libre',serif}
+    .toc-sidebar ul{list-style:none;padding:0;margin:0}
+    .toc-sidebar li{border-bottom:1px solid rgba(0,0,0,.05)}
+    .toc-sidebar li a{display:block;padding:10px 20px;color:var(--text,#212121);text-decoration:none;font-size:.88rem;line-height:1.5;transition:background .15s,border-left-color .15s;border-left:3px solid transparent}
+    .toc-sidebar li a:hover,.toc-sidebar li a.active{background:rgba(26,35,126,.06);border-left-color:var(--accent,#c5a55a);color:var(--primary,#1a237e)}
+    .toc-sidebar li.toc-h3 a{padding-right:35px;font-size:.82rem;color:var(--text-secondary,#555)}
+    .toc-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.3);z-index:999;opacity:0;pointer-events:none;transition:opacity .3s}
+    .toc-overlay.open{opacity:1;pointer-events:auto}
+    html{scroll-behavior:smooth}
+    h2,h3{scroll-margin-top:20px}
+    .ogen{background-color:rgba(197,165,90,.15)!important;border-radius:3px;padding:1px 4px}
+    @media(min-width:1200px){.toc-sidebar{transform:translateX(0);box-shadow:none}.toc-toggle{display:none}.toc-overlay{display:none}.psak-body{margin-left:auto;margin-right:300px}.psak-header,.meta-bar{padding-right:290px}.psak-footer{padding-right:290px}}
+    .tags-section{max-width:850px;margin:0 auto 30px;padding:0 20px}
+    .tags-section h2{font-size:1.3rem;color:var(--primary);margin-bottom:15px;padding-bottom:8px;border-bottom:2px solid var(--accent);font-family:'Frank Ruhl Libre',serif}
+    .tags-container{background:var(--card);border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.07);padding:25px 30px}
+    .tags-group{margin-bottom:18px}
+    .tags-group:last-child{margin-bottom:0}
+    .tags-group h3{font-size:1rem;color:var(--primary-light);margin-bottom:10px}
+    .tags-list{display:flex;flex-wrap:wrap;gap:8px}
+    .tag-pill{display:inline-block;padding:6px 14px;border-radius:20px;font-size:.82rem;line-height:1.4}
+    .tag-subject{background:rgba(26,35,126,.08);color:var(--primary);border:1px solid rgba(26,35,126,.15)}
+    .tag-source{background:rgba(197,165,90,.12);color:#5d4e1f;border:1px solid rgba(197,165,90,.3)}
+    a.tag-pill{text-decoration:none;cursor:pointer;transition:background .2s,box-shadow .2s}
+    a.tag-pill:hover{box-shadow:0 2px 8px rgba(0,0,0,.15);filter:brightness(.92)}
+    a.tag-source:hover{background:rgba(197,165,90,.28)}
   </style>
+  <!-- Sefaria Auto-Linker: הפיכת מראי מקומות לקישורים -->
+  <script charset="utf-8" src="https://www.sefaria.org/linker.v3.js" data-mode="popup-click"></script>
+  <style>.sefaria-ref{color:var(--primary-light,#3949ab)!important;cursor:pointer;border-bottom:1px dashed var(--accent,#c5a55a);transition:border-color .2s}.sefaria-ref:hover{border-bottom-color:var(--primary,#1a237e);background-color:rgba(197,165,90,.1)}</style>
 </head>
 <body>
   <header class="psak-header">
@@ -334,9 +488,26 @@ function buildStyledHtml(data, id) {
       ${cleanBody}
     </article>
   </main>
+  ${tagsHtml}
   <footer class="psak-footer">
     מקור: <a href="https://www.psakim.org/Psakim/File/${id}" target="_blank">psakim.org — פסק ${id}</a>
   </footer>
+<script>
+(function(){
+  var card=document.querySelector('.psak-card');if(!card)return;
+  var headings=card.querySelectorAll('h1,h2,h3,.Heading230,.Bodytext50');if(headings.length<2)return;
+  var items=[],seen=new Set(),idx=0;
+  headings.forEach(function(h){var t=h.textContent.replace(/\\s+/g,' ').trim();if(!t||t.length<2||t==='פסק דין')return;if(seen.has(t))return;seen.add(t);var id='toc-'+(idx++);h.id=id;var lv=h.tagName==='H3'?'h3':'h2';if(h.tagName==='H1'&&h.closest('.psak-header'))return;items.push({id:id,text:t,level:lv})});
+  if(items.length<2)return;
+  var sb=document.createElement('nav');sb.className='toc-sidebar';sb.innerHTML='<h3>תוכן עניינים</h3><ul>'+items.map(function(it){return'<li class="toc-'+it.level+'"><a href="#'+it.id+'">'+it.text+'</a></li>'}).join('')+'</ul>';document.body.appendChild(sb);
+  var btn=document.createElement('button');btn.className='toc-toggle';btn.innerHTML='☰';btn.setAttribute('aria-label','תוכן עניינים');document.body.appendChild(btn);
+  var ov=document.createElement('div');ov.className='toc-overlay';document.body.appendChild(ov);
+  function tog(){sb.classList.toggle('open');ov.classList.toggle('open')}btn.addEventListener('click',tog);ov.addEventListener('click',tog);
+  sb.querySelectorAll('a').forEach(function(a){a.addEventListener('click',function(){if(window.innerWidth<1200)tog()})});
+  var links=sb.querySelectorAll('a'),els=items.map(function(it){return document.getElementById(it.id)});
+  window.addEventListener('scroll',function(){var sp=window.scrollY+100,ac=0;els.forEach(function(el,i){if(el&&el.offsetTop<=sp)ac=i});links.forEach(function(a,i){a.classList.toggle('active',i===ac)})},{passive:true});
+})();
+</script>
 </body>
 </html>`;
 }

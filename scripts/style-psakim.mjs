@@ -94,7 +94,7 @@ function extractContent(html) {
     .replace(/<a[^>]*>\s*<\/a>/gi, '')
     .replace(/<a[^>]*href="\/"[^>]*>[^<]*<\/a>/gi, '')
     .replace(/<a[^>]*href="\/Psakim[^"]*"[^>]*>[^<]*<\/a>/gi, '')
-    .replace(/<a[^>]*class="file-tag"[^>]*>[\s\S]*?<\/a>/gi, '')
+    // file-tag links preserved — Sefaria linker will handle source references
     .replace(/<nav[\s\S]*?<\/nav>/gi, '')
     .replace(/<div[^>]*id="basad"[^>]*>[^<]*<\/div>/gi, '');
   
