@@ -159,11 +159,18 @@ const FolderManagerTab = () => {
       toast({ title: "תיקייה בשם זה כבר קיימת", variant: "destructive" });
       return;
     }
-    // Just add to local list with 0 count — becomes real when psakim are assigned
-    setFolders((prev) => [...prev, { name, count: 0 }].sort((a, b) => a.name.localeCompare(b.name, "he")));
-    setNewFolderName("");
-    setAddDialogOpen(false);
-    toast({ title: `תיקייה "${name}" נוצרה` });
+    try {
+      // Persist to folder_categories table
+      const { error } = await supabase.from("folder_categories").insert({ name });
+      if (error && !error.message.includes("duplicate")) throw error;
+      setFolders((prev) => [...prev, { name, count: 0 }].sort((a, b) => a.name.localeCompare(b.name, "he")));
+      setNewFolderName("");
+      setAddDialogOpen(false);
+      toast({ title: `תיקייה "${name}" נוצרה` });
+    } catch (err) {
+      console.error("Error creating folder:", err);
+      toast({ title: "שגיאה ביצירת תיקייה", variant: "destructive" });
+    }
   };
 
   // ─── Edit Folder ───────────────────────────
