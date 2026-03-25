@@ -75,16 +75,17 @@ const FolderManagerTab = () => {
   const loadFolders = useCallback(async () => {
     setLoading(true);
     try {
-      // Get all categories with counts
-      const { data, error } = await supabase
-        .from("psakei_din")
-        .select("category");
+      // Get folder names from dedicated table + counts from psakei_din
+      const [{ data: folderRows }, { data: psakimData, error }] = await Promise.all([
+        supabase.from("folder_categories").select("name"),
+        supabase.from("psakei_din").select("category"),
+      ]);
 
       if (error) throw error;
 
       const countMap = new Map<string, number>();
       let noCategory = 0;
-      (data || []).forEach((r) => {
+      (psakimData || []).forEach((r) => {
         if (r.category) {
           countMap.set(r.category, (countMap.get(r.category) || 0) + 1);
         } else {
@@ -92,8 +93,13 @@ const FolderManagerTab = () => {
         }
       });
 
+      // Merge: all persisted folder names + any categories found in psakei_din
+      const allNames = new Set<string>();
+      (folderRows || []).forEach((r: any) => allNames.add(r.name));
+      countMap.forEach((_, name) => allNames.add(name));
+
       const folderList: FolderInfo[] = [];
-      countMap.forEach((count, name) => folderList.push({ name, count }));
+      allNames.forEach((name) => folderList.push({ name, count: countMap.get(name) || 0 }));
       folderList.sort((a, b) => a.name.localeCompare(b.name, "he"));
 
       setFolders(folderList);
