@@ -207,13 +207,11 @@ const FolderManagerTab = () => {
   const handleDeleteFolder = async () => {
     setDeleting(true);
     try {
-      // Set category to null for all psakim in this folder
-      const { error } = await supabase
-        .from("psakei_din")
-        .update({ category: null })
-        .eq("category", deletingFolder);
-
-      if (error) throw error;
+      // Delete from folder_categories and clear category on psakei_din
+      await Promise.all([
+        supabase.from("folder_categories").delete().eq("name", deletingFolder),
+        supabase.from("psakei_din").update({ category: null }).eq("category", deletingFolder),
+      ]);
       toast({ title: `תיקייה "${deletingFolder}" נמחקה, הפסקים הוחזרו לללא תיקייה` });
       setDeleteDialogOpen(false);
       setExpandedFolder(null);
