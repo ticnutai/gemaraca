@@ -81,17 +81,15 @@ const UploadPsakDinTab = () => {
     cleanupStaleSessions();
   }, []);
 
-  // Load existing categories
+  // Load existing categories from folder_categories table
   useEffect(() => {
     const loadCategories = async () => {
       const { data } = await supabase
-        .from('psakei_din')
-        .select('category')
-        .not('category', 'is', null)
-        .not('category', 'eq', '');
+        .from('folder_categories')
+        .select('name')
+        .order('name');
       if (data) {
-        const unique = [...new Set(data.map(d => d.category).filter(Boolean))] as string[];
-        setExistingCategories(unique.sort());
+        setExistingCategories(data.map((d: any) => d.name));
       }
     };
     loadCategories();
@@ -856,9 +854,11 @@ const UploadPsakDinTab = () => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
                         if (newCategory.trim()) {
-                          setCategory(newCategory.trim());
-                          if (!existingCategories.includes(newCategory.trim())) {
-                            setExistingCategories(prev => [...prev, newCategory.trim()].sort());
+                          const catName = newCategory.trim();
+                          setCategory(catName);
+                          if (!existingCategories.includes(catName)) {
+                            setExistingCategories(prev => [...prev, catName].sort());
+                            supabase.from('folder_categories').insert({ name: catName }).then(() => {});
                           }
                           setNewCategory('');
                         }
@@ -871,9 +871,11 @@ const UploadPsakDinTab = () => {
                     size="icon"
                     onClick={() => {
                       if (newCategory.trim()) {
-                        setCategory(newCategory.trim());
-                        if (!existingCategories.includes(newCategory.trim())) {
-                          setExistingCategories(prev => [...prev, newCategory.trim()].sort());
+                        const catName = newCategory.trim();
+                        setCategory(catName);
+                        if (!existingCategories.includes(catName)) {
+                          setExistingCategories(prev => [...prev, catName].sort());
+                          supabase.from('folder_categories').insert({ name: catName }).then(() => {});
                         }
                         setNewCategory('');
                       }

@@ -52,6 +52,24 @@ export type Database = {
           },
         ]
       }
+      folder_categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       function_logs: {
         Row: {
           created_at: string

@@ -75,16 +75,17 @@ const FolderManagerTab = () => {
   const loadFolders = useCallback(async () => {
     setLoading(true);
     try {
-      // Get all categories with counts
-      const { data, error } = await supabase
-        .from("psakei_din")
-        .select("category");
+      // Get folder names from dedicated table + counts from psakei_din
+      const [{ data: folderRows }, { data: psakimData, error }] = await Promise.all([
+        supabase.from("folder_categories").select("name"),
+        supabase.from("psakei_din").select("category"),
+      ]);
 
       if (error) throw error;
 
       const countMap = new Map<string, number>();
       let noCategory = 0;
-      (data || []).forEach((r) => {
+      (psakimData || []).forEach((r) => {
         if (r.category) {
           countMap.set(r.category, (countMap.get(r.category) || 0) + 1);
         } else {
@@ -92,8 +93,13 @@ const FolderManagerTab = () => {
         }
       });
 
+      // Merge: all persisted folder names + any categories found in psakei_din
+      const allNames = new Set<string>();
+      (folderRows || []).forEach((r: any) => allNames.add(r.name));
+      countMap.forEach((_, name) => allNames.add(name));
+
       const folderList: FolderInfo[] = [];
-      countMap.forEach((count, name) => folderList.push({ name, count }));
+      allNames.forEach((name) => folderList.push({ name, count: countMap.get(name) || 0 }));
       folderList.sort((a, b) => a.name.localeCompare(b.name, "he"));
 
       setFolders(folderList);
@@ -153,11 +159,18 @@ const FolderManagerTab = () => {
       toast({ title: "תיקייה בשם זה כבר קיימת", variant: "destructive" });
       return;
     }
-    // Just add to local list with 0 count — becomes real when psakim are assigned
-    setFolders((prev) => [...prev, { name, count: 0 }].sort((a, b) => a.name.localeCompare(b.name, "he")));
-    setNewFolderName("");
-    setAddDialogOpen(false);
-    toast({ title: `תיקייה "${name}" נוצרה` });
+    try {
+      // Persist to folder_categories table
+      const { error } = await supabase.from("folder_categories").insert({ name });
+      if (error && !error.message.includes("duplicate")) throw error;
+      setFolders((prev) => [...prev, { name, count: 0 }].sort((a, b) => a.name.localeCompare(b.name, "he")));
+      setNewFolderName("");
+      setAddDialogOpen(false);
+      toast({ title: `תיקייה "${name}" נוצרה` });
+    } catch (err) {
+      console.error("Error creating folder:", err);
+      toast({ title: "שגיאה ביצירת תיקייה", variant: "destructive" });
+    }
   };
 
   // ─── Edit Folder ───────────────────────────
@@ -173,12 +186,12 @@ const FolderManagerTab = () => {
     }
     setRenaming(true);
     try {
-      const { error } = await supabase
-        .from("psakei_din")
-        .update({ category: newName })
-        .eq("category", editingFolder);
+      // Update both folder_categories and psakei_din
+      await Promise.all([
+        supabase.from("folder_categories").update({ name: newName }).eq("name", editingFolder),
+        supabase.from("psakei_din").update({ category: newName }).eq("category", editingFolder),
+      ]);
 
-      if (error) throw error;
       toast({ title: `שם התיקייה שונה ל"${newName}"` });
       setEditDialogOpen(false);
       await loadFolders();
@@ -194,13 +207,11 @@ const FolderManagerTab = () => {
   const handleDeleteFolder = async () => {
     setDeleting(true);
     try {
-      // Set category to null for all psakim in this folder
-      const { error } = await supabase
-        .from("psakei_din")
-        .update({ category: null })
-        .eq("category", deletingFolder);
-
-      if (error) throw error;
+      // Delete from folder_categories and clear category on psakei_din
+      await Promise.all([
+        supabase.from("folder_categories").delete().eq("name", deletingFolder),
+        supabase.from("psakei_din").update({ category: null }).eq("category", deletingFolder),
+      ]);
       toast({ title: `תיקייה "${deletingFolder}" נמחקה, הפסקים הוחזרו לללא תיקייה` });
       setDeleteDialogOpen(false);
       setExpandedFolder(null);
