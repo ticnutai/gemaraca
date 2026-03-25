@@ -186,12 +186,12 @@ const FolderManagerTab = () => {
     }
     setRenaming(true);
     try {
-      const { error } = await supabase
-        .from("psakei_din")
-        .update({ category: newName })
-        .eq("category", editingFolder);
+      // Update both folder_categories and psakei_din
+      await Promise.all([
+        supabase.from("folder_categories").update({ name: newName }).eq("name", editingFolder),
+        supabase.from("psakei_din").update({ category: newName }).eq("category", editingFolder),
+      ]);
 
-      if (error) throw error;
       toast({ title: `שם התיקייה שונה ל"${newName}"` });
       setEditDialogOpen(false);
       await loadFolders();
