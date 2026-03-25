@@ -98,9 +98,12 @@ const SIDEBAR_JS = `
   btn.addEventListener('click', toggle);
   overlay.addEventListener('click', toggle);
 
-  // Close on link click (mobile)
+  // Close on link click (mobile) + prevent default navigation in iframes
   sidebar.querySelectorAll('a').forEach(function(a){
-    a.addEventListener('click', function(){
+    a.addEventListener('click', function(e){
+      e.preventDefault();
+      var target = document.getElementById(a.getAttribute('href').slice(1));
+      if(target) target.scrollIntoView({behavior:'smooth', block:'start'});
       if(window.innerWidth < 1200) toggle();
     });
   });

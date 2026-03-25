@@ -436,6 +436,7 @@ export type Database = {
           beautify_count: number
           case_number: string | null
           case_summary: string | null
+          category: string | null
           content_hash: string | null
           court: string
           created_at: string
@@ -453,6 +454,7 @@ export type Database = {
           beautify_count?: number
           case_number?: string | null
           case_summary?: string | null
+          category?: string | null
           content_hash?: string | null
           court: string
           created_at?: string
@@ -470,6 +472,7 @@ export type Database = {
           beautify_count?: number
           case_number?: string | null
           case_summary?: string | null
+          category?: string | null
           content_hash?: string | null
           court?: string
           created_at?: string

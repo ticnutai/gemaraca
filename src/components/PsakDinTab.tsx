@@ -14,7 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Calendar, Building2, FileText, List, BookOpen, Sparkles, Brain, Loader2,
   Link, Plus, Pencil, Trash2, Download, Search, Filter, ArrowUpDown, FileSpreadsheet,
-  Paintbrush,
+  Paintbrush, FolderOpen,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
@@ -66,7 +66,9 @@ const PsakDinTab = () => {
   const [courtFilter, setCourtFilter] = useState<string>("all");
   const [fileTypeFilter, setFileTypeFilter] = useState<string>("all");
   const [sortOrder, setSortOrder] = useState<string>("year-desc");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [courts, setCourts] = useState<string[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const { toast } = useToast();
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -91,13 +93,18 @@ const PsakDinTab = () => {
   useEffect(() => {
     setPsakim([]);
     setHasMore(true);
-  }, [courtFilter, fileTypeFilter, sortOrder]);
+  }, [courtFilter, fileTypeFilter, sortOrder, categoryFilter]);
 
   // Load courts for filter
   useEffect(() => {
     (async () => {
       const { data } = await supabase.from('psakei_din').select('court').order('court');
       if (data) setCourts([...new Set(data.map(r => r.court).filter(Boolean))].sort());
+    })();
+    // Load categories
+    (async () => {
+      const { data } = await supabase.from('psakei_din').select('category').not('category', 'is', null);
+      if (data) setCategories([...new Set(data.map(r => r.category).filter(Boolean) as string[])].sort());
     })();
   }, []);
 
@@ -118,7 +125,7 @@ const PsakDinTab = () => {
       loadPsakim(0, true);
     }
     loadTotalUnlinkedCount();
-  }, [debouncedSearch, courtFilter, fileTypeFilter, sortOrder]);
+  }, [debouncedSearch, courtFilter, fileTypeFilter, sortOrder, categoryFilter]);
 
   // Restore scroll position after returning from psak viewer
   useEffect(() => {
@@ -208,6 +215,13 @@ const PsakDinTab = () => {
       if (courtFilter !== 'all') {
         query = query.eq('court', courtFilter);
       }
+      if (categoryFilter !== 'all') {
+        if (categoryFilter === '__none__') {
+          query = query.is('category', null);
+        } else {
+          query = query.eq('category', categoryFilter);
+        }
+      }
 
       // File type filter — done via source_url patterns
       if (fileTypeFilter === 'pdf') {
@@ -261,7 +275,7 @@ const PsakDinTab = () => {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [debouncedSearch, courtFilter, fileTypeFilter, sortOrder]);
+  }, [debouncedSearch, courtFilter, fileTypeFilter, sortOrder, categoryFilter]);
 
   // Infinite scroll
   useEffect(() => {
@@ -357,6 +371,11 @@ const PsakDinTab = () => {
 
   const handleEditSaved = () => {
     loadPsakim(0, true);
+    // Refresh categories list
+    (async () => {
+      const { data } = await supabase.from('psakei_din').select('category').not('category', 'is', null);
+      if (data) setCategories([...new Set(data.map(r => r.category).filter(Boolean) as string[])].sort());
+    })();
   };
 
   const handleDeletePsak = async (psakId?: string) => {
@@ -598,6 +617,19 @@ const PsakDinTab = () => {
                       <SelectItem value="none">ללא קובץ</SelectItem>
                     </SelectContent>
                   </Select>
+                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                    <SelectTrigger className="w-[160px]">
+                      <FolderOpen className="w-4 h-4 ml-2" />
+                      <SelectValue placeholder="תיקייה" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">כל התיקיות</SelectItem>
+                      <SelectItem value="__none__">ללא תיקייה</SelectItem>
+                      {categories.map((c) => (
+                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <Select value={sortOrder} onValueChange={setSortOrder}>
                     <SelectTrigger className="w-[170px]">
                       <ArrowUpDown className="w-4 h-4 ml-2" />
@@ -730,6 +762,14 @@ const PsakDinTab = () => {
                                     <div className="flex items-center gap-1">
                                       <span>{psak.case_number}</span>
                                       <FileText className="w-3.5 h-3.5 text-primary" />
+                                    </div>
+                                  )}
+                                  {psak.category && (
+                                    <div className="flex items-center gap-1">
+                                      <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 bg-blue-500/10 text-blue-600 border-blue-500/30 dark:text-blue-400 gap-1">
+                                        <FolderOpen className="w-3 h-3" />
+                                        {psak.category}
+                                      </Badge>
                                     </div>
                                   )}
                                 </div>

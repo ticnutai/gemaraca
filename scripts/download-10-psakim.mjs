@@ -422,7 +422,7 @@ function buildStyledHtml(data, id) {
   var btn=document.createElement('button');btn.className='toc-toggle';btn.innerHTML='☰';btn.setAttribute('aria-label','תוכן עניינים');document.body.appendChild(btn);
   var ov=document.createElement('div');ov.className='toc-overlay';document.body.appendChild(ov);
   function tog(){sb.classList.toggle('open');ov.classList.toggle('open')}btn.addEventListener('click',tog);ov.addEventListener('click',tog);
-  sb.querySelectorAll('a').forEach(function(a){a.addEventListener('click',function(){if(window.innerWidth<1200)tog()})});
+  sb.querySelectorAll('a').forEach(function(a){a.addEventListener('click',function(e){e.preventDefault();var t=document.getElementById(a.getAttribute('href').slice(1));if(t)t.scrollIntoView({behavior:'smooth',block:'start'});if(window.innerWidth<1200)tog()})});
   var links=sb.querySelectorAll('a'),els=items.map(function(it){return document.getElementById(it.id)});
   window.addEventListener('scroll',function(){var sp=window.scrollY+100,ac=0;els.forEach(function(el,i){if(el&&el.offsetTop<=sp)ac=i});links.forEach(function(a,i){a.classList.toggle('active',i===ac)})},{passive:true});
 })();

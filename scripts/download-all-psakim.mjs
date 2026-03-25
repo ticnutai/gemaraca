@@ -20,7 +20,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const outputDir = join(__dirname, '..', 'all-psakim');
+const outputDir = join(__dirname, '..', 'psakim-20-v3');
 const manifestPath = join(outputDir, 'manifest.json');
 
 // ── App base URL — update to your deployed domain ───────────
@@ -503,7 +503,7 @@ function buildStyledHtml(data, id) {
   var btn=document.createElement('button');btn.className='toc-toggle';btn.innerHTML='☰';btn.setAttribute('aria-label','תוכן עניינים');document.body.appendChild(btn);
   var ov=document.createElement('div');ov.className='toc-overlay';document.body.appendChild(ov);
   function tog(){sb.classList.toggle('open');ov.classList.toggle('open')}btn.addEventListener('click',tog);ov.addEventListener('click',tog);
-  sb.querySelectorAll('a').forEach(function(a){a.addEventListener('click',function(){if(window.innerWidth<1200)tog()})});
+  sb.querySelectorAll('a').forEach(function(a){a.addEventListener('click',function(e){e.preventDefault();var t=document.getElementById(a.getAttribute('href').slice(1));if(t)t.scrollIntoView({behavior:'smooth',block:'start'});if(window.innerWidth<1200)tog()})});
   var links=sb.querySelectorAll('a'),els=items.map(function(it){return document.getElementById(it.id)});
   window.addEventListener('scroll',function(){var sp=window.scrollY+100,ac=0;els.forEach(function(el,i){if(el&&el.offsetTop<=sp)ac=i});links.forEach(function(a,i){a.classList.toggle('active',i===ac)})},{passive:true});
 })();
@@ -614,7 +614,7 @@ async function main() {
   console.log('  הורדת כול פסקי הדין מ-psakim.org');
   console.log('═══════════════════════════════════════════════════');
   console.log(`  טווח סריקה: ${fromId} - ${toId}`);
-  console.log(`  תיקייה: all-psakim/`);
+  console.log(`  תיקייה: psakim-20-v3/`);
   console.log(`  שם קובץ = כותרת פסק הדין`);
   console.log(`  פסקים כבר הורדו: ${Object.keys(manifest.downloaded).length}`);
   console.log('═══════════════════════════════════════════════════\n');

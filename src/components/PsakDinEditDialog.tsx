@@ -6,6 +6,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { X, Loader2, Plus, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -20,6 +23,7 @@ interface PsakDinData {
   full_text?: string | null;
   tags?: string[] | null;
   source_url?: string | null;
+  category?: string | null;
 }
 
 interface PsakDinEditDialogProps {
@@ -40,8 +44,11 @@ const PsakDinEditDialog = ({ psak, open, onOpenChange, onSaved, isNew = false }:
     summary: '',
     full_text: '',
     tags: [],
+    category: '',
   });
   const [newTag, setNewTag] = useState('');
+  const [newCategory, setNewCategory] = useState('');
+  const [existingCategories, setExistingCategories] = useState<string[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -54,6 +61,7 @@ const PsakDinEditDialog = ({ psak, open, onOpenChange, onSaved, isNew = false }:
         summary: psak.summary || '',
         full_text: psak.full_text || '',
         tags: psak.tags || [],
+        category: psak.category || '',
       });
     } else if (isNew && open) {
       setFormData({
@@ -64,9 +72,20 @@ const PsakDinEditDialog = ({ psak, open, onOpenChange, onSaved, isNew = false }:
         summary: '',
         full_text: '',
         tags: [],
+        category: '',
       });
     }
   }, [psak, open, isNew]);
+
+  // Load existing categories for dropdown
+  useEffect(() => {
+    if (open) {
+      (async () => {
+        const { data } = await supabase.from('psakei_din').select('category').not('category', 'is', null);
+        if (data) setExistingCategories([...new Set(data.map(r => r.category).filter(Boolean) as string[])].sort());
+      })();
+    }
+  }, [open]);
 
   const handleChange = (field: keyof PsakDinData, value: string | number | string[] | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -111,6 +130,7 @@ const PsakDinEditDialog = ({ psak, open, onOpenChange, onSaved, isNew = false }:
             summary: formData.summary,
             full_text: formData.full_text || null,
             tags: formData.tags || [],
+            category: formData.category || null,
           });
 
         if (error) throw error;
@@ -129,6 +149,7 @@ const PsakDinEditDialog = ({ psak, open, onOpenChange, onSaved, isNew = false }:
             summary: formData.summary,
             full_text: formData.full_text || null,
             tags: formData.tags || [],
+            category: formData.category || null,
           })
           .eq('id', psak.id);
 
@@ -236,6 +257,60 @@ const PsakDinEditDialog = ({ psak, open, onOpenChange, onSaved, isNew = false }:
                 rows={8}
                 className="text-right font-serif"
               />
+            </div>
+
+            {/* Category */}
+            <div className="space-y-2">
+              <Label>תיקייה (קטגוריה)</Label>
+              <div className="flex gap-2">
+                <Select
+                  value={formData.category || '__none__'}
+                  onValueChange={(v) => handleChange('category', v === '__none__' ? '' : v)}
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="בחר תיקייה..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">ללא תיקייה</SelectItem>
+                    {existingCategories.map((c) => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  value={newCategory}
+                  onChange={(e) => setNewCategory(e.target.value)}
+                  placeholder="או הוסף תיקייה חדשה..."
+                  className="text-right"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      if (newCategory.trim()) {
+                        handleChange('category', newCategory.trim());
+                        setNewCategory('');
+                      }
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    if (newCategory.trim()) {
+                      handleChange('category', newCategory.trim());
+                      setNewCategory('');
+                    }
+                  }}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              {formData.category && (
+                <p className="text-xs text-muted-foreground">תיקייה נוכחית: <Badge variant="outline" className="text-xs">{formData.category}</Badge></p>
+              )}
             </div>
 
             {/* Tags */}

@@ -3853,6 +3853,19 @@ export default function EmbedPdfViewerPage() {
                             if (doc?.body) doc.designMode = "on";
                           }
                           setupIframeSelectionListener(htmlEmbedIframeRef.current, 'html-embed');
+                          // Patch TOC sidebar anchor links to scroll instead of navigate
+                          const ifrDoc = htmlEmbedIframeRef.current?.contentDocument;
+                          if (ifrDoc) {
+                            ifrDoc.querySelectorAll('.toc-sidebar a[href^="#"]').forEach((a: Element) => {
+                              a.addEventListener('click', (e: Event) => {
+                                e.preventDefault();
+                                const href = (a as HTMLAnchorElement).getAttribute('href');
+                                if (!href) return;
+                                const target = ifrDoc.getElementById(href.slice(1));
+                                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                              });
+                            });
+                          }
                         }}
                       />
                     )}
