@@ -9,10 +9,9 @@ export type Json =
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  // __InternalSupabase disabled for compatibility with supabase-js 2.x
-  // __InternalSupabase: {
-  //   PostgrestVersion: "13.0.5"
-  // }
+  __InternalSupabase: {
+    PostgrestVersion: "13.0.5"
+  }
   public: {
     Tables: {
       faq_items: {
@@ -395,31 +394,31 @@ export type Database = {
       }
       psak_sections: {
         Row: {
+          created_at: string | null
           id: string
           psak_din_id: string
-          section_type: string
-          section_title: string
           section_content: string
           section_order: number
-          created_at: string
+          section_title: string
+          section_type: string
         }
         Insert: {
+          created_at?: string | null
           id?: string
           psak_din_id: string
-          section_type: string
-          section_title: string
           section_content: string
           section_order?: number
-          created_at?: string
+          section_title: string
+          section_type: string
         }
         Update: {
+          created_at?: string | null
           id?: string
           psak_din_id?: string
-          section_type?: string
-          section_title?: string
           section_content?: string
           section_order?: number
-          created_at?: string
+          section_title?: string
+          section_type?: string
         }
         Relationships: [
           {
@@ -806,30 +805,6 @@ export type Database = {
         }
         Relationships: []
       }
-      user_preferences: {
-        Row: {
-          id: string
-          user_id: string
-          viewer_mode: string
-          recently_viewed_psakim: string[]
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          viewer_mode?: string
-          recently_viewed_psakim?: string[]
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          viewer_mode?: string
-          recently_viewed_psakim?: string[]
-          updated_at?: string
-        }
-        Relationships: []
-      }
       user_pinned_items: {
         Row: {
           amud: string | null
@@ -872,6 +847,33 @@ export type Database = {
           ref_count?: number | null
           tractate?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          recently_viewed_psakim: Json | null
+          updated_at: string
+          user_id: string
+          viewer_mode: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          recently_viewed_psakim?: Json | null
+          updated_at?: string
+          user_id: string
+          viewer_mode?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          recently_viewed_psakim?: Json | null
+          updated_at?: string
+          user_id?: string
+          viewer_mode?: string | null
         }
         Relationships: []
       }
