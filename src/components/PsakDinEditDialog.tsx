@@ -81,8 +81,8 @@ const PsakDinEditDialog = ({ psak, open, onOpenChange, onSaved, isNew = false }:
   useEffect(() => {
     if (open) {
       (async () => {
-        const { data } = await supabase.from('psakei_din').select('category').not('category', 'is', null);
-        if (data) setExistingCategories([...new Set(data.map(r => r.category).filter(Boolean) as string[])].sort());
+        const { data } = await supabase.from('folder_categories').select('name').order('name');
+        if (data) setExistingCategories(data.map((r: any) => r.name));
       })();
     }
   }, [open]);
