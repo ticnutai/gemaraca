@@ -100,7 +100,7 @@ export function useUploadController(options: UseUploadControllerOptions = {}) {
 
   const uploadFiles = useCallback(async (
     files: File[],
-    metadata: { court?: string; year?: number; tags?: string[] },
+    metadata: { court?: string; year?: number; tags?: string[]; category?: string },
     withAI: boolean = false,
     sessionName?: string
   ) => {

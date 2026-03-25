@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, FileText, Archive, X, Loader2, CheckCircle, AlertCircle, FolderUp, Sparkles, Brain, Copy, Ban, Hash, Layers, LogIn } from "lucide-react";
+import { Upload, FileText, Archive, X, Loader2, CheckCircle, AlertCircle, FolderUp, Sparkles, Brain, Copy, Ban, Hash, Layers, LogIn, FolderOpen, Plus } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast, toast } from "@/hooks/use-toast";
 import { useUploadStore } from "@/stores/uploadStore";
 import { useUploadController } from "@/hooks/useUploadController";
@@ -44,6 +45,9 @@ const UploadPsakDinTab = () => {
   const [court, setCourt] = useState("");
   const [year, setYear] = useState(new Date().getFullYear().toString());
   const [tags, setTags] = useState("");
+  const [category, setCategory] = useState("");
+  const [newCategory, setNewCategory] = useState("");
+  const [existingCategories, setExistingCategories] = useState<string[]>([]);
   const [showSummary, setShowSummary] = useState(false);
   const [completedSessionId, setCompletedSessionId] = useState<string | undefined>();
   const [debugLog, setDebugLog] = useState<string[]>([]);
@@ -75,6 +79,22 @@ const UploadPsakDinTab = () => {
   const { cleanupStaleSessions, addFileHash, hasFileHash, getFileByHash } = useUploadStore();
   useEffect(() => {
     cleanupStaleSessions();
+  }, []);
+
+  // Load existing categories
+  useEffect(() => {
+    const loadCategories = async () => {
+      const { data } = await supabase
+        .from('psakei_din')
+        .select('category')
+        .not('category', 'is', null)
+        .not('category', 'eq', '');
+      if (data) {
+        const unique = [...new Set(data.map(d => d.category).filter(Boolean))] as string[];
+        setExistingCategories(unique.sort());
+      }
+    };
+    loadCategories();
   }, []);
   
   // Derived state
@@ -453,6 +473,7 @@ const UploadPsakDinTab = () => {
       court: court || undefined,
       year: parseInt(year) || new Date().getFullYear(),
       tags: tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+      category: category || undefined,
     };
 
     // Remove from pending list
@@ -476,6 +497,7 @@ const UploadPsakDinTab = () => {
       court: court || undefined,
       year: parseInt(year) || new Date().getFullYear(),
       tags: tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+      category: category || undefined,
     };
 
     // Copy and clear the list
@@ -497,6 +519,8 @@ const UploadPsakDinTab = () => {
     setCourt("");
     setYear(new Date().getFullYear().toString());
     setTags("");
+    setCategory("");
+    setNewCategory("");
     setDuplicates([]);
   };
 
@@ -799,6 +823,73 @@ const UploadPsakDinTab = () => {
                   className="bg-card border-border text-right"
                 />
               </div>
+            </div>
+
+            {/* Category/Folder Selection */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <FolderOpen className="w-4 h-4" />
+                תיקייה (סיווג לכל הקבצים)
+              </Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <Select
+                  value={category || '__none__'}
+                  onValueChange={(v) => setCategory(v === '__none__' ? '' : v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="בחר תיקייה..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">ללא תיקייה</SelectItem>
+                    {existingCategories.map((c) => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="flex gap-2">
+                  <Input
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                    placeholder="או הוסף תיקייה חדשה..."
+                    className="text-right"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (newCategory.trim()) {
+                          setCategory(newCategory.trim());
+                          if (!existingCategories.includes(newCategory.trim())) {
+                            setExistingCategories(prev => [...prev, newCategory.trim()].sort());
+                          }
+                          setNewCategory('');
+                        }
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      if (newCategory.trim()) {
+                        setCategory(newCategory.trim());
+                        if (!existingCategories.includes(newCategory.trim())) {
+                          setExistingCategories(prev => [...prev, newCategory.trim()].sort());
+                        }
+                        setNewCategory('');
+                      }
+                    }}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              {category && (
+                <Badge variant="secondary" className="gap-1">
+                  <FolderOpen className="w-3 h-3" />
+                  {category}
+                  <X className="w-3 h-3 cursor-pointer" onClick={() => setCategory('')} />
+                </Badge>
+              )}
             </div>
 
             {/* Upload All Buttons */}

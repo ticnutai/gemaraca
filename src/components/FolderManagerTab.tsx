@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useVirtualizer } from "@tanstack/react-virtual";
 
 interface FolderInfo {
   name: string;
@@ -60,10 +61,14 @@ const FolderManagerTab = () => {
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [assignTargetFolder, setAssignTargetFolder] = useState("");
   const [assignSearch, setAssignSearch] = useState("");
-  const [assignPsakim, setAssignPsakim] = useState<PsakMinimal[]>([]);
+  const [assignAllPsakim, setAssignAllPsakim] = useState<PsakMinimal[]>([]);
   const [assignSelected, setAssignSelected] = useState<Set<string>>(new Set());
   const [loadingAssign, setLoadingAssign] = useState(false);
   const [assigning, setAssigning] = useState(false);
+  const [assignPage, setAssignPage] = useState(0);
+  const [assignHasMore, setAssignHasMore] = useState(true);
+  const [loadingMoreAssign, setLoadingMoreAssign] = useState(false);
+  const assignScrollRef = useRef<HTMLDivElement>(null);
 
   const { toast } = useToast();
 
@@ -209,39 +214,90 @@ const FolderManagerTab = () => {
   };
 
   // ─── Assign Psakim ─────────────────────────
+  const ASSIGN_PAGE_SIZE = 200;
+
+  const loadAssignPsakim = useCallback(async (folder: string, page: number, reset: boolean) => {
+    if (page === 0) setLoadingAssign(true);
+    else setLoadingMoreAssign(true);
+    try {
+      const from = page * ASSIGN_PAGE_SIZE;
+      const to = from + ASSIGN_PAGE_SIZE - 1;
+      const { data, error } = await supabase
+        .from("psakei_din")
+        .select("id, title, court, year, category")
+        .neq("category", folder)
+        .order("title", { ascending: true })
+        .range(from, to);
+
+      if (error) throw error;
+      const rows = data || [];
+      if (reset) {
+        setAssignAllPsakim(rows);
+      } else {
+        setAssignAllPsakim((prev) => [...prev, ...rows]);
+      }
+      setAssignHasMore(rows.length === ASSIGN_PAGE_SIZE);
+      setAssignPage(page);
+    } catch (err) {
+      console.error("Error loading psakim for assign:", err);
+    } finally {
+      setLoadingAssign(false);
+      setLoadingMoreAssign(false);
+    }
+  }, []);
+
   const openAssignDialog = (folderName: string) => {
     setAssignTargetFolder(folderName);
     setAssignSearch("");
     setAssignSelected(new Set());
-    setAssignPsakim([]);
+    setAssignAllPsakim([]);
+    setAssignHasMore(true);
     setAssignDialogOpen(true);
+    // Load first page
+    loadAssignPsakim(folderName, 0, true);
   };
 
-  const searchPsakimForAssign = async (q: string) => {
-    setAssignSearch(q);
-    if (q.length < 2) {
-      setAssignPsakim([]);
-      return;
-    }
-    setLoadingAssign(true);
-    try {
-      // Search psakim NOT already in the target folder
-      const { data, error } = await supabase
-        .from("psakei_din")
-        .select("id, title, court, year, category")
-        .or(`title.ilike.%${q}%,court.ilike.%${q}%`)
-        .neq("category", assignTargetFolder)
-        .order("year", { ascending: false })
-        .limit(50);
+  const loadMoreAssignPsakim = useCallback(() => {
+    if (loadingMoreAssign || !assignHasMore) return;
+    loadAssignPsakim(assignTargetFolder, assignPage + 1, false);
+  }, [loadingMoreAssign, assignHasMore, assignTargetFolder, assignPage, loadAssignPsakim]);
 
-      if (error) throw error;
-      setAssignPsakim(data || []);
-    } catch (err) {
-      console.error("Error searching psakim:", err);
-    } finally {
-      setLoadingAssign(false);
+  // Filter by search
+  const filteredAssignPsakim = useMemo(() => {
+    const q = assignSearch.trim().toLowerCase();
+    if (!q) return assignAllPsakim;
+    return assignAllPsakim.filter(
+      (p) =>
+        p.title.toLowerCase().includes(q) ||
+        p.court.toLowerCase().includes(q) ||
+        String(p.year).includes(q) ||
+        (p.category && p.category.toLowerCase().includes(q))
+    );
+  }, [assignAllPsakim, assignSearch]);
+
+  // Virtualizer
+  const rowVirtualizer = useVirtualizer({
+    count: filteredAssignPsakim.length,
+    getScrollElement: () => assignScrollRef.current,
+    estimateSize: () => 64,
+    overscan: 15,
+  });
+
+  // Infinite scroll — load more when nearing the bottom
+  const virtualItems = rowVirtualizer.getVirtualItems();
+  const lastVirtualItem = virtualItems[virtualItems.length - 1];
+  const lastVirtualItemIndex = lastVirtualItem?.index ?? -1;
+  useEffect(() => {
+    if (
+      lastVirtualItemIndex >= 0 &&
+      lastVirtualItemIndex >= assignAllPsakim.length - 30 &&
+      assignHasMore &&
+      !loadingMoreAssign &&
+      !assignSearch.trim()
+    ) {
+      loadMoreAssignPsakim();
     }
-  };
+  }, [lastVirtualItemIndex, assignAllPsakim.length, assignHasMore, loadingMoreAssign, assignSearch, loadMoreAssignPsakim]);
 
   const toggleAssignSelect = (id: string) => {
     setAssignSelected((prev) => {
@@ -668,7 +724,7 @@ const FolderManagerTab = () => {
 
       {/* ─── Assign Psakim Dialog ─── */}
       <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col" dir="rtl">
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col" dir="rtl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Plus className="w-5 h-5 text-primary" />
@@ -676,86 +732,151 @@ const FolderManagerTab = () => {
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
+          <div className="space-y-3 flex-1 overflow-hidden flex flex-col">
             {/* Search */}
             <div className="relative">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="חפש פסקי דין לפי שם או בית דין..."
+                placeholder="חפש פסקי דין לפי שם, בית דין, שנה..."
                 value={assignSearch}
-                onChange={(e) => searchPsakimForAssign(e.target.value)}
+                onChange={(e) => setAssignSearch(e.target.value)}
                 className="pr-9"
                 autoFocus
               />
             </div>
 
-            {assignSelected.size > 0 && (
-              <div className="flex items-center justify-between bg-primary/5 border border-primary/20 rounded-lg px-3 py-2">
-                <span className="text-sm font-medium">
-                  {assignSelected.size} פסקים נבחרו
+            {/* Selection info + select all */}
+            <div className="flex items-center justify-between bg-muted/30 rounded-lg px-3 py-2">
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-muted-foreground">
+                  {filteredAssignPsakim.length} פסקים
+                  {assignSearch.trim() && ` (מסוננים מתוך ${assignAllPsakim.length})`}
                 </span>
-                <Button size="sm" variant="ghost" onClick={() => setAssignSelected(new Set())}>
-                  נקה בחירה
-                </Button>
+                {assignSelected.size > 0 && (
+                  <Badge variant="default" className="gap-1">
+                    {assignSelected.size} נבחרו
+                  </Badge>
+                )}
+              </div>
+              <div className="flex gap-2">
+                {filteredAssignPsakim.length > 0 && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-xs h-7"
+                    onClick={() => {
+                      const allIds = new Set(filteredAssignPsakim.map((p) => p.id));
+                      const allSelected = filteredAssignPsakim.every((p) => assignSelected.has(p.id));
+                      if (allSelected) {
+                        setAssignSelected((prev) => {
+                          const next = new Set(prev);
+                          allIds.forEach((id) => next.delete(id));
+                          return next;
+                        });
+                      } else {
+                        setAssignSelected((prev) => new Set([...prev, ...allIds]));
+                      }
+                    }}
+                  >
+                    {filteredAssignPsakim.every((p) => assignSelected.has(p.id))
+                      ? "בטל בחירת הכל"
+                      : "בחר הכל"}
+                  </Button>
+                )}
+                {assignSelected.size > 0 && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-xs h-7"
+                    onClick={() => setAssignSelected(new Set())}
+                  >
+                    נקה בחירה
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Virtual scrolling results */}
+            {loadingAssign ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <div
+                ref={assignScrollRef}
+                className="flex-1 min-h-0 overflow-auto rounded-lg border"
+                style={{ maxHeight: "50vh" }}
+              >
+                <div
+                  style={{
+                    height: `${rowVirtualizer.getTotalSize()}px`,
+                    width: "100%",
+                    position: "relative",
+                  }}
+                >
+                  {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                    const p = filteredAssignPsakim[virtualRow.index];
+                    if (!p) return null;
+                    const isSelected = assignSelected.has(p.id);
+                    return (
+                      <div
+                        key={p.id}
+                        data-index={virtualRow.index}
+                        ref={rowVirtualizer.measureElement}
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          width: "100%",
+                          transform: `translateY(${virtualRow.start}px)`,
+                        }}
+                      >
+                        <div
+                          className={cn(
+                            "flex items-center gap-3 py-3 px-3 transition-colors cursor-pointer border-b border-border/30",
+                            isSelected
+                              ? "bg-primary/10"
+                              : "hover:bg-muted/60"
+                          )}
+                          onClick={() => toggleAssignSelect(p.id)}
+                        >
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => toggleAssignSelect(p.id)}
+                          />
+                          <div className="text-right flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{p.title}</p>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <span>{p.court}</span>
+                              <span>·</span>
+                              <span>{p.year}</span>
+                              {p.category && (
+                                <>
+                                  <span>·</span>
+                                  <Badge variant="outline" className="text-[10px] px-1">
+                                    {p.category}
+                                  </Badge>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {loadingMoreAssign && (
+                  <div className="flex justify-center py-3">
+                    <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                  </div>
+                )}
+                {filteredAssignPsakim.length === 0 && !loadingAssign && (
+                  <p className="text-sm text-muted-foreground text-center py-12">
+                    {assignSearch.trim() ? "לא נמצאו פסקי דין" : "אין פסקי דין זמינים"}
+                  </p>
+                )}
               </div>
             )}
-
-            {/* Results */}
-            <ScrollArea className="flex-1 min-h-0">
-              <div className="space-y-2">
-                {loadingAssign && (
-                  <div className="flex justify-center py-8">
-                    <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                  </div>
-                )}
-
-                {!loadingAssign && assignSearch.length >= 2 && assignPsakim.length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-8">
-                    לא נמצאו פסקי דין
-                  </p>
-                )}
-
-                {!loadingAssign && assignSearch.length < 2 && (
-                  <p className="text-sm text-muted-foreground text-center py-8">
-                    הקלד לפחות 2 תווים לחיפוש
-                  </p>
-                )}
-
-                {assignPsakim.map((p) => (
-                  <div
-                    key={p.id}
-                    className={cn(
-                      "flex items-center gap-3 py-3 px-3 rounded-lg transition-colors cursor-pointer",
-                      assignSelected.has(p.id)
-                        ? "bg-primary/10 border border-primary/30"
-                        : "bg-muted/30 hover:bg-muted/60"
-                    )}
-                    onClick={() => toggleAssignSelect(p.id)}
-                  >
-                    <Checkbox
-                      checked={assignSelected.has(p.id)}
-                      onCheckedChange={() => toggleAssignSelect(p.id)}
-                    />
-                    <div className="text-right flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{p.title}</p>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>{p.court}</span>
-                        <span>·</span>
-                        <span>{p.year}</span>
-                        {p.category && (
-                          <>
-                            <span>·</span>
-                            <Badge variant="outline" className="text-[10px] px-1">
-                              {p.category}
-                            </Badge>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
           </div>
 
           <DialogFooter className="flex-row-reverse gap-2 pt-4 border-t">

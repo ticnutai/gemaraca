@@ -18,6 +18,7 @@ interface PsakDinData {
   fileName?: string;
   fileUrl?: string;
   contentHash?: string;
+  category?: string;
 }
 
 // Calculate SHA-256 hash of file content
@@ -270,6 +271,7 @@ async function processAndSaveFile(
       fullText: fullText || metadata.fullTexts?.[fileName] || metadata.fullText,
       tags: metadata.tags || [],
       contentHash,
+      category: metadata.category || undefined,
     };
 
     const { data: psakDin, error: psakError } = await supabase
@@ -284,6 +286,7 @@ async function processAndSaveFile(
         source_url: publicUrl,
         tags: psakData.tags,
         content_hash: psakData.contentHash,
+        category: psakData.category || null,
       })
       .select()
       .single();
