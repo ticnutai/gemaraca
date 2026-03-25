@@ -854,9 +854,11 @@ const UploadPsakDinTab = () => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
                         if (newCategory.trim()) {
-                          setCategory(newCategory.trim());
-                          if (!existingCategories.includes(newCategory.trim())) {
-                            setExistingCategories(prev => [...prev, newCategory.trim()].sort());
+                          const catName = newCategory.trim();
+                          setCategory(catName);
+                          if (!existingCategories.includes(catName)) {
+                            setExistingCategories(prev => [...prev, catName].sort());
+                            supabase.from('folder_categories').insert({ name: catName }).then(() => {});
                           }
                           setNewCategory('');
                         }
