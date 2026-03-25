@@ -304,7 +304,11 @@ const PsakDinEditDialog = ({ psak, open, onOpenChange, onSaved, isNew = false }:
                   size="icon"
                   onClick={() => {
                     if (newCategory.trim()) {
-                      handleChange('category', newCategory.trim());
+                      const catName = newCategory.trim();
+                      handleChange('category', catName);
+                      if (!existingCategories.includes(catName)) {
+                        supabase.from('folder_categories').insert({ name: catName }).then(() => {});
+                      }
                       setNewCategory('');
                     }
                   }}
