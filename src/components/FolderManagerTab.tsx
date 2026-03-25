@@ -13,13 +13,18 @@ import {
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
+import { Database } from "@/integrations/supabase/types";
 import {
   FolderOpen, FolderPlus, Pencil, Trash2, Search, FileText,
   Loader2, Check, X, ChevronDown, ChevronLeft, Plus,
+  Eye, Star, MessageSquare, ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { useNavigate } from "react-router-dom";
+import { Textarea } from "@/components/ui/textarea";
+import PsakDinViewDialog from "./PsakDinViewDialog";
 
 interface FolderInfo {
   name: string;
@@ -35,12 +40,40 @@ interface PsakMinimal {
 }
 
 const FolderManagerTab = () => {
+  const navigate = useNavigate();
   const [folders, setFolders] = useState<FolderInfo[]>([]);
   const [uncategorizedCount, setUncategorizedCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [expandedFolder, setExpandedFolder] = useState<string | null>(null);
   const [folderPsakim, setFolderPsakim] = useState<PsakMinimal[]>([]);
   const [loadingPsakim, setLoadingPsakim] = useState(false);
+
+  // View psak dialog
+  const [viewPsak, setViewPsak] = useState<Database['public']['Tables']['psakei_din']['Row'] | null>(null);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [loadingViewPsak, setLoadingViewPsak] = useState(false);
+
+  // Notes dialog
+  const [notesDialogOpen, setNotesDialogOpen] = useState(false);
+  const [notesPsakId, setNotesPsakId] = useState<string>("");
+  const [notesPsakTitle, setNotesPsakTitle] = useState("");
+  const [noteText, setNoteText] = useState("");
+  const [loadingNotes, setLoadingNotes] = useState(false);
+  const [savingNote, setSavingNote] = useState(false);
+
+  // Favorites (local state, persisted in localStorage)
+  const [favorites, setFavorites] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem("folder-psak-favorites");
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch { return new Set(); }
+  });
+
+  // Delete psak dialog
+  const [deletePsakDialogOpen, setDeletePsakDialogOpen] = useState(false);
+  const [deletingPsakId, setDeletingPsakId] = useState<string>("");
+  const [deletingPsakTitle, setDeletingPsakTitle] = useState("");
+  const [deletingPsak, setDeletingPsak] = useState(false);
 
   // Add folder
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -373,6 +406,134 @@ const FolderManagerTab = () => {
     }
   };
 
+  // ─── View Psak ─────────────────────────
+  const handleViewPsak = async (psakId: string) => {
+    setLoadingViewPsak(true);
+    try {
+      const { data, error } = await supabase
+        .from("psakei_din")
+        .select("*")
+        .eq("id", psakId)
+        .single();
+      if (error) throw error;
+      setViewPsak(data);
+      setViewDialogOpen(true);
+    } catch (err) {
+      console.error("Error loading psak:", err);
+      toast({ title: "שגיאה בטעינת פסק הדין", variant: "destructive" });
+    } finally {
+      setLoadingViewPsak(false);
+    }
+  };
+
+  // ─── Open in EmbedPDF ──────────────────────
+  const handleOpenEmbedPdf = async (psakId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("psakei_din")
+        .select("id, title, source_url")
+        .eq("id", psakId)
+        .single();
+      if (error) throw error;
+      const sourceUrl = data.source_url || "";
+      navigate(`/embedpdf-viewer?${sourceUrl ? `url=${encodeURIComponent(sourceUrl)}&` : ""}title=${encodeURIComponent(data.title)}&psakId=${data.id}`);
+    } catch (err) {
+      console.error("Error opening embedpdf:", err);
+      toast({ title: "שגיאה בפתיחת EmbedPDF", variant: "destructive" });
+    }
+  };
+
+  // ─── Toggle Favorite ───────────────────────
+  const toggleFavorite = (psakId: string) => {
+    setFavorites((prev) => {
+      const next = new Set(prev);
+      if (next.has(psakId)) next.delete(psakId);
+      else next.add(psakId);
+      localStorage.setItem("folder-psak-favorites", JSON.stringify([...next]));
+      return next;
+    });
+  };
+
+  // ─── Notes ─────────────────────────────────
+  const handleOpenNotes = async (psakId: string, psakTitle: string) => {
+    setNotesPsakId(psakId);
+    setNotesPsakTitle(psakTitle);
+    setNoteText("");
+    setNotesDialogOpen(true);
+    setLoadingNotes(true);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from("psak_din_notes")
+        .select("note_text")
+        .eq("psak_din_id", psakId)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      setNoteText(data?.note_text || "");
+    } catch (err) {
+      console.error("Error loading notes:", err);
+    } finally {
+      setLoadingNotes(false);
+    }
+  };
+
+  const handleSaveNote = async () => {
+    setSavingNote(true);
+    try {
+      // Check if note exists
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: existing } = await (supabase as any)
+        .from("psak_din_notes")
+        .select("id")
+        .eq("psak_din_id", notesPsakId)
+        .limit(1)
+        .maybeSingle();
+
+      if (existing) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase as any)
+          .from("psak_din_notes")
+          .update({ note_text: noteText, updated_at: new Date().toISOString() })
+          .eq("id", existing.id);
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase as any)
+          .from("psak_din_notes")
+          .insert({ psak_din_id: notesPsakId, note_text: noteText });
+      }
+      toast({ title: "ההערה נשמרה" });
+      setNotesDialogOpen(false);
+    } catch (err) {
+      console.error("Error saving note:", err);
+      toast({ title: "שגיאה בשמירת הערה", variant: "destructive" });
+    } finally {
+      setSavingNote(false);
+    }
+  };
+
+  // ─── Delete Psak ───────────────────────────
+  const handleDeletePsak = async () => {
+    setDeletingPsak(true);
+    try {
+      const { error } = await supabase
+        .from("psakei_din")
+        .delete()
+        .eq("id", deletingPsakId);
+      if (error) throw error;
+      toast({ title: `פסק הדין "${deletingPsakTitle}" נמחק` });
+      setDeletePsakDialogOpen(false);
+      setFolderPsakim((prev) => prev.filter((p) => p.id !== deletingPsakId));
+      await loadFolders();
+    } catch (err) {
+      console.error("Error deleting psak:", err);
+      toast({ title: "שגיאה במחיקת פסק הדין", variant: "destructive" });
+    } finally {
+      setDeletingPsak(false);
+    }
+  };
+
   // Remove single psak from folder
   const handleRemoveFromFolder = async (psakId: string) => {
     try {
@@ -483,11 +644,31 @@ const FolderManagerTab = () => {
                         {folderPsakim.map((p) => (
                           <div
                             key={p.id}
-                            className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/30 hover:bg-muted/60 transition-colors"
+                            className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/30 hover:bg-muted/60 transition-colors group"
                           >
                             <div className="text-right flex-1 min-w-0">
                               <p className="text-sm font-medium truncate">{p.title}</p>
                               <p className="text-xs text-muted-foreground">{p.court} · {p.year}</p>
+                            </div>
+                            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-primary" title="צפייה" onClick={() => handleViewPsak(p.id)}>
+                                <Eye className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-primary" title="עריכה" onClick={() => handleViewPsak(p.id)}>
+                                <Pencil className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-blue-500" title="EmbedPDF" onClick={() => handleOpenEmbedPdf(p.id)}>
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-amber-500" title="הערות" onClick={() => handleOpenNotes(p.id, p.title)}>
+                                <MessageSquare className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button size="icon" variant="ghost" className={cn("h-7 w-7 transition-colors", favorites.has(p.id) ? "text-yellow-500" : "text-muted-foreground hover:text-yellow-500")} title="מועדף" onClick={() => toggleFavorite(p.id)}>
+                                <Star className={cn("w-3.5 h-3.5", favorites.has(p.id) && "fill-current")} />
+                              </Button>
+                              <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive" title="מחק" onClick={() => { setDeletingPsakId(p.id); setDeletingPsakTitle(p.title); setDeletePsakDialogOpen(true); }}>
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
                             </div>
                           </div>
                         ))}
@@ -595,15 +776,29 @@ const FolderManagerTab = () => {
                                   <p className="text-sm font-medium truncate">{p.title}</p>
                                   <p className="text-xs text-muted-foreground">{p.court} · {p.year}</p>
                                 </div>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                                  title="הסר מתיקייה"
-                                  onClick={() => handleRemoveFromFolder(p.id)}
-                                >
-                                  <X className="w-3.5 h-3.5" />
-                                </Button>
+                                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-primary" title="צפייה" onClick={() => handleViewPsak(p.id)}>
+                                    <Eye className="w-3.5 h-3.5" />
+                                  </Button>
+                                  <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-primary" title="עריכה" onClick={() => handleViewPsak(p.id)}>
+                                    <Pencil className="w-3.5 h-3.5" />
+                                  </Button>
+                                  <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-blue-500" title="EmbedPDF" onClick={() => handleOpenEmbedPdf(p.id)}>
+                                    <ExternalLink className="w-3.5 h-3.5" />
+                                  </Button>
+                                  <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-amber-500" title="הערות" onClick={() => handleOpenNotes(p.id, p.title)}>
+                                    <MessageSquare className="w-3.5 h-3.5" />
+                                  </Button>
+                                  <Button size="icon" variant="ghost" className={cn("h-7 w-7 transition-colors", favorites.has(p.id) ? "text-yellow-500" : "text-muted-foreground hover:text-yellow-500")} title="מועדף" onClick={() => toggleFavorite(p.id)}>
+                                    <Star className={cn("w-3.5 h-3.5", favorites.has(p.id) && "fill-current")} />
+                                  </Button>
+                                  <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive" title="הסר מתיקייה" onClick={() => handleRemoveFromFolder(p.id)}>
+                                    <X className="w-3.5 h-3.5" />
+                                  </Button>
+                                  <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive" title="מחק" onClick={() => { setDeletingPsakId(p.id); setDeletingPsakTitle(p.title); setDeletePsakDialogOpen(true); }}>
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </Button>
+                                </div>
                               </div>
                             ))}
                             {folderPsakim.length === 0 && (
@@ -932,6 +1127,94 @@ const FolderManagerTab = () => {
               {assigning ? "מעביר..." : `העבר ${assignSelected.size} פסקים`}
             </Button>
             <Button variant="outline" onClick={() => setAssignDialogOpen(false)} disabled={assigning}>
+              ביטול
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── View Psak Dialog ─── */}
+      <PsakDinViewDialog
+        psak={viewPsak}
+        open={viewDialogOpen}
+        onOpenChange={setViewDialogOpen}
+        onSave={() => {
+          // Refresh the current folder psakim after a save
+          if (expandedFolder === "__uncategorized__") {
+            loadFolderPsakim(null);
+          } else if (expandedFolder) {
+            loadFolderPsakim(expandedFolder);
+          }
+        }}
+      />
+
+      {/* ─── Notes Dialog ─── */}
+      <Dialog open={notesDialogOpen} onOpenChange={setNotesDialogOpen}>
+        <DialogContent className="max-w-lg" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-amber-500" />
+              הערות
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-2 space-y-3">
+            <p className="text-sm text-muted-foreground truncate">
+              {notesPsakTitle}
+            </p>
+            {loadingNotes ? (
+              <div className="flex justify-center py-6">
+                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <Textarea
+                value={noteText}
+                onChange={(e) => setNoteText(e.target.value)}
+                placeholder="הקלד הערות כאן..."
+                className="min-h-[150px] text-right"
+                dir="rtl"
+              />
+            )}
+          </div>
+          <DialogFooter className="flex-row-reverse gap-2">
+            <Button onClick={handleSaveNote} disabled={savingNote || loadingNotes} className="gap-2">
+              {savingNote ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+              {savingNote ? "שומר..." : "שמור"}
+            </Button>
+            <Button variant="outline" onClick={() => setNotesDialogOpen(false)} disabled={savingNote}>
+              ביטול
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── Delete Psak Dialog ─── */}
+      <Dialog open={deletePsakDialogOpen} onOpenChange={setDeletePsakDialogOpen}>
+        <DialogContent className="max-w-md" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="w-5 h-5" />
+              מחיקת פסק דין
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground">
+              האם למחוק את פסק הדין <strong>"{deletingPsakTitle}"</strong>?
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              פעולה זו אינה ניתנת לביטול.
+            </p>
+          </div>
+          <DialogFooter className="flex-row-reverse gap-2">
+            <Button
+              variant="destructive"
+              onClick={handleDeletePsak}
+              disabled={deletingPsak}
+              className="gap-2"
+            >
+              {deletingPsak ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+              {deletingPsak ? "מוחק..." : "מחק"}
+            </Button>
+            <Button variant="outline" onClick={() => setDeletePsakDialogOpen(false)} disabled={deletingPsak}>
               ביטול
             </Button>
           </DialogFooter>

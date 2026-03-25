@@ -229,10 +229,13 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
     navigate(`/sugya/${sugyaId}`);
   };
 
-  const handlePsakDinClick = (id: string) => {
+  const handlePsakDinClick = async (id: string) => {
     trackRecentPsak(id);
     queryClient.invalidateQueries({ queryKey: ['recently-viewed-psakim'] });
-    setActiveTab("psak-din");
+    // Open directly in EmbedPDF viewer
+    const psak = psakDinExamples.find(p => p.id === id);
+    const sourceUrl = psak?.source_url || '';
+    navigate(`/embedpdf-viewer?${sourceUrl ? `url=${encodeURIComponent(sourceUrl)}&` : ''}psakId=${id}`);
   };
 
   const getMasechetCount = (seder: string) => {
