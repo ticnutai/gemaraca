@@ -33,9 +33,11 @@ interface FloatingTextToolbarProps {
   editMode?: boolean;
   /** Callback to apply annotation to selection for non-edit mode */
   onAnnotate?: (styles: Record<string, string>) => void;
+  /** Called after any formatting command is applied (for auto-save) */
+  onAfterFormat?: () => void;
 }
 
-export default function FloatingTextToolbar({ containerRef, iframeRef, editMode, onAnnotate }: FloatingTextToolbarProps) {
+export default function FloatingTextToolbar({ containerRef, iframeRef, editMode, onAnnotate, onAfterFormat }: FloatingTextToolbarProps) {
   const [visible, setVisible] = useState(false);
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const [selectedText, setSelectedText] = useState("");
@@ -57,7 +59,8 @@ export default function FloatingTextToolbar({ containerRef, iframeRef, editMode,
   const exec = useCallback((cmd: string, val?: string) => {
     const doc = getDoc();
     doc.execCommand(cmd, false, val);
-  }, [getDoc]);
+    onAfterFormat?.();
+  }, [getDoc, onAfterFormat]);
 
   const handleSelectionChange = useCallback(() => {
     const sel = getSelection();
