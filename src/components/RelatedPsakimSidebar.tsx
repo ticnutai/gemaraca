@@ -129,8 +129,8 @@ const RelatedPsakimSidebar = ({ sugyaId }: RelatedPsakimSidebarProps) => {
       return;
     }
 
-    if (preferred === "embedpdf" && sourceUrl) {
-      navigate(`/embedpdf-viewer?url=${encodeURIComponent(sourceUrl)}&psakId=${psak.id}`);
+    if (preferred === "embedpdf") {
+      navigate(`/embedpdf-viewer?${sourceUrl ? `url=${encodeURIComponent(sourceUrl)}&` : ''}psakId=${psak.id}`);
       return;
     }
 
@@ -145,8 +145,8 @@ const RelatedPsakimSidebar = ({ sugyaId }: RelatedPsakimSidebarProps) => {
     setViewerPreference(next);
 
     const sourceUrl = (psak as any).source_url as string | undefined;
-    if (next === "embedpdf" && sourceUrl) {
-      navigate(`/embedpdf-viewer?url=${encodeURIComponent(sourceUrl)}&psakId=${psak.id}`);
+    if (next === "embedpdf") {
+      navigate(`/embedpdf-viewer?${sourceUrl ? `url=${encodeURIComponent(sourceUrl)}&` : ''}psakId=${psak.id}`);
       return;
     }
 

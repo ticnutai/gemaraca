@@ -132,13 +132,7 @@ export default function AdvancedIndexTab() {
         break;
       case 'embedpdf': {
         const sourceUrl = data.source_url;
-        if (sourceUrl) {
-          navigate(`/embedpdf-viewer?url=${encodeURIComponent(sourceUrl)}&title=${encodeURIComponent(data.title)}&psakId=${data.id}`);
-        } else {
-          // No file URL — open in dialog instead
-          setSelectedPsak(data);
-          setDialogOpen(true);
-        }
+        navigate(`/embedpdf-viewer?${sourceUrl ? `url=${encodeURIComponent(sourceUrl)}&` : ''}title=${encodeURIComponent(data.title)}&psakId=${data.id}`);
         break;
       }
       case 'newwindow': {

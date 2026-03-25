@@ -1656,20 +1656,20 @@ const PsakDinViewDialog = ({ psak, open, onOpenChange, onSave }: PsakDinViewDial
             {isBeautifying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 text-[#D4AF37]" />}
             {isBeautifying ? "מעצב..." : `עצב פסק דין (${selectedTemplateInfo.name})`}
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 bg-[#D4AF37]/10 border-[#D4AF37]/40 text-[#0B1F5B] hover:bg-[#D4AF37]/20"
+            onClick={() => {
+              onOpenChange(false);
+              navigate(`/embedpdf-viewer?${sourceUrl ? `url=${encodeURIComponent(sourceUrl)}&` : ''}${psak?.id ? `psakId=${psak.id}` : ''}`);
+            }}
+          >
+            <FileText className="w-4 h-4" />
+            פתח ב-EmbedPDF
+          </Button>
           {sourceUrl && (
             <>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2 bg-[#D4AF37]/10 border-[#D4AF37]/40 text-[#0B1F5B] hover:bg-[#D4AF37]/20"
-                onClick={() => {
-                  onOpenChange(false);
-                  navigate(`/embedpdf-viewer?url=${encodeURIComponent(sourceUrl)}${psak?.id ? `&psakId=${psak.id}` : ''}`);
-                }}
-              >
-                <FileText className="w-4 h-4" />
-                פתח ב-EmbedPDF
-              </Button>
               <Button
                 variant="outline"
                 size="sm"

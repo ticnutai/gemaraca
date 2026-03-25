@@ -601,8 +601,8 @@ const SmartIndexTab = () => {
       return;
     }
 
-    if (preferredViewer === "embedpdf" && sourceUrl) {
-      navigate(`/embedpdf-viewer?url=${encodeURIComponent(sourceUrl)}&psakId=${data.id}`);
+    if (preferredViewer === "embedpdf") {
+      navigate(`/embedpdf-viewer?${sourceUrl ? `url=${encodeURIComponent(sourceUrl)}&` : ''}psakId=${data.id}`);
       return;
     }
 

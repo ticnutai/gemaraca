@@ -210,10 +210,6 @@ export default function PsakeiDinDafPanel({
 
   const handleOpenPsak = useCallback((psak: DafPsak) => {
     setSelectedPsak(psak);
-    if (!psak.source_url) {
-      setDialogOpen(true);
-      return;
-    }
     // If a default viewer is saved, open directly with it
     const unified = getViewerPreference();
     if (unified === "newwindow" && psak.source_url) {
@@ -226,8 +222,8 @@ export default function PsakeiDinDafPanel({
       ? (localStorage.getItem(PSAK_VIEWER_DEFAULT_KEY) as ViewerType | null) ?? "embedpdf-page"
       : (localStorage.getItem(PSAK_VIEWER_DEFAULT_KEY) as ViewerType | null);
     if (saved) {
-      if (saved === 'embedpdf-page' && psak.source_url) {
-        navigate(`/embedpdf-viewer?url=${encodeURIComponent(psak.source_url)}&psakId=${psak.id}`);
+      if (saved === 'embedpdf-page') {
+        navigate(`/embedpdf-viewer?${psak.source_url ? `url=${encodeURIComponent(psak.source_url)}&` : ''}psakId=${psak.id}`);
       } else if (saved === 'regular') {
         setDialogOpen(true);
       } else {
@@ -235,18 +231,14 @@ export default function PsakeiDinDafPanel({
       }
     } else {
       // Default to EmbedPDF page when no preference is saved
-      if (psak.source_url) {
-        navigate(`/embedpdf-viewer?url=${encodeURIComponent(psak.source_url)}&psakId=${psak.id}`);
-      } else {
-        setViewerSelectOpen(true);
-      }
+      navigate(`/embedpdf-viewer?${psak.source_url ? `url=${encodeURIComponent(psak.source_url)}&` : ''}psakId=${psak.id}`);
     }
   }, [navigate]);
 
   const openViewer = useCallback((type: ViewerType) => {
     setViewerSelectOpen(false);
-    if (type === 'embedpdf-page' && selectedPsak?.source_url) {
-      navigate(`/embedpdf-viewer?url=${encodeURIComponent(selectedPsak.source_url)}&psakId=${selectedPsak.id}`);
+    if (type === 'embedpdf-page') {
+      navigate(`/embedpdf-viewer?${selectedPsak?.source_url ? `url=${encodeURIComponent(selectedPsak.source_url)}&` : ''}psakId=${selectedPsak?.id}`);
     } else if (type === 'regular') {
       setDialogOpen(true);
     } else {

@@ -181,8 +181,8 @@ const LinkedPsakimSection = ({ sugyaId, masechet, dafNumber }: LinkedPsakimSecti
       window.open(data.source_url, "_blank");
       return;
     }
-    if (preferred === "embedpdf" && data.source_url) {
-      navigate(`/embedpdf-viewer?url=${encodeURIComponent(data.source_url)}&psakId=${data.id}`);
+    if (preferred === "embedpdf") {
+      navigate(`/embedpdf-viewer?${data.source_url ? `url=${encodeURIComponent(data.source_url)}&` : ''}psakId=${data.id}`);
       return;
     }
 
@@ -203,8 +203,8 @@ const LinkedPsakimSection = ({ sugyaId, masechet, dafNumber }: LinkedPsakimSecti
     const next: ViewerMode = current === "dialog" ? "embedpdf" : "dialog";
     setViewerPreference(next);
 
-    if (next === "embedpdf" && data.source_url) {
-      navigate(`/embedpdf-viewer?url=${encodeURIComponent(data.source_url)}&psakId=${data.id}`);
+    if (next === "embedpdf") {
+      navigate(`/embedpdf-viewer?${data.source_url ? `url=${encodeURIComponent(data.source_url)}&` : ''}psakId=${data.id}`);
       return;
     }
 

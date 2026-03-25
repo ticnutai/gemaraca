@@ -1140,7 +1140,8 @@ export default function EmbedPdfViewerPage() {
     }
   }, []);
 
-  const leftContentType = detectContentType(leftSourceUrl);
+  const rawLeftContentType = detectContentType(leftSourceUrl);
+  const leftContentType = (!leftSourceUrl && psakData?.full_text) ? 'html-embed' as ContentViewType : rawLeftContentType;
   const rightContentType = detectContentType(rightSourceUrl);
   const leftViewerUrl = getViewerUrl(leftSourceUrl, leftContentType);
   const rightViewerUrl = getViewerUrl(rightSourceUrl, rightContentType);
@@ -1403,6 +1404,12 @@ export default function EmbedPdfViewerPage() {
 
     return () => { cancelled = true; };
   }, [leftSourceUrl, leftContentType]);
+
+  // Auto-populate fetchedHtml from psakData.full_text when no source URL
+  useEffect(() => {
+    if (leftSourceUrl || !psakData?.full_text || fetchedHtml) return;
+    setFetchedHtml(psakData.full_text);
+  }, [leftSourceUrl, psakData?.full_text, fetchedHtml]);
 
   // ── Save HTML Embed Handlers ──
   const handleSaveHtmlEmbed = useCallback(async () => {
@@ -3118,7 +3125,7 @@ export default function EmbedPdfViewerPage() {
 
         {/* ═══ VIEWER ═══ */}
         <main ref={mainRef} className={`flex-1 min-w-0 overflow-hidden ${viewMode === "split" ? "flex flex-row" : "flex flex-col"}`}>
-          {leftSourceUrl ? (
+          {(leftSourceUrl || fetchedHtml) ? (
             <div className="flex flex-col min-w-0" style={{ minHeight: viewerFullscreen ? "calc(100vh - 50px)" : "calc(100vh - 50px)", ...(viewMode === "split" ? { flex: `${splitRatio} 1 0%` } : { flex: '1 1 auto' }) }}>
               {/* ═══ BEAUTIFIED FORMATTING TOOLBAR ═══ */}
               {beautifiedHtml && activePanel === "beautify" && (

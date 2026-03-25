@@ -311,8 +311,8 @@ const PsakDinTab = () => {
       return;
     }
 
-    if (preferred === "embedpdf" && sourceUrl) {
-      navigate(`/embedpdf-viewer?url=${encodeURIComponent(sourceUrl)}&psakId=${psak.id}`);
+    if (preferred === "embedpdf") {
+      navigate(`/embedpdf-viewer?${sourceUrl ? `url=${encodeURIComponent(sourceUrl)}&` : ''}psakId=${psak.id}`);
       return;
     }
 
@@ -331,8 +331,8 @@ const PsakDinTab = () => {
     const next: ViewerMode = current === "dialog" ? "embedpdf" : "dialog";
     setViewerPreference(next);
 
-    if (next === "embedpdf" && psak.source_url) {
-      navigate(`/embedpdf-viewer?url=${encodeURIComponent(psak.source_url)}&psakId=${psak.id}`);
+    if (next === "embedpdf") {
+      navigate(`/embedpdf-viewer?${psak.source_url ? `url=${encodeURIComponent(psak.source_url)}&` : ''}psakId=${psak.id}`);
       return;
     }
 

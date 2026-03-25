@@ -465,12 +465,7 @@ const GemaraPsakDinIndex = () => {
     const sourceUrl = (psak as any)?.source_url || (psak as any)?.sourceUrl || psak?.psakei_din?.source_url;
     switch (mode) {
       case "embedpdf":
-        if (sourceUrl) {
-          navigate(`/embedpdf-viewer?url=${encodeURIComponent(sourceUrl)}&psakId=${psak.psak_din_id || psak.id}`);
-        } else {
-          setDialogPsak(psak);
-          setDialogOpen(true);
-        }
+        navigate(`/embedpdf-viewer?${sourceUrl ? `url=${encodeURIComponent(sourceUrl)}&` : ''}psakId=${psak.psak_din_id || psak.id}`);
         break;
       case "newwindow":
         if (sourceUrl) {
