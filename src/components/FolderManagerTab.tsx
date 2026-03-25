@@ -75,16 +75,26 @@ const FolderManagerTab = () => {
   const loadFolders = useCallback(async () => {
     setLoading(true);
     try {
-      // Get all categories with counts
-      const { data, error } = await supabase
-        .from("psakei_din")
-        .select("category");
-
-      if (error) throw error;
+      // Paginate to get ALL categories (Supabase default limit = 1000)
+      const CHUNK = 1000;
+      let allRows: { category: string | null }[] = [];
+      let page = 0;
+      let hasMore = true;
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from("psakei_din")
+          .select("category")
+          .range(page * CHUNK, (page + 1) * CHUNK - 1);
+        if (error) throw error;
+        const rows = data || [];
+        allRows = [...allRows, ...rows];
+        hasMore = rows.length === CHUNK;
+        page++;
+      }
 
       const countMap = new Map<string, number>();
       let noCategory = 0;
-      (data || []).forEach((r) => {
+      allRows.forEach((r) => {
         if (r.category) {
           countMap.set(r.category, (countMap.get(r.category) || 0) + 1);
         } else {
@@ -214,9 +224,9 @@ const FolderManagerTab = () => {
   };
 
   // ─── Assign Psakim ─────────────────────────
-  const ASSIGN_PAGE_SIZE = 200;
+  const ASSIGN_PAGE_SIZE = 500;
 
-  const loadAssignPsakim = useCallback(async (folder: string, page: number, reset: boolean) => {
+  const loadAssignPsakim = useCallback(async (_folder: string, page: number, reset: boolean) => {
     if (page === 0) setLoadingAssign(true);
     else setLoadingMoreAssign(true);
     try {
@@ -225,7 +235,6 @@ const FolderManagerTab = () => {
       const { data, error } = await supabase
         .from("psakei_din")
         .select("id, title, court, year, category")
-        .neq("category", folder)
         .order("title", { ascending: true })
         .range(from, to);
 
@@ -246,15 +255,30 @@ const FolderManagerTab = () => {
     }
   }, []);
 
-  const openAssignDialog = (folderName: string) => {
+  const openAssignDialog = async (folderName: string) => {
     setAssignTargetFolder(folderName);
     setAssignSearch("");
     setAssignSelected(new Set());
     setAssignAllPsakim([]);
     setAssignHasMore(true);
     setAssignDialogOpen(true);
-    // Load first page
-    loadAssignPsakim(folderName, 0, true);
+    // Load first 2 pages in parallel for instant feel
+    setLoadingAssign(true);
+    try {
+      const [res0, res1] = await Promise.all([
+        supabase.from("psakei_din").select("id, title, court, year, category").order("title", { ascending: true }).range(0, ASSIGN_PAGE_SIZE - 1),
+        supabase.from("psakei_din").select("id, title, court, year, category").order("title", { ascending: true }).range(ASSIGN_PAGE_SIZE, ASSIGN_PAGE_SIZE * 2 - 1),
+      ]);
+      const rows0 = res0.data || [];
+      const rows1 = res1.data || [];
+      setAssignAllPsakim([...rows0, ...rows1]);
+      setAssignPage(rows1.length === ASSIGN_PAGE_SIZE ? 1 : 0);
+      setAssignHasMore(rows1.length === ASSIGN_PAGE_SIZE);
+    } catch (err) {
+      console.error("Error loading initial psakim:", err);
+    } finally {
+      setLoadingAssign(false);
+    }
   };
 
   const loadMoreAssignPsakim = useCallback(() => {
