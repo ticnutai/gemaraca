@@ -81,17 +81,15 @@ const UploadPsakDinTab = () => {
     cleanupStaleSessions();
   }, []);
 
-  // Load existing categories
+  // Load existing categories from folder_categories table
   useEffect(() => {
     const loadCategories = async () => {
       const { data } = await supabase
-        .from('psakei_din')
-        .select('category')
-        .not('category', 'is', null)
-        .not('category', 'eq', '');
+        .from('folder_categories')
+        .select('name')
+        .order('name');
       if (data) {
-        const unique = [...new Set(data.map(d => d.category).filter(Boolean))] as string[];
-        setExistingCategories(unique.sort());
+        setExistingCategories(data.map((d: any) => d.name));
       }
     };
     loadCategories();
