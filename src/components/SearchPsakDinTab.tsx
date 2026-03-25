@@ -254,6 +254,11 @@ const SearchPsakDinTab = () => {
                 <CardHeader>
                   <CardTitle className="text-lg font-semibold text-foreground flex items-center gap-2 justify-end">
                     <SummaryToggle summary={psak.summary} />
+                    {psak.tags?.includes('psakim.org') && (
+                      <Badge className="text-[10px] px-1.5 py-0.5 bg-emerald-500/15 text-emerald-600 border border-emerald-500/30 dark:text-emerald-400">
+                        psakim.org
+                      </Badge>
+                    )}
                     <FileTypeBadge url={psak.sourceUrl} size="sm" />
                     {psak.title}
                   </CardTitle>

@@ -707,6 +707,11 @@ const PsakDinTab = () => {
                                       עוצב {Number((psak as Record<string, unknown>).beautify_count)}
                                     </Badge>
                                   )}
+                                  {psak.tags?.includes('psakim.org') && (
+                                    <Badge className="text-[10px] px-1.5 py-0.5 bg-emerald-500/15 text-emerald-600 border border-emerald-500/30 dark:text-emerald-400">
+                                      psakim.org
+                                    </Badge>
+                                  )}
                                   <FileTypeBadge url={psak.source_url} size="sm" />
                                   {psak.title}
                                 </h3>
