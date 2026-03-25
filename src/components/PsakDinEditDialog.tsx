@@ -81,8 +81,8 @@ const PsakDinEditDialog = ({ psak, open, onOpenChange, onSaved, isNew = false }:
   useEffect(() => {
     if (open) {
       (async () => {
-        const { data } = await supabase.from('psakei_din').select('category').not('category', 'is', null);
-        if (data) setExistingCategories([...new Set(data.map(r => r.category).filter(Boolean) as string[])].sort());
+        const { data } = await supabase.from('folder_categories').select('name').order('name');
+        if (data) setExistingCategories(data.map((r: any) => r.name));
       })();
     }
   }, [open]);
@@ -288,7 +288,11 @@ const PsakDinEditDialog = ({ psak, open, onOpenChange, onSaved, isNew = false }:
                     if (e.key === 'Enter') {
                       e.preventDefault();
                       if (newCategory.trim()) {
-                        handleChange('category', newCategory.trim());
+                        const catName = newCategory.trim();
+                        handleChange('category', catName);
+                        if (!existingCategories.includes(catName)) {
+                          supabase.from('folder_categories').insert({ name: catName }).then(() => {});
+                        }
                         setNewCategory('');
                       }
                     }
@@ -300,7 +304,11 @@ const PsakDinEditDialog = ({ psak, open, onOpenChange, onSaved, isNew = false }:
                   size="icon"
                   onClick={() => {
                     if (newCategory.trim()) {
-                      handleChange('category', newCategory.trim());
+                      const catName = newCategory.trim();
+                      handleChange('category', catName);
+                      if (!existingCategories.includes(catName)) {
+                        supabase.from('folder_categories').insert({ name: catName }).then(() => {});
+                      }
                       setNewCategory('');
                     }
                   }}
