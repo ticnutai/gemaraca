@@ -70,6 +70,10 @@ const FolderManagerTab = () => {
   const [loadingMoreAssign, setLoadingMoreAssign] = useState(false);
   const assignScrollRef = useRef<HTMLDivElement>(null);
 
+  // Drag & Drop state
+  const [draggedPsak, setDraggedPsak] = useState<PsakMinimal | null>(null);
+  const [dragOverFolder, setDragOverFolder] = useState<string | null>(null);
+
   const { toast } = useToast();
 
   const loadFolders = useCallback(async () => {
