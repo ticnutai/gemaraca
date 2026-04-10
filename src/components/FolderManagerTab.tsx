@@ -395,9 +395,27 @@ const FolderManagerTab = () => {
   };
 
   // ─── Drag & Drop Handlers ────────────────────
+  const toggleSelectPsak = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setSelectedPsakim((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   const handleDragStart = (e: React.DragEvent, psak: PsakMinimal) => {
+    // If this psak isn't selected, make it the only dragged item
+    const dragIds = selectedPsakim.has(psak.id) && selectedPsakim.size > 0
+      ? Array.from(selectedPsakim)
+      : [psak.id];
+    const dragTitles = selectedPsakim.has(psak.id) && selectedPsakim.size > 1
+      ? folderPsakim.filter(p => selectedPsakim.has(p.id)).map(p => p.title)
+      : [psak.title];
+
     setDraggedPsak(psak);
-    e.dataTransfer.setData("text/plain", JSON.stringify({ id: psak.id, title: psak.title }));
+    e.dataTransfer.setData("text/plain", JSON.stringify({ ids: dragIds, titles: dragTitles }));
     e.dataTransfer.effectAllowed = "move";
   };
 
@@ -418,21 +436,26 @@ const FolderManagerTab = () => {
 
     try {
       const data = JSON.parse(e.dataTransfer.getData("text/plain"));
-      const psakId = data.id as string;
-      const psakTitle = data.title as string;
+      const ids: string[] = data.ids || [data.id];
+      const titles: string[] = data.titles || [data.title];
 
       const { error } = await supabase
         .from("psakei_din")
         .update({ category: targetFolder })
-        .eq("id", psakId);
+        .in("id", ids);
 
       if (error) throw error;
 
       const targetName = targetFolder ?? "ללא תיקייה";
-      toast({ title: `"${psakTitle}" הועבר ל"${targetName}"` });
+      const msg = ids.length > 1
+        ? `${ids.length} פסקים הועברו ל"${targetName}"`
+        : `"${titles[0]}" הועבר ל"${targetName}"`;
+      toast({ title: msg });
 
       // Remove from currently displayed list
-      setFolderPsakim((prev) => prev.filter((p) => p.id !== psakId));
+      const idSet = new Set(ids);
+      setFolderPsakim((prev) => prev.filter((p) => !idSet.has(p.id)));
+      setSelectedPsakim(new Set());
       await loadFolders();
 
       // If target folder is expanded, reload it
