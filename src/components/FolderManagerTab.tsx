@@ -506,8 +506,12 @@ const FolderManagerTab = () => {
           <Card
             className={cn(
               "border shadow-sm hover:shadow-md transition-all cursor-pointer",
-              expandedFolder === "__uncategorized__" && "ring-1 ring-amber-500/50 border-amber-500/30"
+              expandedFolder === "__uncategorized__" && "ring-1 ring-amber-500/50 border-amber-500/30",
+              dragOverFolder === "__uncategorized__" && "ring-2 ring-primary border-primary/50 bg-primary/5"
             )}
+            onDragOver={(e) => handleDragOver(e, "__uncategorized__")}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, null)}
           >
             <CardContent className="p-0">
               <button
