@@ -15,7 +15,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import {
   FolderOpen, FolderPlus, Pencil, Trash2, Search, FileText,
-  Loader2, Check, X, ChevronDown, ChevronLeft, Plus,
+  Loader2, Check, X, ChevronDown, ChevronLeft, Plus, GripVertical,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
