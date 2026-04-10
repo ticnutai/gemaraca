@@ -703,33 +703,55 @@ const FolderManagerTab = () => {
                         </div>
                       ) : (
                         <ScrollArea className="max-h-[400px] mt-3">
+                          {selectedPsakim.size > 0 && (
+                            <div className="flex items-center gap-2 mb-2 px-1">
+                              <Badge variant="default" className="gap-1 text-xs">{selectedPsakim.size} נבחרו לגרירה</Badge>
+                              <Button size="sm" variant="ghost" className="text-xs h-6 px-2" onClick={() => setSelectedPsakim(new Set())}>נקה</Button>
+                            </div>
+                          )}
                           <div className="space-y-2">
-                            {folderPsakim.map((p) => (
-                              <div
-                                key={p.id}
-                                draggable
-                                onDragStart={(e) => handleDragStart(e, p)}
-                                onDragEnd={handleDragEnd}
-                                className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/30 hover:bg-muted/60 transition-colors group cursor-grab active:cursor-grabbing"
-                              >
-                                <div className="flex items-center gap-2 flex-1 min-w-0">
-                                  <GripVertical className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
-                                  <div className="text-right flex-1 min-w-0">
-                                    <p className="text-sm font-medium truncate">{p.title}</p>
-                                    <p className="text-xs text-muted-foreground">{p.court} · {p.year}</p>
+                            {folderPsakim.map((p) => {
+                              const isSelected = selectedPsakim.has(p.id);
+                              return (
+                                <div
+                                  key={p.id}
+                                  draggable
+                                  onDragStart={(e) => handleDragStart(e, p)}
+                                  onDragEnd={handleDragEnd}
+                                  className={cn(
+                                    "flex items-center justify-between py-2 px-3 rounded-lg transition-colors group cursor-grab active:cursor-grabbing",
+                                    isSelected ? "bg-primary/10 ring-1 ring-primary/30" : "bg-muted/30 hover:bg-muted/60"
+                                  )}
+                                >
+                                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                                    <Checkbox
+                                      checked={isSelected}
+                                      onCheckedChange={() => toggleSelectPsak(p.id)}
+                                      className="flex-shrink-0"
+                                    />
+                                    <GripVertical className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
+                                    <div className="text-right flex-1 min-w-0">
+                                      <p className="text-sm font-medium truncate">{p.title}</p>
+                                      <p className="text-xs text-muted-foreground">{p.court} · {p.year}</p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    {isSelected && selectedPsakim.size > 1 && (
+                                      <Badge variant="secondary" className="text-[10px] px-1.5">{selectedPsakim.size}</Badge>
+                                    )}
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                                      title="הסר מתיקייה"
+                                      onClick={() => handleRemoveFromFolder(p.id)}
+                                    >
+                                      <X className="w-3.5 h-3.5" />
+                                    </Button>
                                   </div>
                                 </div>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                                  title="הסר מתיקייה"
-                                  onClick={() => handleRemoveFromFolder(p.id)}
-                                >
-                                  <X className="w-3.5 h-3.5" />
-                                </Button>
-                              </div>
-                            ))}
+                              );
+                            })}
                             {folderPsakim.length === 0 && (
                               <div className="text-center py-6">
                                 <p className="text-sm text-muted-foreground mb-3">
