@@ -663,11 +663,17 @@ const FolderManagerTab = () => {
                             {folderPsakim.map((p) => (
                               <div
                                 key={p.id}
-                                className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/30 hover:bg-muted/60 transition-colors group"
+                                draggable
+                                onDragStart={(e) => handleDragStart(e, p)}
+                                onDragEnd={handleDragEnd}
+                                className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/30 hover:bg-muted/60 transition-colors group cursor-grab active:cursor-grabbing"
                               >
-                                <div className="text-right flex-1 min-w-0">
-                                  <p className="text-sm font-medium truncate">{p.title}</p>
-                                  <p className="text-xs text-muted-foreground">{p.court} · {p.year}</p>
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                  <GripVertical className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
+                                  <div className="text-right flex-1 min-w-0">
+                                    <p className="text-sm font-medium truncate">{p.title}</p>
+                                    <p className="text-xs text-muted-foreground">{p.court} · {p.year}</p>
+                                  </div>
                                 </div>
                                 <Button
                                   size="icon"
