@@ -73,6 +73,7 @@ const FolderManagerTab = () => {
   // Drag & Drop state
   const [draggedPsak, setDraggedPsak] = useState<PsakMinimal | null>(null);
   const [dragOverFolder, setDragOverFolder] = useState<string | null>(null);
+  const [selectedPsakim, setSelectedPsakim] = useState<Set<string>>(new Set());
 
   const { toast } = useToast();
 
