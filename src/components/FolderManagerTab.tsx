@@ -73,6 +73,7 @@ const FolderManagerTab = () => {
   // Drag & Drop state
   const [draggedPsak, setDraggedPsak] = useState<PsakMinimal | null>(null);
   const [dragOverFolder, setDragOverFolder] = useState<string | null>(null);
+  const [selectedPsakim, setSelectedPsakim] = useState<Set<string>>(new Set());
 
   const { toast } = useToast();
 
@@ -167,6 +168,7 @@ const FolderManagerTab = () => {
       setExpandedFolder(key);
       loadFolderPsakim(folderName);
     }
+    setSelectedPsakim(new Set());
   };
 
   // ─── Add Folder ────────────────────────────
@@ -394,9 +396,27 @@ const FolderManagerTab = () => {
   };
 
   // ─── Drag & Drop Handlers ────────────────────
+  const toggleSelectPsak = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setSelectedPsakim((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   const handleDragStart = (e: React.DragEvent, psak: PsakMinimal) => {
+    // If this psak isn't selected, make it the only dragged item
+    const dragIds = selectedPsakim.has(psak.id) && selectedPsakim.size > 0
+      ? Array.from(selectedPsakim)
+      : [psak.id];
+    const dragTitles = selectedPsakim.has(psak.id) && selectedPsakim.size > 1
+      ? folderPsakim.filter(p => selectedPsakim.has(p.id)).map(p => p.title)
+      : [psak.title];
+
     setDraggedPsak(psak);
-    e.dataTransfer.setData("text/plain", JSON.stringify({ id: psak.id, title: psak.title }));
+    e.dataTransfer.setData("text/plain", JSON.stringify({ ids: dragIds, titles: dragTitles }));
     e.dataTransfer.effectAllowed = "move";
   };
 
@@ -417,21 +437,26 @@ const FolderManagerTab = () => {
 
     try {
       const data = JSON.parse(e.dataTransfer.getData("text/plain"));
-      const psakId = data.id as string;
-      const psakTitle = data.title as string;
+      const ids: string[] = data.ids || [data.id];
+      const titles: string[] = data.titles || [data.title];
 
       const { error } = await supabase
         .from("psakei_din")
         .update({ category: targetFolder })
-        .eq("id", psakId);
+        .in("id", ids);
 
       if (error) throw error;
 
       const targetName = targetFolder ?? "ללא תיקייה";
-      toast({ title: `"${psakTitle}" הועבר ל"${targetName}"` });
+      const msg = ids.length > 1
+        ? `${ids.length} פסקים הועברו ל"${targetName}"`
+        : `"${titles[0]}" הועבר ל"${targetName}"`;
+      toast({ title: msg });
 
       // Remove from currently displayed list
-      setFolderPsakim((prev) => prev.filter((p) => p.id !== psakId));
+      const idSet = new Set(ids);
+      setFolderPsakim((prev) => prev.filter((p) => !idSet.has(p.id)));
+      setSelectedPsakim(new Set());
       await loadFolders();
 
       // If target folder is expanded, reload it
@@ -543,24 +568,44 @@ const FolderManagerTab = () => {
                     </div>
                   ) : (
                     <ScrollArea className="max-h-[300px] mt-3">
+                      {selectedPsakim.size > 0 && (
+                        <div className="flex items-center gap-2 mb-2 px-1">
+                          <Badge variant="default" className="gap-1 text-xs">{selectedPsakim.size} נבחרו לגרירה</Badge>
+                          <Button size="sm" variant="ghost" className="text-xs h-6 px-2" onClick={() => setSelectedPsakim(new Set())}>נקה</Button>
+                        </div>
+                      )}
                       <div className="space-y-2">
-                        {folderPsakim.map((p) => (
-                          <div
-                            key={p.id}
-                            draggable
-                            onDragStart={(e) => handleDragStart(e, p)}
-                            onDragEnd={handleDragEnd}
-                            className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/30 hover:bg-muted/60 transition-colors cursor-grab active:cursor-grabbing"
-                          >
-                            <div className="flex items-center gap-2 flex-1 min-w-0">
-                              <GripVertical className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
-                              <div className="text-right flex-1 min-w-0">
-                                <p className="text-sm font-medium truncate">{p.title}</p>
-                                <p className="text-xs text-muted-foreground">{p.court} · {p.year}</p>
+                        {folderPsakim.map((p) => {
+                          const isSelected = selectedPsakim.has(p.id);
+                          return (
+                            <div
+                              key={p.id}
+                              draggable
+                              onDragStart={(e) => handleDragStart(e, p)}
+                              onDragEnd={handleDragEnd}
+                              className={cn(
+                                "flex items-center justify-between py-2 px-3 rounded-lg transition-colors cursor-grab active:cursor-grabbing",
+                                isSelected ? "bg-primary/10 ring-1 ring-primary/30" : "bg-muted/30 hover:bg-muted/60"
+                              )}
+                            >
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <Checkbox
+                                  checked={isSelected}
+                                  onCheckedChange={() => toggleSelectPsak(p.id)}
+                                  className="flex-shrink-0"
+                                />
+                                <GripVertical className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
+                                <div className="text-right flex-1 min-w-0">
+                                  <p className="text-sm font-medium truncate">{p.title}</p>
+                                  <p className="text-xs text-muted-foreground">{p.court} · {p.year}</p>
+                                </div>
                               </div>
+                              {isSelected && selectedPsakim.size > 1 && (
+                                <Badge variant="secondary" className="text-[10px] px-1.5 mr-2">{selectedPsakim.size}</Badge>
+                              )}
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                         {folderPsakim.length === 0 && (
                           <p className="text-sm text-muted-foreground text-center py-4">אין פסקים ללא תיקייה</p>
                         )}
@@ -659,33 +704,55 @@ const FolderManagerTab = () => {
                         </div>
                       ) : (
                         <ScrollArea className="max-h-[400px] mt-3">
+                          {selectedPsakim.size > 0 && (
+                            <div className="flex items-center gap-2 mb-2 px-1">
+                              <Badge variant="default" className="gap-1 text-xs">{selectedPsakim.size} נבחרו לגרירה</Badge>
+                              <Button size="sm" variant="ghost" className="text-xs h-6 px-2" onClick={() => setSelectedPsakim(new Set())}>נקה</Button>
+                            </div>
+                          )}
                           <div className="space-y-2">
-                            {folderPsakim.map((p) => (
-                              <div
-                                key={p.id}
-                                draggable
-                                onDragStart={(e) => handleDragStart(e, p)}
-                                onDragEnd={handleDragEnd}
-                                className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/30 hover:bg-muted/60 transition-colors group cursor-grab active:cursor-grabbing"
-                              >
-                                <div className="flex items-center gap-2 flex-1 min-w-0">
-                                  <GripVertical className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
-                                  <div className="text-right flex-1 min-w-0">
-                                    <p className="text-sm font-medium truncate">{p.title}</p>
-                                    <p className="text-xs text-muted-foreground">{p.court} · {p.year}</p>
+                            {folderPsakim.map((p) => {
+                              const isSelected = selectedPsakim.has(p.id);
+                              return (
+                                <div
+                                  key={p.id}
+                                  draggable
+                                  onDragStart={(e) => handleDragStart(e, p)}
+                                  onDragEnd={handleDragEnd}
+                                  className={cn(
+                                    "flex items-center justify-between py-2 px-3 rounded-lg transition-colors group cursor-grab active:cursor-grabbing",
+                                    isSelected ? "bg-primary/10 ring-1 ring-primary/30" : "bg-muted/30 hover:bg-muted/60"
+                                  )}
+                                >
+                                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                                    <Checkbox
+                                      checked={isSelected}
+                                      onCheckedChange={() => toggleSelectPsak(p.id)}
+                                      className="flex-shrink-0"
+                                    />
+                                    <GripVertical className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
+                                    <div className="text-right flex-1 min-w-0">
+                                      <p className="text-sm font-medium truncate">{p.title}</p>
+                                      <p className="text-xs text-muted-foreground">{p.court} · {p.year}</p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    {isSelected && selectedPsakim.size > 1 && (
+                                      <Badge variant="secondary" className="text-[10px] px-1.5">{selectedPsakim.size}</Badge>
+                                    )}
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                                      title="הסר מתיקייה"
+                                      onClick={() => handleRemoveFromFolder(p.id)}
+                                    >
+                                      <X className="w-3.5 h-3.5" />
+                                    </Button>
                                   </div>
                                 </div>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                                  title="הסר מתיקייה"
-                                  onClick={() => handleRemoveFromFolder(p.id)}
-                                >
-                                  <X className="w-3.5 h-3.5" />
-                                </Button>
-                              </div>
-                            ))}
+                              );
+                            })}
                             {folderPsakim.length === 0 && (
                               <div className="text-center py-6">
                                 <p className="text-sm text-muted-foreground mb-3">
