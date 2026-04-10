@@ -580,8 +580,12 @@ const FolderManagerTab = () => {
                 key={folder.name}
                 className={cn(
                   "border shadow-sm hover:shadow-md transition-all",
-                  isExpanded && "ring-1 ring-primary/50 border-primary/30"
+                  isExpanded && "ring-1 ring-primary/50 border-primary/30",
+                  dragOverFolder === folder.name && "ring-2 ring-primary border-primary/50 bg-primary/5"
                 )}
+                onDragOver={(e) => handleDragOver(e, folder.name)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, folder.name)}
               >
                 <CardContent className="p-0">
                   <div className="flex items-center justify-between p-4">
