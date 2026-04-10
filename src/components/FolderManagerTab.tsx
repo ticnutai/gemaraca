@@ -168,6 +168,7 @@ const FolderManagerTab = () => {
       setExpandedFolder(key);
       loadFolderPsakim(folderName);
     }
+    setSelectedPsakim(new Set());
   };
 
   // ─── Add Folder ────────────────────────────
