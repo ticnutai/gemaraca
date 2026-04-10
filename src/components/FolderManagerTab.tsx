@@ -15,7 +15,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import {
   FolderOpen, FolderPlus, Pencil, Trash2, Search, FileText,
-  Loader2, Check, X, ChevronDown, ChevronLeft, Plus,
+  Loader2, Check, X, ChevronDown, ChevronLeft, Plus, GripVertical,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -69,6 +69,10 @@ const FolderManagerTab = () => {
   const [assignHasMore, setAssignHasMore] = useState(true);
   const [loadingMoreAssign, setLoadingMoreAssign] = useState(false);
   const assignScrollRef = useRef<HTMLDivElement>(null);
+
+  // Drag & Drop state
+  const [draggedPsak, setDraggedPsak] = useState<PsakMinimal | null>(null);
+  const [dragOverFolder, setDragOverFolder] = useState<string | null>(null);
 
   const { toast } = useToast();
 
@@ -389,6 +393,62 @@ const FolderManagerTab = () => {
     }
   };
 
+  // ─── Drag & Drop Handlers ────────────────────
+  const handleDragStart = (e: React.DragEvent, psak: PsakMinimal) => {
+    setDraggedPsak(psak);
+    e.dataTransfer.setData("text/plain", JSON.stringify({ id: psak.id, title: psak.title }));
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (e: React.DragEvent, folderKey: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDragOverFolder(folderKey);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverFolder(null);
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetFolder: string | null) => {
+    e.preventDefault();
+    setDragOverFolder(null);
+    setDraggedPsak(null);
+
+    try {
+      const data = JSON.parse(e.dataTransfer.getData("text/plain"));
+      const psakId = data.id as string;
+      const psakTitle = data.title as string;
+
+      const { error } = await supabase
+        .from("psakei_din")
+        .update({ category: targetFolder })
+        .eq("id", psakId);
+
+      if (error) throw error;
+
+      const targetName = targetFolder ?? "ללא תיקייה";
+      toast({ title: `"${psakTitle}" הועבר ל"${targetName}"` });
+
+      // Remove from currently displayed list
+      setFolderPsakim((prev) => prev.filter((p) => p.id !== psakId));
+      await loadFolders();
+
+      // If target folder is expanded, reload it
+      if (expandedFolder === targetFolder || expandedFolder === (targetFolder ?? "__uncategorized__")) {
+        loadFolderPsakim(targetFolder);
+      }
+    } catch (err) {
+      console.error("Error moving psak via drag:", err);
+      toast({ title: "שגיאה בהעברת פסק דין", variant: "destructive" });
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDraggedPsak(null);
+    setDragOverFolder(null);
+  };
+
   return (
     <div className="p-4 md:p-6 space-y-6" dir="rtl">
       {/* Header */}
@@ -446,8 +506,12 @@ const FolderManagerTab = () => {
           <Card
             className={cn(
               "border shadow-sm hover:shadow-md transition-all cursor-pointer",
-              expandedFolder === "__uncategorized__" && "ring-1 ring-amber-500/50 border-amber-500/30"
+              expandedFolder === "__uncategorized__" && "ring-1 ring-amber-500/50 border-amber-500/30",
+              dragOverFolder === "__uncategorized__" && "ring-2 ring-primary border-primary/50 bg-primary/5"
             )}
+            onDragOver={(e) => handleDragOver(e, "__uncategorized__")}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, null)}
           >
             <CardContent className="p-0">
               <button
@@ -483,11 +547,17 @@ const FolderManagerTab = () => {
                         {folderPsakim.map((p) => (
                           <div
                             key={p.id}
-                            className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/30 hover:bg-muted/60 transition-colors"
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, p)}
+                            onDragEnd={handleDragEnd}
+                            className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/30 hover:bg-muted/60 transition-colors cursor-grab active:cursor-grabbing"
                           >
-                            <div className="text-right flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate">{p.title}</p>
-                              <p className="text-xs text-muted-foreground">{p.court} · {p.year}</p>
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              <GripVertical className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
+                              <div className="text-right flex-1 min-w-0">
+                                <p className="text-sm font-medium truncate">{p.title}</p>
+                                <p className="text-xs text-muted-foreground">{p.court} · {p.year}</p>
+                              </div>
                             </div>
                           </div>
                         ))}
@@ -510,8 +580,12 @@ const FolderManagerTab = () => {
                 key={folder.name}
                 className={cn(
                   "border shadow-sm hover:shadow-md transition-all",
-                  isExpanded && "ring-1 ring-primary/50 border-primary/30"
+                  isExpanded && "ring-1 ring-primary/50 border-primary/30",
+                  dragOverFolder === folder.name && "ring-2 ring-primary border-primary/50 bg-primary/5"
                 )}
+                onDragOver={(e) => handleDragOver(e, folder.name)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, folder.name)}
               >
                 <CardContent className="p-0">
                   <div className="flex items-center justify-between p-4">
@@ -589,11 +663,17 @@ const FolderManagerTab = () => {
                             {folderPsakim.map((p) => (
                               <div
                                 key={p.id}
-                                className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/30 hover:bg-muted/60 transition-colors group"
+                                draggable
+                                onDragStart={(e) => handleDragStart(e, p)}
+                                onDragEnd={handleDragEnd}
+                                className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/30 hover:bg-muted/60 transition-colors group cursor-grab active:cursor-grabbing"
                               >
-                                <div className="text-right flex-1 min-w-0">
-                                  <p className="text-sm font-medium truncate">{p.title}</p>
-                                  <p className="text-xs text-muted-foreground">{p.court} · {p.year}</p>
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                  <GripVertical className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
+                                  <div className="text-right flex-1 min-w-0">
+                                    <p className="text-sm font-medium truncate">{p.title}</p>
+                                    <p className="text-xs text-muted-foreground">{p.court} · {p.year}</p>
+                                  </div>
                                 </div>
                                 <Button
                                   size="icon"
