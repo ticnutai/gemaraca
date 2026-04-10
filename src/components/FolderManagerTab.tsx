@@ -393,6 +393,62 @@ const FolderManagerTab = () => {
     }
   };
 
+  // ─── Drag & Drop Handlers ────────────────────
+  const handleDragStart = (e: React.DragEvent, psak: PsakMinimal) => {
+    setDraggedPsak(psak);
+    e.dataTransfer.setData("text/plain", JSON.stringify({ id: psak.id, title: psak.title }));
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (e: React.DragEvent, folderKey: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDragOverFolder(folderKey);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverFolder(null);
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetFolder: string | null) => {
+    e.preventDefault();
+    setDragOverFolder(null);
+    setDraggedPsak(null);
+
+    try {
+      const data = JSON.parse(e.dataTransfer.getData("text/plain"));
+      const psakId = data.id as string;
+      const psakTitle = data.title as string;
+
+      const { error } = await supabase
+        .from("psakei_din")
+        .update({ category: targetFolder })
+        .eq("id", psakId);
+
+      if (error) throw error;
+
+      const targetName = targetFolder ?? "ללא תיקייה";
+      toast({ title: `"${psakTitle}" הועבר ל"${targetName}"` });
+
+      // Remove from currently displayed list
+      setFolderPsakim((prev) => prev.filter((p) => p.id !== psakId));
+      await loadFolders();
+
+      // If target folder is expanded, reload it
+      if (expandedFolder === targetFolder || expandedFolder === (targetFolder ?? "__uncategorized__")) {
+        loadFolderPsakim(targetFolder);
+      }
+    } catch (err) {
+      console.error("Error moving psak via drag:", err);
+      toast({ title: "שגיאה בהעברת פסק דין", variant: "destructive" });
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDraggedPsak(null);
+    setDragOverFolder(null);
+  };
+
   return (
     <div className="p-4 md:p-6 space-y-6" dir="rtl">
       {/* Header */}
