@@ -657,7 +657,7 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
       {/* ──── פסקי דין אחרונים - shown in all view modes ──── */}
       {psakDinExamples.length > 0 && !selectedMasechetLocal && (
         <div className="bg-card rounded-lg md:rounded-xl border border-border p-2 md:p-4">
-           <div className="flex items-center gap-1.5 md:gap-2 mb-2 md:mb-4">
+           <div className="flex items-center gap-1.5 md:gap-2 mb-2 md:mb-4 justify-end flex-row-reverse">
             <Scale className="h-3.5 w-3.5 md:h-5 md:w-5 text-foreground" />
             <h3 className="font-bold text-sm md:text-lg">פסקי דין אחרונים</h3>
           </div>
