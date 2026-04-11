@@ -666,19 +666,22 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
             {psakDinExamples.map((psak) => (
               <button
                 key={psak.id}
-                onClick={() => handlePsakDinClick(psak.id)}
+                onClick={() => handlePsakDinClick(psak)}
                 className={cn(
                   "p-2.5 md:p-3 rounded-md md:rounded-lg border text-right transition-all min-h-[48px]",
                   "bg-secondary/30 border-border hover:border-accent hover:shadow-sm",
                   "hover:bg-accent/10"
                 )}
+                dir="rtl"
               >
-                <h4 className="font-medium text-xs md:text-sm line-clamp-2 mb-0.5 md:mb-1 flex items-center gap-1 justify-end"><SummaryToggle summary={psak.summary} compact /><FileTypeBadge url={psak.source_url} />{psak.title.replace(/^.*[/\\]/, '')}</h4>
-                <div className="flex items-center gap-1.5 md:gap-2 text-[10px] md:text-xs text-muted-foreground">
-                  <span className="truncate max-w-[100px] md:max-w-none">{psak.court}</span>
-                  <span>•</span>
-                  <span>{psak.year}</span>
-                </div>
+                <h4 className="font-medium text-xs md:text-sm line-clamp-2 mb-0.5 md:mb-1 flex items-center gap-1 justify-start flex-row-reverse"><SummaryToggle summary={psak.summary} compact /><FileTypeBadge url={psak.source_url} />{psak.title.replace(/^.*[/\\]/, '')}</h4>
+                {(psak.court && psak.court !== 'לא צוין') || psak.year ? (
+                  <div className="flex items-center gap-1.5 md:gap-2 text-[10px] md:text-xs text-muted-foreground justify-end flex-row-reverse">
+                    {psak.court && psak.court !== 'לא צוין' && <span className="truncate max-w-[100px] md:max-w-none">{psak.court}</span>}
+                    {psak.court && psak.court !== 'לא צוין' && psak.year && <span>•</span>}
+                    {psak.year && <span>{psak.year}</span>}
+                  </div>
+                ) : null}
               </button>
             ))}
           </div>
