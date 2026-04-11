@@ -2,6 +2,7 @@ import { useState, useEffect, lazy, Suspense } from "react";
 import { BookOpen, ChevronLeft, ChevronDown, Scale, Download, Loader2, Check, X, MoreVertical, Trash2, RefreshCw, LayoutGrid, List, Compass, GitBranch } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { trackRecentPsak } from "@/lib/recentPsakim";
+import { getViewerPreference } from "@/components/ViewerPreferenceDialog";
 import { SEDARIM, getMasechtotBySeder, MASECHTOT, Masechet } from "@/lib/masechtotData";
 import { toDafFormat } from "@/lib/hebrewNumbers";
 import { Button } from "@/components/ui/button";
@@ -229,9 +230,20 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
     navigate(`/sugya/${sugyaId}`);
   };
 
-  const handlePsakDinClick = (id: string) => {
-    trackRecentPsak(id);
+  const handlePsakDinClick = (psak: PsakDinExample) => {
+    trackRecentPsak(psak.id);
     queryClient.invalidateQueries({ queryKey: ['recently-viewed-psakim'] });
+    
+    const preferred = getViewerPreference() ?? "embedpdf";
+    if (preferred === "newwindow" && psak.source_url) {
+      window.open(psak.source_url, '_blank');
+      return;
+    }
+    if (preferred === "embedpdf") {
+      navigate(`/embedpdf-viewer?${psak.source_url ? `url=${encodeURIComponent(psak.source_url)}&` : ''}psakId=${psak.id}`);
+      return;
+    }
+    // fallback: go to psak-din tab
     setActiveTab("psak-din");
   };
 
@@ -645,7 +657,7 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
       {/* ──── פסקי דין אחרונים - shown in all view modes ──── */}
       {psakDinExamples.length > 0 && !selectedMasechetLocal && (
         <div className="bg-card rounded-lg md:rounded-xl border border-border p-2 md:p-4">
-           <div className="flex items-center gap-1.5 md:gap-2 mb-2 md:mb-4">
+           <div className="flex items-center gap-1.5 md:gap-2 mb-2 md:mb-4 justify-end flex-row-reverse">
             <Scale className="h-3.5 w-3.5 md:h-5 md:w-5 text-foreground" />
             <h3 className="font-bold text-sm md:text-lg">פסקי דין אחרונים</h3>
           </div>
@@ -654,19 +666,22 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
             {psakDinExamples.map((psak) => (
               <button
                 key={psak.id}
-                onClick={() => handlePsakDinClick(psak.id)}
+                onClick={() => handlePsakDinClick(psak)}
                 className={cn(
                   "p-2.5 md:p-3 rounded-md md:rounded-lg border text-right transition-all min-h-[48px]",
                   "bg-secondary/30 border-border hover:border-accent hover:shadow-sm",
                   "hover:bg-accent/10"
                 )}
+                dir="rtl"
               >
-                <h4 className="font-medium text-xs md:text-sm line-clamp-2 mb-0.5 md:mb-1 flex items-center gap-1 justify-end"><SummaryToggle summary={psak.summary} compact /><FileTypeBadge url={psak.source_url} />{psak.title.replace(/^.*[/\\]/, '')}</h4>
-                <div className="flex items-center gap-1.5 md:gap-2 text-[10px] md:text-xs text-muted-foreground">
-                  <span className="truncate max-w-[100px] md:max-w-none">{psak.court}</span>
-                  <span>•</span>
-                  <span>{psak.year}</span>
-                </div>
+                <h4 className="font-medium text-xs md:text-sm line-clamp-2 mb-0.5 md:mb-1 flex items-center gap-1 justify-start flex-row-reverse"><SummaryToggle summary={psak.summary} compact /><FileTypeBadge url={psak.source_url} />{psak.title.replace(/^.*[/\\]/, '')}</h4>
+                {(psak.court && psak.court !== 'לא צוין') || psak.year ? (
+                  <div className="flex items-center gap-1.5 md:gap-2 text-[10px] md:text-xs text-muted-foreground justify-end flex-row-reverse">
+                    {psak.court && psak.court !== 'לא צוין' && <span className="truncate max-w-[100px] md:max-w-none">{psak.court}</span>}
+                    {psak.court && psak.court !== 'לא צוין' && psak.year && <span>•</span>}
+                    {psak.year && <span>{psak.year}</span>}
+                  </div>
+                ) : null}
               </button>
             ))}
           </div>
