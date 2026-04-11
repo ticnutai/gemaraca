@@ -181,6 +181,7 @@ const FolderManagerTab = () => {
       loadFolderPsakim(folderName);
     }
     setSelectedPsakim(new Set());
+    setFolderSearch("");
   };
 
   // ─── Add Folder ────────────────────────────
