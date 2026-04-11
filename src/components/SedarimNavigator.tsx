@@ -230,9 +230,20 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
     navigate(`/sugya/${sugyaId}`);
   };
 
-  const handlePsakDinClick = (id: string) => {
-    trackRecentPsak(id);
+  const handlePsakDinClick = (psak: PsakDinExample) => {
+    trackRecentPsak(psak.id);
     queryClient.invalidateQueries({ queryKey: ['recently-viewed-psakim'] });
+    
+    const preferred = getViewerPreference() ?? "embedpdf";
+    if (preferred === "newwindow" && psak.source_url) {
+      window.open(psak.source_url, '_blank');
+      return;
+    }
+    if (preferred === "embedpdf") {
+      navigate(`/embedpdf-viewer?${psak.source_url ? `url=${encodeURIComponent(psak.source_url)}&` : ''}psakId=${psak.id}`);
+      return;
+    }
+    // fallback: go to psak-din tab
     setActiveTab("psak-din");
   };
 
