@@ -744,20 +744,29 @@ const FolderManagerTab = () => {
                         </div>
                       ) : (
                         <ScrollArea className="max-h-[400px] mt-3">
+                          <div className="relative mb-2">
+                            <Search className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input
+                              placeholder="חיפוש פסקים..."
+                              value={folderSearch}
+                              onChange={(e) => setFolderSearch(e.target.value)}
+                              className="pr-8 h-8 text-sm"
+                            />
+                          </div>
                           <div className="flex items-center gap-2 mb-2 px-1">
                             <Checkbox
-                              checked={folderPsakim.length > 0 && selectedPsakim.size === folderPsakim.length}
+                              checked={filteredFolderPsakim.length > 0 && selectedPsakim.size === filteredFolderPsakim.length}
                               onCheckedChange={() => {
-                                if (selectedPsakim.size === folderPsakim.length) {
+                                if (selectedPsakim.size === filteredFolderPsakim.length) {
                                   setSelectedPsakim(new Set());
                                 } else {
-                                  setSelectedPsakim(new Set(folderPsakim.map(p => p.id)));
+                                  setSelectedPsakim(new Set(filteredFolderPsakim.map(p => p.id)));
                                 }
                               }}
                               className="flex-shrink-0"
                             />
                             <span className="text-xs text-muted-foreground">
-                              {selectedPsakim.size === folderPsakim.length && folderPsakim.length > 0 ? "בטל הכל" : "בחר הכל"}
+                              {selectedPsakim.size === filteredFolderPsakim.length && filteredFolderPsakim.length > 0 ? "בטל הכל" : "בחר הכל"}
                             </span>
                             {selectedPsakim.size > 0 && (
                               <>
@@ -767,7 +776,7 @@ const FolderManagerTab = () => {
                             )}
                           </div>
                           <div className="space-y-2">
-                            {folderPsakim.map((p) => {
+                            {filteredFolderPsakim.map((p) => {
                               const isSelected = selectedPsakim.has(p.id);
                               return (
                                 <div
@@ -809,20 +818,22 @@ const FolderManagerTab = () => {
                                 </div>
                               );
                             })}
-                            {folderPsakim.length === 0 && (
+                            {filteredFolderPsakim.length === 0 && (
                               <div className="text-center py-6">
                                 <p className="text-sm text-muted-foreground mb-3">
-                                  התיקייה ריקה
+                                  {folderSearch.trim() ? "לא נמצאו תוצאות" : "התיקייה ריקה"}
                                 </p>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="gap-2"
-                                  onClick={() => openAssignDialog(folder.name)}
-                                >
-                                  <Plus className="w-4 h-4" />
-                                  הוסף פסקים
-                                </Button>
+                                {!folderSearch.trim() && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="gap-2"
+                                    onClick={() => openAssignDialog(folder.name)}
+                                  >
+                                    <Plus className="w-4 h-4" />
+                                    הוסף פסקים
+                                  </Button>
+                                )}
                               </div>
                             )}
                           </div>
