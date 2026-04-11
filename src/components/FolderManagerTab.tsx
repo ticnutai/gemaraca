@@ -74,8 +74,20 @@ const FolderManagerTab = () => {
   const [draggedPsak, setDraggedPsak] = useState<PsakMinimal | null>(null);
   const [dragOverFolder, setDragOverFolder] = useState<string | null>(null);
   const [selectedPsakim, setSelectedPsakim] = useState<Set<string>>(new Set());
+  const [folderSearch, setFolderSearch] = useState("");
 
   const { toast } = useToast();
+
+  const filteredFolderPsakim = useMemo(() => {
+    const q = folderSearch.trim().toLowerCase();
+    if (!q) return folderPsakim;
+    return folderPsakim.filter(
+      (p) =>
+        p.title.toLowerCase().includes(q) ||
+        p.court.toLowerCase().includes(q) ||
+        String(p.year).includes(q)
+    );
+  }, [folderPsakim, folderSearch]);
 
   const loadFolders = useCallback(async () => {
     setLoading(true);
