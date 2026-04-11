@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect, lazy, Suspense, useCallback } from "react";
 import { BookOpen, ChevronLeft, ChevronDown, Scale, Download, Loader2, Check, X, MoreVertical, Trash2, RefreshCw, LayoutGrid, List, Compass, GitBranch } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { trackRecentPsak } from "@/lib/recentPsakim";
