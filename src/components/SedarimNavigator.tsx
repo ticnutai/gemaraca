@@ -2,6 +2,7 @@ import { useState, useEffect, lazy, Suspense } from "react";
 import { BookOpen, ChevronLeft, ChevronDown, Scale, Download, Loader2, Check, X, MoreVertical, Trash2, RefreshCw, LayoutGrid, List, Compass, GitBranch } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { trackRecentPsak } from "@/lib/recentPsakim";
+import { getViewerPreference } from "@/components/ViewerPreferenceDialog";
 import { SEDARIM, getMasechtotBySeder, MASECHTOT, Masechet } from "@/lib/masechtotData";
 import { toDafFormat } from "@/lib/hebrewNumbers";
 import { Button } from "@/components/ui/button";
