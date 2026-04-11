@@ -568,12 +568,28 @@ const FolderManagerTab = () => {
                     </div>
                   ) : (
                     <ScrollArea className="max-h-[300px] mt-3">
-                      {selectedPsakim.size > 0 && (
-                        <div className="flex items-center gap-2 mb-2 px-1">
-                          <Badge variant="default" className="gap-1 text-xs">{selectedPsakim.size} נבחרו לגרירה</Badge>
-                          <Button size="sm" variant="ghost" className="text-xs h-6 px-2" onClick={() => setSelectedPsakim(new Set())}>נקה</Button>
-                        </div>
-                      )}
+                      <div className="flex items-center gap-2 mb-2 px-1">
+                        <Checkbox
+                          checked={folderPsakim.length > 0 && selectedPsakim.size === folderPsakim.length}
+                          onCheckedChange={() => {
+                            if (selectedPsakim.size === folderPsakim.length) {
+                              setSelectedPsakim(new Set());
+                            } else {
+                              setSelectedPsakim(new Set(folderPsakim.map(p => p.id)));
+                            }
+                          }}
+                          className="flex-shrink-0"
+                        />
+                        <span className="text-xs text-muted-foreground">
+                          {selectedPsakim.size === folderPsakim.length && folderPsakim.length > 0 ? "בטל הכל" : "בחר הכל"}
+                        </span>
+                        {selectedPsakim.size > 0 && (
+                          <>
+                            <Badge variant="default" className="gap-1 text-xs">{selectedPsakim.size} נבחרו לגרירה</Badge>
+                            <Button size="sm" variant="ghost" className="text-xs h-6 px-2" onClick={() => setSelectedPsakim(new Set())}>נקה</Button>
+                          </>
+                        )}
+                      </div>
                       <div className="space-y-2">
                         {folderPsakim.map((p) => {
                           const isSelected = selectedPsakim.has(p.id);
@@ -704,12 +720,28 @@ const FolderManagerTab = () => {
                         </div>
                       ) : (
                         <ScrollArea className="max-h-[400px] mt-3">
-                          {selectedPsakim.size > 0 && (
-                            <div className="flex items-center gap-2 mb-2 px-1">
-                              <Badge variant="default" className="gap-1 text-xs">{selectedPsakim.size} נבחרו לגרירה</Badge>
-                              <Button size="sm" variant="ghost" className="text-xs h-6 px-2" onClick={() => setSelectedPsakim(new Set())}>נקה</Button>
-                            </div>
-                          )}
+                          <div className="flex items-center gap-2 mb-2 px-1">
+                            <Checkbox
+                              checked={folderPsakim.length > 0 && selectedPsakim.size === folderPsakim.length}
+                              onCheckedChange={() => {
+                                if (selectedPsakim.size === folderPsakim.length) {
+                                  setSelectedPsakim(new Set());
+                                } else {
+                                  setSelectedPsakim(new Set(folderPsakim.map(p => p.id)));
+                                }
+                              }}
+                              className="flex-shrink-0"
+                            />
+                            <span className="text-xs text-muted-foreground">
+                              {selectedPsakim.size === folderPsakim.length && folderPsakim.length > 0 ? "בטל הכל" : "בחר הכל"}
+                            </span>
+                            {selectedPsakim.size > 0 && (
+                              <>
+                                <Badge variant="default" className="gap-1 text-xs">{selectedPsakim.size} נבחרו לגרירה</Badge>
+                                <Button size="sm" variant="ghost" className="text-xs h-6 px-2" onClick={() => setSelectedPsakim(new Set())}>נקה</Button>
+                              </>
+                            )}
+                          </div>
                           <div className="space-y-2">
                             {folderPsakim.map((p) => {
                               const isSelected = selectedPsakim.has(p.id);
