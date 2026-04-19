@@ -16,7 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 import {
   FolderOpen, FolderPlus, Pencil, Trash2, Search, FileText,
-  Loader2, Check, X, ChevronDown, ChevronLeft, Plus,
+  Loader2, Check, X, ChevronDown, ChevronLeft, Plus, GripVertical,
   Eye, Star, MessageSquare, ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -103,7 +103,24 @@ const FolderManagerTab = () => {
   const [loadingMoreAssign, setLoadingMoreAssign] = useState(false);
   const assignScrollRef = useRef<HTMLDivElement>(null);
 
+  // Drag & Drop state
+  const [draggedPsak, setDraggedPsak] = useState<PsakMinimal | null>(null);
+  const [dragOverFolder, setDragOverFolder] = useState<string | null>(null);
+  const [selectedPsakim, setSelectedPsakim] = useState<Set<string>>(new Set());
+  const [folderSearch, setFolderSearch] = useState("");
+
   const { toast } = useToast();
+
+  const filteredFolderPsakim = useMemo(() => {
+    const q = folderSearch.trim().toLowerCase();
+    if (!q) return folderPsakim;
+    return folderPsakim.filter(
+      (p) =>
+        p.title.toLowerCase().includes(q) ||
+        p.court.toLowerCase().includes(q) ||
+        String(p.year).includes(q)
+    );
+  }, [folderPsakim, folderSearch]);
 
   const loadFolders = useCallback(async () => {
     setLoading(true);
@@ -196,6 +213,8 @@ const FolderManagerTab = () => {
       setExpandedFolder(key);
       loadFolderPsakim(folderName);
     }
+    setSelectedPsakim(new Set());
+    setFolderSearch("");
   };
 
   // ─── Add Folder ────────────────────────────
@@ -550,6 +569,85 @@ const FolderManagerTab = () => {
     }
   };
 
+  // ─── Drag & Drop Handlers ────────────────────
+  const toggleSelectPsak = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setSelectedPsakim((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleDragStart = (e: React.DragEvent, psak: PsakMinimal) => {
+    // If this psak isn't selected, make it the only dragged item
+    const dragIds = selectedPsakim.has(psak.id) && selectedPsakim.size > 0
+      ? Array.from(selectedPsakim)
+      : [psak.id];
+    const dragTitles = selectedPsakim.has(psak.id) && selectedPsakim.size > 1
+      ? folderPsakim.filter(p => selectedPsakim.has(p.id)).map(p => p.title)
+      : [psak.title];
+
+    setDraggedPsak(psak);
+    e.dataTransfer.setData("text/plain", JSON.stringify({ ids: dragIds, titles: dragTitles }));
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (e: React.DragEvent, folderKey: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDragOverFolder(folderKey);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverFolder(null);
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetFolder: string | null) => {
+    e.preventDefault();
+    setDragOverFolder(null);
+    setDraggedPsak(null);
+
+    try {
+      const data = JSON.parse(e.dataTransfer.getData("text/plain"));
+      const ids: string[] = data.ids || [data.id];
+      const titles: string[] = data.titles || [data.title];
+
+      const { error } = await supabase
+        .from("psakei_din")
+        .update({ category: targetFolder })
+        .in("id", ids);
+
+      if (error) throw error;
+
+      const targetName = targetFolder ?? "ללא תיקייה";
+      const msg = ids.length > 1
+        ? `${ids.length} פסקים הועברו ל"${targetName}"`
+        : `"${titles[0]}" הועבר ל"${targetName}"`;
+      toast({ title: msg });
+
+      // Remove from currently displayed list
+      const idSet = new Set(ids);
+      setFolderPsakim((prev) => prev.filter((p) => !idSet.has(p.id)));
+      setSelectedPsakim(new Set());
+      await loadFolders();
+
+      // If target folder is expanded, reload it
+      if (expandedFolder === targetFolder || expandedFolder === (targetFolder ?? "__uncategorized__")) {
+        loadFolderPsakim(targetFolder);
+      }
+    } catch (err) {
+      console.error("Error moving psak via drag:", err);
+      toast({ title: "שגיאה בהעברת פסק דין", variant: "destructive" });
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDraggedPsak(null);
+    setDragOverFolder(null);
+  };
+
   return (
     <div className="p-4 md:p-6 space-y-6" dir="rtl">
       {/* Header */}
@@ -607,8 +705,12 @@ const FolderManagerTab = () => {
           <Card
             className={cn(
               "border shadow-sm hover:shadow-md transition-all cursor-pointer",
-              expandedFolder === "__uncategorized__" && "ring-1 ring-amber-500/50 border-amber-500/30"
+              expandedFolder === "__uncategorized__" && "ring-1 ring-amber-500/50 border-amber-500/30",
+              dragOverFolder === "__uncategorized__" && "ring-2 ring-primary border-primary/50 bg-primary/5"
             )}
+            onDragOver={(e) => handleDragOver(e, "__uncategorized__")}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, null)}
           >
             <CardContent className="p-0">
               <button
@@ -640,40 +742,95 @@ const FolderManagerTab = () => {
                     </div>
                   ) : (
                     <ScrollArea className="max-h-[300px] mt-3">
+                      <div className="relative mb-2">
+                        <Search className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          placeholder="חיפוש פסקים..."
+                          value={folderSearch}
+                          onChange={(e) => setFolderSearch(e.target.value)}
+                          className="pr-8 h-8 text-sm"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 mb-2 px-1">
+                        <Checkbox
+                          checked={filteredFolderPsakim.length > 0 && selectedPsakim.size === filteredFolderPsakim.length}
+                          onCheckedChange={() => {
+                            if (selectedPsakim.size === filteredFolderPsakim.length) {
+                              setSelectedPsakim(new Set());
+                            } else {
+                              setSelectedPsakim(new Set(filteredFolderPsakim.map(p => p.id)));
+                            }
+                          }}
+                          className="flex-shrink-0"
+                        />
+                        <span className="text-xs text-muted-foreground">
+                          {selectedPsakim.size === filteredFolderPsakim.length && filteredFolderPsakim.length > 0 ? "בטל הכל" : "בחר הכל"}
+                        </span>
+                        {selectedPsakim.size > 0 && (
+                          <>
+                            <Badge variant="default" className="gap-1 text-xs">{selectedPsakim.size} נבחרו לגרירה</Badge>
+                            <Button size="sm" variant="ghost" className="text-xs h-6 px-2" onClick={() => setSelectedPsakim(new Set())}>נקה</Button>
+                          </>
+                        )}
+                      </div>
                       <div className="space-y-2">
-                        {folderPsakim.map((p) => (
-                          <div
-                            key={p.id}
-                            className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/30 hover:bg-muted/60 transition-colors group"
-                          >
-                            <div className="text-right flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate">{p.title}</p>
-                              <p className="text-xs text-muted-foreground">{p.court} · {p.year}</p>
+                        {filteredFolderPsakim.map((p) => {
+                          const isSelected = selectedPsakim.has(p.id);
+                          return (
+                            <div
+                              key={p.id}
+                              draggable
+                              onDragStart={(e) => handleDragStart(e, p)}
+                              onDragEnd={handleDragEnd}
+                              className={cn(
+                                "flex items-center justify-between py-2 px-3 rounded-lg transition-colors group cursor-grab active:cursor-grabbing",
+                                isSelected ? "bg-primary/10 ring-1 ring-primary/30" : "bg-muted/30 hover:bg-muted/60"
+                              )}
+                            >
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <Checkbox
+                                  checked={isSelected}
+                                  onCheckedChange={() => toggleSelectPsak(p.id)}
+                                  className="flex-shrink-0"
+                                />
+                                <GripVertical className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
+                                <div className="text-right flex-1 min-w-0">
+                                  <p className="text-sm font-medium truncate">{p.title}</p>
+                                  <p className="text-xs text-muted-foreground">{p.court} · {p.year}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-0.5">
+                                {isSelected && selectedPsakim.size > 1 && (
+                                  <Badge variant="secondary" className="text-[10px] px-1.5 mr-1">{selectedPsakim.size}</Badge>
+                                )}
+                                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-primary" title="צפייה" onClick={() => handleViewPsak(p.id)}>
+                                    <Eye className="w-3.5 h-3.5" />
+                                  </Button>
+                                  <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-primary" title="עריכה" onClick={() => handleViewPsak(p.id)}>
+                                    <Pencil className="w-3.5 h-3.5" />
+                                  </Button>
+                                  <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-blue-500" title="EmbedPDF" onClick={() => handleOpenEmbedPdf(p.id)}>
+                                    <ExternalLink className="w-3.5 h-3.5" />
+                                  </Button>
+                                  <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-amber-500" title="הערות" onClick={() => handleOpenNotes(p.id, p.title)}>
+                                    <MessageSquare className="w-3.5 h-3.5" />
+                                  </Button>
+                                  <Button size="icon" variant="ghost" className={cn("h-7 w-7 transition-colors", favorites.has(p.id) ? "text-yellow-500" : "text-muted-foreground hover:text-yellow-500")} title="מועדף" onClick={() => toggleFavorite(p.id)}>
+                                    <Star className={cn("w-3.5 h-3.5", favorites.has(p.id) && "fill-current")} />
+                                  </Button>
+                                  <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive" title="מחק" onClick={() => { setDeletingPsakId(p.id); setDeletingPsakTitle(p.title); setDeletePsakDialogOpen(true); }}>
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </Button>
+                                </div>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-primary" title="צפייה" onClick={() => handleViewPsak(p.id)}>
-                                <Eye className="w-3.5 h-3.5" />
-                              </Button>
-                              <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-primary" title="עריכה" onClick={() => handleViewPsak(p.id)}>
-                                <Pencil className="w-3.5 h-3.5" />
-                              </Button>
-                              <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-blue-500" title="EmbedPDF" onClick={() => handleOpenEmbedPdf(p.id)}>
-                                <ExternalLink className="w-3.5 h-3.5" />
-                              </Button>
-                              <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-amber-500" title="הערות" onClick={() => handleOpenNotes(p.id, p.title)}>
-                                <MessageSquare className="w-3.5 h-3.5" />
-                              </Button>
-                              <Button size="icon" variant="ghost" className={cn("h-7 w-7 transition-colors", favorites.has(p.id) ? "text-yellow-500" : "text-muted-foreground hover:text-yellow-500")} title="מועדף" onClick={() => toggleFavorite(p.id)}>
-                                <Star className={cn("w-3.5 h-3.5", favorites.has(p.id) && "fill-current")} />
-                              </Button>
-                              <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive" title="מחק" onClick={() => { setDeletingPsakId(p.id); setDeletingPsakTitle(p.title); setDeletePsakDialogOpen(true); }}>
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                        {folderPsakim.length === 0 && (
-                          <p className="text-sm text-muted-foreground text-center py-4">אין פסקים ללא תיקייה</p>
+                          );
+                        })}
+                        {filteredFolderPsakim.length === 0 && (
+                          <p className="text-sm text-muted-foreground text-center py-4">
+                            {folderSearch.trim() ? "לא נמצאו תוצאות" : "אין פסקים ללא תיקייה"}
+                          </p>
                         )}
                       </div>
                     </ScrollArea>
@@ -691,8 +848,12 @@ const FolderManagerTab = () => {
                 key={folder.name}
                 className={cn(
                   "border shadow-sm hover:shadow-md transition-all",
-                  isExpanded && "ring-1 ring-primary/50 border-primary/30"
+                  isExpanded && "ring-1 ring-primary/50 border-primary/30",
+                  dragOverFolder === folder.name && "ring-2 ring-primary border-primary/50 bg-primary/5"
                 )}
+                onDragOver={(e) => handleDragOver(e, folder.name)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, folder.name)}
               >
                 <CardContent className="p-0">
                   <div className="flex items-center justify-between p-4">
@@ -766,55 +927,110 @@ const FolderManagerTab = () => {
                         </div>
                       ) : (
                         <ScrollArea className="max-h-[400px] mt-3">
+                          <div className="relative mb-2">
+                            <Search className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input
+                              placeholder="חיפוש פסקים..."
+                              value={folderSearch}
+                              onChange={(e) => setFolderSearch(e.target.value)}
+                              className="pr-8 h-8 text-sm"
+                            />
+                          </div>
+                          <div className="flex items-center gap-2 mb-2 px-1">
+                            <Checkbox
+                              checked={filteredFolderPsakim.length > 0 && selectedPsakim.size === filteredFolderPsakim.length}
+                              onCheckedChange={() => {
+                                if (selectedPsakim.size === filteredFolderPsakim.length) {
+                                  setSelectedPsakim(new Set());
+                                } else {
+                                  setSelectedPsakim(new Set(filteredFolderPsakim.map(p => p.id)));
+                                }
+                              }}
+                              className="flex-shrink-0"
+                            />
+                            <span className="text-xs text-muted-foreground">
+                              {selectedPsakim.size === filteredFolderPsakim.length && filteredFolderPsakim.length > 0 ? "בטל הכל" : "בחר הכל"}
+                            </span>
+                            {selectedPsakim.size > 0 && (
+                              <>
+                                <Badge variant="default" className="gap-1 text-xs">{selectedPsakim.size} נבחרו לגרירה</Badge>
+                                <Button size="sm" variant="ghost" className="text-xs h-6 px-2" onClick={() => setSelectedPsakim(new Set())}>נקה</Button>
+                              </>
+                            )}
+                          </div>
                           <div className="space-y-2">
-                            {folderPsakim.map((p) => (
-                              <div
-                                key={p.id}
-                                className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/30 hover:bg-muted/60 transition-colors group"
-                              >
-                                <div className="text-right flex-1 min-w-0">
-                                  <p className="text-sm font-medium truncate">{p.title}</p>
-                                  <p className="text-xs text-muted-foreground">{p.court} · {p.year}</p>
+                            {filteredFolderPsakim.map((p) => {
+                              const isSelected = selectedPsakim.has(p.id);
+                              return (
+                                <div
+                                  key={p.id}
+                                  draggable
+                                  onDragStart={(e) => handleDragStart(e, p)}
+                                  onDragEnd={handleDragEnd}
+                                  className={cn(
+                                    "flex items-center justify-between py-2 px-3 rounded-lg transition-colors group cursor-grab active:cursor-grabbing",
+                                    isSelected ? "bg-primary/10 ring-1 ring-primary/30" : "bg-muted/30 hover:bg-muted/60"
+                                  )}
+                                >
+                                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                                    <Checkbox
+                                      checked={isSelected}
+                                      onCheckedChange={() => toggleSelectPsak(p.id)}
+                                      className="flex-shrink-0"
+                                    />
+                                    <GripVertical className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
+                                    <div className="text-right flex-1 min-w-0">
+                                      <p className="text-sm font-medium truncate">{p.title}</p>
+                                      <p className="text-xs text-muted-foreground">{p.court} · {p.year}</p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-0.5">
+                                    {isSelected && selectedPsakim.size > 1 && (
+                                      <Badge variant="secondary" className="text-[10px] px-1.5 mr-1">{selectedPsakim.size}</Badge>
+                                    )}
+                                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-primary" title="צפייה" onClick={() => handleViewPsak(p.id)}>
+                                        <Eye className="w-3.5 h-3.5" />
+                                      </Button>
+                                      <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-primary" title="עריכה" onClick={() => handleViewPsak(p.id)}>
+                                        <Pencil className="w-3.5 h-3.5" />
+                                      </Button>
+                                      <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-blue-500" title="EmbedPDF" onClick={() => handleOpenEmbedPdf(p.id)}>
+                                        <ExternalLink className="w-3.5 h-3.5" />
+                                      </Button>
+                                      <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-amber-500" title="הערות" onClick={() => handleOpenNotes(p.id, p.title)}>
+                                        <MessageSquare className="w-3.5 h-3.5" />
+                                      </Button>
+                                      <Button size="icon" variant="ghost" className={cn("h-7 w-7 transition-colors", favorites.has(p.id) ? "text-yellow-500" : "text-muted-foreground hover:text-yellow-500")} title="מועדף" onClick={() => toggleFavorite(p.id)}>
+                                        <Star className={cn("w-3.5 h-3.5", favorites.has(p.id) && "fill-current")} />
+                                      </Button>
+                                      <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive" title="הסר מתיקייה" onClick={() => handleRemoveFromFolder(p.id)}>
+                                        <X className="w-3.5 h-3.5" />
+                                      </Button>
+                                      <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive" title="מחק" onClick={() => { setDeletingPsakId(p.id); setDeletingPsakTitle(p.title); setDeletePsakDialogOpen(true); }}>
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </Button>
+                                    </div>
+                                  </div>
                                 </div>
-                                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-primary" title="צפייה" onClick={() => handleViewPsak(p.id)}>
-                                    <Eye className="w-3.5 h-3.5" />
-                                  </Button>
-                                  <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-primary" title="עריכה" onClick={() => handleViewPsak(p.id)}>
-                                    <Pencil className="w-3.5 h-3.5" />
-                                  </Button>
-                                  <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-blue-500" title="EmbedPDF" onClick={() => handleOpenEmbedPdf(p.id)}>
-                                    <ExternalLink className="w-3.5 h-3.5" />
-                                  </Button>
-                                  <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-amber-500" title="הערות" onClick={() => handleOpenNotes(p.id, p.title)}>
-                                    <MessageSquare className="w-3.5 h-3.5" />
-                                  </Button>
-                                  <Button size="icon" variant="ghost" className={cn("h-7 w-7 transition-colors", favorites.has(p.id) ? "text-yellow-500" : "text-muted-foreground hover:text-yellow-500")} title="מועדף" onClick={() => toggleFavorite(p.id)}>
-                                    <Star className={cn("w-3.5 h-3.5", favorites.has(p.id) && "fill-current")} />
-                                  </Button>
-                                  <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive" title="הסר מתיקייה" onClick={() => handleRemoveFromFolder(p.id)}>
-                                    <X className="w-3.5 h-3.5" />
-                                  </Button>
-                                  <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive" title="מחק" onClick={() => { setDeletingPsakId(p.id); setDeletingPsakTitle(p.title); setDeletePsakDialogOpen(true); }}>
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </Button>
-                                </div>
-                              </div>
-                            ))}
-                            {folderPsakim.length === 0 && (
+                              );
+                            })}
+                            {filteredFolderPsakim.length === 0 && (
                               <div className="text-center py-6">
                                 <p className="text-sm text-muted-foreground mb-3">
-                                  התיקייה ריקה
+                                  {folderSearch.trim() ? "לא נמצאו תוצאות" : "התיקייה ריקה"}
                                 </p>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="gap-2"
-                                  onClick={() => openAssignDialog(folder.name)}
-                                >
-                                  <Plus className="w-4 h-4" />
-                                  הוסף פסקים
-                                </Button>
+                                {!folderSearch.trim() && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="gap-2"
+                                    onClick={() => openAssignDialog(folder.name)}
+                                  >
+                                    <Plus className="w-4 h-4" />
+                                    הוסף פסקים
+                                  </Button>
+                                )}
                               </div>
                             )}
                           </div>
