@@ -374,9 +374,6 @@ const AppSidebar = ({
                       activeTab === item.id ? "text-accent" : "text-muted-foreground"
                     )} />
                     <span className="font-medium text-sm">{item.title}</span>
-                    {"badge" in item && item.badge && (
-                      <span className="text-[10px] bg-accent/20 text-accent-foreground border border-accent/40 px-1.5 py-0.5 rounded-full font-medium">{item.badge}</span>
-                    )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
