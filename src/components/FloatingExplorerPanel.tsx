@@ -482,10 +482,10 @@ export default function FloatingExplorerPanel() {
         "hover:shadow-xl",
         isOpen && "ring-2 ring-primary/50 ring-offset-2"
       )}
-      aria-label="סייר"
-      title="סייר"
+      aria-label="ניווט מהיר"
+      title="ניווט מהיר"
     >
-      <Compass className="w-6 h-6" />
+      <BookOpen className="w-6 h-6" />
     </button>
   );
 

@@ -9,7 +9,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useGemaraDownloadEngine } from "@/hooks/useGemaraDownloadEngine";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 
-const FloatingGemaraNav = lazy(() => import("./FloatingGemaraNav"));
 const GemaraDownloadFloat = lazy(() => import("./GemaraDownloadFloat"));
 
 
@@ -106,11 +105,6 @@ const AppLayoutInner = ({ children }: AppLayoutProps) => {
           isMobile={isMobile}
         />
       </div>
-
-      {/* Floating Navigation Button */}
-      <Suspense fallback={null}>
-        <FloatingGemaraNav />
-      </Suspense>
 
       {/* Gemara Download Progress Float */}
       <Suspense fallback={null}>
