@@ -674,7 +674,7 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
                 )}
                 dir="rtl"
               >
-                <h4 className="font-medium text-xs md:text-sm line-clamp-2 mb-0.5 md:mb-1 flex items-center gap-1 justify-start flex-row-reverse"><SummaryToggle summary={psak.summary} compact /><FileTypeBadge url={psak.source_url} />{psak.title.replace(/^.*[/\\]/, '')}</h4>
+                <h4 className="font-medium text-xs md:text-sm line-clamp-2 mb-0.5 md:mb-1 flex items-center gap-1 justify-end" dir="rtl"><span className="text-right">{psak.title.replace(/^.*[/\\]/, '')}</span><FileTypeBadge url={psak.source_url} /><SummaryToggle summary={psak.summary} compact /></h4>
                 {(psak.court && psak.court !== 'לא צוין') || psak.year ? (
                   <div className="flex items-center gap-1.5 md:gap-2 text-[10px] md:text-xs text-muted-foreground justify-end flex-row-reverse">
                     {psak.court && psak.court !== 'לא צוין' && <span className="truncate max-w-[100px] md:max-w-none">{psak.court}</span>}
