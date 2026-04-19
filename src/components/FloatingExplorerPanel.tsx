@@ -4,7 +4,7 @@ import {
   Loader2, Crown, Star, Flame, TrendingUp,
   Building2, Calendar, Download, ExternalLink,
   X, Minus, Maximize2, Minimize2, Compass, GripVertical,
-  CheckCircle2, BookOpenCheck,
+  CheckCircle2, BookOpenCheck, Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SEDARIM, getMasechtotBySeder, MASECHTOT, Masechet } from "@/lib/masechtotData";
@@ -80,6 +80,7 @@ export default function FloatingExplorerPanel() {
   const [viewPsak, setViewPsak] = useState<DafPsak | null>(null);
   const [viewPsakOpen, setViewPsakOpen] = useState(false);
   const [minimized, setMinimized] = useState(false);
+  const [showShasInfo, setShowShasInfo] = useState(false);
 
   // Download
   const enqueueJobRaw = useGemaraDownloadStore((s) => s.enqueueJob);
@@ -95,8 +96,10 @@ export default function FloatingExplorerPanel() {
 
   // Refs
   const panelRef = useRef<HTMLDivElement>(null);
-  const dragRef = useRef<{ sx: number; sy: number; lx: number; ly: number } | null>(null);
+  const dragRef = useRef<{ sx: number; sy: number; lx: number; ly: number; sl: PanelLayout } | null>(null);
   const resizeRef = useRef<{ dir: string; sx: number; sy: number; sl: PanelLayout } | null>(null);
+  const layoutRef = useRef(layout);
+  layoutRef.current = layout;
 
   // Cloud sync on mount
   useEffect(() => { syncFromCloud(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -369,67 +372,85 @@ export default function FloatingExplorerPanel() {
     navigateToPage(selectedMasechetLocal, selectedDaf, selectedAmud);
   };
 
-  // ─── Drag ─────────────────────────────────────────────
-  const handleDragStart = useCallback((e: React.PointerEvent) => {
+  // ─── Escape key to close ───────────────────────────────
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { e.stopPropagation(); close(); }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [isOpen, close]);
+
+  // ─── Drag (document-level events for reliability) ─────
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      if (!dragRef.current) return;
+      e.preventDefault();
+      const dx = e.clientX - dragRef.current.sx;
+      const dy = e.clientY - dragRef.current.sy;
+      setLayout({ ...dragRef.current.sl, x: dragRef.current.lx + dx, y: dragRef.current.ly + dy });
+    };
+    const onUp = () => {
+      if (!dragRef.current) return;
+      dragRef.current = null;
+    };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+    return () => {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+  }, [setLayout]);
+
+  const handleDragStart = useCallback((e: React.MouseEvent) => {
+    // Allow clicks on buttons (close, minimize, back)
     if ((e.target as HTMLElement).closest("button")) return;
     e.preventDefault();
-    const el = e.currentTarget as HTMLElement;
-    el.setPointerCapture(e.pointerId);
-    dragRef.current = { sx: e.clientX, sy: e.clientY, lx: resolvedLayout.x, ly: resolvedLayout.y };
-  }, [resolvedLayout]);
-
-  const handleDragMove = useCallback((e: React.PointerEvent) => {
-    if (!dragRef.current) return;
-    const dx = e.clientX - dragRef.current.sx;
-    const dy = e.clientY - dragRef.current.sy;
-    setLayout({ ...layout, x: dragRef.current.lx + dx, y: dragRef.current.ly + dy });
-  }, [layout, setLayout]);
-
-  const handleDragEnd = useCallback((e: React.PointerEvent) => {
-    if (!dragRef.current) return;
-    (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-    dragRef.current = null;
+    const cur = layoutRef.current;
+    const rx = cur.x < 0 ? Math.max(20, (window.innerWidth - cur.w) / 2) : cur.x;
+    const ry = cur.y < 0 ? Math.max(20, (window.innerHeight - cur.h) / 2) : cur.y;
+    dragRef.current = { sx: e.clientX, sy: e.clientY, lx: rx, ly: ry, sl: { ...cur, x: rx, y: ry } };
   }, []);
 
-  // ─── Resize ───────────────────────────────────────────
+  // ─── Resize (document-level events for reliability) ───
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      if (!resizeRef.current) return;
+      const { dir, sx, sy, sl } = resizeRef.current;
+      const dx = e.clientX - sx;
+      const dy = e.clientY - sy;
+      const n: PanelLayout = { ...sl };
+
+      if (dir.includes("e")) n.w = Math.max(MIN_W, sl.w + dx);
+      if (dir.includes("w")) { n.w = Math.max(MIN_W, sl.w - dx); n.x = sl.x + (sl.w - n.w); }
+      if (dir.includes("s")) n.h = Math.max(MIN_H, sl.h + dy);
+      if (dir.includes("n")) { n.h = Math.max(MIN_H, sl.h - dy); n.y = sl.y + (sl.h - n.h); }
+      setLayout(n);
+    };
+    const onUp = () => {
+      resizeRef.current = null;
+    };
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
+    return () => {
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+    };
+  }, [setLayout]);
+
   const startResize = useCallback((dir: string, e: React.PointerEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const el = e.currentTarget as HTMLElement;
-    el.setPointerCapture(e.pointerId);
-    resizeRef.current = { dir, sx: e.clientX, sy: e.clientY, sl: { ...resolvedLayout } };
-  }, [resolvedLayout]);
-
-  const handleResizeMove = useCallback((e: React.PointerEvent) => {
-    if (!resizeRef.current) return;
-    const { dir, sx, sy, sl } = resizeRef.current;
-    const dx = e.clientX - sx;
-    const dy = e.clientY - sy;
-    const n: PanelLayout = { ...sl };
-
-    if (dir.includes("e")) n.w = Math.max(MIN_W, sl.w + dx);
-    if (dir.includes("w")) { n.w = Math.max(MIN_W, sl.w - dx); n.x = sl.x + (sl.w - n.w); }
-    if (dir.includes("s")) n.h = Math.max(MIN_H, sl.h + dy);
-    if (dir.includes("n")) { n.h = Math.max(MIN_H, sl.h - dy); n.y = sl.y + (sl.h - n.h); }
-    setLayout(n);
-  }, [setLayout]);
-
-  const handleResizeEnd = useCallback((e: React.PointerEvent) => {
-    if (!resizeRef.current) return;
-    (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-    resizeRef.current = null;
+    const cur = layoutRef.current;
+    const resolved: PanelLayout = {
+      x: cur.x < 0 ? Math.max(20, (window.innerWidth - cur.w) / 2) : cur.x,
+      y: cur.y < 0 ? Math.max(20, (window.innerHeight - cur.h) / 2) : cur.y,
+      w: cur.w,
+      h: cur.h,
+    };
+    resizeRef.current = { dir, sx: e.clientX, sy: e.clientY, sl: resolved };
   }, []);
-
-  // Resize handle component
-  const Handle = ({ dir, className, cursor }: { dir: string; className: string; cursor: string }) => (
-    <div
-      className={cn("absolute z-10 touch-none", className)}
-      style={{ cursor }}
-      onPointerDown={(e) => startResize(dir, e)}
-      onPointerMove={handleResizeMove}
-      onPointerUp={handleResizeEnd}
-    />
-  );
 
   // ─── Breadcrumb ───────────────────────────────────────
   const breadcrumbs = useMemo(() => {
@@ -488,10 +509,8 @@ export default function FloatingExplorerPanel() {
       >
         {/* ─── Header (drag handle) ─── */}
         <div
-          className="flex items-center justify-between px-3 py-2 bg-gradient-to-l from-primary/10 via-accent/5 to-transparent border-b border-border cursor-move touch-none"
-          onPointerDown={handleDragStart}
-          onPointerMove={handleDragMove}
-          onPointerUp={handleDragEnd}
+          className="flex items-center justify-between px-3 py-2 bg-gradient-to-l from-primary/10 via-accent/5 to-transparent border-b border-border cursor-move"
+          onMouseDown={handleDragStart}
         >
           <div className="flex items-center gap-2 min-w-0">
             <GripVertical className="h-4 w-4 text-muted-foreground/50 shrink-0" />
@@ -504,7 +523,10 @@ export default function FloatingExplorerPanel() {
                 <ArrowRight className="h-3.5 w-3.5" />
               </Button>
             )}
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setMinimized(!minimized)} title={minimized ? "הגדל" : "מזער"}>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setShowShasInfo(v => !v)} title="ניהול ש״ס">
+              <Settings className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setMinimized(!minimized)} title={minimized ? "הגדל" : "מזער">
               {minimized ? <Maximize2 className="h-3.5 w-3.5" /> : <Minus className="h-3.5 w-3.5" />}
             </Button>
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={close} title="סגור">
@@ -535,23 +557,34 @@ export default function FloatingExplorerPanel() {
         {!minimized && (
           <ScrollArea className="flex-1 min-h-0">
             <div className="p-3">
-              {/* ──── Sedarim ──── */}
-              {step === "sedarim" && (
-                <div className="space-y-2">
-                  <button
-                    onClick={() => enqueueJob(buildShasJob())}
-                    className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl border border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 transition-all text-primary text-sm font-semibold"
-                  >
-                    <Download className="h-4 w-4" />
-                    הורד את כל הש״ס
-                  </button>
-                  {/* Summary bar */}
-                  <div className="flex items-center justify-center gap-2 p-2.5 rounded-xl border border-primary/20 bg-primary/5 text-sm">
+              {/* ──── Shas Info Panel ──── */}
+              {showShasInfo && (
+                <div className="space-y-3 mb-3 p-3 rounded-xl border border-primary/20 bg-primary/5 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="flex items-center justify-between">
+                    <button onClick={() => setShowShasInfo(false)} className="text-muted-foreground hover:text-foreground transition-colors">
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                    <h4 className="font-bold text-sm text-primary">ניהול ש״ס</h4>
+                  </div>
+                  <div className="flex items-center justify-center gap-2 text-sm">
                     <BookOpenCheck className="h-4 w-4 text-primary" />
                     <span className="font-semibold text-primary">
                       {Object.values(masechetLoadedCount).reduce((a, b) => a + b, 0).toLocaleString()} עמודים במסד הנתונים
                     </span>
                   </div>
+                  <button
+                    onClick={() => { enqueueJob(buildShasJob()); setShowShasInfo(false); }}
+                    className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl border border-dashed border-primary/40 bg-background hover:bg-primary/10 transition-all text-primary text-sm font-semibold"
+                  >
+                    <Download className="h-4 w-4" />
+                    הורד את כל הש״ס
+                  </button>
+                </div>
+              )}
+
+              {/* ──── Sedarim ──── */}
+              {step === "sedarim" && (
+                <div className="space-y-2">
                   <div className="grid grid-cols-2 gap-2">
                     {SEDARIM.map((seder) => {
                       const meta = SEDER_META[seder] || SEDER_META["זרעים"];
@@ -866,19 +899,29 @@ export default function FloatingExplorerPanel() {
           </ScrollArea>
         )}
 
+        {/* ─── Footer drag bar ─── */}
+        {!minimized && (
+          <div
+            className="flex items-center justify-center px-3 py-1.5 border-t border-border cursor-move bg-muted/30 hover:bg-muted/50 transition-colors"
+            onMouseDown={handleDragStart}
+          >
+            <div className="w-8 h-1 rounded-full bg-border" />
+          </div>
+        )}
+
         {/* ─── Resize Handles ─── */}
         {!minimized && (
           <>
             {/* Edges */}
-            <Handle dir="n" className="top-0 left-3 right-3 h-1.5" cursor="ns-resize" />
-            <Handle dir="s" className="bottom-0 left-3 right-3 h-1.5" cursor="ns-resize" />
-            <Handle dir="e" className="top-3 bottom-3 right-0 w-1.5" cursor="ew-resize" />
-            <Handle dir="w" className="top-3 bottom-3 left-0 w-1.5" cursor="ew-resize" />
+            <div className="absolute z-10 touch-none top-0 left-3 right-3 h-1.5" style={{ cursor: "ns-resize" }} onPointerDown={(e) => startResize("n", e)} />
+            <div className="absolute z-10 touch-none bottom-0 left-3 right-3 h-1.5" style={{ cursor: "ns-resize" }} onPointerDown={(e) => startResize("s", e)} />
+            <div className="absolute z-10 touch-none top-3 bottom-3 right-0 w-1.5" style={{ cursor: "ew-resize" }} onPointerDown={(e) => startResize("e", e)} />
+            <div className="absolute z-10 touch-none top-3 bottom-3 left-0 w-1.5" style={{ cursor: "ew-resize" }} onPointerDown={(e) => startResize("w", e)} />
             {/* Corners */}
-            <Handle dir="nw" className="top-0 left-0 w-3 h-3" cursor="nwse-resize" />
-            <Handle dir="ne" className="top-0 right-0 w-3 h-3" cursor="nesw-resize" />
-            <Handle dir="sw" className="bottom-0 left-0 w-3 h-3" cursor="nesw-resize" />
-            <Handle dir="se" className="bottom-0 right-0 w-3 h-3" cursor="nwse-resize" />
+            <div className="absolute z-10 touch-none top-0 left-0 w-3 h-3" style={{ cursor: "nwse-resize" }} onPointerDown={(e) => startResize("nw", e)} />
+            <div className="absolute z-10 touch-none top-0 right-0 w-3 h-3" style={{ cursor: "nesw-resize" }} onPointerDown={(e) => startResize("ne", e)} />
+            <div className="absolute z-10 touch-none bottom-0 left-0 w-3 h-3" style={{ cursor: "nesw-resize" }} onPointerDown={(e) => startResize("sw", e)} />
+            <div className="absolute z-10 touch-none bottom-0 right-0 w-3 h-3" style={{ cursor: "nwse-resize" }} onPointerDown={(e) => startResize("se", e)} />
             {/* Visible corner indicator (bottom-right) */}
             <div className="absolute bottom-1 right-1 pointer-events-none opacity-30">
               <svg width="10" height="10" viewBox="0 0 10 10">

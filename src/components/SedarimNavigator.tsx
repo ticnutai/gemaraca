@@ -581,7 +581,7 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
 
       {/* ──── List View ──── */}
       {viewMode === 'list' && (
-        <div className="space-y-2">
+        <div className="space-y-2" dir="rtl">
           {SEDARIM.map((seder) => (
             <div key={seder} className="bg-card rounded-xl border border-border overflow-hidden">
               <button
@@ -590,17 +590,18 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
                   "w-full flex items-center justify-between p-3 md:p-4 transition-all",
                   selectedSeder === seder ? "bg-primary/10" : "hover:bg-muted/50"
                 )}
+                dir="rtl"
               >
                 <div className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4 text-primary" />
+                  <h3 className="font-bold text-sm md:text-base">סדר {seder}</h3>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">{getMasechtotBySeder(seder).length} מסכתות</span>
                   <ChevronDown className={cn(
                     "h-4 w-4 transition-transform",
                     selectedSeder === seder ? "rotate-180" : ""
                   )} />
-                  <span className="text-xs text-muted-foreground">{getMasechtotBySeder(seder).length} מסכתות</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <BookOpen className="h-4 w-4 text-primary" />
-                  <h3 className="font-bold text-sm md:text-base">סדר {seder}</h3>
                 </div>
               </button>
 
@@ -619,7 +620,12 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
                           navigate(`/sugya/${masechet.sefariaName.toLowerCase()}_2a`);
                         }}
                         className="w-full flex items-center justify-between p-3 md:p-4 hover:bg-accent/5 transition-all text-right"
+                        dir="rtl"
                       >
+                        <div>
+                          <span className="font-medium text-sm">{masechet.hebrewName}</span>
+                          <span className="text-xs text-muted-foreground mr-2">({masechet.maxDaf - 1} דפים)</span>
+                        </div>
                         <div className="flex items-center gap-2">
                           {/* Psak din indicator */}
                           {pCount > 0 && (
@@ -640,10 +646,6 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
                             </Badge>
                           )}
                           <ChevronLeft className="h-4 w-4 text-muted-foreground/40" />
-                        </div>
-                        <div>
-                          <span className="font-medium text-sm">{masechet.hebrewName}</span>
-                          <span className="text-xs text-muted-foreground mr-2">({masechet.maxDaf - 1} דפים)</span>
                         </div>
                       </button>
                     );
@@ -674,7 +676,7 @@ const SedarimNavigator = ({ className }: SedarimNavigatorProps) => {
                 )}
                 dir="rtl"
               >
-                <h4 className="font-medium text-xs md:text-sm line-clamp-2 mb-0.5 md:mb-1 flex items-center gap-1 justify-end" dir="rtl"><span className="text-right">{psak.title.replace(/^.*[/\\]/, '')}</span><FileTypeBadge url={psak.source_url} /><SummaryToggle summary={psak.summary} compact /></h4>
+                <h4 className="font-medium text-xs md:text-sm line-clamp-2 mb-0.5 md:mb-1 flex items-center gap-1 justify-start" dir="rtl"><span className="text-right">{psak.title.replace(/^.*[/\\]/, '')}</span><FileTypeBadge url={psak.source_url} /><SummaryToggle summary={psak.summary} compact /></h4>
                 {(psak.court && psak.court !== 'לא צוין') || psak.year ? (
                   <div className="flex items-center gap-1.5 md:gap-2 text-[10px] md:text-xs text-muted-foreground justify-end flex-row-reverse">
                     {psak.court && psak.court !== 'לא צוין' && <span className="truncate max-w-[100px] md:max-w-none">{psak.court}</span>}

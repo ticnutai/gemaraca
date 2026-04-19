@@ -146,7 +146,11 @@ const TalmudTreeView = ({ psakCounts, loadedPages }: TalmudTreeViewProps) => {
                               )}
                               onClick={() => toggleMasechet(masechet.englishName)}
                             >
-                              <div className="flex items-center justify-between">
+                              <div className="flex items-center justify-between" dir="rtl">
+                                <div className="text-right">
+                                  <span className="font-medium text-[11px] sm:text-xs">{masechet.hebrewName}</span>
+                                  <span className="text-[9px] text-muted-foreground mr-1">({masechet.maxDaf - 1})</span>
+                                </div>
                                 <div className="flex items-center gap-1">
                                   {pCount > 0 && (
                                     <div className="relative">
@@ -164,10 +168,6 @@ const TalmudTreeView = ({ psakCounts, loadedPages }: TalmudTreeViewProps) => {
                                       {status.percent === 100 ? "✓" : `${status.percent}%`}
                                     </span>
                                   )}
-                                </div>
-                                <div className="text-right">
-                                  <span className="font-medium text-[11px] sm:text-xs">{masechet.hebrewName}</span>
-                                  <span className="text-[9px] text-muted-foreground mr-1">({masechet.maxDaf - 1})</span>
                                 </div>
                               </div>
                             </div>

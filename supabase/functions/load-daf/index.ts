@@ -152,9 +152,30 @@ serve(async (req) => {
     console.log('Generated dafYomi:', dafYomi);
     console.log('Generated sefariaRef:', sefariaRef);
 
-    // Verify the page exists in Sefaria
+    // ─── 1. Check database FIRST ───
+    const { data: existingPage } = await supabaseClient
+      .from('gemara_pages')
+      .select('*')
+      .eq('masechet', sefariaName)
+      .eq('sugya_id', sugya_id)
+      .maybeSingle();
+
+    if (existingPage?.text_he) {
+      console.log('Page already exists with text in DB (skipping Sefaria):', existingPage.id);
+      return new Response(
+        JSON.stringify({
+          success: true,
+          data: existingPage,
+          source: 'database',
+          message: `דף ${dafYomi} כבר קיים במסד הנתונים`
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // ─── 2. Fallback: fetch from Sefaria API ───
     const sefariaUrl = `https://www.sefaria.org/api/texts/${sefariaRef}?commentary=0&context=1`;
-    console.log('Calling Sefaria API:', sefariaUrl);
+    console.log('Not in DB, calling Sefaria API:', sefariaUrl);
     
     const sefariaResponse = await fetch(sefariaUrl);
     console.log('Sefaria response status:', sefariaResponse.status);
@@ -173,56 +194,37 @@ serve(async (req) => {
       throw new Error('No text found in Sefaria for this daf');
     }
 
-    // Check if page already exists (use sugya_id to distinguish amud a from amud b)
-    const { data: existingPage } = await supabaseClient
-      .from('gemara_pages')
-      .select('*')
-      .eq('masechet', sefariaName)
-      .eq('sugya_id', sugya_id)
-      .maybeSingle();
-
-    if (existingPage) {
-      // If page exists but has no text, update it with the text content
-      if (!existingPage.text_he) {
-        console.log('Page exists without text, updating with content...');
-        const { data: updated, error: updateError } = await supabaseClient
-          .from('gemara_pages')
-          .update({
-            text_he: sefariaData.he,
-            text_en: sefariaData.text || null,
-            he_ref: sefariaData.heRef || null,
-            book: sefariaData.book || null,
-            categories: sefariaData.categories || null,
-            section_ref: sefariaData.sectionRef || null,
-          })
-          .eq('id', existingPage.id)
-          .select()
-          .single();
-        
-        if (updateError) {
-          console.error('Error updating existing page with text:', updateError);
-        } else {
-          console.log('Updated existing page with text content:', updated.id);
-          return new Response(
-            JSON.stringify({
-              success: true,
-              data: updated,
-              message: `דף ${dafYomi} עודכן עם תוכן טקסט`
-            }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
+    // Check if page exists without text (needs updating with Sefaria data)
+    if (existingPage && !existingPage.text_he) {
+      console.log('Page exists without text, updating with content...');
+      const { data: updated, error: updateError } = await supabaseClient
+        .from('gemara_pages')
+        .update({
+          text_he: sefariaData.he,
+          text_en: sefariaData.text || null,
+          he_ref: sefariaData.heRef || null,
+          book: sefariaData.book || null,
+          categories: sefariaData.categories || null,
+          section_ref: sefariaData.sectionRef || null,
+        })
+        .eq('id', existingPage.id)
+        .select()
+        .single();
+      
+      if (updateError) {
+        console.error('Error updating existing page with text:', updateError);
+      } else {
+        console.log('Updated existing page with text content:', updated.id);
+        return new Response(
+          JSON.stringify({
+            success: true,
+            data: updated,
+            source: 'sefaria_updated',
+            message: `דף ${dafYomi} עודכן עם תוכן טקסט`
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
-
-      console.log('Page already exists with text:', existingPage.id);
-      return new Response(
-        JSON.stringify({
-          success: true,
-          data: existingPage,
-          message: `דף ${dafYomi} כבר קיים במערכת`
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
     }
 
     console.log('Inserting into database with text content...');
