@@ -14,38 +14,52 @@ const PARALLEL_FETCHES = 5;     // concurrent Sefaria requests (was 1 = sequenti
 const DELAY_BETWEEN_GROUPS = 150; // ms between parallel groups (was 300 per page)
 const FETCH_TIMEOUT_MS = 12000;
 
-// Shekalim Yerushalmi mapping
-const SHEKALIM_DAF_MAP: Record<string, string> = {};
-const _buildShekalimMap = () => {
-  const chapters = [
-    { ch: 1, fromDaf: 2, fromAmud: 'a', toDaf: 5, toAmud: 'a' },
-    { ch: 2, fromDaf: 5, fromAmud: 'a', toDaf: 7, toAmud: 'a' },
-    { ch: 3, fromDaf: 7, fromAmud: 'a', toDaf: 9, toAmud: 'b' },
-    { ch: 4, fromDaf: 9, fromAmud: 'b', toDaf: 12, toAmud: 'a' },
-    { ch: 5, fromDaf: 12, fromAmud: 'a', toDaf: 14, toAmud: 'b' },
-    { ch: 6, fromDaf: 14, fromAmud: 'b', toDaf: 17, toAmud: 'a' },
-    { ch: 7, fromDaf: 17, fromAmud: 'a', toDaf: 19, toAmud: 'b' },
-    { ch: 8, fromDaf: 19, fromAmud: 'b', toDaf: 22, toAmud: 'a' },
-  ];
-  const halakhaCounts: Record<number, number> = {};
-  for (let daf = 2; daf <= 22; daf++) {
-    for (const amud of ['a', 'b']) {
-      const key = `${daf}${amud}`;
-      const chapter = chapters.find(c => {
-        const fromVal = c.fromDaf * 2 + (c.fromAmud === 'b' ? 1 : 0);
-        const toVal = c.toDaf * 2 + (c.toAmud === 'b' ? 1 : 0);
-        const curVal = daf * 2 + (amud === 'b' ? 1 : 0);
-        return curVal >= fromVal && curVal <= toVal;
-      });
-      if (chapter) {
-        if (!halakhaCounts[chapter.ch]) halakhaCounts[chapter.ch] = 1;
-        SHEKALIM_DAF_MAP[key] = `Jerusalem_Talmud_Shekalim.${chapter.ch}.${halakhaCounts[chapter.ch]}`;
-        halakhaCounts[chapter.ch]++;
-      }
-    }
-  }
+// Shekalim Yerushalmi mapping — based on Sefaria "Daf Yomi" mapping
+// Each daf maps to the exact Jerusalem Talmud Shekalim chapter:halakhah range
+const SHEKALIM_DAF_MAP: Record<string, string> = {
+  '2a':  'Jerusalem_Talmud_Shekalim.1.1',
+  '2b':  'Jerusalem_Talmud_Shekalim.1.1',
+  '3a':  'Jerusalem_Talmud_Shekalim.1.1',
+  '3b':  'Jerusalem_Talmud_Shekalim.1.2',
+  '4a':  'Jerusalem_Talmud_Shekalim.1.4',
+  '4b':  'Jerusalem_Talmud_Shekalim.1.4',
+  '5a':  'Jerusalem_Talmud_Shekalim.1.4',
+  '5b':  'Jerusalem_Talmud_Shekalim.2.1',
+  '6a':  'Jerusalem_Talmud_Shekalim.2.3',
+  '6b':  'Jerusalem_Talmud_Shekalim.2.4',
+  '7a':  'Jerusalem_Talmud_Shekalim.2.4',
+  '7b':  'Jerusalem_Talmud_Shekalim.2.5',
+  '8a':  'Jerusalem_Talmud_Shekalim.3.1',
+  '8b':  'Jerusalem_Talmud_Shekalim.3.2',
+  '9a':  'Jerusalem_Talmud_Shekalim.3.2',
+  '9b':  'Jerusalem_Talmud_Shekalim.3.3',
+  '10a': 'Jerusalem_Talmud_Shekalim.4.1',
+  '10b': 'Jerusalem_Talmud_Shekalim.4.2',
+  '11a': 'Jerusalem_Talmud_Shekalim.4.2',
+  '11b': 'Jerusalem_Talmud_Shekalim.4.3',
+  '12a': 'Jerusalem_Talmud_Shekalim.4.4',
+  '12b': 'Jerusalem_Talmud_Shekalim.4.4',
+  '13a': 'Jerusalem_Talmud_Shekalim.4.4',
+  '13b': 'Jerusalem_Talmud_Shekalim.5.1',
+  '14a': 'Jerusalem_Talmud_Shekalim.5.1',
+  '14b': 'Jerusalem_Talmud_Shekalim.5.1',
+  '15a': 'Jerusalem_Talmud_Shekalim.5.3',
+  '15b': 'Jerusalem_Talmud_Shekalim.5.4',
+  '16a': 'Jerusalem_Talmud_Shekalim.6.1',
+  '16b': 'Jerusalem_Talmud_Shekalim.6.1',
+  '17a': 'Jerusalem_Talmud_Shekalim.6.2',
+  '17b': 'Jerusalem_Talmud_Shekalim.6.2',
+  '18a': 'Jerusalem_Talmud_Shekalim.6.3',
+  '18b': 'Jerusalem_Talmud_Shekalim.6.4',
+  '19a': 'Jerusalem_Talmud_Shekalim.6.4',
+  '19b': 'Jerusalem_Talmud_Shekalim.7.2',
+  '20a': 'Jerusalem_Talmud_Shekalim.7.2',
+  '20b': 'Jerusalem_Talmud_Shekalim.7.3',
+  '21a': 'Jerusalem_Talmud_Shekalim.7.3',
+  '21b': 'Jerusalem_Talmud_Shekalim.8.1',
+  '22a': 'Jerusalem_Talmud_Shekalim.8.3',
+  '22b': 'Jerusalem_Talmud_Shekalim.8.4',
 };
-_buildShekalimMap();
 
 const toHebrewNumeral = (num: number): string => {
   const ones = ['', 'א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט'];
@@ -75,13 +89,15 @@ async function fetchSefariaPage(sefariaRef: string, isYerushalmi: boolean, dafAm
     );
     clearTimeout(timeoutId);
     if (!resp.ok) {
-      // Fallback for Yerushalmi
+      // Fallback for Yerushalmi: try the full chapter reference
       if (isYerushalmi) {
         const fallbackController = new AbortController();
         const fallbackTimeout = setTimeout(() => fallbackController.abort(), FETCH_TIMEOUT_MS);
         try {
+          // Try with spaces instead of underscores (alternative Sefaria format)
+          const altRef = sefariaRef.replace(/_/g, ' ');
           const fallbackResp = await fetch(
-            `https://www.sefaria.org/api/texts/Shekalim.${dafAmudKey}?commentary=0&context=0`,
+            `https://www.sefaria.org/api/texts/${encodeURIComponent(altRef)}?commentary=0&context=0`,
             { signal: fallbackController.signal }
           );
           clearTimeout(fallbackTimeout);

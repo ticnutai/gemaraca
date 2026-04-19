@@ -97,7 +97,57 @@ serve(async (req) => {
 
     const amudLabel = amud === 'a' ? 'ע״א' : 'ע״ב';
     const dafYomi = `${masechetName} ${toHebrewNumeral(dafNumber)} ${amudLabel}`;
-    const sefariaRef = `${sefariaName}.${dafNumber}${amud}`;
+    
+    // Shekalim uses Jerusalem Talmud references on Sefaria
+    const isYerushalmi = sefariaName === 'Shekalim';
+    const SHEKALIM_DAF_MAP: Record<string, string> = {
+      '2a':  'Jerusalem_Talmud_Shekalim.1.1',
+      '2b':  'Jerusalem_Talmud_Shekalim.1.1',
+      '3a':  'Jerusalem_Talmud_Shekalim.1.1',
+      '3b':  'Jerusalem_Talmud_Shekalim.1.2',
+      '4a':  'Jerusalem_Talmud_Shekalim.1.4',
+      '4b':  'Jerusalem_Talmud_Shekalim.1.4',
+      '5a':  'Jerusalem_Talmud_Shekalim.1.4',
+      '5b':  'Jerusalem_Talmud_Shekalim.2.1',
+      '6a':  'Jerusalem_Talmud_Shekalim.2.3',
+      '6b':  'Jerusalem_Talmud_Shekalim.2.4',
+      '7a':  'Jerusalem_Talmud_Shekalim.2.4',
+      '7b':  'Jerusalem_Talmud_Shekalim.2.5',
+      '8a':  'Jerusalem_Talmud_Shekalim.3.1',
+      '8b':  'Jerusalem_Talmud_Shekalim.3.2',
+      '9a':  'Jerusalem_Talmud_Shekalim.3.2',
+      '9b':  'Jerusalem_Talmud_Shekalim.3.3',
+      '10a': 'Jerusalem_Talmud_Shekalim.4.1',
+      '10b': 'Jerusalem_Talmud_Shekalim.4.2',
+      '11a': 'Jerusalem_Talmud_Shekalim.4.2',
+      '11b': 'Jerusalem_Talmud_Shekalim.4.3',
+      '12a': 'Jerusalem_Talmud_Shekalim.4.4',
+      '12b': 'Jerusalem_Talmud_Shekalim.4.4',
+      '13a': 'Jerusalem_Talmud_Shekalim.4.4',
+      '13b': 'Jerusalem_Talmud_Shekalim.5.1',
+      '14a': 'Jerusalem_Talmud_Shekalim.5.1',
+      '14b': 'Jerusalem_Talmud_Shekalim.5.1',
+      '15a': 'Jerusalem_Talmud_Shekalim.5.3',
+      '15b': 'Jerusalem_Talmud_Shekalim.5.4',
+      '16a': 'Jerusalem_Talmud_Shekalim.6.1',
+      '16b': 'Jerusalem_Talmud_Shekalim.6.1',
+      '17a': 'Jerusalem_Talmud_Shekalim.6.2',
+      '17b': 'Jerusalem_Talmud_Shekalim.6.2',
+      '18a': 'Jerusalem_Talmud_Shekalim.6.3',
+      '18b': 'Jerusalem_Talmud_Shekalim.6.4',
+      '19a': 'Jerusalem_Talmud_Shekalim.6.4',
+      '19b': 'Jerusalem_Talmud_Shekalim.7.2',
+      '20a': 'Jerusalem_Talmud_Shekalim.7.2',
+      '20b': 'Jerusalem_Talmud_Shekalim.7.3',
+      '21a': 'Jerusalem_Talmud_Shekalim.7.3',
+      '21b': 'Jerusalem_Talmud_Shekalim.8.1',
+      '22a': 'Jerusalem_Talmud_Shekalim.8.3',
+      '22b': 'Jerusalem_Talmud_Shekalim.8.4',
+    };
+    const dafAmudKey = `${dafNumber}${amud}`;
+    const sefariaRef = isYerushalmi && SHEKALIM_DAF_MAP[dafAmudKey]
+      ? SHEKALIM_DAF_MAP[dafAmudKey]
+      : `${sefariaName}.${dafAmudKey}`;
     
     console.log('Generated dafYomi:', dafYomi);
     console.log('Generated sefariaRef:', sefariaRef);
