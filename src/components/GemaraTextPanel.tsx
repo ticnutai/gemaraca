@@ -1328,13 +1328,14 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
           
           {/* בחירת מצב תצוגה - Dropdown */}
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Eye className="h-4 w-4" />
-                  {VIEW_LABELS[viewMode].label}
-                </Button>
-              </DropdownMenuTrigger>
+            <div className="flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Eye className="h-4 w-4" />
+                    {VIEW_LABELS[viewMode].label}
+                  </Button>
+                </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56">
                 {(Object.keys(VIEW_LABELS) as ViewMode[]).map((mode) => (
                   <DropdownMenuItem
@@ -1351,7 +1352,14 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
-            </DropdownMenu>
+              </DropdownMenu>
+              {savedFlash && (
+                <span className="flex items-center gap-1 text-xs text-[hsl(45_70%_45%)] animate-fade-in" dir="rtl">
+                  <Cloud className="h-3 w-3" />
+                  נשמר
+                </span>
+              )}
+            </div>
             
             {viewMode === 'text' && (
               <div className="flex gap-1 p-1 bg-muted rounded-lg">
