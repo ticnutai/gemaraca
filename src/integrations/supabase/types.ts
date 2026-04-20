@@ -871,6 +871,7 @@ export type Database = {
       user_preferences: {
         Row: {
           created_at: string
+          gemara_daf_theme: string | null
           id: string
           recently_viewed_psakim: Json | null
           sugya_view_mode: string | null
@@ -880,6 +881,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          gemara_daf_theme?: string | null
           id?: string
           recently_viewed_psakim?: Json | null
           sugya_view_mode?: string | null
@@ -889,6 +891,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          gemara_daf_theme?: string | null
           id?: string
           recently_viewed_psakim?: Json | null
           sugya_view_mode?: string | null
