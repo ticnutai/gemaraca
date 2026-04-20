@@ -195,6 +195,10 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   const [cloudLineHeight, setCloudLineHeight] = useState(1.8);
   const [cloudParagraphSpacing, setCloudParagraphSpacing] = useState(10);
 
+  // Cloud PDF sub-mode state (text vs scanned PDF from Supabase Storage)
+  const [cloudSubMode, setCloudSubMode] = useState<'text' | 'scan'>('text');
+  const [cloudPdfUrl, setCloudPdfUrl] = useState<string | null>(null);
+
   // Load cloud pages list when switching to cloud mode
   useEffect(() => {
     if (viewMode === 'cloud') {
@@ -208,6 +212,26 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
       loadCloudContent(sugyaId);
     }
   }, [viewMode, sugyaId]);
+
+  // Check if a scanned PDF exists for this daf in Supabase Storage
+  useEffect(() => {
+    if (viewMode === 'cloud' && sugyaId && masechet) {
+      const lastIdx = sugyaId.lastIndexOf('_');
+      const dafAmud = sugyaId.slice(lastIdx + 1);
+      const match = dafAmud.match(/^(\d+)(a|b)$/);
+      if (!match) { setCloudPdfUrl(null); return; }
+      const storagePath = `${masechet}/${match[1]}${match[2]}.pdf`;
+      const { data } = supabase.storage.from('shas-pdf-pages').getPublicUrl(storagePath);
+      fetch(data.publicUrl, { method: 'HEAD' })
+        .then(res => {
+          const url = res.ok ? data.publicUrl : null;
+          setCloudPdfUrl(url);
+          // Auto-switch to scan mode if PDF exists but no text content
+          if (url && !cloudContent) setCloudSubMode('scan');
+        })
+        .catch(() => setCloudPdfUrl(null));
+    }
+  }, [viewMode, sugyaId, masechet, cloudContent]);
 
   const loadCloudPages = async () => {
     setCloudLoading(true);
@@ -959,6 +983,42 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   };
 
   const renderCloudView = () => {
+    // ═══ Scanned PDF sub-mode: show PDF from Supabase Storage ═══
+    if (cloudSubMode === 'scan' && cloudPdfUrl) {
+      return (
+        <div className="space-y-0">
+          {/* Sub-mode toggle bar */}
+          <div className="border-2 border-b-0 border-[#D4AF37]/30 rounded-t-xl bg-white px-3 py-2 flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] text-[#D4AF37] font-bold ml-2">📄 תמונה סרוקה מהענן</span>
+            <div className="w-px h-5 bg-[#D4AF37]/20" />
+            <div className="flex gap-1 p-0.5 bg-muted rounded-lg">
+              <Button size="sm" variant={cloudSubMode === 'text' ? 'default' : 'ghost'} className="h-6 text-[11px] px-2" onClick={() => setCloudSubMode('text')}>
+                <FileText className="h-3 w-3 ml-1" />טקסט
+              </Button>
+              <Button size="sm" variant={cloudSubMode === 'scan' ? 'default' : 'ghost'} className="h-6 text-[11px] px-2" onClick={() => setCloudSubMode('scan')}>
+                <Image className="h-3 w-3 ml-1" />סריקה
+              </Button>
+            </div>
+            <div className="w-px h-5 bg-[#D4AF37]/20" />
+            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => window.open(cloudPdfUrl, '_blank')} title="פתח בחלון חדש">
+              <ExternalLink className="h-3.5 w-3.5 text-[#0B1F5B]" />
+            </Button>
+            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { const a = document.createElement('a'); a.href = cloudPdfUrl; a.download = ''; a.click(); }} title="הורד PDF">
+              <FileDown className="h-3.5 w-3.5 text-[#0B1F5B]" />
+            </Button>
+          </div>
+          <div className="border-2 border-[#D4AF37]/30 rounded-b-xl bg-white overflow-hidden shadow-lg" style={{ minHeight: '500px' }}>
+            <iframe
+              src={`${cloudPdfUrl}#toolbar=1&navpanes=0&view=FitH`}
+              className="w-full border-0"
+              style={{ height: '750px' }}
+              title="דף גמרא סרוק מהענן"
+            />
+          </div>
+        </div>
+      );
+    }
+
     if (cloudLoading && !cloudContent) {
       return (
         <div className="space-y-4 py-6">
@@ -970,7 +1030,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
       );
     }
 
-    if (!cloudContent) {
+    if (!cloudContent && !cloudPdfUrl) {
       return (
         <div className="text-center py-12 space-y-4">
           <Database className="h-12 w-12 text-[#D4AF37] mx-auto opacity-60" />
@@ -992,6 +1052,21 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
         <div className="border-2 border-b-0 border-[#D4AF37]/30 rounded-t-xl bg-white px-2 py-1.5 flex items-center gap-1 flex-wrap">
           <span className="text-[10px] text-[#D4AF37] font-bold ml-2">📀 גמרא מהענן</span>
           <div className="w-px h-5 bg-[#D4AF37]/20" />
+
+          {/* Sub-mode toggle: text vs scan (only shown when PDF exists) */}
+          {cloudPdfUrl && (
+            <>
+              <div className="flex gap-0.5 p-0.5 bg-muted rounded-lg">
+                <Button size="sm" variant={cloudSubMode === 'text' ? 'default' : 'ghost'} className="h-6 text-[11px] px-2" onClick={() => setCloudSubMode('text')}>
+                  <FileText className="h-3 w-3 ml-1" />טקסט
+                </Button>
+                <Button size="sm" variant={cloudSubMode === 'scan' ? 'default' : 'ghost'} className="h-6 text-[11px] px-2" onClick={() => setCloudSubMode('scan')}>
+                  <Image className="h-3 w-3 ml-1" />סריקה
+                </Button>
+              </div>
+              <div className="w-px h-5 bg-[#D4AF37]/20" />
+            </>
+          )}
 
           {/* Edit Mode Toggle */}
           <Button size="sm" variant={cloudEditMode ? "default" : "outline"} className={`h-7 text-xs gap-1 ${cloudEditMode ? "bg-[#D4AF37] text-[#0B1F5B]" : "border-[#D4AF37]/40 text-[#0B1F5B]"}`} onClick={() => {
