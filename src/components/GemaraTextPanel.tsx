@@ -25,6 +25,8 @@ import { useToast } from "@/hooks/use-toast";
 import { getCachedGemaraText, setCachedGemaraText } from "@/lib/pageCache";
 import { RichTextViewer } from "./RichTextViewer";
 import { useGemaraAutoSave } from "@/hooks/useGemaraAutoSave";
+import { useSugyaViewMode } from "@/hooks/useSugyaViewMode";
+import { Cloud } from "lucide-react";
 
 const FONTS = [
   { value: 'font-serif', label: 'דוד (סריף)' },
@@ -162,10 +164,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   const [gemaraText, setGemaraText] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showHebrew, setShowHebrew] = useState(true);
-  const [viewMode, setViewMode] = useState<ViewMode>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return (saved as ViewMode) || 'sefaria';
-  });
+  const { viewMode, setViewMode, savedFlash } = useSugyaViewMode();
   const [imageZoom, setImageZoom] = useState(100);
   const [textSettings, setTextSettings] = useState<TextSettings>(() => {
     try {
@@ -294,10 +293,6 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
     // Prefetch next daf in background for instant navigation
     prefetchNextDaf();
   }, [dafYomi]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, viewMode);
-  }, [viewMode]);
 
   useEffect(() => {
     localStorage.setItem(TEXT_SETTINGS_KEY, JSON.stringify(textSettings));
@@ -1333,13 +1328,14 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
           
           {/* בחירת מצב תצוגה - Dropdown */}
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Eye className="h-4 w-4" />
-                  {VIEW_LABELS[viewMode].label}
-                </Button>
-              </DropdownMenuTrigger>
+            <div className="flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Eye className="h-4 w-4" />
+                    {VIEW_LABELS[viewMode].label}
+                  </Button>
+                </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56">
                 {(Object.keys(VIEW_LABELS) as ViewMode[]).map((mode) => (
                   <DropdownMenuItem
@@ -1356,7 +1352,14 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
-            </DropdownMenu>
+              </DropdownMenu>
+              {savedFlash && (
+                <span className="flex items-center gap-1 text-xs text-[hsl(45_70%_45%)] animate-fade-in" dir="rtl">
+                  <Cloud className="h-3 w-3" />
+                  נשמר
+                </span>
+              )}
+            </div>
             
             {viewMode === 'text' && (
               <div className="flex gap-1 p-1 bg-muted rounded-lg">
