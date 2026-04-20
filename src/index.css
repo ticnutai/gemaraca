@@ -250,6 +250,23 @@ All colors MUST be HSL.
   }
 }
 
+/* Gold-themed slider: chromatic track, gold range fill + thumb */
+.gold-slider [data-orientation="horizontal"] {
+  background: linear-gradient(90deg, hsl(0 0% 88%), hsl(0 0% 78%));
+}
+.gold-slider [data-orientation="horizontal"] > span {
+  background: linear-gradient(90deg, hsl(45 80% 55%), hsl(42 70% 48%));
+}
+.gold-slider [role="slider"] {
+  background: hsl(45 80% 55%);
+  border-color: hsl(42 70% 42%);
+  box-shadow: 0 0 0 2px hsl(45 80% 90%), 0 2px 6px -1px hsl(42 70% 42% / 0.4);
+}
+.gold-slider [role="slider"]:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px hsl(45 80% 70%), 0 2px 8px -1px hsl(42 70% 42% / 0.5);
+}
+
 /* Safe area insets for notched phones */
 @supports(padding: max(0px)) {
   .safe-area-bottom {
