@@ -261,7 +261,13 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
       if (error) throw error;
       if (data) {
         const ext = data as Record<string, unknown>;
-        const text = (ext.gemara_text as string) || (ext.full_text as string) || "";
+        // text_he is an array of strings (paragraphs from Sefaria)
+        let text = "";
+        if (Array.isArray(ext.text_he)) {
+          text = (ext.text_he as string[]).map(p => `<p>${p}</p>`).join("");
+        } else {
+          text = (ext.gemara_text as string) || (ext.full_text as string) || (ext.text_he as string) || "";
+        }
         setCloudContent(text);
       } else {
         setCloudContent("");
