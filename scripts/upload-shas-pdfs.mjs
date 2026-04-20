@@ -19,7 +19,7 @@ import { createClient } from '@supabase/supabase-js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
-const SHAS_DIR = path.join(ROOT, 'שס');
+const SHAS_DIR = path.join(ROOT, 'שס_נקי');
 const BUCKET = 'shas-pdf-pages';
 
 // Supabase config
@@ -89,10 +89,15 @@ function parseGematria(heb) {
 }
 
 /**
- * Parse filename like "דף_ב_עמוד_א.pdf" → { daf: 2, amud: 'a' }
+ * Parse filename like "דף_ב_עמוד_א.pdf" or "2a.pdf" → { daf: 2, amud: 'a' }
  */
 function parseFileName(name) {
-  // Pattern: דף_XXX_עמוד_Y.pdf
+  // Sefaria-style: 2a.pdf, 10b.pdf, etc.
+  const sefariaMatch = name.match(/^(\d+)(a|b)\.pdf$/);
+  if (sefariaMatch) {
+    return { daf: parseInt(sefariaMatch[1], 10), amud: sefariaMatch[2] };
+  }
+  // Hebrew-style: דף_XXX_עמוד_Y.pdf
   const match = name.match(/^דף_(.+)_עמוד_(א|ב)\.pdf$/);
   if (!match) return null;
   const daf = parseGematria(match[1]);
