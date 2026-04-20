@@ -164,10 +164,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   const [gemaraText, setGemaraText] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showHebrew, setShowHebrew] = useState(true);
-  const [viewMode, setViewMode] = useState<ViewMode>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return (saved as ViewMode) || 'sefaria';
-  });
+  const { viewMode, setViewMode, savedFlash } = useSugyaViewMode();
   const [imageZoom, setImageZoom] = useState(100);
   const [textSettings, setTextSettings] = useState<TextSettings>(() => {
     try {
