@@ -618,35 +618,78 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
 
         {sep}
 
-        {/* Font Size */}
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => updateTextSetting('fontSize', Math.max(10, textSettings.fontSize - 2))} title="הקטן גופן">
-          <AArrowDown className="h-3.5 w-3.5" />
-        </Button>
-        <span className="text-xs text-muted-foreground w-6 text-center font-mono">{textSettings.fontSize}</span>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => updateTextSetting('fontSize', Math.min(36, textSettings.fontSize + 2))} title="הגדל גופן">
-          <AArrowUp className="h-3.5 w-3.5" />
-        </Button>
-
-        {sep}
-
-        {/* Font Family */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-7 w-7" title="שנה גופן">
+        {/* Typography Panel — unified T button (font size, family, line height) */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-7 w-7" title="הגדרות טיפוגרפיה">
               <Type className="h-3.5 w-3.5" />
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            {FONTS.map(font => (
-              <DropdownMenuItem key={font.value} onClick={() => updateTextSetting('fontFamily', font.value)} className="flex items-center gap-2">
-                <span className={font.value}>{font.label}</span>
-                {textSettings.fontFamily === font.value && <Check className="h-4 w-4 text-primary" />}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+          </PopoverTrigger>
+          <PopoverContent className="w-72 p-4 space-y-4" align="start" dir="rtl">
+            {/* Font Family */}
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-foreground">סוג גופן</p>
+              <div className="grid grid-cols-2 gap-1.5">
+                {FONTS.map(font => (
+                  <Button
+                    key={font.value}
+                    type="button"
+                    variant={textSettings.fontFamily === font.value ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => updateTextSetting('fontFamily', font.value)}
+                    className={`h-8 justify-center text-xs ${font.value}`}
+                  >
+                    {font.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
 
-        {sep}
+            {/* Font Size Slider */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-foreground">גודל גופן</span>
+                <span className="text-[11px] font-mono text-[hsl(45_70%_52%)]">{textSettings.fontSize}px</span>
+              </div>
+              <div dir="rtl" className="px-1">
+                <Slider
+                  value={[textSettings.fontSize]}
+                  onValueChange={(v) => updateTextSetting('fontSize', v[0])}
+                  min={10}
+                  max={48}
+                  step={1}
+                  className="gold-slider"
+                />
+                <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
+                  <span>10</span>
+                  <span>48</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Line Height Slider */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-foreground">מרווח שורות</span>
+                <span className="text-[11px] font-mono text-[hsl(45_70%_52%)]">{textSettings.lineHeight.toFixed(1)}</span>
+              </div>
+              <div dir="rtl" className="px-1">
+                <Slider
+                  value={[textSettings.lineHeight]}
+                  onValueChange={(v) => updateTextSetting('lineHeight', v[0])}
+                  min={0.8}
+                  max={4}
+                  step={0.1}
+                  className="gold-slider"
+                />
+                <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
+                  <span>0.8</span>
+                  <span>4.0</span>
+                </div>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
 
         {/* Text Formatting: Bold, Italic, Underline, Strikethrough */}
         <Button variant={textSettings.isBold ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onMouseDown={e => e.preventDefault()} onClick={() => { if (textEditMode) textIframeRef.current?.contentDocument?.execCommand('bold'); else updateTextSetting('isBold', !textSettings.isBold); }} title="הדגשה">
