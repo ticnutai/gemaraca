@@ -27,6 +27,9 @@ import { RichTextViewer } from "./RichTextViewer";
 import { useGemaraAutoSave } from "@/hooks/useGemaraAutoSave";
 import { useSugyaViewMode } from "@/hooks/useSugyaViewMode";
 import { Cloud } from "lucide-react";
+import { useGemaraDafTheme } from "@/hooks/useGemaraDafTheme";
+import { DAF_THEMES } from "@/lib/gemaraDafThemes";
+import GemaraDafThemeFloat from "./GemaraDafThemeFloat";
 
 const FONTS = [
   { value: 'font-serif', label: 'דוד (סריף)' },
