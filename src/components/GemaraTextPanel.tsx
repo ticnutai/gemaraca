@@ -25,6 +25,8 @@ import { useToast } from "@/hooks/use-toast";
 import { getCachedGemaraText, setCachedGemaraText } from "@/lib/pageCache";
 import { RichTextViewer } from "./RichTextViewer";
 import { useGemaraAutoSave } from "@/hooks/useGemaraAutoSave";
+import { useSugyaViewMode } from "@/hooks/useSugyaViewMode";
+import { Cloud } from "lucide-react";
 
 const FONTS = [
   { value: 'font-serif', label: 'דוד (סריף)' },
