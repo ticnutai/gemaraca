@@ -168,6 +168,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   const [isLoading, setIsLoading] = useState(false);
   const [showHebrew, setShowHebrew] = useState(true);
   const { viewMode, setViewMode, savedFlash } = useSugyaViewMode();
+  const { theme: dafTheme } = useGemaraDafTheme();
   const [imageZoom, setImageZoom] = useState(100);
   const [textSettings, setTextSettings] = useState<TextSettings>(() => {
     try {
