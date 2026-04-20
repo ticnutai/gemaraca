@@ -1388,6 +1388,8 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
       <CardContent>
         {renderContent()}
       </CardContent>
+      {/* Floating daf design theme picker — only relevant for text view */}
+      {viewMode === 'text' && <GemaraDafThemeFloat />}
     </Card>
   );
 }
