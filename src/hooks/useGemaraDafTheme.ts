@@ -5,13 +5,29 @@ export type DafThemeId = 'vilna' | 'modern' | 'minimal' | 'night' | 'parchment';
 
 const STORAGE_KEY = 'gemara-daf-theme';
 const VALID: DafThemeId[] = ['vilna', 'modern', 'minimal', 'night', 'parchment'];
+const DEFAULT_THEME: DafThemeId = 'vilna';
+
+const listeners = new Set<(theme: DafThemeId) => void>();
+let currentTheme: DafThemeId | null = null;
 
 function readLocal(): DafThemeId {
+  if (typeof window === 'undefined') return DEFAULT_THEME;
   try {
     const v = localStorage.getItem(STORAGE_KEY);
     if (v && VALID.includes(v as DafThemeId)) return v as DafThemeId;
   } catch {}
-  return 'vilna';
+  return DEFAULT_THEME;
+}
+
+function getCurrentTheme(): DafThemeId {
+  if (currentTheme) return currentTheme;
+  currentTheme = readLocal();
+  return currentTheme;
+}
+
+function broadcastTheme(next: DafThemeId) {
+  currentTheme = next;
+  listeners.forEach((listener) => listener(next));
 }
 
 /**
@@ -19,10 +35,29 @@ function readLocal(): DafThemeId {
  * Same pattern as useSugyaViewMode.
  */
 export function useGemaraDafTheme() {
-  const [theme, setThemeState] = useState<DafThemeId>(readLocal);
+  const [theme, setThemeState] = useState<DafThemeId>(getCurrentTheme);
   const [userId, setUserId] = useState<string | null>(null);
   const [savedFlash, setSavedFlash] = useState(false);
   const flashTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    const syncTheme = (next: DafThemeId) => setThemeState(next);
+    listeners.add(syncTheme);
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== STORAGE_KEY) return;
+      const next = readLocal();
+      broadcastTheme(next);
+    };
+
+    window.addEventListener('storage', handleStorage);
+    setThemeState(getCurrentTheme());
+
+    return () => {
+      listeners.delete(syncTheme);
+      window.removeEventListener('storage', handleStorage);
+    };
+  }, []);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -46,7 +81,7 @@ export function useGemaraDafTheme() {
       if (cancelled) return;
       const cloudVal = (data as any)?.gemara_daf_theme as DafThemeId | null | undefined;
       if (cloudVal && VALID.includes(cloudVal)) {
-        setThemeState(cloudVal);
+        broadcastTheme(cloudVal);
         try { localStorage.setItem(STORAGE_KEY, cloudVal); } catch {}
       } else {
         const local = readLocal();
@@ -62,7 +97,7 @@ export function useGemaraDafTheme() {
   }, [userId]);
 
   const setTheme = useCallback((next: DafThemeId) => {
-    setThemeState(next);
+    broadcastTheme(next);
     try { localStorage.setItem(STORAGE_KEY, next); } catch {}
     if (userId) {
       supabase
