@@ -295,10 +295,6 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   }, [dafYomi]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, viewMode);
-  }, [viewMode]);
-
-  useEffect(() => {
     localStorage.setItem(TEXT_SETTINGS_KEY, JSON.stringify(textSettings));
   }, [textSettings]);
 
