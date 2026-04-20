@@ -25,6 +25,11 @@ import { useToast } from "@/hooks/use-toast";
 import { getCachedGemaraText, setCachedGemaraText } from "@/lib/pageCache";
 import { RichTextViewer } from "./RichTextViewer";
 import { useGemaraAutoSave } from "@/hooks/useGemaraAutoSave";
+import { useSugyaViewMode } from "@/hooks/useSugyaViewMode";
+import { Cloud } from "lucide-react";
+import { useGemaraDafTheme } from "@/hooks/useGemaraDafTheme";
+import { DAF_THEMES } from "@/lib/gemaraDafThemes";
+import GemaraDafThemeFloat from "./GemaraDafThemeFloat";
 
 const FONTS = [
   { value: 'font-serif', label: 'דוד (סריף)' },
@@ -162,10 +167,8 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   const [gemaraText, setGemaraText] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showHebrew, setShowHebrew] = useState(true);
-  const [viewMode, setViewMode] = useState<ViewMode>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return (saved as ViewMode) || 'sefaria';
-  });
+  const { viewMode, setViewMode, savedFlash } = useSugyaViewMode();
+  const { theme: dafTheme } = useGemaraDafTheme();
   const [imageZoom, setImageZoom] = useState(100);
   const [textSettings, setTextSettings] = useState<TextSettings>(() => {
     try {
@@ -324,10 +327,6 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
     // Prefetch next daf in background for instant navigation
     prefetchNextDaf();
   }, [dafYomi]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, viewMode);
-  }, [viewMode]);
 
   useEffect(() => {
     localStorage.setItem(TEXT_SETTINGS_KEY, JSON.stringify(textSettings));
@@ -648,35 +647,78 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
 
         {sep}
 
-        {/* Font Size */}
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => updateTextSetting('fontSize', Math.max(10, textSettings.fontSize - 2))} title="הקטן גופן">
-          <AArrowDown className="h-3.5 w-3.5" />
-        </Button>
-        <span className="text-xs text-muted-foreground w-6 text-center font-mono">{textSettings.fontSize}</span>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => updateTextSetting('fontSize', Math.min(36, textSettings.fontSize + 2))} title="הגדל גופן">
-          <AArrowUp className="h-3.5 w-3.5" />
-        </Button>
-
-        {sep}
-
-        {/* Font Family */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-7 w-7" title="שנה גופן">
+        {/* Typography Panel — unified T button (font size, family, line height) */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-7 w-7" title="הגדרות טיפוגרפיה">
               <Type className="h-3.5 w-3.5" />
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            {FONTS.map(font => (
-              <DropdownMenuItem key={font.value} onClick={() => updateTextSetting('fontFamily', font.value)} className="flex items-center gap-2">
-                <span className={font.value}>{font.label}</span>
-                {textSettings.fontFamily === font.value && <Check className="h-4 w-4 text-primary" />}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+          </PopoverTrigger>
+          <PopoverContent className="w-72 p-4 space-y-4" align="start" dir="rtl">
+            {/* Font Family */}
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-foreground">סוג גופן</p>
+              <div className="grid grid-cols-2 gap-1.5">
+                {FONTS.map(font => (
+                  <Button
+                    key={font.value}
+                    type="button"
+                    variant={textSettings.fontFamily === font.value ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => updateTextSetting('fontFamily', font.value)}
+                    className={`h-8 justify-center text-xs ${font.value}`}
+                  >
+                    {font.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
 
-        {sep}
+            {/* Font Size Slider */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-foreground">גודל גופן</span>
+                <span className="text-[11px] font-mono text-[hsl(45_70%_52%)]">{textSettings.fontSize}px</span>
+              </div>
+              <div dir="rtl" className="px-1">
+                <Slider
+                  value={[textSettings.fontSize]}
+                  onValueChange={(v) => updateTextSetting('fontSize', v[0])}
+                  min={10}
+                  max={48}
+                  step={1}
+                  className="gold-slider"
+                />
+                <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
+                  <span>10</span>
+                  <span>48</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Line Height Slider */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-foreground">מרווח שורות</span>
+                <span className="text-[11px] font-mono text-[hsl(45_70%_52%)]">{textSettings.lineHeight.toFixed(1)}</span>
+              </div>
+              <div dir="rtl" className="px-1">
+                <Slider
+                  value={[textSettings.lineHeight]}
+                  onValueChange={(v) => updateTextSetting('lineHeight', v[0])}
+                  min={0.8}
+                  max={4}
+                  step={0.1}
+                  className="gold-slider"
+                />
+                <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
+                  <span>0.8</span>
+                  <span>4.0</span>
+                </div>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
 
         {/* Text Formatting: Bold, Italic, Underline, Strikethrough */}
         <Button variant={textSettings.isBold ? 'secondary' : 'ghost'} size="icon" className="h-7 w-7" onMouseDown={e => e.preventDefault()} onClick={() => { if (textEditMode) textIframeRef.current?.contentDocument?.execCommand('bold'); else updateTextSetting('isBold', !textSettings.isBold); }} title="הדגשה">
@@ -1297,10 +1339,9 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
                 <iframe
                   ref={textIframeRef}
                   srcDoc={`<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="utf-8"><style>
-                    @import url('https://fonts.googleapis.com/css2?family=David+Libre&family=Frank+Ruhl+Libre&family=Rubik&display=swap');
-                    body { font-family: 'David Libre', 'David', serif; font-size: ${textSettings.fontSize}px; line-height: ${textSettings.lineHeight}; color: hsl(222 47% 11%); padding: 24px; margin: 0; direction: rtl; text-align: ${textSettings.textAlign}; column-count: ${textSettings.columns}; column-gap: 32px; column-rule: 1px solid #e5e7eb; }
-                    ::selection { background: hsl(37 77% 53% / 0.3); }
-                    p, div { margin-bottom: 8px; break-inside: avoid; }
+                    ${DAF_THEMES[dafTheme].buildCss({ fontSize: textSettings.fontSize, lineHeight: textSettings.lineHeight })}
+                    body { text-align: ${textSettings.textAlign} !important; column-count: ${textSettings.columns}; column-gap: 32px; column-rule: 1px solid rgba(0,0,0,0.08); }
+                    p, div { break-inside: avoid; }
                   </style></head><body>${textAutoSave.savedHtml || memoizedPlainText.split('\n').map(p => `<p>${p || '&nbsp;'}</p>`).join('')}</body></html>`}
                   className="w-full border-0"
                   style={{ height: '600px' }}
@@ -1371,13 +1412,14 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
           
           {/* בחירת מצב תצוגה - Dropdown */}
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Eye className="h-4 w-4" />
-                  {VIEW_LABELS[viewMode].label}
-                </Button>
-              </DropdownMenuTrigger>
+            <div className="flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Eye className="h-4 w-4" />
+                    {VIEW_LABELS[viewMode].label}
+                  </Button>
+                </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56">
                 {(Object.keys(VIEW_LABELS) as ViewMode[]).map((mode) => (
                   <DropdownMenuItem
@@ -1394,7 +1436,14 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
-            </DropdownMenu>
+              </DropdownMenu>
+              {savedFlash && (
+                <span className="flex items-center gap-1 text-xs text-[hsl(45_70%_45%)] animate-fade-in" dir="rtl">
+                  <Cloud className="h-3 w-3" />
+                  נשמר
+                </span>
+              )}
+            </div>
             
             {viewMode === 'text' && (
               <div className="flex gap-1 p-1 bg-muted rounded-lg">
@@ -1420,6 +1469,8 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
       <CardContent>
         {renderContent()}
       </CardContent>
+      {/* Floating daf design theme picker — only relevant for text view */}
+      {viewMode === 'text' && <GemaraDafThemeFloat />}
     </Card>
   );
 }
