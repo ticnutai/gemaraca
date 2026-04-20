@@ -167,7 +167,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   const [gemaraText, setGemaraText] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showHebrew, setShowHebrew] = useState(true);
-  const { viewMode, setViewMode, savedFlash } = useSugyaViewMode();
+  const { viewMode, setViewMode, savedFlash, isReady: isViewModeReady } = useSugyaViewMode();
   const { theme: dafTheme } = useGemaraDafTheme();
   const [imageZoom, setImageZoom] = useState(100);
   const [textSettings, setTextSettings] = useState<TextSettings>(() => {
@@ -1300,6 +1300,22 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   };
 
   const renderContent = () => {
+    if (!isViewModeReady) {
+      return (
+        <div className="space-y-4 py-6">
+          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground" dir="rtl">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            טוען העדפת תצוגה...
+          </div>
+          <div className="space-y-2">
+            {[...Array(5)].map((_, i) => (
+              <Skeleton key={i} className="h-4 w-full" style={{ width: `${82 + Math.random() * 14}%` }} />
+            ))}
+          </div>
+        </div>
+      );
+    }
+
     if (isLoading && viewMode === 'text') {
       return (
         <div className="space-y-4 py-6">
@@ -1415,9 +1431,9 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
             <div className="flex items-center gap-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <Eye className="h-4 w-4" />
-                    {VIEW_LABELS[viewMode].label}
+                  <Button variant="outline" size="sm" className="gap-2" disabled={!isViewModeReady}>
+                    {isViewModeReady ? <Eye className="h-4 w-4" /> : <Loader2 className="h-4 w-4 animate-spin" />}
+                    {isViewModeReady ? VIEW_LABELS[viewMode].label : 'טוען תצוגה...'}
                   </Button>
                 </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56">
