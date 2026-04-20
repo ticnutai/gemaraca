@@ -873,6 +873,7 @@ export type Database = {
           created_at: string
           id: string
           recently_viewed_psakim: Json | null
+          sugya_view_mode: string | null
           updated_at: string
           user_id: string
           viewer_mode: string | null
@@ -881,6 +882,7 @@ export type Database = {
           created_at?: string
           id?: string
           recently_viewed_psakim?: Json | null
+          sugya_view_mode?: string | null
           updated_at?: string
           user_id: string
           viewer_mode?: string | null
@@ -889,6 +891,7 @@ export type Database = {
           created_at?: string
           id?: string
           recently_viewed_psakim?: Json | null
+          sugya_view_mode?: string | null
           updated_at?: string
           user_id?: string
           viewer_mode?: string | null
