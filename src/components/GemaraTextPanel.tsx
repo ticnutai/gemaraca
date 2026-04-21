@@ -15,7 +15,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Loader2, BookOpen, Image, FileText, ExternalLink, Eye, Check, ZoomIn, ZoomOut, Type, AArrowUp, AArrowDown, AlignRight, AlignCenter, AlignLeft, AlignJustify, Bold, Italic, Underline, Strikethrough, Highlighter, MousePointer2, Database, Copy, Printer, MoveVertical, FileDown, Save, Palette, RotateCcw, Scissors, Search, Columns2, Columns3 } from "lucide-react";
+import { Loader2, BookOpen, Image, FileText, ExternalLink, Eye, Check, ZoomIn, ZoomOut, Type, AArrowUp, AArrowDown, AlignRight, AlignCenter, AlignLeft, AlignJustify, Bold, Italic, Underline, Strikethrough, Highlighter, MousePointer2, Database, Copy, Printer, MoveVertical, FileDown, Save, Palette, RotateCcw, Scissors, Search, Columns2, Columns3, ChevronLeft, ChevronRight } from "lucide-react";
 import FloatingTextToolbar from "./FloatingTextToolbar";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
@@ -30,6 +30,8 @@ import { Cloud } from "lucide-react";
 import { useGemaraDafTheme } from "@/hooks/useGemaraDafTheme";
 import { DAF_THEMES } from "@/lib/gemaraDafThemes";
 import GemaraDafThemeFloat from "./GemaraDafThemeFloat";
+import { MASECHTOT } from "@/lib/masechtotData";
+import { useNavigate } from "react-router-dom";
 
 const FONTS = [
   { value: 'font-serif', label: 'דוד (סריף)' },
@@ -222,6 +224,42 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   const [cloudEmbedError, setCloudEmbedError] = useState<string | null>(null);
   const [cloudEmbedStatus, setCloudEmbedStatus] = useState<string | null>(null);
   const [cloudEmbedFallbackNotice, setCloudEmbedFallbackNotice] = useState<string | null>(null);
+
+  // ═══ Daf navigation (prev/next within masechet) ═══
+  const navigate = useNavigate();
+  const dafNav = useMemo(() => {
+    const lastIdx = sugyaId.lastIndexOf('_');
+    if (lastIdx < 0) return null;
+    const prefix = sugyaId.slice(0, lastIdx); // e.g. "berakhot"
+    const dafAmud = sugyaId.slice(lastIdx + 1);
+    const m = dafAmud.match(/^(\d+)([ab])$/);
+    if (!m) return null;
+    const daf = parseInt(m[1], 10);
+    const amud = m[2] as 'a' | 'b';
+    const info = MASECHTOT.find((x) => x.sefariaName.toLowerCase() === prefix.toLowerCase());
+    const maxDaf = info?.maxDaf ?? 200;
+    let prev: string | null = null;
+    let next: string | null = null;
+    if (amud === 'b') prev = `${prefix}_${daf}a`;
+    else if (daf > 2) prev = `${prefix}_${daf - 1}b`;
+    if (amud === 'a') next = `${prefix}_${daf}b`;
+    else if (daf < maxDaf) next = `${prefix}_${daf + 1}a`;
+    return { prev, next, daf, amud, maxDaf };
+  }, [sugyaId]);
+
+  const goToDaf = useCallback(
+    (targetSugyaId: string) => {
+      navigate(`/sugya/${targetSugyaId}`);
+    },
+    [navigate]
+  );
+
+  // Trigger Ctrl+F-style search in the scan iframe (best-effort)
+  const triggerScanSearch = useCallback(() => {
+    sonnerToast.info('לחץ Ctrl+F בתוך הסריקה כדי לפתוח חיפוש טקסט', {
+      description: 'חיפוש מופעל על ידי מציג ה-PDF המובנה של הדפדפן',
+    });
+  }, []);
 
   // Load the current daf's cloud content when entering cloud mode
   useEffect(() => {
@@ -1240,6 +1278,34 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
             <div className="w-px h-5 bg-[#D4AF37]/20" />
             {renderCloudSubModeTabs()}
             <div className="w-px h-5 bg-[#D4AF37]/20" />
+            {dafNav && (
+              <>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7"
+                  disabled={!dafNav.prev}
+                  onClick={() => dafNav.prev && goToDaf(dafNav.prev)}
+                  title="דף קודם"
+                >
+                  <ChevronRight className="h-3.5 w-3.5 text-[#0B1F5B]" />
+                </Button>
+                <span className="text-[10px] text-[#0B1F5B]/70 min-w-[36px] text-center">
+                  {dafNav.daf}{dafNav.amud}
+                </span>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7"
+                  disabled={!dafNav.next}
+                  onClick={() => dafNav.next && goToDaf(dafNav.next)}
+                  title="דף הבא"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5 text-[#0B1F5B]" />
+                </Button>
+                <div className="w-px h-5 bg-[#D4AF37]/20" />
+              </>
+            )}
             <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => window.open(cloudPdfUrl, '_blank')} title="פתח PDF בחלון חדש">
               <ExternalLink className="h-3.5 w-3.5 text-[#0B1F5B]" />
             </Button>
@@ -1308,6 +1374,37 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
             <div className="w-px h-5 bg-[#D4AF37]/20" />
             {renderCloudSubModeTabs()}
             <div className="w-px h-5 bg-[#D4AF37]/20" />
+            {dafNav && (
+              <>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7"
+                  disabled={!dafNav.prev}
+                  onClick={() => dafNav.prev && goToDaf(dafNav.prev)}
+                  title="דף קודם"
+                >
+                  <ChevronRight className="h-3.5 w-3.5 text-[#0B1F5B]" />
+                </Button>
+                <span className="text-[10px] text-[#0B1F5B]/70 min-w-[36px] text-center">
+                  {dafNav.daf}{dafNav.amud}
+                </span>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7"
+                  disabled={!dafNav.next}
+                  onClick={() => dafNav.next && goToDaf(dafNav.next)}
+                  title="דף הבא"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5 text-[#0B1F5B]" />
+                </Button>
+                <div className="w-px h-5 bg-[#D4AF37]/20" />
+              </>
+            )}
+            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={triggerScanSearch} title="חיפוש טקסט (Ctrl+F)">
+              <Search className="h-3.5 w-3.5 text-[#0B1F5B]" />
+            </Button>
             <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => window.open(cloudPdfUrl, '_blank')} title="פתח בחלון חדש">
               <ExternalLink className="h-3.5 w-3.5 text-[#0B1F5B]" />
             </Button>

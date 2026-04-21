@@ -201,34 +201,62 @@ export default function ShasManagerPage() {
       }
       const arr = Array.from(files);
       setUploadQueue(arr.map((f) => ({ name: f.name, status: "ממתין" })));
-      for (let i = 0; i < arr.length; i++) {
+
+      const CONCURRENCY = 4;
+      let nextIndex = 0;
+      let doneCount = 0;
+      let okCount = 0;
+      let skipCount = 0;
+      let failCount = 0;
+
+      const processOne = async (i: number) => {
         const f = arr[i];
         const parsed = parseFilename(f.name);
         if (!parsed) {
+          skipCount++;
           setUploadQueue((q) =>
             q.map((x, idx) => (idx === i ? { ...x, status: "דילוג: שם לא תקני" } : x))
           );
-          continue;
+          return;
         }
         try {
           setUploadQueue((q) =>
             q.map((x, idx) => (idx === i ? { ...x, status: "מעלה..." } : x))
           );
           await uploadSingleFile(f, uploadTargetMasechet, parsed.daf, parsed.amud);
+          okCount++;
           setUploadQueue((q) =>
             q.map((x, idx) =>
               idx === i ? { ...x, status: `הועלה ${parsed.daf}${parsed.amud}` } : x
             )
           );
         } catch (err: unknown) {
+          failCount++;
           const msg = err instanceof Error ? err.message : String(err);
           setUploadQueue((q) =>
             q.map((x, idx) => (idx === i ? { ...x, status: `שגיאה: ${msg}` } : x))
           );
         }
-      }
+      };
+
+      const worker = async () => {
+        while (true) {
+          const i = nextIndex++;
+          if (i >= arr.length) return;
+          await processOne(i);
+          doneCount++;
+        }
+      };
+
+      await Promise.all(
+        Array.from({ length: Math.min(CONCURRENCY, arr.length) }, () => worker())
+      );
+
       qc.invalidateQueries({ queryKey: ["shas_pdf_pages"] });
-      toast({ title: "סיים העלאה", description: `עיבדה ${arr.length} קבצים.` });
+      toast({
+        title: "סיים העלאה",
+        description: `הועלו: ${okCount} · דילוגים: ${skipCount} · שגיאות: ${failCount} (מתוך ${arr.length})`,
+      });
     },
     [userId, uploadTargetMasechet, uploadSingleFile, qc]
   );
@@ -357,13 +385,30 @@ export default function ShasManagerPage() {
         </div>
 
         {uploadQueue.length > 0 && (
-          <div className="mt-3 max-h-40 overflow-auto border rounded p-2 text-xs space-y-1">
-            {uploadQueue.map((q, i) => (
-              <div key={i} className="flex justify-between">
-                <span className="truncate mr-2">{q.name}</span>
-                <span className="text-muted-foreground whitespace-nowrap">{q.status}</span>
-              </div>
-            ))}
+          <div className="mt-3 space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-medium">
+                התקדמות: {uploadQueue.filter((q) => q.status !== "ממתין" && q.status !== "מעלה...").length}/
+                {uploadQueue.length}
+              </span>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-6 text-xs"
+                onClick={() => setUploadQueue([])}
+                disabled={uploadQueue.some((q) => q.status === "מעלה...")}
+              >
+                נקה רשימה
+              </Button>
+            </div>
+            <div className="max-h-40 overflow-auto border rounded p-2 text-xs space-y-1">
+              {uploadQueue.map((q, i) => (
+                <div key={i} className="flex justify-between">
+                  <span className="truncate mr-2">{q.name}</span>
+                  <span className="text-muted-foreground whitespace-nowrap">{q.status}</span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </Card>

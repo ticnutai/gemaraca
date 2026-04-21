@@ -1,6 +1,7 @@
 import { useState, lazy, Suspense } from "react";
-import { Settings, Check, Palette, ChevronRight, Pipette, Code2, Bug, Zap } from "lucide-react";
+import { Settings, Check, Palette, ChevronRight, Pipette, Code2, Bug, Zap, Library } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 const DevMigrationsPanel = lazy(() => import("@/components/DevMigrationsPanel"));
 const DevConsoleMonitor = lazy(() => import("@/components/DevConsoleMonitor"));
@@ -30,6 +31,7 @@ const presetColors = [
 
 export function SettingsButton() {
   const { theme, setTheme, customColors, setCustomColors } = useTheme();
+  const navigate = useNavigate();
   const [showCustomizer, setShowCustomizer] = useState(false);
   const [showDevPanel, setShowDevPanel] = useState(false);
   const [showDevTab, setShowDevTab] = useState(false);
@@ -68,6 +70,18 @@ export function SettingsButton() {
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2">
+      {/* Shas Manager Button */}
+      <Button
+        size="icon"
+        variant="outline"
+        className="h-10 w-10 rounded-full shadow-lg bg-card border-border hover:bg-muted"
+        onClick={() => navigate("/shas-manager")}
+        title={'ניהול סריקות ש"ס'}
+      >
+        <Library className="h-4 w-4" />
+      </Button>
+
+      {/* lassName="fixed bottom-6 right-6 z-50 flex flex-col gap-2">
       {/* Dev Button */}
       <Button
         size="icon"
