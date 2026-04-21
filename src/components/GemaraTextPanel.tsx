@@ -357,7 +357,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
 
       if (existingError) throw existingError;
 
-      const existingBookId = (existing as Array<{ id: string }> | null)?.[0]?.id ?? null;
+      const existingBookId = (existing as unknown as Array<{ id: string }> | null)?.[0]?.id ?? null;
       if (existingBookId) {
         setCloudEmbedBookId(existingBookId);
         return existingBookId;
