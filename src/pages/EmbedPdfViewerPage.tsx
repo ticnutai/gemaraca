@@ -563,9 +563,11 @@ function downloadBlob(content: string, filename: string, mime: string) {
 export default function EmbedPdfViewerPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [selectedPdfId, setSelectedPdfId] = useState<string | null>(null);
+  const embeddedMode = searchParams.get("embedded") === "1";
+  const externalBookIdParam = searchParams.get("bookId");
+  const [selectedPdfId, setSelectedPdfId] = useState<string | null>(() => externalBookIdParam);
   const [comparePdfId, setComparePdfId] = useState<string | null>(null);
-  const [manualUrl, setManualUrl] = useState(() => searchParams.get("url") || "");
+  const [manualUrl, setManualUrl] = useState(() => (externalBookIdParam ? "" : (searchParams.get("url") || "")));
   const [compareManualUrl, setCompareManualUrl] = useState("");
   const [targetPane, setTargetPane] = useState<"left" | "right">("left");
   const [viewerFullscreen, setViewerFullscreen] = useState(false);
@@ -808,12 +810,22 @@ export default function EmbedPdfViewerPage() {
 
   // Auto-load URL from query params when they change
   useEffect(() => {
+    if (externalBookIdParam) return;
     const urlParam = searchParams.get("url");
     if (urlParam && urlParam !== manualUrl) setManualUrl(urlParam);
-  }, [searchParams]);
+  }, [externalBookIdParam, manualUrl, searchParams]);
 
   // Data hooks
   const { books, addBook, deleteBook, updateBookEditedText } = useUserBooks();
+
+  useEffect(() => {
+    if (!externalBookIdParam) return;
+    const matchedBook = books.find((book) => book.id === externalBookIdParam);
+    if (!matchedBook) return;
+    setSelectedPdfId(matchedBook.id);
+    if (manualUrl) setManualUrl("");
+  }, [books, externalBookIdParam, manualUrl]);
+
   const selectedPdf = books.find((b) => b.id === selectedPdfId) ?? null;
   const comparePdf = books.find((b) => b.id === comparePdfId) ?? null;
 
@@ -2242,7 +2254,7 @@ export default function EmbedPdfViewerPage() {
   }, []);
 
   return (
-    <div dir="rtl" className="min-h-screen bg-white text-[#0B1F5B] flex flex-col relative"
+    <div dir="rtl" className={`${embeddedMode ? 'h-full min-h-0' : 'min-h-screen'} bg-white text-[#0B1F5B] flex flex-col relative`}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
@@ -2259,9 +2271,10 @@ export default function EmbedPdfViewerPage() {
         </div>
       )}
       {/* ── Compact Header ── */}
-      <header className="border-b-2 border-[#D4AF37] bg-white px-3 py-2 shadow-sm flex-shrink-0">
+      <header className={`border-b-2 border-[#D4AF37] bg-white px-3 ${embeddedMode ? 'py-1.5' : 'py-2'} shadow-sm flex-shrink-0`}>
         <div className="flex items-center gap-2 max-w-[1800px] mx-auto">
           {/* Back button */}
+          {!embeddedMode && (
           <Button
             size="icon"
             variant="ghost"
@@ -2277,8 +2290,10 @@ export default function EmbedPdfViewerPage() {
           >
             <ArrowRight className="h-4 w-4" />
           </Button>
+          )}
 
           {/* Home button */}
+          {!embeddedMode && (
           <Button
             size="icon"
             variant="ghost"
@@ -2288,9 +2303,14 @@ export default function EmbedPdfViewerPage() {
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
           </Button>
+          )}
 
           <FileText className="h-5 w-5 text-[#D4AF37] shrink-0" />
-          <h1 className="text-base font-bold text-[#0B1F5B] hidden sm:block">EmbedPDF</h1>
+          <h1 className={`font-bold text-[#0B1F5B] ${embeddedMode ? 'text-sm' : 'text-base hidden sm:block'}`}>EmbedPDF</h1>
+
+          {embeddedMode && (
+            <span className="text-[11px] text-[#0B1F5B]/60 hidden sm:inline">מצב משובץ בתוך דף הגמרא</span>
+          )}
 
           <Separator orientation="vertical" className="h-5 bg-[#D4AF37]/30 hidden sm:block" />
 
@@ -3126,7 +3146,7 @@ export default function EmbedPdfViewerPage() {
         {/* ═══ VIEWER ═══ */}
         <main ref={mainRef} className={`flex-1 min-w-0 overflow-hidden ${viewMode === "split" ? "flex flex-row" : "flex flex-col"}`}>
           {(leftSourceUrl || fetchedHtml) ? (
-            <div className="flex flex-col min-w-0" style={{ minHeight: viewerFullscreen ? "calc(100vh - 50px)" : "calc(100vh - 50px)", ...(viewMode === "split" ? { flex: `${splitRatio} 1 0%` } : { flex: '1 1 auto' }) }}>
+            <div className="flex flex-col min-w-0" style={{ minHeight: embeddedMode ? "100%" : "calc(100vh - 50px)", ...(viewMode === "split" ? { flex: `${splitRatio} 1 0%` } : { flex: '1 1 auto' }) }}>
               {/* ═══ BEAUTIFIED FORMATTING TOOLBAR ═══ */}
               {beautifiedHtml && activePanel === "beautify" && (
                 <div className="border-b-2 border-[#D4AF37]/20 bg-white/80 backdrop-blur-sm flex-shrink-0">

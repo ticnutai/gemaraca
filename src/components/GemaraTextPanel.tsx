@@ -199,8 +199,11 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   const [cloudParagraphSpacing, setCloudParagraphSpacing] = useState(10);
 
   // Cloud PDF sub-mode state (text vs scanned PDF from Supabase Storage)
-  const [cloudSubMode, setCloudSubMode] = useState<'text' | 'scan'>('text');
+  const [cloudSubMode, setCloudSubMode] = useState<'text' | 'scan' | 'embedpdf'>('text');
   const [cloudPdfUrl, setCloudPdfUrl] = useState<string | null>(null);
+  const [cloudEmbedBookId, setCloudEmbedBookId] = useState<string | null>(null);
+  const [cloudEmbedLoading, setCloudEmbedLoading] = useState(false);
+  const [cloudEmbedError, setCloudEmbedError] = useState<string | null>(null);
 
   // Load cloud pages list when switching to cloud mode
   useEffect(() => {
@@ -229,12 +232,19 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
         .then(res => {
           const url = res.ok ? data.publicUrl : null;
           setCloudPdfUrl(url);
-          // Auto-switch to scan mode if PDF exists but no text content
-          if (url && !cloudContent) setCloudSubMode('scan');
+          if (url) setCloudSubMode('embedpdf');
         })
         .catch(() => setCloudPdfUrl(null));
     }
-  }, [viewMode, sugyaId, masechet, cloudContent]);
+  }, [viewMode, sugyaId, masechet]);
+
+  useEffect(() => {
+    setCloudEmbedBookId(null);
+    setCloudEmbedError(null);
+    if (cloudSubMode === 'embedpdf' && !cloudPdfUrl) {
+      setCloudSubMode('text');
+    }
+  }, [cloudPdfUrl, sugyaId]);
 
   const loadCloudPages = async () => {
     setCloudLoading(true);
@@ -321,6 +331,96 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
     URL.revokeObjectURL(url);
     sonnerToast.success(`הקובץ ${title}.${ext} הורד בהצלחה`);
   }, [cloudContent, sugyaId]);
+
+  const ensureCloudEmbedBook = useCallback(async () => {
+    if (!cloudPdfUrl) return null;
+
+    setCloudEmbedLoading(true);
+    setCloudEmbedError(null);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session?.user) {
+        setCloudEmbedBookId(null);
+        setCloudEmbedError('יש להתחבר כדי לשמור הערות וסימניות ל-EmbedPDF בענן');
+        return null;
+      }
+
+      const fallbackTitle = gemaraText?.heRef || gemaraText?.ref || dafYomi || sugyaId;
+      const bookTitle = `סריקת גמרא - ${fallbackTitle}`;
+
+      const { data: existing, error: existingError } = await supabase
+        .from('user_books' as any)
+        .select('id')
+        .eq('file_url', cloudPdfUrl)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (existingError) throw existingError;
+
+      const existingBookId = existing?.[0]?.id ?? null;
+      if (existingBookId) {
+        setCloudEmbedBookId(existingBookId);
+        return existingBookId;
+      }
+
+      const { data: inserted, error: insertError } = await supabase
+        .from('user_books' as any)
+        .insert({
+          title: bookTitle,
+          file_name: `${sugyaId}.pdf`,
+          file_url: cloudPdfUrl,
+        } as any)
+        .select('id')
+        .single();
+
+      if (insertError) throw insertError;
+
+      const insertedBookId = (inserted as { id: string }).id;
+      setCloudEmbedBookId(insertedBookId);
+      return insertedBookId;
+    } catch (error) {
+      console.error('Failed to prepare EmbedPDF source for cloud scan:', error);
+      setCloudEmbedBookId(null);
+      setCloudEmbedError('לא הצלחתי להכין את קובץ הסריקה ל-EmbedPDF');
+      return null;
+    } finally {
+      setCloudEmbedLoading(false);
+    }
+  }, [cloudPdfUrl, dafYomi, gemaraText, sugyaId]);
+
+  useEffect(() => {
+    if (cloudSubMode === 'embedpdf' && cloudPdfUrl && !cloudEmbedBookId && !cloudEmbedLoading) {
+      void ensureCloudEmbedBook();
+    }
+  }, [cloudSubMode, cloudPdfUrl, cloudEmbedBookId, cloudEmbedLoading, ensureCloudEmbedBook]);
+
+  const cloudEmbedViewerSrc = useMemo(() => {
+    if (!cloudPdfUrl || !cloudEmbedBookId) return '';
+
+    const fallbackTitle = gemaraText?.heRef || gemaraText?.ref || dafYomi || sugyaId;
+    const params = new URLSearchParams({
+      embedded: '1',
+      bookId: cloudEmbedBookId,
+      url: cloudPdfUrl,
+      title: `סריקת גמרא - ${fallbackTitle}`,
+    });
+
+    return `/embedpdf-viewer?${params.toString()}`;
+  }, [cloudPdfUrl, cloudEmbedBookId, dafYomi, gemaraText, sugyaId]);
+
+  const renderCloudSubModeTabs = () => (
+    <div className="flex gap-0.5 p-0.5 bg-muted rounded-lg">
+      <Button size="sm" variant={cloudSubMode === 'text' ? 'default' : 'ghost'} className="h-6 text-[11px] px-2" onClick={() => setCloudSubMode('text')}>
+        <FileText className="h-3 w-3 ml-1" />טקסט
+      </Button>
+      <Button size="sm" variant={cloudSubMode === 'scan' ? 'default' : 'ghost'} className="h-6 text-[11px] px-2" onClick={() => setCloudSubMode('scan')}>
+        <Image className="h-3 w-3 ml-1" />סריקה
+      </Button>
+      <Button size="sm" variant={cloudSubMode === 'embedpdf' ? 'default' : 'ghost'} className="h-6 text-[11px] px-2" onClick={() => setCloudSubMode('embedpdf')}>
+        <BookOpen className="h-3 w-3 ml-1" />EmbedPDF
+      </Button>
+    </div>
+  );
 
   useEffect(() => {
     loadGemaraText();
@@ -1031,6 +1131,51 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   };
 
   const renderCloudView = () => {
+    if (cloudSubMode === 'embedpdf' && cloudPdfUrl) {
+      return (
+        <div className="space-y-0">
+          <div className="border-2 border-b-0 border-[#D4AF37]/30 rounded-t-xl bg-white px-3 py-2 flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] text-[#D4AF37] font-bold ml-2">🧠 EmbedPDF לדף הסרוק</span>
+            <div className="w-px h-5 bg-[#D4AF37]/20" />
+            {renderCloudSubModeTabs()}
+            <div className="w-px h-5 bg-[#D4AF37]/20" />
+            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => window.open(cloudPdfUrl, '_blank')} title="פתח PDF בחלון חדש">
+              <ExternalLink className="h-3.5 w-3.5 text-[#0B1F5B]" />
+            </Button>
+          </div>
+
+          <div className="border-2 border-[#D4AF37]/30 rounded-b-xl bg-white overflow-hidden shadow-lg" style={{ minHeight: '500px' }}>
+            {cloudEmbedLoading ? (
+              <div className="space-y-4 py-10 px-6 text-center">
+                <Loader2 className="h-8 w-8 animate-spin text-[#D4AF37] mx-auto" />
+                <p className="text-sm text-[#0B1F5B]/70">מכין את הסריקה ל-EmbedPDF עם כל כלי ההערות והעריכה...</p>
+              </div>
+            ) : cloudEmbedError ? (
+              <div className="space-y-4 py-10 px-6 text-center">
+                <Database className="h-10 w-10 text-[#D4AF37] mx-auto opacity-70" />
+                <p className="text-sm text-[#0B1F5B]/70">{cloudEmbedError}</p>
+                <Button size="sm" variant="outline" className="border-[#D4AF37]/40 text-[#0B1F5B]" onClick={() => void ensureCloudEmbedBook()}>
+                  נסה שוב
+                </Button>
+              </div>
+            ) : cloudEmbedViewerSrc ? (
+              <iframe
+                src={cloudEmbedViewerSrc}
+                className="w-full border-0"
+                style={{ height: '900px' }}
+                title="EmbedPDF - דף גמרא סרוק מהענן"
+              />
+            ) : (
+              <div className="space-y-4 py-10 px-6 text-center">
+                <Loader2 className="h-8 w-8 animate-spin text-[#D4AF37] mx-auto" />
+                <p className="text-sm text-[#0B1F5B]/70">טוען את EmbedPDF...</p>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
     // ═══ Scanned PDF sub-mode: show PDF from Supabase Storage ═══
     if (cloudSubMode === 'scan' && cloudPdfUrl) {
       return (
@@ -1039,14 +1184,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
           <div className="border-2 border-b-0 border-[#D4AF37]/30 rounded-t-xl bg-white px-3 py-2 flex items-center gap-2 flex-wrap">
             <span className="text-[10px] text-[#D4AF37] font-bold ml-2">📄 תמונה סרוקה מהענן</span>
             <div className="w-px h-5 bg-[#D4AF37]/20" />
-            <div className="flex gap-1 p-0.5 bg-muted rounded-lg">
-              <Button size="sm" variant={cloudSubMode === 'text' ? 'default' : 'ghost'} className="h-6 text-[11px] px-2" onClick={() => setCloudSubMode('text')}>
-                <FileText className="h-3 w-3 ml-1" />טקסט
-              </Button>
-              <Button size="sm" variant={cloudSubMode === 'scan' ? 'default' : 'ghost'} className="h-6 text-[11px] px-2" onClick={() => setCloudSubMode('scan')}>
-                <Image className="h-3 w-3 ml-1" />סריקה
-              </Button>
-            </div>
+            {renderCloudSubModeTabs()}
             <div className="w-px h-5 bg-[#D4AF37]/20" />
             <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => window.open(cloudPdfUrl, '_blank')} title="פתח בחלון חדש">
               <ExternalLink className="h-3.5 w-3.5 text-[#0B1F5B]" />
@@ -1104,14 +1242,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
           {/* Sub-mode toggle: text vs scan (only shown when PDF exists) */}
           {cloudPdfUrl && (
             <>
-              <div className="flex gap-0.5 p-0.5 bg-muted rounded-lg">
-                <Button size="sm" variant={cloudSubMode === 'text' ? 'default' : 'ghost'} className="h-6 text-[11px] px-2" onClick={() => setCloudSubMode('text')}>
-                  <FileText className="h-3 w-3 ml-1" />טקסט
-                </Button>
-                <Button size="sm" variant={cloudSubMode === 'scan' ? 'default' : 'ghost'} className="h-6 text-[11px] px-2" onClick={() => setCloudSubMode('scan')}>
-                  <Image className="h-3 w-3 ml-1" />סריקה
-                </Button>
-              </div>
+              {renderCloudSubModeTabs()}
               <div className="w-px h-5 bg-[#D4AF37]/20" />
             </>
           )}
