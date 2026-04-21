@@ -61,7 +61,8 @@ function broadcastMode(next: SugyaViewMode) {
 export function useSugyaViewMode() {
   const [viewMode, setViewModeState] = useState<SugyaViewMode>(getCurrentMode);
   const [userId, setUserId] = useState<string | null>(null);
-  const [isReady, setIsReady] = useState(hasLocalPreference());
+  // Never block the UI: a local preference (or default) is always available immediately.
+  const [isReady, setIsReady] = useState(true);
   const [savedFlash, setSavedFlash] = useState(false);
   const flashTimer = useRef<number | null>(null);
   const userIdRef = useRef<string | null>(null);
@@ -112,15 +113,11 @@ export function useSugyaViewMode() {
 
     const { data: listener } = supabase.auth.onAuthStateChange((_e, session) => {
       const nextUserId = session?.user?.id || null;
-      const didUserChange = userIdRef.current !== nextUserId;
       userIdRef.current = nextUserId;
       setUserId(nextUserId);
-      if (!nextUserId) {
-        setIsReady(true);
-      } else if (didUserChange) {
-        // Re-sync cloud preference only on actual user changes.
-        setIsReady(false);
-      }
+      // Never block UI on auth events. Local preference is always usable;
+      // cloud sync happens in the background and broadcasts when ready.
+      setIsReady(true);
     });
     return () => {
       cancelled = true;
@@ -129,18 +126,13 @@ export function useSugyaViewMode() {
     };
   }, []);
 
-  // On user login: pull cloud value (source of truth). If none, push local up.
+  // On user login: pull cloud value (source of truth) in background. If none, push local up.
+  // We do NOT toggle isReady here; the local value is shown immediately and cloud value
+  // overrides it via broadcastMode if/when available.
   useEffect(() => {
     if (!userId) return;
     let cancelled = false;
-    const syncFallback = window.setTimeout(() => {
-      if (!cancelled) {
-        // Keep local mode usable even if cloud preference sync is slow/down.
-        setIsReady(true);
-      }
-    }, 7000);
 
-    setIsReady(false);
     (async () => {
       try {
         const { data } = await withTimeout(
@@ -155,7 +147,7 @@ export function useSugyaViewMode() {
         if (cancelled) return;
         const cloudVal = (data as { sugya_view_mode?: SugyaViewMode } | null)?.sugya_view_mode;
         if (cloudVal && VALID_MODES.includes(cloudVal)) {
-          broadcastMode(cloudVal);
+          if (cloudVal !== getCurrentMode()) broadcastMode(cloudVal);
           try { localStorage.setItem(STORAGE_KEY, cloudVal); } catch {}
         } else {
           const local = readLocal();
@@ -169,16 +161,15 @@ export function useSugyaViewMode() {
             5000,
             'user_preferences.upsert'
           );
-          if (!cancelled) broadcastMode(local);
         }
+      } catch {
+        // Cloud sync failures are non-fatal; local preference remains active.
       } finally {
-        window.clearTimeout(syncFallback);
         if (!cancelled) setIsReady(true);
       }
     })();
     return () => {
       cancelled = true;
-      window.clearTimeout(syncFallback);
     };
   }, [userId]);
 
