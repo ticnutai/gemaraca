@@ -568,7 +568,8 @@ export default function EmbedPdfViewerPage() {
   const viewerStateKeyParam = searchParams.get("viewerStateKey");
   const [selectedPdfId, setSelectedPdfId] = useState<string | null>(() => externalBookIdParam);
   const [comparePdfId, setComparePdfId] = useState<string | null>(null);
-  const [manualUrl, setManualUrl] = useState(() => (externalBookIdParam ? "" : (searchParams.get("url") || "")));
+  // Always seed manualUrl from the url param so we have a fallback before the bookId is resolved
+  const [manualUrl, setManualUrl] = useState(() => searchParams.get("url") || "");
   const [compareManualUrl, setCompareManualUrl] = useState("");
   const [targetPane, setTargetPane] = useState<"left" | "right">("left");
   const [viewerFullscreen, setViewerFullscreen] = useState(false);
@@ -862,10 +863,9 @@ export default function EmbedPdfViewerPage() {
 
   // Auto-load URL from query params when they change
   useEffect(() => {
-    if (externalBookIdParam) return;
     const urlParam = searchParams.get("url");
     if (urlParam && urlParam !== manualUrl) setManualUrl(urlParam);
-  }, [externalBookIdParam, manualUrl, searchParams]);
+  }, [manualUrl, searchParams]);
 
   // Data hooks
   const { books, addBook, deleteBook, updateBookEditedText } = useUserBooks();
@@ -875,13 +875,17 @@ export default function EmbedPdfViewerPage() {
     const matchedBook = books.find((book) => book.id === externalBookIdParam);
     if (!matchedBook) return;
     setSelectedPdfId(matchedBook.id);
-    if (manualUrl) setManualUrl("");
+    // Only clear manualUrl if the matched book actually has a usable file_url;
+    // otherwise keep manualUrl as the fallback source.
+    if (matchedBook.file_url && manualUrl) setManualUrl("");
   }, [books, externalBookIdParam, manualUrl]);
 
   const selectedPdf = books.find((b) => b.id === selectedPdfId) ?? null;
   const comparePdf = books.find((b) => b.id === comparePdfId) ?? null;
 
-  const canPersist = Boolean(selectedPdf?.id && !manualUrl.trim());
+  // Persist annotations when we have an actual book row (selectedPdf), even if a url param was also provided.
+  // The url param is just a fallback for the source; bookId still anchors annotations.
+  const canPersist = Boolean(selectedPdf?.id);
   const {
     annotations,
     bookmarks,
@@ -1087,7 +1091,7 @@ export default function EmbedPdfViewerPage() {
   }, []);
 
   // Source URLs
-  const leftSourceUrl = manualUrl.trim() || selectedPdf?.file_url || "";
+  const leftSourceUrl = selectedPdf?.file_url || manualUrl.trim() || "";
   const rightSourceUrl = compareManualUrl.trim() || comparePdf?.file_url || "";
 
   // ── Save Beautified Handlers ──
