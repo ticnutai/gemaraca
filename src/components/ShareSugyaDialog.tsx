@@ -139,7 +139,7 @@ h1,h2,h3{color:#0B1F5B;border-bottom:2px solid #D4AF37;padding-bottom:4px}
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="gap-1">
           <Share2 className="h-4 w-4" />
-          שתף
+          שיתוף
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-md" dir="rtl">
@@ -193,7 +193,7 @@ h1,h2,h3{color:#0B1F5B;border-bottom:2px solid #D4AF37;padding-bottom:4px}
             </Button>
             <Button variant="outline" className="gap-2 text-sm" onClick={shareNative}>
               <Share2 className="h-4 w-4" />
-              שתף...
+              שיתוף מערכת מהיר
             </Button>
             <Button variant="outline" className="gap-2 text-sm" onClick={printPage}>
               <Printer className="h-4 w-4" />
