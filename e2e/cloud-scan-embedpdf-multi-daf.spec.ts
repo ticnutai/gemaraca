@@ -1,24 +1,19 @@
 import { test, expect } from "@playwright/test";
 
-test.describe("Cloud Scan EmbedPDF Debug", () => {
-  test("sugya cloud scan embedpdf should resolve (iframe or actionable error)", async ({ page }, testInfo) => {
+const SUGYA_PATHS = [
+  "/sugya/berakhot_2a",
+  "/sugya/berakhot_2b",
+];
+
+for (const path of SUGYA_PATHS) {
+  test(`cloud scan embedpdf resolves for ${path}`, async ({ page }, testInfo) => {
     const consoleLogs: string[] = [];
-    const pageErrors: string[] = [];
-    const requestFails: string[] = [];
 
     page.on("console", (msg) => {
       consoleLogs.push(`[${msg.type()}] ${msg.text()}`);
     });
 
-    page.on("pageerror", (err) => {
-      pageErrors.push(String(err));
-    });
-
-    page.on("requestfailed", (req) => {
-      requestFails.push(`${req.method()} ${req.url()} -> ${req.failure()?.errorText || "failed"}`);
-    });
-
-    await page.goto("/sugya/berakhot_2a", { waitUntil: "domcontentloaded" });
+    await page.goto(path, { waitUntil: "domcontentloaded" });
 
     const viewModeButton = page
       .locator("button")
@@ -60,29 +55,11 @@ test.describe("Cloud Scan EmbedPDF Debug", () => {
       await page.waitForTimeout(1000);
     }
 
-    await testInfo.attach("console.log", {
+    await testInfo.attach(`console-${path.replace(/[^a-z0-9]/gi, "_")}.log`, {
       body: consoleLogs.join("\n") || "(no console logs)",
       contentType: "text/plain",
     });
 
-    await testInfo.attach("page-errors.log", {
-      body: pageErrors.join("\n") || "(no page errors)",
-      contentType: "text/plain",
-    });
-
-    await testInfo.attach("request-failures.log", {
-      body: requestFails.join("\n") || "(no failed requests)",
-      contentType: "text/plain",
-    });
-
-    if (!resolved) {
-      const spinnerStillVisible = await spinnerText.isVisible().catch(() => false);
-      const spinner2StillVisible = await spinnerText2.isVisible().catch(() => false);
-      throw new Error(
-        `EmbedPDF cloud scan did not resolve within timeout. spinnerStillVisible=${spinnerStillVisible}; spinner2StillVisible=${spinner2StillVisible}`
-      );
-    }
-
     expect(resolved).toBeTruthy();
   });
-});
+}

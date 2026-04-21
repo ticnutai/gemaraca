@@ -220,6 +220,8 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   const [cloudEmbedBookId, setCloudEmbedBookId] = useState<string | null>(null);
   const [cloudEmbedLoading, setCloudEmbedLoading] = useState(false);
   const [cloudEmbedError, setCloudEmbedError] = useState<string | null>(null);
+  const [cloudEmbedStatus, setCloudEmbedStatus] = useState<string | null>(null);
+  const [cloudEmbedFallbackNotice, setCloudEmbedFallbackNotice] = useState<string | null>(null);
 
   // Load the current daf's cloud content when entering cloud mode
   useEffect(() => {
@@ -263,6 +265,8 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   useEffect(() => {
     setCloudEmbedBookId(null);
     setCloudEmbedError(null);
+    setCloudEmbedStatus(null);
+    setCloudEmbedFallbackNotice(null);
     if (cloudSubMode === 'embedpdf' && !cloudPdfUrl) {
       setCloudSubMode('text');
     }
@@ -360,15 +364,19 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
     const debugTag = `[CloudEmbed:${sugyaId}]`;
     setCloudEmbedLoading(true);
     setCloudEmbedError(null);
+    setCloudEmbedStatus('מכין מסמך EmbedPDF ושומר לקישור ענן קבוע...');
     console.info(`${debugTag} prepare start`, { cloudPdfUrl });
     try {
       const { data: sessionData } = await withTimeout(supabase.auth.getSession(), 10000, 'supabase.auth.getSession');
       if (!sessionData.session?.user) {
         console.warn(`${debugTag} no active session`);
         setCloudEmbedBookId(null);
-        setCloudEmbedError('יש להתחבר כדי לשמור הערות וסימניות ל-EmbedPDF בענן');
+        setCloudEmbedStatus('מצב אורח: ניתן לערוך ולסמן, שמירה לענן זמינה אחרי התחברות');
         return null;
       }
+
+      const sessionUserId = sessionData.session.user.id;
+      const stableCloudKey = `scan:${sessionUserId}:${masechet}:${sugyaId}`;
 
       const fallbackTitle = gemaraText?.heRef || gemaraText?.ref || dafYomi || sugyaId;
       const bookTitle = `סריקת גמרא - ${fallbackTitle}`;
@@ -377,11 +385,12 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
         supabase
           .from('user_books' as any)
           .select('id')
-          .eq('file_url', cloudPdfUrl)
+          .eq('user_id', sessionUserId)
+          .eq('file_name', `${stableCloudKey}.pdf`)
           .order('created_at', { ascending: false })
           .limit(1),
         12000,
-        'user_books select by file_url'
+        'user_books select by stable key'
       );
 
       if (existingError) throw existingError;
@@ -390,6 +399,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
       if (existingBookId) {
         console.info(`${debugTag} existing book found`, { existingBookId });
         setCloudEmbedBookId(existingBookId);
+        setCloudEmbedStatus('EmbedPDF מוכן לעריכה. סימונים נשמרים בענן.');
         return existingBookId;
       }
 
@@ -398,7 +408,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
           .from('user_books' as any)
           .insert({
             title: bookTitle,
-            file_name: `${sugyaId}.pdf`,
+            file_name: `${stableCloudKey}.pdf`,
             file_url: cloudPdfUrl,
           } as any)
           .select('id')
@@ -412,12 +422,14 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
       const insertedBookId = (inserted as unknown as { id: string }).id;
       console.info(`${debugTag} book created`, { insertedBookId });
       setCloudEmbedBookId(insertedBookId);
+      setCloudEmbedStatus('EmbedPDF מוכן לעריכה. סימונים נשמרים בענן.');
       return insertedBookId;
     } catch (error) {
       console.error(`${debugTag} prepare failed`, error);
       setCloudEmbedBookId(null);
       const reason = error instanceof Error ? error.message : String(error);
       setCloudEmbedError(`לא הצלחתי להכין את קובץ הסריקה ל-EmbedPDF (${reason})`);
+      setCloudEmbedStatus('נכשלה הכנה ל-EmbedPDF, אפשר לנסות שוב או לעבוד בסריקה.');
       return null;
     } finally {
       setCloudEmbedLoading(false);
@@ -439,6 +451,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
       embedded: '1',
       url: cloudPdfUrl,
       title: `סריקת גמרא - ${fallbackTitle}`,
+      viewerStateKey: `cloud:${masechet}:${sugyaId}`,
     });
 
     if (cloudEmbedBookId) {
@@ -446,7 +459,36 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
     }
 
     return `/embedpdf-viewer?${params.toString()}`;
-  }, [cloudPdfUrl, cloudEmbedBookId, dafYomi, gemaraText, sugyaId]);
+  }, [cloudPdfUrl, cloudEmbedBookId, dafYomi, gemaraText, masechet, sugyaId]);
+
+  // Load contract: if EmbedPDF is still unresolved after 5s, fallback to scan with clear notice.
+  useEffect(() => {
+    if (viewMode !== 'cloud' || cloudSubMode !== 'embedpdf' || !cloudPdfUrl) return;
+    const timer = window.setTimeout(() => {
+      const unresolved = cloudEmbedLoading || (!cloudEmbedViewerSrc && !cloudEmbedError);
+      if (!unresolved) return;
+      const notice = 'טעינת EmbedPDF התעכבה. עברנו אוטומטית לסריקה כדי למנוע תקיעה.';
+      setCloudEmbedFallbackNotice(notice);
+      setCloudEmbedStatus(notice);
+      setCloudSubMode('scan');
+    }, 5000);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [viewMode, cloudSubMode, cloudPdfUrl, cloudEmbedLoading, cloudEmbedViewerSrc, cloudEmbedError]);
+
+  useEffect(() => {
+    if (viewMode !== 'cloud') return;
+    if (cloudSubMode === 'scan' && cloudEmbedFallbackNotice) return;
+    if (cloudSubMode === 'embedpdf' && cloudEmbedViewerSrc && !cloudEmbedLoading) {
+      if (cloudEmbedBookId) {
+        setCloudEmbedStatus('EmbedPDF מוכן לעריכה. סימונים נשמרים בענן.');
+      } else {
+        setCloudEmbedStatus('EmbedPDF מוכן במצב אורח. התחברות תאפשר שמירת סימונים בענן.');
+      }
+    }
+  }, [viewMode, cloudSubMode, cloudEmbedViewerSrc, cloudEmbedLoading, cloudEmbedBookId, cloudEmbedFallbackNotice]);
 
   useEffect(() => {
     if (viewMode !== 'cloud' || cloudSubMode !== 'embedpdf') return;
@@ -468,7 +510,10 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
       <Button size="sm" variant={cloudSubMode === 'scan' ? 'default' : 'ghost'} className="h-6 text-[11px] px-2" onClick={() => setCloudSubMode('scan')}>
         <Image className="h-3 w-3 ml-1" />סריקה
       </Button>
-      <Button size="sm" variant={cloudSubMode === 'embedpdf' ? 'default' : 'ghost'} className="h-6 text-[11px] px-2" onClick={() => setCloudSubMode('embedpdf')}>
+      <Button size="sm" variant={cloudSubMode === 'embedpdf' ? 'default' : 'ghost'} className="h-6 text-[11px] px-2" onClick={() => {
+        setCloudEmbedFallbackNotice(null);
+        setCloudSubMode('embedpdf');
+      }}>
         <BookOpen className="h-3 w-3 ml-1" />EmbedPDF
       </Button>
     </div>
@@ -1189,6 +1234,9 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
         <div className="space-y-0">
           <div className="border-2 border-b-0 border-[#D4AF37]/30 rounded-t-xl bg-white px-3 py-2 flex items-center gap-2 flex-wrap">
             <span className="text-[10px] text-[#D4AF37] font-bold ml-2">🧠 EmbedPDF לדף הסרוק</span>
+            {cloudEmbedStatus && (
+              <span className="text-[10px] text-[#0B1F5B]/65" dir="rtl">{cloudEmbedStatus}</span>
+            )}
             <div className="w-px h-5 bg-[#D4AF37]/20" />
             {renderCloudSubModeTabs()}
             <div className="w-px h-5 bg-[#D4AF37]/20" />
@@ -1246,6 +1294,17 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
           {/* Sub-mode toggle bar */}
           <div className="border-2 border-b-0 border-[#D4AF37]/30 rounded-t-xl bg-white px-3 py-2 flex items-center gap-2 flex-wrap">
             <span className="text-[10px] text-[#D4AF37] font-bold ml-2">📄 תמונה סרוקה מהענן</span>
+            {cloudEmbedFallbackNotice && (
+              <div className="flex items-center gap-2 rounded-md border border-[#D4AF37]/40 bg-[#FFF9E6] px-2 py-1">
+                <span className="text-[10px] text-[#0B1F5B]/70" dir="rtl">{cloudEmbedFallbackNotice}</span>
+                <Button size="sm" variant="outline" className="h-6 text-[10px] border-[#D4AF37]/40 text-[#0B1F5B]" onClick={() => {
+                  setCloudEmbedFallbackNotice(null);
+                  setCloudSubMode('embedpdf');
+                }}>
+                  נסה שוב EmbedPDF
+                </Button>
+              </div>
+            )}
             <div className="w-px h-5 bg-[#D4AF37]/20" />
             {renderCloudSubModeTabs()}
             <div className="w-px h-5 bg-[#D4AF37]/20" />

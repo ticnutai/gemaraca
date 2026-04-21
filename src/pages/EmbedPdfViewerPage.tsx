@@ -565,6 +565,7 @@ export default function EmbedPdfViewerPage() {
   const navigate = useNavigate();
   const embeddedMode = searchParams.get("embedded") === "1";
   const externalBookIdParam = searchParams.get("bookId");
+  const viewerStateKeyParam = searchParams.get("viewerStateKey");
   const [selectedPdfId, setSelectedPdfId] = useState<string | null>(() => externalBookIdParam);
   const [comparePdfId, setComparePdfId] = useState<string | null>(null);
   const [manualUrl, setManualUrl] = useState(() => (externalBookIdParam ? "" : (searchParams.get("url") || "")));
@@ -573,9 +574,30 @@ export default function EmbedPdfViewerPage() {
   const [viewerFullscreen, setViewerFullscreen] = useState(false);
   const [regularViewerOpen, setRegularViewerOpen] = useState(false);
 
+  const viewerStateStorageKey = useMemo(() => {
+    const fallbackKey = externalBookIdParam || searchParams.get("url") || "default";
+    return `embedpdf-view-state-v1:${viewerStateKeyParam || fallbackKey}`;
+  }, [externalBookIdParam, searchParams, viewerStateKeyParam]);
+
+  const readViewerState = useCallback((): { currentPage?: string; pdfTheme?: PdfThemeKey } => {
+    try {
+      const raw = localStorage.getItem(viewerStateStorageKey);
+      if (!raw) return {};
+      const parsed = JSON.parse(raw) as { currentPage?: string; pdfTheme?: PdfThemeKey };
+      return parsed || {};
+    } catch {
+      return {};
+    }
+  }, [viewerStateStorageKey]);
+
   // ── PDF Theme (for EmbedPDF viewer) ──
   const [pdfTheme, setPdfTheme] = useState<PdfThemeKey>(() => {
     try {
+      const scopedRaw = localStorage.getItem(`embedpdf-view-state-v1:${viewerStateKeyParam || externalBookIdParam || searchParams.get("url") || "default"}`);
+      if (scopedRaw) {
+        const scoped = JSON.parse(scopedRaw) as { pdfTheme?: PdfThemeKey };
+        if (scoped.pdfTheme && PDF_THEME_CONFIGS[scoped.pdfTheme]) return scoped.pdfTheme;
+      }
       return (localStorage.getItem(PDF_THEME_STORAGE_KEY) as PdfThemeKey) || "cobalt";
     } catch { return "cobalt"; }
   });
@@ -723,11 +745,41 @@ export default function EmbedPdfViewerPage() {
   }, [viewMode, syncScroll]);
 
   // Annotation form
-  const [currentPage, setCurrentPage] = useState("1");
+  const [currentPage, setCurrentPage] = useState(() => {
+    try {
+      const scopedRaw = localStorage.getItem(`embedpdf-view-state-v1:${viewerStateKeyParam || externalBookIdParam || searchParams.get("url") || "default"}`);
+      if (scopedRaw) {
+        const scoped = JSON.parse(scopedRaw) as { currentPage?: string };
+        if (scoped.currentPage && /^\d+$/.test(scoped.currentPage)) return scoped.currentPage;
+      }
+    } catch {
+      // ignore localStorage init errors
+    }
+    return "1";
+  });
   const [highlightText, setHighlightText] = useState("");
   const [noteText, setNoteText] = useState("");
   const [annotationColor, setAnnotationColor] = useState("#FFEB3B");
   const [annotationSearch, setAnnotationSearch] = useState("");
+
+  useEffect(() => {
+    const state = readViewerState();
+    if (state.currentPage && /^\d+$/.test(state.currentPage)) {
+      setCurrentPage(state.currentPage);
+    }
+    if (state.pdfTheme && PDF_THEME_CONFIGS[state.pdfTheme]) {
+      setPdfTheme(state.pdfTheme);
+    }
+  }, [readViewerState]);
+
+  useEffect(() => {
+    try {
+      const next = { currentPage, pdfTheme };
+      localStorage.setItem(viewerStateStorageKey, JSON.stringify(next));
+    } catch {
+      // ignore persistence issues
+    }
+  }, [currentPage, pdfTheme, viewerStateStorageKey]);
 
   // ── Psak Favorites ──
   const [psakFavorites, setPsakFavorites] = useState<Set<string>>(loadPsakFavorites);
