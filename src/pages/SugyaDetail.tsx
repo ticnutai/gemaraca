@@ -8,7 +8,6 @@ import { ArrowRight, BookOpen, Scale, ExternalLink, Lightbulb, FileText, HelpCir
 import DafAmudNavigator from "@/components/DafAmudNavigator";
 import FAQSection from "@/components/FAQSection";
 import PsakDinSearchButton from "@/components/PsakDinSearchButton";
-import ShareExportButton from "@/components/ShareExportButton";
 import { SectionErrorBoundary } from "@/components/SectionErrorBoundary";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -30,7 +29,6 @@ const SugyaSummary = lazy(() => import("@/components/SugyaSummary"));
 const AskAboutDaf = lazy(() => import("@/components/AskAboutDaf"));
 const CollaborativeNotes = lazy(() => import("@/components/CollaborativeNotes"));
 const ShareSugyaDialog = lazy(() => import("@/components/ShareSugyaDialog"));
-const ExportPdfButton = lazy(() => import("@/components/ExportPdfButton"));
 
 const PanelFallback = () => (
   <div className="space-y-3 p-4">
