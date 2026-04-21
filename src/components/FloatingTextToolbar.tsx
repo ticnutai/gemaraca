@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Type, AArrowUp, AArrowDown, Bold, Italic, Underline, Strikethrough,
   Search, Highlighter, Palette, Copy, AlignRight, AlignCenter, AlignLeft,
-  AlignJustify, RotateCcw, Save
+  AlignJustify, RotateCcw, Save, Bookmark
 } from "lucide-react";
 import { toast as sonnerToast } from "sonner";
 
@@ -137,6 +137,20 @@ export default function FloatingTextToolbar({ containerRef, iframeRef, editMode,
     sonnerToast.success("הועתק");
   };
 
+  const handleBookmark = useCallback(() => {
+    if (!selectedText) return;
+    const key = 'gemara-bookmarks';
+    const existing: Array<Record<string, string>> = JSON.parse(localStorage.getItem(key) || '[]');
+    existing.push({
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      text: selectedText.substring(0, 300),
+      location: window.location.pathname,
+      timestamp: new Date().toISOString(),
+    });
+    localStorage.setItem(key, JSON.stringify(existing));
+    sonnerToast.success('הסמניה נשמרה');
+  }, [selectedText]);
+
   const btnClass = "w-8 h-8 flex items-center justify-center rounded hover:bg-white/20 transition-colors text-white";
 
   if (!visible) return null;
@@ -184,6 +198,10 @@ export default function FloatingTextToolbar({ containerRef, iframeRef, editMode,
           {/* Bold */}
           <button className={btnClass} title="הדגשה" onClick={() => exec('bold')}>
             <Bold className="h-4 w-4" />
+          </button>
+          {/* Bookmark */}
+          <button className={btnClass} title="סמן מקום" onClick={handleBookmark}>
+            <Bookmark className="h-4 w-4 text-[#D4AF37]" />
           </button>
           <div className="w-px h-5 bg-white/20 mx-0.5" />
           {/* Search */}
