@@ -9,6 +9,7 @@ import {
   Search, ChevronRight, RotateCcw, Zap, Sparkles, Clock, Star,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { useFloatingPanel, ResizeHandles } from "@/hooks/useFloatingPanel";
 
 // ─── Types ───
@@ -86,6 +87,35 @@ function persistPrompts(prompts: SavedPrompt[]) {
   try { localStorage.setItem(PROMPTS_KEY, JSON.stringify(prompts)); } catch { /* skip */ }
 }
 
+// ─── FAB position persistence (localStorage + Supabase cross-device) ───
+const FAB_POS_KEY = "ai-tutor-fab-position";
+
+function clampFabPos(pos: { x: number; y: number }): { x: number; y: number } {
+  if (typeof window === "undefined") return pos;
+  const maxX = Math.max(0, window.innerWidth - 60);
+  const maxY = Math.max(0, window.innerHeight - 60);
+  return {
+    x: Math.min(Math.max(0, pos.x), maxX),
+    y: Math.min(Math.max(0, pos.y), maxY),
+  };
+}
+
+function loadFabPosLocal(): { x: number; y: number } | null {
+  try {
+    const raw = localStorage.getItem(FAB_POS_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (typeof parsed?.x === "number" && typeof parsed?.y === "number") {
+      return clampFabPos(parsed);
+    }
+    return null;
+  } catch { return null; }
+}
+
+function saveFabPosLocal(pos: { x: number; y: number }) {
+  try { localStorage.setItem(FAB_POS_KEY, JSON.stringify(pos)); } catch { /* skip */ }
+}
+
 // migrate old single-history format
 function migrateOldHistory(): Conversation | null {
   try {
@@ -158,13 +188,18 @@ export default function AiTutorChat() {
   const [historySearch, setHistorySearch] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // FAB position
-  const [fabPos, setFabPos] = useState({
-    x: typeof window !== "undefined" ? window.innerWidth - 80 : 300,
-    y: typeof window !== "undefined" ? window.innerHeight - 80 : 400,
+  // FAB position (persisted to localStorage + Supabase for cross-device sync)
+  const [fabPos, setFabPos] = useState(() => {
+    const stored = loadFabPosLocal();
+    if (stored) return stored;
+    return {
+      x: typeof window !== "undefined" ? window.innerWidth - 80 : 300,
+      y: typeof window !== "undefined" ? window.innerHeight - 80 : 400,
+    };
   });
   const [isFabDragging, setIsFabDragging] = useState(false);
   const fabDragOffset = useRef({ x: 0, y: 0 });
+  const fabPosLoadedFromCloud = useRef(false);
 
   const { geo, onDragStart: onPanelDragStart, onResizeStart } = useFloatingPanel("ai-tutor", {
     x: typeof window !== "undefined" ? window.innerWidth - 420 : 200,
@@ -435,12 +470,69 @@ export default function AiTutorChat() {
 
   useEffect(() => {
     if (!isFabDragging) return;
-    const onMove = (e: MouseEvent) => setFabPos({ x: e.clientX - fabDragOffset.current.x, y: e.clientY - fabDragOffset.current.y });
-    const onUp = () => setIsFabDragging(false);
+    const onMove = (e: MouseEvent) => setFabPos(clampFabPos({ x: e.clientX - fabDragOffset.current.x, y: e.clientY - fabDragOffset.current.y }));
+    const onUp = () => {
+      setIsFabDragging(false);
+      // Persist final position locally + to Supabase for cross-device sync
+      setFabPos((current) => {
+        const clamped = clampFabPos(current);
+        saveFabPosLocal(clamped);
+        // Fire-and-forget cloud sync (only if user is signed in)
+        (async () => {
+          try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+            await supabase
+              .from("user_preferences")
+              .upsert(
+                { user_id: user.id, ai_fab_position: clamped as unknown as Json },
+                { onConflict: "user_id" },
+              );
+          } catch { /* ignore network errors, localStorage already saved */ }
+        })();
+        return clamped;
+      });
+    };
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
     return () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); };
   }, [isFabDragging]);
+
+  // Cross-device sync: pull FAB position from Supabase on mount (overrides localStorage if cloud has value)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user || cancelled) return;
+        const { data, error } = await supabase
+          .from("user_preferences")
+          .select("ai_fab_position")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (error || !data?.ai_fab_position || cancelled) return;
+        const cloud = data.ai_fab_position as unknown as { x?: number; y?: number };
+        if (typeof cloud?.x === "number" && typeof cloud?.y === "number") {
+          const clamped = clampFabPos({ x: cloud.x, y: cloud.y });
+          fabPosLoadedFromCloud.current = true;
+          setFabPos(clamped);
+          saveFabPosLocal(clamped);
+        }
+      } catch { /* ignore */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Re-clamp on window resize so FAB never sits off-screen
+  useEffect(() => {
+    const onResize = () => setFabPos((p) => {
+      const clamped = clampFabPos(p);
+      if (clamped.x !== p.x || clamped.y !== p.y) saveFabPosLocal(clamped);
+      return clamped;
+    });
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;

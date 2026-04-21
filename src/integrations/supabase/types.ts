@@ -909,6 +909,7 @@ export type Database = {
       }
       user_preferences: {
         Row: {
+          ai_fab_position: Json | null
           created_at: string
           gemara_daf_theme: string | null
           id: string
@@ -919,6 +920,7 @@ export type Database = {
           viewer_mode: string | null
         }
         Insert: {
+          ai_fab_position?: Json | null
           created_at?: string
           gemara_daf_theme?: string | null
           id?: string
@@ -929,6 +931,7 @@ export type Database = {
           viewer_mode?: string | null
         }
         Update: {
+          ai_fab_position?: Json | null
           created_at?: string
           gemara_daf_theme?: string | null
           id?: string
