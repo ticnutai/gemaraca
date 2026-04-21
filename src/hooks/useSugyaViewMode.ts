@@ -64,6 +64,7 @@ export function useSugyaViewMode() {
   const [isReady, setIsReady] = useState(hasLocalPreference());
   const [savedFlash, setSavedFlash] = useState(false);
   const flashTimer = useRef<number | null>(null);
+  const userIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     const syncMode = (next: SugyaViewMode) => setViewModeState(next);
@@ -98,6 +99,7 @@ export function useSugyaViewMode() {
       .then(({ data }) => {
         if (cancelled) return;
         const nextUserId = data.session?.user?.id || null;
+        userIdRef.current = nextUserId;
         setUserId(nextUserId);
         if (!nextUserId) setIsReady(true);
       })
@@ -110,8 +112,15 @@ export function useSugyaViewMode() {
 
     const { data: listener } = supabase.auth.onAuthStateChange((_e, session) => {
       const nextUserId = session?.user?.id || null;
+      const didUserChange = userIdRef.current !== nextUserId;
+      userIdRef.current = nextUserId;
       setUserId(nextUserId);
-      setIsReady(!nextUserId);
+      if (!nextUserId) {
+        setIsReady(true);
+      } else if (didUserChange) {
+        // Re-sync cloud preference only on actual user changes.
+        setIsReady(false);
+      }
     });
     return () => {
       cancelled = true;
