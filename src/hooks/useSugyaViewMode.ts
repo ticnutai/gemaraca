@@ -10,6 +10,18 @@ const DEFAULT_MODE: SugyaViewMode = 'sefaria';
 const listeners = new Set<(mode: SugyaViewMode) => void>();
 let currentMode: SugyaViewMode | null = null;
 
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`Timeout after ${timeoutMs}ms: ${label}`)), timeoutMs);
+  });
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 function readLocal(): SugyaViewMode {
   if (typeof window === 'undefined') return DEFAULT_MODE;
   try {
@@ -74,51 +86,91 @@ export function useSugyaViewMode() {
 
   // Track auth state
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      const nextUserId = data.session?.user?.id || null;
-      setUserId(nextUserId);
-      if (!nextUserId) setIsReady(true);
-    });
+    let cancelled = false;
+    const authBootstrapFallback = window.setTimeout(() => {
+      if (!cancelled) {
+        // Never block UI forever on auth bootstrap.
+        setIsReady(true);
+      }
+    }, 5000);
+
+    withTimeout(supabase.auth.getSession(), 4000, 'auth.getSession')
+      .then(({ data }) => {
+        if (cancelled) return;
+        const nextUserId = data.session?.user?.id || null;
+        setUserId(nextUserId);
+        if (!nextUserId) setIsReady(true);
+      })
+      .catch(() => {
+        if (!cancelled) setIsReady(true);
+      })
+      .finally(() => {
+        window.clearTimeout(authBootstrapFallback);
+      });
+
     const { data: listener } = supabase.auth.onAuthStateChange((_e, session) => {
       const nextUserId = session?.user?.id || null;
       setUserId(nextUserId);
       setIsReady(!nextUserId);
     });
-    return () => listener.subscription.unsubscribe();
+    return () => {
+      cancelled = true;
+      window.clearTimeout(authBootstrapFallback);
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
   // On user login: pull cloud value (source of truth). If none, push local up.
   useEffect(() => {
     if (!userId) return;
     let cancelled = false;
+    const syncFallback = window.setTimeout(() => {
+      if (!cancelled) {
+        // Keep local mode usable even if cloud preference sync is slow/down.
+        setIsReady(true);
+      }
+    }, 7000);
+
     setIsReady(false);
     (async () => {
       try {
-        const { data } = await supabase
-          .from('user_preferences')
-          .select('sugya_view_mode')
-          .eq('user_id', userId)
-          .maybeSingle();
+        const { data } = await withTimeout(
+          supabase
+            .from('user_preferences')
+            .select('sugya_view_mode')
+            .eq('user_id', userId)
+            .maybeSingle(),
+          5000,
+          'user_preferences.select'
+        );
         if (cancelled) return;
-        const cloudVal = (data as any)?.sugya_view_mode as SugyaViewMode | null | undefined;
+        const cloudVal = (data as { sugya_view_mode?: SugyaViewMode } | null)?.sugya_view_mode;
         if (cloudVal && VALID_MODES.includes(cloudVal)) {
           broadcastMode(cloudVal);
           try { localStorage.setItem(STORAGE_KEY, cloudVal); } catch {}
         } else {
           const local = readLocal();
-          await supabase
-            .from('user_preferences')
-            .upsert(
-              { user_id: userId, sugya_view_mode: local, updated_at: new Date().toISOString() },
-              { onConflict: 'user_id' }
-            );
+          await withTimeout(
+            supabase
+              .from('user_preferences')
+              .upsert(
+                { user_id: userId, sugya_view_mode: local, updated_at: new Date().toISOString() },
+                { onConflict: 'user_id' }
+              ),
+            5000,
+            'user_preferences.upsert'
+          );
           if (!cancelled) broadcastMode(local);
         }
       } finally {
+        window.clearTimeout(syncFallback);
         if (!cancelled) setIsReady(true);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      window.clearTimeout(syncFallback);
+    };
   }, [userId]);
 
   const setViewMode = useCallback((mode: SugyaViewMode) => {
