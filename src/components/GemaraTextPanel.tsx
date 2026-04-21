@@ -15,7 +15,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Loader2, BookOpen, Image, FileText, ExternalLink, Eye, Check, ZoomIn, ZoomOut, Type, AArrowUp, AArrowDown, AlignRight, AlignCenter, AlignLeft, AlignJustify, Bold, Italic, Underline, Strikethrough, Highlighter, MousePointer2, Database, Copy, Printer, MoveVertical, FileDown, Save, Palette, RotateCcw, Scissors, Search, Columns2, Columns3, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, BookOpen, Image, FileText, ExternalLink, Eye, Check, ZoomIn, ZoomOut, Type, AArrowUp, AArrowDown, AlignRight, AlignCenter, AlignLeft, AlignJustify, Bold, Italic, Underline, Strikethrough, Highlighter, MousePointer2, Database, Copy, Printer, MoveVertical, FileDown, Save, Palette, RotateCcw, Scissors, Search, Columns2, Columns3, ChevronLeft, ChevronRight, Bookmark } from "lucide-react";
 import FloatingTextToolbar from "./FloatingTextToolbar";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
@@ -1724,6 +1724,31 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
               </DropdownMenu>
               {/* Cloud sub-mode icon tabs — shown only in cloud view when a PDF exists */}
               {viewMode === 'cloud' && cloudPdfUrl && renderCloudSubModeTabs()}
+              {/* Bookmark button — visible in cloud view to save current page */}
+              {viewMode === 'cloud' && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  title="שמור סמנייה"
+                  onClick={() => {
+                    const key = 'gemara-bookmarks';
+                    const existing: Array<Record<string, string>> = JSON.parse(localStorage.getItem(key) || '[]');
+                    existing.push({
+                      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+                      text: window.getSelection()?.toString().substring(0, 300) || '',
+                      location: window.location.pathname,
+                      ref: gemaraText?.heRef || gemaraText?.ref || '',
+                      subMode: cloudSubMode,
+                      timestamp: new Date().toISOString(),
+                    });
+                    localStorage.setItem(key, JSON.stringify(existing));
+                    sonnerToast.success('הסמנייה נשמרה');
+                  }}
+                >
+                  <Bookmark className="h-4 w-4" />
+                </Button>
+              )}
               {savedFlash && (
                 <span className="flex items-center gap-1 text-xs text-[hsl(45_70%_45%)] animate-fade-in" dir="rtl">
                   <Cloud className="h-3 w-3" />
