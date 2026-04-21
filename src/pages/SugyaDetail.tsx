@@ -1,14 +1,13 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect, useState, lazy, Suspense, useRef } from "react";
+import { useEffect, useState, lazy, Suspense, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRight, BookOpen, Scale, ExternalLink, Lightbulb, FileText, HelpCircle } from "lucide-react";
+import { ArrowRight, BookOpen, Scale, ExternalLink, Lightbulb, FileText, HelpCircle, Share2, FileDown, Printer } from "lucide-react";
 import DafAmudNavigator from "@/components/DafAmudNavigator";
 import FAQSection from "@/components/FAQSection";
 import PsakDinSearchButton from "@/components/PsakDinSearchButton";
-import ShareExportButton from "@/components/ShareExportButton";
 import { SectionErrorBoundary } from "@/components/SectionErrorBoundary";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -30,7 +29,6 @@ const SugyaSummary = lazy(() => import("@/components/SugyaSummary"));
 const AskAboutDaf = lazy(() => import("@/components/AskAboutDaf"));
 const CollaborativeNotes = lazy(() => import("@/components/CollaborativeNotes"));
 const ShareSugyaDialog = lazy(() => import("@/components/ShareSugyaDialog"));
-const ExportPdfButton = lazy(() => import("@/components/ExportPdfButton"));
 
 const PanelFallback = () => (
   <div className="space-y-3 p-4">
@@ -119,6 +117,54 @@ const SugyaDetail = () => {
   
   const sugya = loadedPage;
   const enterTimeRef = useRef(Date.now());
+
+  const handleShare = useCallback(async () => {
+    const text = sugya?.gemaraText || sugya?.fullText || sugya?.summary || "";
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: sugya?.title || "סוגיה",
+          text: text.slice(0, 300),
+          url: window.location.href,
+        });
+        return;
+      } catch {
+        // user canceled share dialog
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+    } catch {
+      // ignore clipboard failures silently in fallback path
+    }
+  }, [sugya]);
+
+  const handlePrintOrExport = useCallback(() => {
+    if (!sugya) return;
+
+    const html = sugya.gemaraText || sugya.fullText || sugya.summary || "";
+    const win = window.open("", "_blank");
+    if (!win) return;
+
+    win.document.write(`<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <title>${sugya.title}</title>
+  <style>
+    body { font-family: 'David', 'Noto Sans Hebrew', serif; margin: 2rem auto; max-width: 900px; line-height: 1.8; color: #0B1F5B; }
+    h1 { border-bottom: 2px solid #D4AF37; padding-bottom: 0.5rem; margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>${sugya.title}</h1>
+  <div style="white-space: pre-line;">${html}</div>
+</body>
+</html>`);
+    win.document.close();
+    win.print();
+  }, [sugya]);
 
   // Record learning history on mount/unmount
   useEffect(() => {
@@ -323,10 +369,10 @@ const SugyaDetail = () => {
             <ArrowRight className="w-4 h-4 rotate-180" />
             חזרה
           </Button>
-          <ShareExportButton
-            title={sugya.title}
-            text={sugya.gemaraText || sugya.fullText || sugya.summary}
-          />
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={handleShare}>
+            <Share2 className="w-4 h-4" />
+            שיתוף
+          </Button>
           <Suspense fallback={null}>
             <ShareSugyaDialog
               sugyaId={id || ""}
@@ -336,9 +382,11 @@ const SugyaDetail = () => {
               selectedText={selectedGemaraText}
             />
           </Suspense>
-          <Suspense fallback={null}>
-            <ExportPdfButton title={sugya.title} htmlContent={sugya.gemaraText || sugya.fullText} />
-          </Suspense>
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={handlePrintOrExport}>
+            <Printer className="w-4 h-4" />
+            הדפסה / PDF
+            <FileDown className="w-4 h-4" />
+          </Button>
         </div>
 
         {/* Daf/Amud Navigator - Single source of truth for masechet name */}
