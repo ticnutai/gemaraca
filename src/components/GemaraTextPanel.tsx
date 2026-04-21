@@ -432,15 +432,18 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   }, [cloudSubMode, cloudPdfUrl, cloudEmbedBookId, cloudEmbedLoading, cloudEmbedError, ensureCloudEmbedBook]);
 
   const cloudEmbedViewerSrc = useMemo(() => {
-    if (!cloudPdfUrl || !cloudEmbedBookId) return '';
+    if (!cloudPdfUrl) return '';
 
     const fallbackTitle = gemaraText?.heRef || gemaraText?.ref || dafYomi || sugyaId;
     const params = new URLSearchParams({
       embedded: '1',
-      bookId: cloudEmbedBookId,
       url: cloudPdfUrl,
       title: `סריקת גמרא - ${fallbackTitle}`,
     });
+
+    if (cloudEmbedBookId) {
+      params.set('bookId', cloudEmbedBookId);
+    }
 
     return `/embedpdf-viewer?${params.toString()}`;
   }, [cloudPdfUrl, cloudEmbedBookId, dafYomi, gemaraText, sugyaId]);
@@ -1200,6 +1203,23 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
                 <Loader2 className="h-8 w-8 animate-spin text-[#D4AF37] mx-auto" />
                 <p className="text-sm text-[#0B1F5B]/70">מכין את הסריקה ל-EmbedPDF עם כל כלי ההערות והעריכה...</p>
               </div>
+            ) : cloudEmbedViewerSrc ? (
+              <div>
+                {cloudEmbedError && (
+                  <div className="flex items-center justify-between gap-2 px-4 py-2 border-b border-[#D4AF37]/30 bg-[#FFF9E6]">
+                    <p className="text-xs text-[#0B1F5B]/70">{cloudEmbedError}</p>
+                    <Button size="sm" variant="outline" className="h-7 border-[#D4AF37]/40 text-[#0B1F5B]" onClick={() => void ensureCloudEmbedBook()}>
+                      נסה שוב
+                    </Button>
+                  </div>
+                )}
+                <iframe
+                  src={cloudEmbedViewerSrc}
+                  className="w-full border-0"
+                  style={{ height: '900px' }}
+                  title="EmbedPDF - דף גמרא סרוק מהענן"
+                />
+              </div>
             ) : cloudEmbedError ? (
               <div className="space-y-4 py-10 px-6 text-center">
                 <Database className="h-10 w-10 text-[#D4AF37] mx-auto opacity-70" />
@@ -1208,13 +1228,6 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
                   נסה שוב
                 </Button>
               </div>
-            ) : cloudEmbedViewerSrc ? (
-              <iframe
-                src={cloudEmbedViewerSrc}
-                className="w-full border-0"
-                style={{ height: '900px' }}
-                title="EmbedPDF - דף גמרא סרוק מהענן"
-              />
             ) : (
               <div className="space-y-4 py-10 px-6 text-center">
                 <Loader2 className="h-8 w-8 animate-spin text-[#D4AF37] mx-auto" />
