@@ -357,7 +357,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
 
       if (existingError) throw existingError;
 
-      const existingBookId = existing?.[0]?.id ?? null;
+      const existingBookId = (existing as unknown as Array<{ id: string }> | null)?.[0]?.id ?? null;
       if (existingBookId) {
         setCloudEmbedBookId(existingBookId);
         return existingBookId;
@@ -375,7 +375,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
 
       if (insertError) throw insertError;
 
-      const insertedBookId = (inserted as { id: string }).id;
+      const insertedBookId = (inserted as unknown as { id: string }).id;
       setCloudEmbedBookId(insertedBookId);
       return insertedBookId;
     } catch (error) {
