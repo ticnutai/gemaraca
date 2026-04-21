@@ -304,8 +304,8 @@ const SugyaDetail = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto max-w-7xl px-3 sm:px-4 py-4 sm:py-8">
-        {/* Header - Compact navigation */}
-        <div className="flex items-center justify-between gap-2 mb-4">
+        {/* Header - Single compact toolbar (back + unified share) */}
+        <div className="flex items-center justify-between gap-2 mb-3">
           <Button 
             variant="ghost" 
             size="sm"
@@ -321,10 +321,6 @@ const SugyaDetail = () => {
             <ArrowRight className="w-4 h-4 rotate-180" />
             חזרה
           </Button>
-          <ShareExportButton
-            title={sugya.title}
-            text={sugya.gemaraText || sugya.fullText || sugya.summary}
-          />
           <Suspense fallback={null}>
             <ShareSugyaDialog
               sugyaId={id || ""}
@@ -332,28 +328,35 @@ const SugyaDetail = () => {
               daf={sugya.dafYomi}
               title={sugya.title}
               selectedText={selectedGemaraText}
+              bodyText={sugya.gemaraText || sugya.fullText || sugya.summary}
+              htmlContent={sugya.gemaraText || sugya.fullText}
             />
           </Suspense>
-          <Suspense fallback={null}>
-            <ExportPdfButton title={sugya.title} htmlContent={sugya.gemaraText || sugya.fullText} />
-          </Suspense>
         </div>
 
-        {/* Daf/Amud Navigator - Single source of truth for masechet name */}
-        <DafAmudNavigator className="mb-6" />
+        {/* Breadcrumb-style header: masechet/daf navigator + single page title.
+            DafAmudNavigator already shows masechet name + daf controls,
+            so we render only ONE H1 below it (no duplicate title or subtitle). */}
+        <DafAmudNavigator className="mb-3" />
+        <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-6">
+          {sugya.title}
+        </h1>
 
-        {/* Page Title - Simple, no duplications */}
-        <div className="mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-2">{sugya.title}</h1>
-          <p className="text-sm sm:text-base text-muted-foreground">{sugya.summary}</p>
-        </div>
-
-        {/* Main Tabs - 4 Primary Tabs */}
+        {/* Main Tabs - flattened single row.
+            "המחשה" lives only here (removed from inside the Gemara tab to avoid duplication). */}
         <Tabs value={mainTab} onValueChange={setMainTab} className="w-full" dir="rtl">
-          <TabsList className="grid w-full grid-cols-5 mb-6 h-auto">
+          <TabsList className="grid w-full grid-cols-7 mb-6 h-auto">
             <TabsTrigger value="gemara" className="flex items-center gap-1.5 py-2.5 text-xs sm:text-sm">
               <BookOpen className="w-4 h-4 hidden sm:block" />
               גמרא
+            </TabsTrigger>
+            <TabsTrigger value="commentaries" className="flex items-center gap-1.5 py-2.5 text-xs sm:text-sm">
+              <BookOpen className="w-4 h-4 hidden sm:block" />
+              מפרשים
+            </TabsTrigger>
+            <TabsTrigger value="lexicon" className="flex items-center gap-1.5 py-2.5 text-xs sm:text-sm">
+              <FileText className="w-4 h-4 hidden sm:block" />
+              מילון
             </TabsTrigger>
             <TabsTrigger value="illustration" className="flex items-center gap-1.5 py-2.5 text-xs sm:text-sm">
               <Lightbulb className="w-4 h-4 hidden sm:block" />
