@@ -192,6 +192,7 @@ All colors MUST be HSL.
 
   html {
     direction: rtl;
+    height: 100%;
   }
 
   body {
@@ -201,12 +202,14 @@ All colors MUST be HSL.
     font-family: 'Heebo', 'Segoe UI', system-ui, sans-serif;
     overflow-x: hidden;
     max-width: 100%;
+    min-height: 100%;
   }
 
   /* Prevent horizontal scroll on root */
   #root {
     overflow-x: hidden;
     max-width: 100%;
+    min-height: 100%;
   }
 
   /* RTL fixes for common elements */

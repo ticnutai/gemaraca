@@ -68,4 +68,26 @@ test("logged-in user sees Berakhot daf in EmbedPDF tab with toolbar", async ({ p
 
   console.log(`[AUTH TEST] iframe src: ${src}`);
   console.log(`[AUTH TEST] outer tool buttons: ${outerCount}`);
+
+  // 9. Verify the EmbedPDF actually renders a canvas inside the iframe's shadow DOM
+  await embedIframe.scrollIntoViewIfNeeded();
+  const iframeHandle = await embedIframe.elementHandle();
+  const innerFrame = await iframeHandle!.contentFrame();
+  await expect(async () => {
+    const canvasCount = await innerFrame!.evaluate(() => {
+      let count = 0;
+      const walk = (root: any, d = 0) => {
+        if (d > 10 || !root) return;
+        count += root.querySelectorAll?.("canvas")?.length ?? 0;
+        for (const n of (root.querySelectorAll?.("*") ?? [])) {
+          if (n.shadowRoot) walk(n.shadowRoot, d + 1);
+        }
+      };
+      walk(document);
+      return count;
+    });
+    expect(canvasCount).toBeGreaterThan(0);
+  }).toPass({ timeout: 60_000, intervals: [2000, 3000, 5000] });
+
+  console.log(`[AUTH TEST] canvas rendered successfully`);
 });

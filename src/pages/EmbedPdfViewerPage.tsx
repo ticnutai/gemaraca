@@ -1224,7 +1224,7 @@ export default function EmbedPdfViewerPage() {
         colorPresets: ["#FFEB3B", "#81C784", "#64B5F6", "#FF8A65", "#CE93D8", "#F48FB1", "#FCA5A5"],
       },
       search: { showAllResults: true },
-      zoom: { defaultZoomLevel: "page-width" as any },
+      zoom: { defaultZoomLevel: "fit-width" as any },
     };
   }, [leftSourceUrl, leftContentType, pdfTheme]);
 
@@ -1237,7 +1237,7 @@ export default function EmbedPdfViewerPage() {
         colorPresets: ["#FFEB3B", "#81C784", "#64B5F6", "#FF8A65", "#CE93D8", "#F48FB1", "#FCA5A5"],
       },
       search: { showAllResults: true },
-      zoom: { defaultZoomLevel: "page-width" as any },
+      zoom: { defaultZoomLevel: "fit-width" as any },
     };
   }, [rightSourceUrl, rightContentType, pdfTheme]);
 
@@ -2310,7 +2310,7 @@ export default function EmbedPdfViewerPage() {
   }, []);
 
   return (
-    <div dir="rtl" className={`${embeddedMode ? 'h-full min-h-0' : 'min-h-screen'} bg-white text-[#0B1F5B] flex flex-col relative`}
+    <div dir="rtl" className={`${embeddedMode ? 'h-screen min-h-0' : 'min-h-screen'} bg-white text-[#0B1F5B] flex flex-col relative`}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
