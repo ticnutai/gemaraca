@@ -151,7 +151,7 @@ interface TextSettings {
   columns: 1 | 2 | 3;
 }
 
-const withTimeout = async <T,>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> => {
+const withTimeout = async <T,>(promise: PromiseLike<T>, timeoutMs: number, label: string): Promise<T> => {
   let timer: ReturnType<typeof setTimeout> | null = null;
   const timeoutPromise = new Promise<never>((_, reject) => {
     timer = setTimeout(() => {
@@ -160,7 +160,7 @@ const withTimeout = async <T,>(promise: Promise<T>, timeoutMs: number, label: st
   });
 
   try {
-    return await Promise.race([promise, timeoutPromise]);
+    return await Promise.race([Promise.resolve(promise), timeoutPromise]);
   } finally {
     if (timer) clearTimeout(timer);
   }
