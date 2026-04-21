@@ -40,6 +40,8 @@ export function SettingsButton() {
   // Dev tools toggles — persisted in localStorage
   const [consoleMonitorEnabled, setConsoleMonitorEnabled] = useState(() => localStorage.getItem("dev-console-enabled") === "true");
   const [perfMonitorEnabled, setPerfMonitorEnabled] = useState(() => localStorage.getItem("dev-perf-enabled") === "true");
+  const [shasManagerBtnEnabled, setShasManagerBtnEnabled] = useState(() => localStorage.getItem("dev-shas-manager-btn") === "true");
+  const [devMigrationsBtnEnabled, setDevMigrationsBtnEnabled] = useState(() => localStorage.getItem("dev-migrations-btn") === "true");
 
   const toggleConsoleMonitor = () => {
     const next = !consoleMonitorEnabled;
@@ -51,6 +53,18 @@ export function SettingsButton() {
     const next = !perfMonitorEnabled;
     setPerfMonitorEnabled(next);
     localStorage.setItem("dev-perf-enabled", String(next));
+  };
+
+  const toggleShasManagerBtn = () => {
+    const next = !shasManagerBtnEnabled;
+    setShasManagerBtnEnabled(next);
+    localStorage.setItem("dev-shas-manager-btn", String(next));
+  };
+
+  const toggleDevMigrationsBtn = () => {
+    const next = !devMigrationsBtnEnabled;
+    setDevMigrationsBtnEnabled(next);
+    localStorage.setItem("dev-migrations-btn", String(next));
   };
 
   const handleColorChange = (key: keyof CustomColors, value: string) => {
@@ -70,28 +84,32 @@ export function SettingsButton() {
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2">
-      {/* Shas Manager Button */}
-      <Button
-        size="icon"
-        variant="outline"
-        className="h-10 w-10 rounded-full shadow-lg bg-card border-border hover:bg-muted"
-        onClick={() => navigate("/shas-manager")}
-        title={'ניהול סריקות ש"ס'}
-      >
-        <Library className="h-4 w-4" />
-      </Button>
+      {/* Shas Manager Button — dev-toggleable */}
+      {shasManagerBtnEnabled && (
+        <Button
+          size="icon"
+          variant="outline"
+          className="h-10 w-10 rounded-full shadow-lg bg-card border-border hover:bg-muted"
+          onClick={() => navigate("/shas-manager")}
+          title={'ניהול סריקות ש"ס'}
+        >
+          <Library className="h-4 w-4" />
+        </Button>
+      )}
 
       {/* lassName="fixed bottom-6 right-6 z-50 flex flex-col gap-2">
-      {/* Dev Button */}
-      <Button
-        size="icon"
-        variant="outline"
-        className="h-10 w-10 rounded-full shadow-lg bg-card border-border hover:bg-muted"
-        onClick={() => setShowDevPanel(true)}
-        title="פיתוח - מיגרציות"
-      >
-        <Code2 className="h-4 w-4" />
-      </Button>
+      {/* Dev Migrations Button — dev-toggleable */}
+      {devMigrationsBtnEnabled && (
+        <Button
+          size="icon"
+          variant="outline"
+          className="h-10 w-10 rounded-full shadow-lg bg-card border-border hover:bg-muted"
+          onClick={() => setShowDevPanel(true)}
+          title="פיתוח - מיגרציות"
+        >
+          <Code2 className="h-4 w-4" />
+        </Button>
+      )}
 
       <Suspense fallback={null}>
         {showDevPanel && (
@@ -245,6 +263,58 @@ export function SettingsButton() {
                     <div className={cn(
                       "absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all",
                       perfMonitorEnabled ? "left-0.5" : "right-0.5"
+                    )} />
+                  </div>
+                </button>
+
+                {/* Shas Manager floating button toggle */}
+                <button
+                  onClick={toggleShasManagerBtn}
+                  className={cn(
+                    "w-full flex items-center gap-3 p-3 rounded-lg transition-all border",
+                    shasManagerBtnEnabled
+                      ? "bg-accent/10 border-accent/30"
+                      : "bg-muted/30 border-border hover:bg-muted/50"
+                  )}
+                >
+                  <Library className={cn("h-5 w-5", shasManagerBtnEnabled ? "text-accent" : "text-muted-foreground")} />
+                  <div className="flex-1 text-right">
+                    <div className="font-medium text-sm">כפתור ניהול ש"ס</div>
+                    <div className="text-xs text-muted-foreground">כפתור צף לניהול סריקות</div>
+                  </div>
+                  <div className={cn(
+                    "w-10 h-5 rounded-full transition-colors relative",
+                    shasManagerBtnEnabled ? "bg-accent" : "bg-muted-foreground/30"
+                  )}>
+                    <div className={cn(
+                      "absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all",
+                      shasManagerBtnEnabled ? "left-0.5" : "right-0.5"
+                    )} />
+                  </div>
+                </button>
+
+                {/* Dev Migrations floating button toggle */}
+                <button
+                  onClick={toggleDevMigrationsBtn}
+                  className={cn(
+                    "w-full flex items-center gap-3 p-3 rounded-lg transition-all border",
+                    devMigrationsBtnEnabled
+                      ? "bg-purple-500/10 border-purple-500/30"
+                      : "bg-muted/30 border-border hover:bg-muted/50"
+                  )}
+                >
+                  <Code2 className={cn("h-5 w-5", devMigrationsBtnEnabled ? "text-purple-500" : "text-muted-foreground")} />
+                  <div className="flex-1 text-right">
+                    <div className="font-medium text-sm">כפתור מיגרציות</div>
+                    <div className="text-xs text-muted-foreground">כפתור צף לפאנל המיגרציות</div>
+                  </div>
+                  <div className={cn(
+                    "w-10 h-5 rounded-full transition-colors relative",
+                    devMigrationsBtnEnabled ? "bg-purple-500" : "bg-muted-foreground/30"
+                  )}>
+                    <div className={cn(
+                      "absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all",
+                      devMigrationsBtnEnabled ? "left-0.5" : "right-0.5"
                     )} />
                   </div>
                 </button>
