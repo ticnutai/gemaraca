@@ -149,6 +149,21 @@ interface TextSettings {
   columns: 1 | 2 | 3;
 }
 
+const withTimeout = async <T,>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> => {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      reject(new Error(`Timeout after ${timeoutMs}ms: ${label}`));
+    }, timeoutMs);
+  });
+
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+};
+
 const defaultTextSettings: TextSettings = {
   fontSize: 18,
   fontFamily: 'font-serif',
@@ -216,19 +231,32 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   // Check if a scanned PDF exists for this daf in Supabase Storage
   useEffect(() => {
     if (viewMode === 'cloud' && sugyaId && masechet) {
+      const debugTag = `[CloudScan:${sugyaId}]`;
+      let cancelled = false;
       const lastIdx = sugyaId.lastIndexOf('_');
       const dafAmud = sugyaId.slice(lastIdx + 1);
       const match = dafAmud.match(/^(\d+)(a|b)$/);
       if (!match) { setCloudPdfUrl(null); return; }
       const storagePath = `${masechet}/${match[1]}${match[2]}.pdf`;
       const { data } = supabase.storage.from('shas-pdf-pages').getPublicUrl(storagePath);
+      console.info(`${debugTag} checking scan availability`, { storagePath, publicUrl: data.publicUrl });
       fetch(data.publicUrl, { method: 'HEAD' })
         .then(res => {
+          if (cancelled) return;
           const url = res.ok ? data.publicUrl : null;
+          console.info(`${debugTag} scan availability resolved`, { ok: res.ok, status: res.status, resolvedUrl: !!url });
           setCloudPdfUrl(url);
           if (url) setCloudSubMode('embedpdf');
         })
-        .catch(() => setCloudPdfUrl(null));
+        .catch((error) => {
+          if (cancelled) return;
+          console.warn(`${debugTag} scan availability failed`, error);
+          setCloudPdfUrl(null);
+        });
+
+      return () => {
+        cancelled = true;
+      };
     }
   }, [viewMode, sugyaId, masechet]);
 
@@ -329,11 +357,14 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   const ensureCloudEmbedBook = useCallback(async () => {
     if (!cloudPdfUrl) return null;
 
+    const debugTag = `[CloudEmbed:${sugyaId}]`;
     setCloudEmbedLoading(true);
     setCloudEmbedError(null);
+    console.info(`${debugTag} prepare start`, { cloudPdfUrl });
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
+      const { data: sessionData } = await withTimeout(supabase.auth.getSession(), 10000, 'supabase.auth.getSession');
       if (!sessionData.session?.user) {
+        console.warn(`${debugTag} no active session`);
         setCloudEmbedBookId(null);
         setCloudEmbedError('יש להתחבר כדי לשמור הערות וסימניות ל-EmbedPDF בענן');
         return null;
@@ -342,43 +373,55 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
       const fallbackTitle = gemaraText?.heRef || gemaraText?.ref || dafYomi || sugyaId;
       const bookTitle = `סריקת גמרא - ${fallbackTitle}`;
 
-      const { data: existing, error: existingError } = await supabase
-        .from('user_books' as any)
-        .select('id')
-        .eq('file_url', cloudPdfUrl)
-        .order('created_at', { ascending: false })
-        .limit(1);
+      const { data: existing, error: existingError } = await withTimeout(
+        supabase
+          .from('user_books' as any)
+          .select('id')
+          .eq('file_url', cloudPdfUrl)
+          .order('created_at', { ascending: false })
+          .limit(1),
+        12000,
+        'user_books select by file_url'
+      );
 
       if (existingError) throw existingError;
 
       const existingBookId = (existing as unknown as Array<{ id: string }> | null)?.[0]?.id ?? null;
       if (existingBookId) {
+        console.info(`${debugTag} existing book found`, { existingBookId });
         setCloudEmbedBookId(existingBookId);
         return existingBookId;
       }
 
-      const { data: inserted, error: insertError } = await supabase
-        .from('user_books' as any)
-        .insert({
-          title: bookTitle,
-          file_name: `${sugyaId}.pdf`,
-          file_url: cloudPdfUrl,
-        } as any)
-        .select('id')
-        .single();
+      const { data: inserted, error: insertError } = await withTimeout(
+        supabase
+          .from('user_books' as any)
+          .insert({
+            title: bookTitle,
+            file_name: `${sugyaId}.pdf`,
+            file_url: cloudPdfUrl,
+          } as any)
+          .select('id')
+          .single(),
+        12000,
+        'user_books insert'
+      );
 
       if (insertError) throw insertError;
 
       const insertedBookId = (inserted as unknown as { id: string }).id;
+      console.info(`${debugTag} book created`, { insertedBookId });
       setCloudEmbedBookId(insertedBookId);
       return insertedBookId;
     } catch (error) {
-      console.error('Failed to prepare EmbedPDF source for cloud scan:', error);
+      console.error(`${debugTag} prepare failed`, error);
       setCloudEmbedBookId(null);
-      setCloudEmbedError('לא הצלחתי להכין את קובץ הסריקה ל-EmbedPDF');
+      const reason = error instanceof Error ? error.message : String(error);
+      setCloudEmbedError(`לא הצלחתי להכין את קובץ הסריקה ל-EmbedPDF (${reason})`);
       return null;
     } finally {
       setCloudEmbedLoading(false);
+      console.info(`${debugTag} prepare finished`);
     }
   }, [cloudPdfUrl, dafYomi, gemaraText, sugyaId]);
 
@@ -401,6 +444,18 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
 
     return `/embedpdf-viewer?${params.toString()}`;
   }, [cloudPdfUrl, cloudEmbedBookId, dafYomi, gemaraText, sugyaId]);
+
+  useEffect(() => {
+    if (viewMode !== 'cloud' || cloudSubMode !== 'embedpdf') return;
+    const debugTag = `[CloudEmbed:${sugyaId}]`;
+    console.info(`${debugTag} state`, {
+      cloudPdfUrl: !!cloudPdfUrl,
+      cloudEmbedBookId,
+      cloudEmbedLoading,
+      cloudEmbedError,
+      hasViewerSrc: !!cloudEmbedViewerSrc,
+    });
+  }, [viewMode, cloudSubMode, sugyaId, cloudPdfUrl, cloudEmbedBookId, cloudEmbedLoading, cloudEmbedError, cloudEmbedViewerSrc]);
 
   const renderCloudSubModeTabs = () => (
     <div className="flex gap-0.5 p-0.5 bg-muted rounded-lg">
