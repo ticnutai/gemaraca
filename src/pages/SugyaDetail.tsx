@@ -366,7 +366,7 @@ const SugyaDetail = () => {
         {/* Main Tabs - flattened single row.
             "המחשה" lives only here (removed from inside the Gemara tab to avoid duplication). */}
         <Tabs value={mainTab} onValueChange={setMainTab} className="w-full" dir="rtl">
-          <TabsList className="grid w-full grid-cols-7 mb-6 h-auto">
+          <TabsList className="grid w-full grid-cols-7 mb-6 h-auto sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/75 shadow-sm">
             <TabsTrigger value="gemara" className="flex items-center gap-1.5 py-2.5 text-xs sm:text-sm">
               <BookOpen className="w-4 h-4 hidden sm:block" />
               גמרא

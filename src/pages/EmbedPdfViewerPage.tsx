@@ -2364,48 +2364,64 @@ export default function EmbedPdfViewerPage() {
           <FileText className="h-5 w-5 text-[#D4AF37] shrink-0" />
           <h1 className={`font-bold text-[#0B1F5B] ${embeddedMode ? 'text-sm' : 'text-base hidden sm:block'}`}>EmbedPDF</h1>
 
-          {embeddedMode && (
-            <span className="text-[11px] text-[#0B1F5B]/60 hidden sm:inline">מצב משובץ בתוך דף הגמרא</span>
-          )}
-
           <Separator orientation="vertical" className="h-5 bg-[#D4AF37]/30 hidden sm:block" />
 
-          {/* View mode buttons */}
+          {/* View mode — icon-only buttons with tooltip */}
           <div className="flex gap-0.5">
-            {(["single", "split", "compare"] as ViewMode[]).map((mode) => (
+            {([
+              { mode: "single" as ViewMode, label: "יחיד", icon: <FileText className="h-3.5 w-3.5" /> },
+              { mode: "split" as ViewMode, label: "מפוצל", icon: <Columns className="h-3.5 w-3.5" /> },
+              { mode: "compare" as ViewMode, label: "השוואה", icon: <CopyPlus className="h-3.5 w-3.5" /> },
+            ]).map(({ mode, label, icon }) => (
               <Button
                 key={mode}
-                size="sm"
+                size="icon"
                 variant={viewMode === mode ? "default" : "ghost"}
-                className={`h-7 text-xs px-2 ${viewMode === mode
+                className={`h-7 w-7 ${viewMode === mode
                   ? "bg-[#0B1F5B] text-white hover:bg-[#0B1F5B]/90"
                   : "text-[#0B1F5B]/60 hover:bg-[#D4AF37]/10"}`}
                 onClick={() => setViewMode(mode)}
+                title={label}
+                aria-label={label}
               >
-                {mode === "single" ? "יחיד" : mode === "split" ? "מפוצל" : "השוואה"}
+                {icon}
               </Button>
             ))}
           </div>
 
-          {/* ── PDF Theme Toggle (Cobalt / Sand / Noir) ── */}
+          {/* ── PDF Theme — icon-only popover ── */}
           {leftContentType === 'pdf' && (
             <>
               <Separator orientation="vertical" className="h-5 bg-[#D4AF37]/30 hidden sm:block" />
-              <div className="flex gap-0.5">
-                {(Object.keys(PDF_THEME_CONFIGS) as PdfThemeKey[]).map((key) => (
+              <Popover>
+                <PopoverTrigger asChild>
                   <Button
-                    key={key}
-                    size="sm"
-                    variant={pdfTheme === key ? "default" : "ghost"}
-                    className={`h-7 text-xs px-2 ${pdfTheme === key
-                      ? "bg-[#0B1F5B] text-white hover:bg-[#0B1F5B]/90"
-                      : "text-[#0B1F5B]/60 hover:bg-[#D4AF37]/10"}`}
-                    onClick={() => setPdfTheme(key)}
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 text-[#0B1F5B]/70 hover:bg-[#D4AF37]/10"
+                    title={`ערכת נושא: ${PDF_THEME_CONFIGS[pdfTheme].label}`}
+                    aria-label="ערכת נושא PDF"
                   >
-                    {PDF_THEME_CONFIGS[key].icon} {PDF_THEME_CONFIGS[key].label}
+                    <Palette className="h-3.5 w-3.5" />
                   </Button>
-                ))}
-              </div>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-auto p-1" dir="rtl">
+                  <div className="flex flex-col gap-0.5">
+                    {(Object.keys(PDF_THEME_CONFIGS) as PdfThemeKey[]).map((key) => (
+                      <button
+                        key={key}
+                        onClick={() => setPdfTheme(key)}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm text-right ${pdfTheme === key
+                          ? "bg-[#0B1F5B] text-white"
+                          : "text-[#0B1F5B] hover:bg-[#D4AF37]/15"}`}
+                      >
+                        <span>{PDF_THEME_CONFIGS[key].icon}</span>
+                        <span>{PDF_THEME_CONFIGS[key].label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
             </>
           )}
 

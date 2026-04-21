@@ -1779,24 +1779,20 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
     <Card className="w-full">
       <CardHeader className="pb-3">
         <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-primary" />
-              <CardTitle className="text-xl">טקסט הגמרא</CardTitle>
-            </div>
-            <div className="text-sm text-muted-foreground" dir="rtl">
-              {gemaraText?.heRef || gemaraText?.ref}
-            </div>
-          </div>
-          
-          {/* בחירת מצב תצוגה - Dropdown */}
+          {/* Compact row: view-mode picker (icon-only) + source ref (small) + Hebrew/English toggle */}
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2" disabled={!isViewModeReady}>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    disabled={!isViewModeReady}
+                    title={isViewModeReady ? `${VIEW_LABELS[viewMode].label} — ${VIEW_LABELS[viewMode].description}` : 'טוען תצוגה...'}
+                    aria-label="בחירת מקור תצוגה"
+                  >
                     {isViewModeReady ? <Eye className="h-4 w-4" /> : <Loader2 className="h-4 w-4 animate-spin" />}
-                    {isViewModeReady ? VIEW_LABELS[viewMode].label : 'טוען תצוגה...'}
                   </Button>
                 </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56">
@@ -1822,8 +1818,11 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
                   נשמר
                 </span>
               )}
+              <span className="text-xs text-muted-foreground" dir="rtl">
+                {gemaraText?.heRef || gemaraText?.ref}
+              </span>
             </div>
-            
+
             {viewMode === 'text' && (
               <div className="flex gap-1 p-1 bg-muted rounded-lg">
                 <Button

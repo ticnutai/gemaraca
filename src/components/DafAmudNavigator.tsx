@@ -114,15 +114,15 @@ const DafAmudNavigator = ({
 
   return (
     <div className={`bg-card border border-border rounded-xl shadow-sm ${className}`} dir="rtl">
-      {/* Masechet name - separate row */}
-      <div className="text-center py-3 border-b border-border">
-        <span className="text-xl md:text-2xl font-bold text-primary">
+      {/* Single unified row: Masechet + Daf + Amud navigation */}
+      <div className="flex items-center justify-center gap-2 md:gap-4 px-2 md:px-4 py-3 flex-wrap">
+        {/* Masechet name (inline) */}
+        <span className="font-bold text-primary text-base md:text-lg">
           {masechetData.hebrewName}
         </span>
-      </div>
 
-      {/* Navigation row - responsive */}
-      <div className="flex items-center justify-center gap-2 md:gap-4 px-2 md:px-4 py-3 flex-wrap">
+        <span className="text-muted-foreground opacity-60">—</span>
+
         {/* Daf navigation */}
         <div className="flex items-center gap-1">
           <Button
