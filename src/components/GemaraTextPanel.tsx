@@ -542,17 +542,17 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
 
   const renderCloudSubModeTabs = () => (
     <div className="flex gap-0.5 p-0.5 bg-muted rounded-lg">
-      <Button size="sm" variant={cloudSubMode === 'text' ? 'default' : 'ghost'} className="h-6 text-[11px] px-2" onClick={() => setCloudSubMode('text')}>
-        <FileText className="h-3 w-3 ml-1" />טקסט
+      <Button size="icon" variant={cloudSubMode === 'text' ? 'default' : 'ghost'} className="h-7 w-7" onClick={() => setCloudSubMode('text')} title="טקסט">
+        <FileText className="h-3.5 w-3.5" />
       </Button>
-      <Button size="sm" variant={cloudSubMode === 'scan' ? 'default' : 'ghost'} className="h-6 text-[11px] px-2" onClick={() => setCloudSubMode('scan')}>
-        <Image className="h-3 w-3 ml-1" />סריקה
+      <Button size="icon" variant={cloudSubMode === 'scan' ? 'default' : 'ghost'} className="h-7 w-7" onClick={() => setCloudSubMode('scan')} title="סריקה">
+        <Image className="h-3.5 w-3.5" />
       </Button>
-      <Button size="sm" variant={cloudSubMode === 'embedpdf' ? 'default' : 'ghost'} className="h-6 text-[11px] px-2" onClick={() => {
+      <Button size="icon" variant={cloudSubMode === 'embedpdf' ? 'default' : 'ghost'} className="h-7 w-7" onClick={() => {
         setCloudEmbedFallbackNotice(null);
         setCloudSubMode('embedpdf');
-      }}>
-        <BookOpen className="h-3 w-3 ml-1" />EmbedPDF
+      }} title="EmbedPDF">
+        <BookOpen className="h-3.5 w-3.5" />
       </Button>
     </div>
   );
@@ -1269,49 +1269,11 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   const renderCloudView = () => {
     if (cloudSubMode === 'embedpdf' && cloudPdfUrl) {
       return (
-        <div className="space-y-0">
-          <div className="border-2 border-b-0 border-[#D4AF37]/30 rounded-t-xl bg-white px-3 py-2 flex items-center gap-2 flex-wrap">
-            <span className="text-[10px] text-[#D4AF37] font-bold ml-2">🧠 EmbedPDF לדף הסרוק</span>
-            {cloudEmbedStatus && (
-              <span className="text-[10px] text-[#0B1F5B]/65" dir="rtl">{cloudEmbedStatus}</span>
-            )}
-            <div className="w-px h-5 bg-[#D4AF37]/20" />
-            {renderCloudSubModeTabs()}
-            <div className="w-px h-5 bg-[#D4AF37]/20" />
-            {dafNav && (
-              <>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-7 w-7"
-                  disabled={!dafNav.prev}
-                  onClick={() => dafNav.prev && goToDaf(dafNav.prev)}
-                  title="דף קודם"
-                >
-                  <ChevronRight className="h-3.5 w-3.5 text-[#0B1F5B]" />
-                </Button>
-                <span className="text-[10px] text-[#0B1F5B]/70 min-w-[36px] text-center">
-                  {dafNav.daf}{dafNav.amud}
-                </span>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-7 w-7"
-                  disabled={!dafNav.next}
-                  onClick={() => dafNav.next && goToDaf(dafNav.next)}
-                  title="דף הבא"
-                >
-                  <ChevronLeft className="h-3.5 w-3.5 text-[#0B1F5B]" />
-                </Button>
-                <div className="w-px h-5 bg-[#D4AF37]/20" />
-              </>
-            )}
-            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => window.open(cloudPdfUrl, '_blank')} title="פתח PDF בחלון חדש">
-              <ExternalLink className="h-3.5 w-3.5 text-[#0B1F5B]" />
-            </Button>
-          </div>
-
-          <div className="border-2 border-[#D4AF37]/30 rounded-b-xl bg-white overflow-hidden shadow-lg" style={{ minHeight: '500px' }}>
+        <div>
+          {cloudEmbedStatus && (
+            <p className="text-[10px] text-[#0B1F5B]/60 px-1 pb-1" dir="rtl">{cloudEmbedStatus}</p>
+          )}
+          <div className="border-2 border-[#D4AF37]/30 rounded-xl bg-white overflow-hidden shadow-lg" style={{ minHeight: '500px' }}>
             {cloudEmbedLoading ? (
               <div className="space-y-4 py-10 px-6 text-center">
                 <Loader2 className="h-8 w-8 animate-spin text-[#D4AF37] mx-auto" />
@@ -1356,63 +1318,19 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
     // ═══ Scanned PDF sub-mode: show PDF from Supabase Storage ═══
     if (cloudSubMode === 'scan' && cloudPdfUrl) {
       return (
-        <div className="space-y-0">
-          {/* Sub-mode toggle bar */}
-          <div className="border-2 border-b-0 border-[#D4AF37]/30 rounded-t-xl bg-white px-3 py-2 flex items-center gap-2 flex-wrap">
-            <span className="text-[10px] text-[#D4AF37] font-bold ml-2">📄 תמונה סרוקה מהענן</span>
-            {cloudEmbedFallbackNotice && (
-              <div className="flex items-center gap-2 rounded-md border border-[#D4AF37]/40 bg-[#FFF9E6] px-2 py-1">
-                <span className="text-[10px] text-[#0B1F5B]/70" dir="rtl">{cloudEmbedFallbackNotice}</span>
-                <Button size="sm" variant="outline" className="h-6 text-[10px] border-[#D4AF37]/40 text-[#0B1F5B]" onClick={() => {
-                  setCloudEmbedFallbackNotice(null);
-                  setCloudSubMode('embedpdf');
-                }}>
-                  נסה שוב EmbedPDF
-                </Button>
-              </div>
-            )}
-            <div className="w-px h-5 bg-[#D4AF37]/20" />
-            {renderCloudSubModeTabs()}
-            <div className="w-px h-5 bg-[#D4AF37]/20" />
-            {dafNav && (
-              <>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-7 w-7"
-                  disabled={!dafNav.prev}
-                  onClick={() => dafNav.prev && goToDaf(dafNav.prev)}
-                  title="דף קודם"
-                >
-                  <ChevronRight className="h-3.5 w-3.5 text-[#0B1F5B]" />
-                </Button>
-                <span className="text-[10px] text-[#0B1F5B]/70 min-w-[36px] text-center">
-                  {dafNav.daf}{dafNav.amud}
-                </span>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-7 w-7"
-                  disabled={!dafNav.next}
-                  onClick={() => dafNav.next && goToDaf(dafNav.next)}
-                  title="דף הבא"
-                >
-                  <ChevronLeft className="h-3.5 w-3.5 text-[#0B1F5B]" />
-                </Button>
-                <div className="w-px h-5 bg-[#D4AF37]/20" />
-              </>
-            )}
-            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={triggerScanSearch} title="חיפוש טקסט (Ctrl+F)">
-              <Search className="h-3.5 w-3.5 text-[#0B1F5B]" />
-            </Button>
-            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => window.open(cloudPdfUrl, '_blank')} title="פתח בחלון חדש">
-              <ExternalLink className="h-3.5 w-3.5 text-[#0B1F5B]" />
-            </Button>
-            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { const a = document.createElement('a'); a.href = cloudPdfUrl; a.download = ''; a.click(); }} title="הורד PDF">
-              <FileDown className="h-3.5 w-3.5 text-[#0B1F5B]" />
-            </Button>
-          </div>
-          <div className="border-2 border-[#D4AF37]/30 rounded-b-xl bg-white overflow-hidden shadow-lg" style={{ minHeight: '500px' }}>
+        <div>
+          {cloudEmbedFallbackNotice && (
+            <div className="flex items-center gap-2 rounded-md border border-[#D4AF37]/40 bg-[#FFF9E6] px-2 py-1 mb-1">
+              <span className="text-[10px] text-[#0B1F5B]/70" dir="rtl">{cloudEmbedFallbackNotice}</span>
+              <Button size="sm" variant="outline" className="h-6 text-[10px] border-[#D4AF37]/40 text-[#0B1F5B]" onClick={() => {
+                setCloudEmbedFallbackNotice(null);
+                setCloudSubMode('embedpdf');
+              }}>
+                נסה שוב EmbedPDF
+              </Button>
+            </div>
+          )}
+          <div className="border-2 border-[#D4AF37]/30 rounded-xl bg-white overflow-hidden shadow-lg" style={{ minHeight: '500px' }}>
             <iframe
               src={`${cloudPdfUrl}#toolbar=1&navpanes=0&view=FitH`}
               className="w-full border-0"
@@ -1457,14 +1375,6 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
         <div className="border-2 border-b-0 border-[#D4AF37]/30 rounded-t-xl bg-white px-2 py-1.5 flex items-center gap-1 flex-wrap">
           <span className="text-[10px] text-[#D4AF37] font-bold ml-2">📀 גמרא מהענן</span>
           <div className="w-px h-5 bg-[#D4AF37]/20" />
-
-          {/* Sub-mode toggle: text vs scan (only shown when PDF exists) */}
-          {cloudPdfUrl && (
-            <>
-              {renderCloudSubModeTabs()}
-              <div className="w-px h-5 bg-[#D4AF37]/20" />
-            </>
-          )}
 
           {/* Edit Mode Toggle */}
           <Button size="sm" variant={cloudEditMode ? "default" : "outline"} className={`h-7 text-xs gap-1 ${cloudEditMode ? "bg-[#D4AF37] text-[#0B1F5B]" : "border-[#D4AF37]/40 text-[#0B1F5B]"}`} onClick={() => {
@@ -1812,6 +1722,8 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
                 ))}
               </DropdownMenuContent>
               </DropdownMenu>
+              {/* Cloud sub-mode icon tabs — shown only in cloud view when a PDF exists */}
+              {viewMode === 'cloud' && cloudPdfUrl && renderCloudSubModeTabs()}
               {savedFlash && (
                 <span className="flex items-center gap-1 text-xs text-[hsl(45_70%_45%)] animate-fade-in" dir="rtl">
                   <Cloud className="h-3 w-3" />
