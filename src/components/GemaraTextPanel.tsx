@@ -193,7 +193,8 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   const cloudIframeRef = useRef<HTMLIFrameElement>(null);
   const [cloudEditMode, setCloudEditMode] = useState(false);
   const [cloudPages, setCloudPages] = useState<Array<{ sugya_id: string; title: string; daf_yomi: string; masechet: string }>>([]);
-  const [cloudLoading, setCloudLoading] = useState(false);
+  const [cloudPagesLoading, setCloudPagesLoading] = useState(false);
+  const [cloudContentLoading, setCloudContentLoading] = useState(false);
   const [cloudContent, setCloudContent] = useState<string>("");
   const [cloudLineHeight, setCloudLineHeight] = useState(1.8);
   const [cloudParagraphSpacing, setCloudParagraphSpacing] = useState(10);
@@ -204,13 +205,6 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   const [cloudEmbedBookId, setCloudEmbedBookId] = useState<string | null>(null);
   const [cloudEmbedLoading, setCloudEmbedLoading] = useState(false);
   const [cloudEmbedError, setCloudEmbedError] = useState<string | null>(null);
-
-  // Load cloud pages list when switching to cloud mode
-  useEffect(() => {
-    if (viewMode === 'cloud') {
-      loadCloudPages();
-    }
-  }, [viewMode]);
 
   // Load the current daf's cloud content when entering cloud mode
   useEffect(() => {
@@ -247,7 +241,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   }, [cloudPdfUrl, sugyaId]);
 
   const loadCloudPages = async () => {
-    setCloudLoading(true);
+    setCloudPagesLoading(true);
     try {
       const { data, error } = await supabase
         .from('gemara_pages')
@@ -259,12 +253,12 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
     } catch {
       sonnerToast.error("שגיאה בטעינת רשימת הדפים");
     } finally {
-      setCloudLoading(false);
+      setCloudPagesLoading(false);
     }
   };
 
   const loadCloudContent = async (sid: string) => {
-    setCloudLoading(true);
+    setCloudContentLoading(true);
     try {
       const { data, error } = await supabase
         .from('gemara_pages')
@@ -288,7 +282,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
     } catch {
       sonnerToast.error("שגיאה בטעינת תוכן הדף");
     } finally {
-      setCloudLoading(false);
+      setCloudContentLoading(false);
     }
   };
 
@@ -357,7 +351,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
 
       if (existingError) throw existingError;
 
-      const existingBookId = existing?.[0]?.id ?? null;
+      const existingBookId = (existing as unknown as Array<{ id: string }> | null)?.[0]?.id ?? null;
       if (existingBookId) {
         setCloudEmbedBookId(existingBookId);
         return existingBookId;
@@ -375,7 +369,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
 
       if (insertError) throw insertError;
 
-      const insertedBookId = (inserted as { id: string }).id;
+      const insertedBookId = (inserted as unknown as { id: string }).id;
       setCloudEmbedBookId(insertedBookId);
       return insertedBookId;
     } catch (error) {
@@ -389,10 +383,10 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   }, [cloudPdfUrl, dafYomi, gemaraText, sugyaId]);
 
   useEffect(() => {
-    if (cloudSubMode === 'embedpdf' && cloudPdfUrl && !cloudEmbedBookId && !cloudEmbedLoading) {
+    if (cloudSubMode === 'embedpdf' && cloudPdfUrl && !cloudEmbedBookId && !cloudEmbedLoading && !cloudEmbedError) {
       void ensureCloudEmbedBook();
     }
-  }, [cloudSubMode, cloudPdfUrl, cloudEmbedBookId, cloudEmbedLoading, ensureCloudEmbedBook]);
+  }, [cloudSubMode, cloudPdfUrl, cloudEmbedBookId, cloudEmbedLoading, cloudEmbedError, ensureCloudEmbedBook]);
 
   const cloudEmbedViewerSrc = useMemo(() => {
     if (!cloudPdfUrl || !cloudEmbedBookId) return '';
@@ -423,10 +417,11 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
   );
 
   useEffect(() => {
+    if (viewMode !== 'text') return;
     loadGemaraText();
-    // Prefetch next daf in background for instant navigation
+    // Prefetch next daf in background only for text mode navigation.
     prefetchNextDaf();
-  }, [dafYomi]);
+  }, [dafYomi, viewMode]);
 
   useEffect(() => {
     localStorage.setItem(TEXT_SETTINGS_KEY, JSON.stringify(textSettings));
@@ -1205,7 +1200,7 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
       );
     }
 
-    if (cloudLoading && !cloudContent) {
+    if (cloudContentLoading && !cloudContent) {
       return (
         <div className="space-y-4 py-6">
           <Skeleton className="h-6 w-48 mx-auto" />
@@ -1371,8 +1366,21 @@ export default function GemaraTextPanel({ sugyaId, dafYomi, masechet = "Bava_Bat
               <div className="w-px h-5 bg-[#D4AF37]/20" />
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button size="sm" variant="outline" className="h-7 text-xs gap-1 border-[#D4AF37]/40 text-[#0B1F5B]">
-                    <Database className="h-3 w-3 text-[#D4AF37]" />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs gap-1 border-[#D4AF37]/40 text-[#0B1F5B]"
+                    onClick={() => {
+                      if (!cloudPages.length && !cloudPagesLoading) {
+                        void loadCloudPages();
+                      }
+                    }}
+                  >
+                    {cloudPagesLoading ? (
+                      <Loader2 className="h-3 w-3 text-[#D4AF37] animate-spin" />
+                    ) : (
+                      <Database className="h-3 w-3 text-[#D4AF37]" />
+                    )}
                     דפים ({cloudPages.length})
                   </Button>
                 </PopoverTrigger>

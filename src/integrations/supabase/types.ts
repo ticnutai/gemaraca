@@ -553,6 +553,45 @@ export type Database = {
         }
         Relationships: []
       }
+      shas_pdf_pages: {
+        Row: {
+          amud: string
+          created_at: string | null
+          daf_number: number
+          file_size: number | null
+          hebrew_name: string
+          id: string
+          masechet: string
+          pdf_url: string | null
+          seder: string
+          storage_path: string
+        }
+        Insert: {
+          amud: string
+          created_at?: string | null
+          daf_number: number
+          file_size?: number | null
+          hebrew_name: string
+          id?: string
+          masechet: string
+          pdf_url?: string | null
+          seder: string
+          storage_path: string
+        }
+        Update: {
+          amud?: string
+          created_at?: string | null
+          daf_number?: number
+          file_size?: number | null
+          hebrew_name?: string
+          id?: string
+          masechet?: string
+          pdf_url?: string | null
+          seder?: string
+          storage_path?: string
+        }
+        Relationships: []
+      }
       smart_index_results: {
         Row: {
           analysis_method: string

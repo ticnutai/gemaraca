@@ -352,8 +352,8 @@ const SugyaDetail = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto max-w-7xl px-3 sm:px-4 py-4 sm:py-8">
-        {/* Header - Compact navigation */}
-        <div className="flex items-center justify-between gap-2 mb-4">
+        {/* Header - Single compact toolbar (back + unified share) */}
+        <div className="flex items-center justify-between gap-2 mb-3">
           <Button 
             variant="ghost" 
             size="sm"
@@ -380,6 +380,8 @@ const SugyaDetail = () => {
               daf={sugya.dafYomi}
               title={sugya.title}
               selectedText={selectedGemaraText}
+              bodyText={sugya.gemaraText || sugya.fullText || sugya.summary}
+              htmlContent={sugya.gemaraText || sugya.fullText}
             />
           </Suspense>
           <Button variant="outline" size="sm" className="gap-1.5" onClick={handlePrintOrExport}>
@@ -389,21 +391,29 @@ const SugyaDetail = () => {
           </Button>
         </div>
 
-        {/* Daf/Amud Navigator - Single source of truth for masechet name */}
-        <DafAmudNavigator className="mb-6" />
+        {/* Breadcrumb-style header: masechet/daf navigator + single page title.
+            DafAmudNavigator already shows masechet name + daf controls,
+            so we render only ONE H1 below it (no duplicate title or subtitle). */}
+        <DafAmudNavigator className="mb-3" />
+        <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-6">
+          {sugya.title}
+        </h1>
 
-        {/* Page Title - Simple, no duplications */}
-        <div className="mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-2">{sugya.title}</h1>
-          <p className="text-sm sm:text-base text-muted-foreground">{sugya.summary}</p>
-        </div>
-
-        {/* Main Tabs - 4 Primary Tabs */}
+        {/* Main Tabs - flattened single row.
+            "המחשה" lives only here (removed from inside the Gemara tab to avoid duplication). */}
         <Tabs value={mainTab} onValueChange={setMainTab} className="w-full" dir="rtl">
-          <TabsList className="grid w-full grid-cols-5 mb-6 h-auto">
+          <TabsList className="grid w-full grid-cols-7 mb-6 h-auto">
             <TabsTrigger value="gemara" className="flex items-center gap-1.5 py-2.5 text-xs sm:text-sm">
               <BookOpen className="w-4 h-4 hidden sm:block" />
               גמרא
+            </TabsTrigger>
+            <TabsTrigger value="commentaries" className="flex items-center gap-1.5 py-2.5 text-xs sm:text-sm">
+              <BookOpen className="w-4 h-4 hidden sm:block" />
+              מפרשים
+            </TabsTrigger>
+            <TabsTrigger value="lexicon" className="flex items-center gap-1.5 py-2.5 text-xs sm:text-sm">
+              <FileText className="w-4 h-4 hidden sm:block" />
+              מילון
             </TabsTrigger>
             <TabsTrigger value="illustration" className="flex items-center gap-1.5 py-2.5 text-xs sm:text-sm">
               <Lightbulb className="w-4 h-4 hidden sm:block" />
@@ -425,59 +435,27 @@ const SugyaDetail = () => {
 
           {/* Tab 1: גמרא - Gemara Text with nested tabs */}
           <TabsContent value="gemara" className="mt-0 space-y-6">
-            {/* Original Gemara Text */}
-            {sugya.gemaraText && (
-              <Card className="p-4 sm:p-6 bg-gradient-to-br from-primary/5 to-secondary/5 border-2 border-primary/20">
-                <h2 className="text-lg sm:text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-                  <BookOpen className="w-5 h-5 text-primary" />
-                  לשון הגמרא
-                </h2>
-                <div className="prose prose-sm max-w-none text-foreground leading-loose whitespace-pre-line font-serif">
-                  {sugya.gemaraText}
-                </div>
-              </Card>
-            )}
+            {/* Single rendering of GemaraTextPanel — no duplicate "לשון הגמרא" card,
+                no nested tabs (commentaries/lexicon/illustrations are now top-level). */}
+            <SectionErrorBoundary section="טקסט גמרא">
+              <Suspense fallback={<PanelFallback />}>
+                <GemaraTextPanel sugyaId={id || ""} dafYomi={sugya.dafYomi} masechet={sugya.masechet} />
+              </Suspense>
+            </SectionErrorBoundary>
+          </TabsContent>
 
-            {/* Nested tabs for Gemara tools */}
-            <Tabs defaultValue="text" className="w-full" dir="rtl">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="text">טקסט מקורי</TabsTrigger>
-                <TabsTrigger value="illustrations" className="flex items-center gap-1">
-                  <Lightbulb className="w-3 h-3" />
-                  המחשות
-                </TabsTrigger>
-                <TabsTrigger value="commentaries">מפרשים</TabsTrigger>
-                <TabsTrigger value="lexicon">מילון</TabsTrigger>
-              </TabsList>
-              <TabsContent value="text" className="mt-4">
-                <SectionErrorBoundary section="טקסט גמרא">
-                <Suspense fallback={<PanelFallback />}>
-                  <GemaraTextPanel sugyaId={id || ""} dafYomi={sugya.dafYomi} masechet={sugya.masechet} />
-                </Suspense>
-                </SectionErrorBoundary>
-              </TabsContent>
-              <TabsContent value="illustrations" className="mt-4">
-                <Suspense fallback={<PanelFallback />}>
-                  <ModernExamplesPanel
-                    gemaraText={sugya.gemaraText || sugya.fullText}
-                    sugyaTitle={sugya.title}
-                    dafYomi={sugya.dafYomi}
-                    masechet={sugya.masechet || "בבא בתרא"}
-                    sugyaId={id}
-                  />
-                </Suspense>
-              </TabsContent>
-              <TabsContent value="commentaries" className="mt-4">
-                <Suspense fallback={<PanelFallback />}>
-                  <CommentariesPanel dafYomi={sugya.dafYomi} masechet={sugya.masechet} />
-                </Suspense>
-              </TabsContent>
-              <TabsContent value="lexicon" className="mt-4">
-                <Suspense fallback={<PanelFallback />}>
-                  <LexiconSearch dafYomi={sugya.dafYomi} />
-                </Suspense>
-              </TabsContent>
-            </Tabs>
+          {/* Commentaries (was nested under Gemara) */}
+          <TabsContent value="commentaries" className="mt-0 space-y-6">
+            <Suspense fallback={<PanelFallback />}>
+              <CommentariesPanel dafYomi={sugya.dafYomi} masechet={sugya.masechet} />
+            </Suspense>
+          </TabsContent>
+
+          {/* Lexicon (was nested under Gemara) */}
+          <TabsContent value="lexicon" className="mt-0 space-y-6">
+            <Suspense fallback={<PanelFallback />}>
+              <LexiconSearch dafYomi={sugya.dafYomi} />
+            </Suspense>
           </TabsContent>
 
           {/* Tab 2: המחשה - Modern Examples */}

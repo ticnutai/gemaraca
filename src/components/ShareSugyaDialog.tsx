@@ -1,10 +1,8 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Share2, Copy, Link2, Check, MessageSquare, X } from "lucide-react";
+import { Share2, Copy, Check, MessageSquare, Printer, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -21,12 +19,17 @@ interface ShareSugyaDialogProps {
   title?: string;
   selectedText?: string;
   notes?: string;
+  /** Optional full body text used for "copy text" and "print" actions */
+  bodyText?: string;
+  /** Optional HTML content used for PDF export */
+  htmlContent?: string;
 }
 
-export default function ShareSugyaDialog({ sugyaId, masechet, daf, title, selectedText, notes }: ShareSugyaDialogProps) {
+export default function ShareSugyaDialog({ sugyaId, masechet, daf, title, selectedText, notes, bodyText, htmlContent }: ShareSugyaDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [personalNote, setPersonalNote] = useState(notes || "");
   const [copied, setCopied] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const shareUrl = useMemo(() => {
     const base = window.location.origin;
@@ -74,6 +77,60 @@ export default function ShareSugyaDialog({ sugyaId, masechet, daf, title, select
       } catch {}
     } else {
       copyFull();
+    }
+  };
+
+  const copyBody = () => {
+    const content = bodyText || shareText;
+    navigator.clipboard.writeText(content);
+    toast.success("הטקסט הועתק!");
+  };
+
+  const printPage = () => {
+    const content = htmlContent || (bodyText ? `<pre style="white-space:pre-wrap;font-family:serif">${bodyText}</pre>` : "");
+    if (!content) {
+      toast.error("אין תוכן להדפסה");
+      return;
+    }
+    const win = window.open("", "_blank");
+    if (!win) return;
+    win.document.write(`<!DOCTYPE html>
+<html dir="rtl" lang="he"><head><meta charset="utf-8"><title>${title || ""}</title>
+<style>body{font-family:'David','Noto Sans Hebrew',serif;max-width:780px;margin:2rem auto;line-height:1.8;padding:0 1rem;color:#0B1F5B}
+h1{text-align:center;border-bottom:2px solid #D4AF37;padding-bottom:.5rem}</style></head>
+<body><h1>${title || ""}</h1>${content}</body></html>`);
+    win.document.close();
+    setTimeout(() => win.print(), 300);
+  };
+
+  const exportPdf = async () => {
+    const content = htmlContent || (bodyText ? `<pre style="white-space:pre-wrap;font-family:serif">${bodyText}</pre>` : "");
+    if (!content) {
+      toast.error("אין תוכן לייצוא");
+      return;
+    }
+    setIsExporting(true);
+    try {
+      const fullHtml = `<!DOCTYPE html>
+<html lang="he" dir="rtl"><head><meta charset="UTF-8"><title>${title || "ייצוא"}</title>
+<style>@page{margin:2cm;size:A4}body{font-family:'David','Noto Sans Hebrew',serif;direction:rtl;color:#0B1F5B;line-height:1.8}
+h1,h2,h3{color:#0B1F5B;border-bottom:2px solid #D4AF37;padding-bottom:4px}
+@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head>
+<body>${content}</body></html>`;
+      const iframe = document.createElement("iframe");
+      iframe.style.cssText = "position:fixed;left:-9999px;width:210mm;height:297mm";
+      document.body.appendChild(iframe);
+      const doc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (!doc) throw new Error();
+      doc.open(); doc.write(fullHtml); doc.close();
+      await new Promise(r => setTimeout(r, 500));
+      iframe.contentWindow?.print();
+      setTimeout(() => document.body.removeChild(iframe), 2000);
+      toast.success("חלון הדפסה נפתח — בחר 'שמור כ-PDF'");
+    } catch {
+      toast.error("שגיאה בייצוא");
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -130,13 +187,21 @@ export default function ShareSugyaDialog({ sugyaId, masechet, daf, title, select
             <Button variant="outline" className="gap-2 text-sm" onClick={shareMail}>
               ✉️ מייל
             </Button>
-            <Button variant="outline" className="gap-2 text-sm" onClick={copyFull}>
+            <Button variant="outline" className="gap-2 text-sm" onClick={copyBody}>
               <Copy className="h-4 w-4" />
               העתק טקסט
             </Button>
             <Button variant="outline" className="gap-2 text-sm" onClick={shareNative}>
               <Share2 className="h-4 w-4" />
               שתף...
+            </Button>
+            <Button variant="outline" className="gap-2 text-sm" onClick={printPage}>
+              <Printer className="h-4 w-4" />
+              הדפסה
+            </Button>
+            <Button variant="outline" className="gap-2 text-sm" onClick={exportPdf} disabled={isExporting}>
+              <FileDown className="h-4 w-4" />
+              ייצוא PDF
             </Button>
           </div>
         </div>
