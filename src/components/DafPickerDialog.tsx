@@ -1,21 +1,17 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
 import {
   Search,
   Clock,
   Star,
   BookOpen,
-  LayoutGrid,
-  List,
-  Rows3,
-  Hash,
-  ChevronLeft,
+  Library,
+  ScrollText,
+  Sparkles,
   X,
 } from "lucide-react";
 import { MASECHTOT, type Masechet } from "@/lib/masechtotData";
@@ -26,9 +22,6 @@ const SEDARIM = ["זרעים", "מועד", "נשים", "נזיקין", "קדשי
 
 const RECENT_KEY = "daf_picker_recent";
 const FAV_KEY = "daf_picker_favorites";
-const STYLE_KEY = "daf_picker_style";
-
-type ViewStyle = "cards" | "list" | "compact" | "grid";
 
 interface RecentItem {
   sugyaId: string;
