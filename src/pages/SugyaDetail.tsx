@@ -4,8 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRight, BookOpen, Scale, ExternalLink, Lightbulb, FileText, HelpCircle, ChevronLeft, Home } from "lucide-react";
+import { ArrowRight, BookOpen, Scale, ExternalLink, Lightbulb, FileText, HelpCircle, ChevronLeft, Home, Layers } from "lucide-react";
 import DafAmudNavigator from "@/components/DafAmudNavigator";
+import DafPickerDialog, { trackDafVisit } from "@/components/DafPickerDialog";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import FAQSection from "@/components/FAQSection";
 import PsakDinSearchButton from "@/components/PsakDinSearchButton";
 import { SectionErrorBoundary } from "@/components/SectionErrorBoundary";
