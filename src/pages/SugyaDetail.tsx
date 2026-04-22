@@ -4,8 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRight, BookOpen, Scale, ExternalLink, Lightbulb, FileText, HelpCircle, ChevronLeft, Home } from "lucide-react";
+import { ArrowRight, BookOpen, Scale, ExternalLink, Lightbulb, FileText, HelpCircle, ChevronLeft, Home, Layers } from "lucide-react";
 import DafAmudNavigator from "@/components/DafAmudNavigator";
+import DafPickerDialog, { trackDafVisit } from "@/components/DafPickerDialog";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import FAQSection from "@/components/FAQSection";
 import PsakDinSearchButton from "@/components/PsakDinSearchButton";
 import { SectionErrorBoundary } from "@/components/SectionErrorBoundary";
@@ -114,6 +123,24 @@ const SugyaDetail = () => {
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [mainTab, setMainTab] = useState("gemara");
   const [selectedGemaraText, setSelectedGemaraText] = useState("");
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  // Keyboard shortcut: Cmd/Ctrl+K opens picker
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setPickerOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  // Track recently visited daf for the picker
+  useEffect(() => {
+    if (id) trackDafVisit(id);
+  }, [id]);
   
   const sugya = loadedPage;
   const enterTimeRef = useRef(Date.now());
@@ -334,28 +361,62 @@ const SugyaDetail = () => {
           </Suspense>
         </div>
 
-        {/* Breadcrumb: Home > Masechet > Daf */}
-        <nav aria-label="נתיב ניווט" className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
-          <button
-            onClick={() => navigate('/')}
-            className="flex items-center gap-1 hover:text-foreground transition-colors"
+        {/* Breadcrumb: Home > Seder > Masechet > Daf  + quick picker trigger */}
+        <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+          <Breadcrumb>
+            <BreadcrumbList className="text-xs sm:text-sm">
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <button onClick={() => navigate('/')} className="flex items-center gap-1">
+                    <Home className="w-3.5 h-3.5" />
+                    בית
+                  </button>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              {(() => {
+                const masechetData = MASECHTOT.find(m => m.hebrewName === sugya.masechet || m.sefariaName === sugya.masechet);
+                if (!masechetData) return null;
+                return (
+                  <>
+                    <BreadcrumbSeparator><ChevronLeft className="w-3.5 h-3.5" /></BreadcrumbSeparator>
+                    <BreadcrumbItem>
+                      <span className="text-muted-foreground">סדר {masechetData.seder}</span>
+                    </BreadcrumbItem>
+                    <BreadcrumbSeparator><ChevronLeft className="w-3.5 h-3.5" /></BreadcrumbSeparator>
+                    <BreadcrumbItem>
+                      <BreadcrumbLink asChild>
+                        <button onClick={() => setPickerOpen(true)} className="hover:text-foreground transition-colors">
+                          {masechetData.hebrewName}
+                        </button>
+                      </BreadcrumbLink>
+                    </BreadcrumbItem>
+                  </>
+                );
+              })()}
+              {sugya.dafYomi && (
+                <>
+                  <BreadcrumbSeparator><ChevronLeft className="w-3.5 h-3.5" /></BreadcrumbSeparator>
+                  <BreadcrumbItem>
+                    <BreadcrumbPage>דף {sugya.dafYomi}</BreadcrumbPage>
+                  </BreadcrumbItem>
+                </>
+              )}
+            </BreadcrumbList>
+          </Breadcrumb>
+
+          <Button
+            onClick={() => setPickerOpen(true)}
+            variant="outline"
+            size="sm"
+            className="gap-1.5 h-8"
           >
-            <Home className="w-3.5 h-3.5" />
-            בית
-          </button>
-          {sugya.masechet && (
-            <>
-              <ChevronLeft className="w-3.5 h-3.5 opacity-60" />
-              <span className="hover:text-foreground transition-colors">{sugya.masechet}</span>
-            </>
-          )}
-          {sugya.dafYomi && (
-            <>
-              <ChevronLeft className="w-3.5 h-3.5 opacity-60" />
-              <span className="text-foreground font-medium">דף {sugya.dafYomi}</span>
-            </>
-          )}
-        </nav>
+            <Layers className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">בורר דפים</span>
+            <kbd className="hidden md:inline text-[10px] bg-muted px-1.5 py-0.5 rounded">⌘K</kbd>
+          </Button>
+        </div>
+
+        <DafPickerDialog open={pickerOpen} onOpenChange={setPickerOpen} />
 
         {/* Breadcrumb-style header: masechet/daf navigator + single page title.
             DafAmudNavigator already shows masechet name + daf controls,
