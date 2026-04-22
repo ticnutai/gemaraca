@@ -123,6 +123,24 @@ const SugyaDetail = () => {
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [mainTab, setMainTab] = useState("gemara");
   const [selectedGemaraText, setSelectedGemaraText] = useState("");
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  // Keyboard shortcut: Cmd/Ctrl+K opens picker
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setPickerOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  // Track recently visited daf for the picker
+  useEffect(() => {
+    if (id) trackDafVisit(id);
+  }, [id]);
   
   const sugya = loadedPage;
   const enterTimeRef = useRef(Date.now());
